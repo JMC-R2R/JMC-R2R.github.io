@@ -1,0 +1,113 @@
+/* ============================================================
+   YOUR BODY HUB — MASTER BRAND STYLESHEET
+   Import this into every report / PDF so all documents match.
+   Identity derived from yourbodyhub.com.au (logo, colours, fonts).
+   Usage:  <link rel="stylesheet" href="brand.css">  (adjust path)
+   Render: Google Chrome --headless --print-to-pdf
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Nunito:wght@400;600;700;800&display=swap');
+
+:root {
+  /* --- Core palette --- */
+  --ybh-purple:       #90278e;  /* PRIMARY — headings, key accents */
+  --ybh-purple-deep:  #6c2766;  /* deep purple — emphasis, CTAs */
+  --ybh-teal:         #62c4bb;  /* bright teal — secondary accent */
+  --ybh-slate:        #779b9f;  /* slate teal — tagline, muted accent */
+  /* --- Tints & neutrals --- */
+  --ybh-lilac:        #f3e9f3;  /* soft lilac — panel backgrounds */
+  --ybh-lilac-2:      #e8d3e8;  /* deeper lilac — borders, table stripes */
+  --ybh-paper:        #f6f4f3;  /* off-white — page background */
+  --ybh-ink:          #2a2530;  /* charcoal — body text */
+  --ybh-ink-soft:     #6a6470;  /* muted text — captions */
+  --ybh-white:        #ffffff;
+  /* --- Type --- */
+  --ybh-head: "Lato", "Helvetica Neue", Arial, sans-serif;
+  --ybh-body: "Nunito", "Segoe UI", Arial, sans-serif;
+}
+
+@page { size: A4; margin: 18mm 15mm 16mm 15mm; }
+* { box-sizing: border-box; }
+
+body {
+  font-family: var(--ybh-body);
+  color: var(--ybh-ink);
+  font-size: 10.8px;
+  line-height: 1.55;
+  margin: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* --- Headings --- */
+h1, h2, h3, h4 { font-family: var(--ybh-head); color: var(--ybh-purple); margin: 0 0 7px; line-height: 1.15; }
+h1 { font-size: 30px; font-weight: 900; }
+h2 { font-size: 19px; font-weight: 800; border-bottom: 3px solid var(--ybh-teal); padding-bottom: 5px; }
+h3 { font-size: 13.5px; font-weight: 700; color: var(--ybh-purple-deep); margin-top: 14px; }
+h4 { font-size: 11.5px; font-weight: 700; color: var(--ybh-ink); margin-top: 10px; }
+p  { margin: 0 0 7px; }
+a  { color: var(--ybh-purple); }
+strong { color: var(--ybh-ink); }
+.small { font-size: 9px; color: var(--ybh-ink-soft); }
+
+/* --- Cover --- */
+.cover { height: 248mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
+.cover img.logo { width: 78mm; margin-bottom: 28px; }
+.cover .kicker { font-family: var(--ybh-head); letter-spacing: 3px; text-transform: uppercase; color: var(--ybh-slate); font-weight: 700; font-size: 12px; }
+.cover h1 { font-size: 42px; margin: 10px 0; color: var(--ybh-purple); }
+.cover .sub { font-family: var(--ybh-body); font-size: 15px; color: var(--ybh-ink-soft); max-width: 78%; }
+.cover .rule { width: 60px; height: 5px; background: var(--ybh-teal); border-radius: 3px; margin: 18px 0; }
+.cover .meta { margin-top: 40px; font-size: 11px; color: var(--ybh-slate); }
+
+/* --- Section breaks --- */
+.section { page-break-before: always; }
+
+/* --- Pills / tags --- */
+.pill { display: inline-block; background: var(--ybh-lilac); color: var(--ybh-purple); border-radius: 20px; padding: 3px 11px; font-size: 9.5px; font-weight: 700; font-family: var(--ybh-body); margin: 2px 3px 2px 0; }
+
+/* --- Tables --- */
+table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 9.2px; }
+th { background: var(--ybh-purple); color: var(--ybh-white); text-align: left; padding: 6px 7px; font-weight: 700; font-family: var(--ybh-head); }
+td { border: 1px solid var(--ybh-lilac-2); padding: 5px 7px; vertical-align: top; }
+tr:nth-child(even) td { background: var(--ybh-lilac); }
+
+/* --- Callouts --- */
+.callout { background: var(--ybh-lilac); border-left: 4px solid var(--ybh-purple); padding: 9px 13px; margin: 10px 0; border-radius: 0 6px 6px 0; }
+.note { background: #fff8fc; border: 1px solid var(--ybh-lilac-2); border-radius: 6px; padding: 9px 13px; margin: 10px 0; font-size: 9.6px; }
+.lead { background: var(--ybh-lilac); border-radius: 7px; padding: 11px 15px; margin: 10px 0; }
+.lead .label { font-family: var(--ybh-head); text-transform: uppercase; letter-spacing: 2px; font-size: 9px; color: var(--ybh-slate); font-weight: 700; }
+
+/* --- CTA labels (brand-mapped) --- */
+.cta-book { color: var(--ybh-purple-deep); font-weight: 800; }   /* bottom funnel */
+.cta-guide{ color: var(--ybh-slate);       font-weight: 800; }   /* mid funnel */
+.cta-sub  { color: var(--ybh-purple);      font-weight: 800; }   /* top funnel */
+
+/* --- Lists --- */
+ul { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+
+/* --- Brand-guideline-specific helpers --- */
+.swatch-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+.swatch { width: 30%; border: 1px solid var(--ybh-lilac-2); border-radius: 8px; overflow: hidden; }
+.swatch .chip { height: 64px; }
+.swatch .info { padding: 7px 9px; font-size: 9px; }
+.swatch .info .name { font-family: var(--ybh-head); font-weight: 700; color: var(--ybh-ink); font-size: 10.5px; }
+.swatch .info .hex { color: var(--ybh-ink-soft); letter-spacing: 0.5px; }
+.type-specimen { border: 1px solid var(--ybh-lilac-2); border-radius: 8px; padding: 12px 16px; margin: 8px 0; }
+.dodont { display: flex; gap: 14px; margin: 8px 0; }
+.dodont > div { flex: 1; border-radius: 8px; padding: 9px 13px; font-size: 9.4px; }
+.do  { background: #eef7f6; border: 1px solid var(--ybh-teal); }
+.dont{ background: #fbeef5; border: 1px solid var(--ybh-lilac-2); }
+.do .h, .dont .h { font-family: var(--ybh-head); font-weight: 800; font-size: 11px; margin-bottom: 4px; }
+.do .h { color: var(--ybh-slate); }
+.dont .h { color: var(--ybh-purple); }
+.logo-stage { background: var(--ybh-paper); border: 1px dashed var(--ybh-lilac-2); border-radius: 8px; padding: 22px; text-align: center; margin: 8px 0; }
+.logo-stage.dark { background: var(--ybh-purple); border-color: var(--ybh-purple-deep); }
+
+/* --- Script / content blocks (content calendars, scripts, briefs) --- */
+.label { font-weight: 700; color: var(--ybh-purple); }
+.scriptbox { background: var(--ybh-lilac); border-left: 4px solid var(--ybh-slate); padding: 9px 13px; margin: 8px 0; border-radius: 0 6px 6px 0; }
+.scriptbox .tag { display: inline-block; background: var(--ybh-purple); color: var(--ybh-white); font-size: 8.5px; font-weight: 700; font-family: var(--ybh-head); padding: 1px 7px; border-radius: 3px; margin-right: 5px; letter-spacing: 0.4px; }
+.scriptbox .tag.film { background: var(--ybh-slate); }
+.scriptbox .line { margin: 3px 0; }
+.scriptbox .label { color: var(--ybh-purple-deep); }
