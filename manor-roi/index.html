@@ -306,8 +306,12 @@ function deltaEl(el, curr, prev, opts={}){
 }
 
 function render(data, isSample){
-  const last = data[data.length-1];
-  const prev = data.length>1 ? data[data.length-2] : null;
+  // Headline = latest month the venue has actually filled in (bookings/walkthroughs/value),
+  // not the current in-progress month. Trend + strip still use every month.
+  let hi = data.length-1;
+  for(let i=data.length-1;i>=0;i--){ if(data[i].bookings||data[i].walkthroughs||data[i].bookedVal){ hi=i; break; } }
+  const last = data[hi];
+  const prev = hi>0 ? data[hi-1] : null;
   const inv = r => r.ourFee+r.socialFee+r.adSpend;
 
   // header
