@@ -173,60 +173,46 @@
     <div class="delta" id="investDelta"></div>
   </div>
   <div class="card hero accent">
-    <div class="lbl">Pipeline ROI · bookings signed</div>
-    <div class="big" id="pipeRoi">—<span class="roi-unit"> back per $1</span></div>
-    <div class="pct" id="pipePct"></div>
-    <div class="delta" id="pipeDelta"></div>
+    <div class="lbl">Return on investment</div>
+    <div class="big" id="roi">—<span class="roi-unit"> back per $1</span></div>
+    <div class="pct" id="roiPct"></div>
+    <div class="delta" id="roiDelta"></div>
   </div>
   <div class="card hero">
-    <div class="lbl">Realised ROI · weddings held</div>
-    <div class="big" id="realRoi">—<span class="roi-unit"> back per $1</span></div>
-    <div class="pct" id="realPct"></div>
-    <div class="delta" id="realDelta"></div>
+    <div class="lbl">Booked wedding value</div>
+    <div class="big" id="bookedVal">—</div>
+    <div class="small"><span id="bookedCount">—</span> weddings booked this month</div>
+    <div class="delta" id="bookedDelta"></div>
   </div>
 </div>
 
 <!-- ROW 2: FUNNEL -->
-<div class="seclabel">Enquiry to booking</div>
-<div class="grid g2" style="grid-template-columns:1.55fr 1fr">
-  <div class="card">
-    <div class="funnel">
-      <div class="fstep"><div class="n" id="fEnq">—</div><div class="t">Enquiries</div></div>
-      <div class="farrow">›<span class="conv" id="cTour"></span></div>
-      <div class="fstep"><div class="n" id="fTour">—</div><div class="t">Qualified · tours</div></div>
-      <div class="farrow">›<span class="conv" id="cBook"></span></div>
-      <div class="fstep"><div class="n" id="fBook">—</div><div class="t">Bookings won</div></div>
-    </div>
-  </div>
-  <div class="grid g2" style="gap:14px">
-    <div class="card"><div class="lbl">Cost per enquiry</div><div class="big" id="cpe" style="font-size:28px">—</div></div>
-    <div class="card"><div class="lbl">Cost per booking</div><div class="big" id="cpb" style="font-size:28px">—</div></div>
+<div class="seclabel">Lead to booking</div>
+<div class="card">
+  <div class="funnel">
+    <div class="fstep"><div class="n" id="fLeads">—</div><div class="t">Leads · new contacts</div></div>
+    <div class="farrow">›<span class="conv" id="cWalk"></span></div>
+    <div class="fstep"><div class="n" id="fWalk">—</div><div class="t">Walkthroughs</div></div>
+    <div class="farrow">›<span class="conv" id="cBook"></span></div>
+    <div class="fstep"><div class="n" id="fBook">—</div><div class="t">Weddings booked</div></div>
   </div>
 </div>
 
-<!-- ROW 3: REVENUE BOTH BASES -->
-<div class="seclabel">Revenue — two views</div>
-<div class="grid g2">
-  <div class="card rev">
-    <span class="tag pipe">Pipeline · signed this period</span>
-    <div class="big" id="signedVal">—</div>
-    <div class="small"><span id="signedCount">—</span> bookings contracted</div>
-  </div>
-  <div class="card rev">
-    <span class="tag real">Realised · weddings held this period</span>
-    <div class="big" id="realVal">—</div>
-    <div class="small"><span id="heldCount">—</span> weddings held</div>
-  </div>
+<!-- ROW 3: AUTO METRICS + COSTS -->
+<div class="seclabel">Channels &amp; efficiency</div>
+<div class="grid g4">
+  <div class="card"><div class="lbl">Google Ads calls</div><div class="big" id="gcalls" style="font-size:30px">—</div><div class="small">phone calls from ads</div></div>
+  <div class="card"><div class="lbl">Ad spend</div><div class="big" id="adspend" style="font-size:30px">—</div><div class="small">Google Ads</div></div>
+  <div class="card"><div class="lbl">Cost per lead</div><div class="big" id="cpl" style="font-size:30px">—</div></div>
+  <div class="card"><div class="lbl">Cost per booking</div><div class="big" id="cpb" style="font-size:30px">—</div></div>
 </div>
-<div class="note">Weddings book 12–18 months ahead, so <b>signed</b> (demand we created now) and <b>realised</b> (events actually held now) describe different periods — they are meant to differ, not to match.</div>
 
 <!-- ROW 4: TREND -->
-<div class="seclabel">Investment vs booking value over time</div>
+<div class="seclabel">Leads &amp; booked value over time</div>
 <div class="trend">
   <div class="legend">
-    <span><i style="background:var(--blue)"></i>Marketing investment</span>
-    <span><i style="background:var(--good)"></i>Signed booking value</span>
-    <span><i style="background:var(--azure)"></i>Realised revenue</span>
+    <span><i style="background:var(--blue)"></i>Leads (new contacts)</span>
+    <span><i style="background:var(--good)"></i>Booked wedding value</span>
   </div>
   <div id="chart"></div>
 </div>
@@ -243,21 +229,15 @@
 <div class="modal-bg" id="modalBg">
   <div class="modal">
     <h2>Update monthly data</h2>
-    <div class="msub">Enter this month's figures. Pick a month already entered to edit it.</div>
+    <div class="msub">Enter the venue's figures for the month. Leads, ad spend &amp; Google Ads calls update automatically.</div>
     <div class="field full">
       <label>Month</label>
       <input type="month" id="f_month">
     </div>
     <div class="frow">
-      <div class="field money"><label>Our fee</label><span class="pre">$</span><input type="number" id="f_ourFee" min="0" step="any"></div>
-      <div class="field money"><label>Social agency fee</label><span class="pre">$</span><input type="number" id="f_socialFee" min="0" step="any"></div>
-      <div class="field money"><label>Ad spend</label><span class="pre">$</span><input type="number" id="f_adSpend" min="0" step="any"></div>
-      <div class="field"><label>Enquiries</label><input type="number" id="f_enquiries" min="0" step="1"></div>
-      <div class="field"><label>Qualified leads / tours</label><input type="number" id="f_tours" min="0" step="1"></div>
-      <div class="field"><label>Bookings won</label><input type="number" id="f_bookings" min="0" step="1"></div>
-      <div class="field money"><label>Signed booking value</label><span class="pre">$</span><input type="number" id="f_signedVal" min="0" step="any"></div>
-      <div class="field"><label>Weddings held</label><input type="number" id="f_held" min="0" step="1"></div>
-      <div class="field money full"><label>Revenue realised (weddings held)</label><span class="pre">$</span><input type="number" id="f_realVal" min="0" step="any"></div>
+      <div class="field"><label>Weddings booked</label><input type="number" id="f_bookings" min="0" step="1"></div>
+      <div class="field"><label>Walkthroughs held</label><input type="number" id="f_tours" min="0" step="1"></div>
+      <div class="field money full"><label>Booked wedding value</label><span class="pre">$</span><input type="number" id="f_signedVal" min="0" step="any"></div>
     </div>
     <div class="field full">
       <label>Edit code</label>
@@ -289,24 +269,23 @@ const SUPA = {
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 let LOADED = [];   // last data loaded from Supabase (for form pre-fill)
 
-/* Map a Supabase row (snake_case) to the keys the dashboard renders. */
+/* Map a Supabase row (snake_case) to the keys the dashboard renders.
+   Auto fields: leads, adSpend, gCalls, ourFee, socialFee.
+   Manual fields (Mario): walkthroughs (tours), bookings, bookedVal (signed_value). */
 function fromSupa(r){
   return {
     month:r.period_label, periodDate:r.period_date,
     ourFee:+r.our_fee, socialFee:+r.social_fee, adSpend:+r.ad_spend,
-    enquiries:+r.enquiries, tours:+r.tours, bookings:+r.bookings,
-    signedVal:+r.signed_value, held:+r.weddings_held, realVal:+r.realised_revenue
+    leads:+r.leads, gCalls:+r.google_ads_calls,
+    walkthroughs:+r.tours, bookings:+r.bookings, bookedVal:+r.signed_value
   };
 }
 
-/* Sample data — shown only until the first real month is entered. */
+/* Sample data — shown only if the database can't be reached. */
 const SAMPLE = [
-  {month:'Jan 2026',ourFee:2500,socialFee:1800,adSpend:1600,enquiries:34,tours:14,bookings:3,signedVal:54000,held:2,realVal:38000},
-  {month:'Feb 2026',ourFee:2500,socialFee:1800,adSpend:1700,enquiries:41,tours:18,bookings:4,signedVal:76000,held:1,realVal:21000},
-  {month:'Mar 2026',ourFee:2500,socialFee:1800,adSpend:1900,enquiries:47,tours:21,bookings:5,signedVal:98000,held:3,realVal:61000},
-  {month:'Apr 2026',ourFee:2500,socialFee:1800,adSpend:2100,enquiries:52,tours:24,bookings:5,signedVal:104000,held:2,realVal:44000},
-  {month:'May 2026',ourFee:2500,socialFee:1800,adSpend:2050,enquiries:58,tours:27,bookings:6,signedVal:129000,held:4,realVal:83000},
-  {month:'Jun 2026',ourFee:2500,socialFee:1800,adSpend:2200,enquiries:63,tours:31,bookings:7,signedVal:151000,held:3,realVal:67000}
+  {month:'Apr 2026',ourFee:5000,socialFee:5000,adSpend:1971,leads:151,gCalls:19,walkthroughs:22,bookings:4,bookedVal:80000},
+  {month:'May 2026',ourFee:5000,socialFee:5000,adSpend:1977,leads:155,gCalls:12,walkthroughs:50,bookings:10,bookedVal:100000},
+  {month:'Jun 2026',ourFee:5000,socialFee:5000,adSpend:829,leads:50,gCalls:1,walkthroughs:0,bookings:0,bookedVal:0}
 ];
 
 /* ---------- helpers ---------- */
@@ -335,90 +314,89 @@ function render(data, isSample){
   $('period').textContent = last.month;
   $('updated').textContent = 'Last updated '+fmtDate(new Date());
   const b=$('banner');
-  if(isSample){ b.className='banner show'; b.innerHTML='⚠ Showing <b>sample data</b> — click <b>✎ Update data</b> to enter real figures.'; }
+  if(isSample){ b.className='banner show'; b.innerHTML='⚠ Showing <b>sample data</b> — could not reach the live database.'; }
   else b.className='banner';
 
-  // Row 1 — investment + ROI
+  // Row 1 — investment + ROI + booked value
   const invest = inv(last);
   $('invest').textContent = aud(invest);
   $('investBreak').innerHTML = `Our fee ${aud(last.ourFee)} · Social ${aud(last.socialFee)} · Ads ${aud(last.adSpend)}`;
   if(prev) deltaEl($('investDelta'), invest, inv(prev), {invert:true});
 
-  const pipeR = invest? last.signedVal/invest : 0;
-  const realR = invest? last.realVal/invest : 0;
-  $('pipeRoi').innerHTML = '$'+pipeR.toFixed(2)+'<span class="roi-unit"> back per $1</span>';
-  $('realRoi').innerHTML = '$'+realR.toFixed(2)+'<span class="roi-unit"> back per $1</span>';
-  $('pipePct').textContent = (pipeR>=1?'+':'')+Math.round((pipeR-1)*100)+'% net return';
-  $('realPct').textContent = (realR>=1?'+':'')+Math.round((realR-1)*100)+'% net return';
-  if(prev){
-    const pInv=inv(prev);
-    deltaEl($('pipeDelta'), pipeR, pInv?prev.signedVal/pInv:0);
-    deltaEl($('realDelta'), realR, pInv?prev.realVal/pInv:0);
-  }
+  const roi = invest? last.bookedVal/invest : 0;
+  $('roi').innerHTML = '$'+roi.toFixed(2)+'<span class="roi-unit"> back per $1</span>';
+  $('roiPct').textContent = last.bookedVal ? (roi>=1?'+':'')+Math.round((roi-1)*100)+'% net return' : 'awaiting bookings';
+  if(prev){ const pInv=inv(prev); deltaEl($('roiDelta'), roi, pInv?prev.bookedVal/pInv:0); }
 
-  // Row 2 — funnel
-  $('fEnq').textContent=last.enquiries; $('fTour').textContent=last.tours; $('fBook').textContent=last.bookings;
-  $('cTour').textContent = last.enquiries? Math.round(last.tours/last.enquiries*100)+'%':'';
-  $('cBook').textContent = last.tours? Math.round(last.bookings/last.tours*100)+'%':'';
-  $('cpe').textContent = last.enquiries? aud(invest/last.enquiries):'—';
+  $('bookedVal').textContent = aud(last.bookedVal);
+  $('bookedCount').textContent = last.bookings;
+  if(prev) deltaEl($('bookedDelta'), last.bookedVal, prev.bookedVal);
+
+  // Row 2 — funnel: leads → walkthroughs → weddings booked
+  $('fLeads').textContent=last.leads; $('fWalk').textContent=last.walkthroughs; $('fBook').textContent=last.bookings;
+  $('cWalk').textContent = last.leads? Math.round(last.walkthroughs/last.leads*100)+'%':'';
+  $('cBook').textContent = last.walkthroughs? Math.round(last.bookings/last.walkthroughs*100)+'%':'';
+
+  // Row 3 — auto metrics + costs
+  $('gcalls').textContent = last.gCalls;
+  $('adspend').textContent = aud(last.adSpend);
+  $('cpl').textContent = last.leads? aud(invest/last.leads):'—';
   $('cpb').textContent = last.bookings? aud(invest/last.bookings):'—';
-
-  // Row 3 — revenue
-  $('signedVal').textContent=aud(last.signedVal); $('signedCount').textContent=last.bookings;
-  $('realVal').textContent=aud(last.realVal); $('heldCount').textContent=last.held;
 
   // Row 4 — trend
   drawChart(data);
 
   // Cumulative strip
   const tInv=data.reduce((s,r)=>s+inv(r),0);
-  const tSign=data.reduce((s,r)=>s+r.signedVal,0);
-  const tReal=data.reduce((s,r)=>s+r.realVal,0);
+  const tLeads=data.reduce((s,r)=>s+r.leads,0);
+  const tVal=data.reduce((s,r)=>s+r.bookedVal,0);
   const tBook=data.reduce((s,r)=>s+r.bookings,0);
   $('strip').innerHTML = `
-    <div class="card"><div class="lbl">Total invested · to date</div><div class="big">${aud(tInv)}</div></div>
-    <div class="card"><div class="lbl">Total signed value</div><div class="big" style="color:var(--blue)">${aud(tSign)}</div></div>
-    <div class="card"><div class="lbl">Blended pipeline ROI</div><div class="big" style="color:var(--good)">$${(tInv?tSign/tInv:0).toFixed(2)}</div></div>
-    <div class="card"><div class="lbl">Bookings won · to date</div><div class="big">${tBook}</div></div>`;
+    <div class="card"><div class="lbl">Total leads · to date</div><div class="big" style="color:var(--blue)">${tLeads.toLocaleString('en-AU')}</div></div>
+    <div class="card"><div class="lbl">Total booked value</div><div class="big" style="color:var(--good)">${aud(tVal)}</div></div>
+    <div class="card"><div class="lbl">Blended ROI</div><div class="big">$${(tInv?tVal/tInv:0).toFixed(2)}</div></div>
+    <div class="card"><div class="lbl">Weddings booked · to date</div><div class="big">${tBook}</div></div>`;
 }
 
 function drawChart(data){
-  const W=1120,H=300,padL=58,padR=20,padT=16,padB=40;
+  const W=1120,H=300,padL=46,padR=64,padT=16,padB=40;
   const rows=data.slice(-12);
-  const inv = r => r.ourFee+r.socialFee+r.adSpend;
-  const maxVal = Math.max(...rows.map(r=>Math.max(inv(r),r.signedVal,r.realVal)),1);
   const plotW=W-padL-padR, plotH=H-padT-padB;
   const n=rows.length, slot=plotW/n;
-  const y = v => padT+plotH-(v/maxVal)*plotH;
+  const maxLeads = Math.max(...rows.map(r=>r.leads),1);
+  const maxVal   = Math.max(...rows.map(r=>r.bookedVal),1);
+  const yL = v => padT+plotH-(v/maxLeads)*plotH;   // left axis: leads (bars)
+  const yR = v => padT+plotH-(v/maxVal)*plotH;      // right axis: booked value (line)
   const xCenter = i => padL+slot*i+slot/2;
-  const barW=Math.min(34,slot*0.42);
+  const barW=Math.min(36,slot*0.46);
 
-  // gridlines + axis labels
-  let grid='',ax='';
+  // gridlines + dual axis labels
+  let grid='',axL='',axR='';
   for(let g=0;g<=4;g++){
-    const val=maxVal*g/4, yy=y(val);
+    const yy=padT+plotH-(g/4)*plotH;
     grid+=`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="#2A2A33" stroke-width="1"/>`;
-    ax+=`<text x="${padL-8}" y="${yy+4}" fill="#8C8C99" font-size="11" font-family="Space Mono, monospace" text-anchor="end">${audK(val)}</text>`;
+    axL+=`<text x="${padL-8}" y="${yy+4}" fill="#17B4F0" font-size="11" font-family="Space Mono, monospace" text-anchor="end">${Math.round(maxLeads*g/4)}</text>`;
+    axR+=`<text x="${W-padR+8}" y="${yy+4}" fill="#3FD07F" font-size="11" font-family="Space Mono, monospace" text-anchor="start">${audK(maxVal*g/4)}</text>`;
   }
-  // investment bars
+  // leads bars (left axis)
   let bars='',xlabels='';
   rows.forEach((r,i)=>{
-    const cx=xCenter(i), bx=cx-barW/2, by=y(inv(r));
-    bars+=`<rect x="${bx}" y="${by}" width="${barW}" height="${padT+plotH-by}" rx="3" fill="#17B4F0" opacity="0.92"/>`;
+    const cx=xCenter(i), bx=cx-barW/2, by=yL(r.leads);
+    bars+=`<rect x="${bx}" y="${by}" width="${barW}" height="${padT+plotH-by}" rx="3" fill="#17B4F0" opacity="0.9"/>`;
+    bars+=`<text x="${cx}" y="${by-6}" fill="#8C8C99" font-size="10" font-family="Space Mono, monospace" text-anchor="middle">${r.leads}</text>`;
     xlabels+=`<text x="${cx}" y="${H-padB+22}" fill="#8C8C99" font-size="11" font-family="Space Mono, monospace" text-anchor="middle">${String(r.month).split(' ')[0]}</text>`;
   });
-  // line builder
-  const line=(key,color,dash)=>{
-    const pts=rows.map((r,i)=>`${xCenter(i)},${y(r[key])}`);
-    const dots=rows.map((r,i)=>`<circle cx="${xCenter(i)}" cy="${y(r[key])}" r="3.5" fill="${color}"/>`).join('');
-    return `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2.5" ${dash?`stroke-dasharray="5 4"`:''} stroke-linejoin="round"/>${dots}`;
-  };
+  // booked value line (right axis) — only across months that actually have a value
+  const valRows=rows.map((r,i)=>({i,v:r.bookedVal})).filter(p=>p.v>0);
+  let lineSvg='';
+  if(valRows.length){
+    const pts=valRows.map(p=>`${xCenter(p.i)},${yR(p.v)}`);
+    const dots=valRows.map(p=>`<circle cx="${xCenter(p.i)}" cy="${yR(p.v)}" r="4" fill="#3FD07F"/>`).join('');
+    lineSvg=`<polyline points="${pts.join(' ')}" fill="none" stroke="#3FD07F" stroke-width="2.5" stroke-linejoin="round"/>${dots}`;
+  }
   $('chart').innerHTML =
-    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Investment versus booking value trend">
-      ${grid}${ax}${bars}
-      ${line('signedVal','#3FD07F',false)}
-      ${line('realVal','#39A0FE',true)}
-      ${xlabels}
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Leads and booked value over time">
+      ${grid}${axL}${axR}${bars}${lineSvg}${xlabels}
     </svg>`;
 }
 
@@ -457,16 +435,12 @@ function openForm(){
 }
 function closeForm(){ $('modalBg').classList.remove('show'); }
 
-// when the chosen month already exists, load its values for editing
+// when the chosen month already exists, load its manual values for editing
 function prefillFromMonth(){
   const v=$('f_month').value; if(!v) return;
-  const pd=v+'-01';
-  const ex=LOADED.find(r=>r.periodDate===pd);
-  const set=(id,val)=>{ $(id).value = (ex? val : ($(id).value||'')); };
+  const ex=LOADED.find(r=>r.periodDate===v+'-01');
   if(ex){
-    $('f_ourFee').value=ex.ourFee; $('f_socialFee').value=ex.socialFee; $('f_adSpend').value=ex.adSpend;
-    $('f_enquiries').value=ex.enquiries; $('f_tours').value=ex.tours; $('f_bookings').value=ex.bookings;
-    $('f_signedVal').value=ex.signedVal; $('f_held').value=ex.held; $('f_realVal').value=ex.realVal;
+    $('f_bookings').value=ex.bookings; $('f_tours').value=ex.walkthroughs; $('f_signedVal').value=ex.bookedVal;
   }
 }
 
@@ -480,9 +454,9 @@ async function saveForm(){
   const row={
     period_date: mv+'-01',
     period_label: MONTHS[parseInt(mo,10)-1]+' '+yr,
-    our_fee:$('f_ourFee').value||0, social_fee:$('f_socialFee').value||0, ad_spend:$('f_adSpend').value||0,
-    enquiries:$('f_enquiries').value||0, tours:$('f_tours').value||0, bookings:$('f_bookings').value||0,
-    signed_value:$('f_signedVal').value||0, weddings_held:$('f_held').value||0, realised_revenue:$('f_realVal').value||0
+    bookings:$('f_bookings').value||0,     // weddings booked
+    tours:$('f_tours').value||0,           // walkthroughs
+    signed_value:$('f_signedVal').value||0 // booked wedding value
   };
   const btn=$('saveBtn'); btn.disabled=true; btn.textContent='Saving…';
   try{
