@@ -610,9 +610,12 @@ function renderPosts(posts, isSample, elId){
   const ptype = t => /REEL/i.test(t)?'Reel':/CAROUSEL/i.test(t)?'Carousel':'Post';
   const top = posts.slice(0,3);
   wrap.innerHTML = top.map(p=>{
-    // image_path is "<period>/<media_id>.jpg" — encode each segment so it's safe inside url('…').
-    const safePath = p.image_path ? String(p.image_path).split('/').map(encodeURIComponent).join('/') : null;
-    const img = p.image_path ? (isSample ? p.image_path : PUBLIC_IMG+safePath) : null;
+    // image_path is normally a storage path "<period>/<media_id>.jpg" → prefix + encode each segment.
+    // Be defensive: a full http(s) url (sample data, or a bad write) is used as-is rather than 400-ing.
+    const raw = p.image_path;
+    const img = !raw ? null
+      : (isSample || /^https?:\/\//i.test(raw)) ? raw
+      : PUBLIC_IMG + String(raw).split('/').map(encodeURIComponent).join('/');
     const tag = `<span class="badge">${icon(p.media_type)} ${ptype(p.media_type)}</span>`;
     const thumb = img
       ? `<div class="thumb" style="background-image:url('${img}')">${tag}</div>`
