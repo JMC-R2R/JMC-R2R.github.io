@@ -284,8 +284,10 @@
     <div id="sChart"></div>
   </div>
 
-  <div class="seclabel">Top posts this month</div>
-  <div class="posts" id="sPosts"></div>
+  <div class="seclabel">Top Instagram posts this month</div>
+  <div class="posts" id="sPostsIg"></div>
+  <div class="seclabel">Top Facebook posts this month</div>
+  <div class="posts" id="sPostsFb"></div>
 </div><!-- /viewSocial -->
 
 <footer>
@@ -599,18 +601,17 @@ const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<'
 // Only allow http(s) links; URL.href is percent-encoded so it can't break the attribute.
 const safeUrl = u => { try{ const x=new URL(u); return (x.protocol==='https:'||x.protocol==='http:')?x.href:'#'; }catch{ return '#'; } };
 
-function renderPosts(posts, isSample){
-  const wrap=$('sPosts');
+function renderPosts(posts, isSample, elId){
+  const wrap=$(elId);
   if(!posts || !posts.length){ wrap.innerHTML='<div class="muted" style="font-family:var(--mono);font-size:12px;padding:8px 2px">No posts for this month yet.</div>'; return; }
   const icon = t => /REEL/i.test(t)?'▶':/CAROUSEL/i.test(t)?'▦':'◳';
   const ptype = t => /REEL/i.test(t)?'Reel':/CAROUSEL/i.test(t)?'Carousel':'Post';
-  const plat = p => (p.platform==='facebook'?'Facebook':'Instagram');
-  const top = posts.slice(0,6);
+  const top = posts.slice(0,3);
   wrap.innerHTML = top.map(p=>{
     // image_path is "<period>/<media_id>.jpg" — encode each segment so it's safe inside url('…').
     const safePath = p.image_path ? String(p.image_path).split('/').map(encodeURIComponent).join('/') : null;
     const img = p.image_path ? (isSample ? p.image_path : PUBLIC_IMG+safePath) : null;
-    const tag = `<span class="badge">${plat(p)} · ${icon(p.media_type)} ${ptype(p.media_type)}</span>`;
+    const tag = `<span class="badge">${icon(p.media_type)} ${ptype(p.media_type)}</span>`;
     const thumb = img
       ? `<div class="thumb" style="background-image:url('${img}')">${tag}</div>`
       : `<div class="thumb">${tag}<div class="ph">${icon(p.media_type)}</div></div>`;
@@ -669,7 +670,9 @@ function renderSocial(groups, posts, isSample){
   if(prev) deltaEl($('sEngDelta'), last.t.engagement, prev.t.engagement);
 
   drawSocialChart(groups);
-  renderPosts(posts, isSample);   // defined in Task 6
+  // posts arrive sorted by engagement desc; split per platform → top 3 each.
+  renderPosts(posts.filter(p=>p.platform!=='facebook'), isSample, 'sPostsIg');
+  renderPosts(posts.filter(p=>p.platform==='facebook'), isSample, 'sPostsFb');
 }
 
 function drawSocialChart(groups){
