@@ -253,6 +253,8 @@
 
 <!-- ===== SOCIAL VIEW ===== -->
 <div class="view" id="viewSocial">
+  <div class="seclabel">Summary</div>
+  <div class="card" id="sSummary" style="line-height:1.65;font-size:14.5px;color:var(--white)"></div>
   <div class="seclabel">Instagram &amp; Facebook · audience</div>
   <div class="grid g3">
     <div class="card hero">
@@ -669,10 +671,38 @@ function renderSocial(groups, posts, isSample){
   $('sEngSplit').innerHTML = split(last.ig.engagement, last.fb.engagement);
   if(prev) deltaEl($('sEngDelta'), last.t.engagement, prev.t.engagement);
 
+  $('sSummary').innerHTML = socialSummary(groups);
+
   drawSocialChart(groups);
   // posts arrive sorted by engagement desc; split per platform → top 3 each.
   renderPosts(posts.filter(p=>p.platform!=='facebook'), isSample, 'sPostsIg');
   renderPosts(posts.filter(p=>p.platform==='facebook'), isSample, 'sPostsFb');
+}
+
+/* Auto-updating recap. States current standing + current-month figures (labelled
+   MTD while the month is in progress), and a month-on-month % only between two
+   COMPLETE months — so the % is always full-month vs full-month, never a
+   misleading part-month comparison. */
+function socialSummary(groups){
+  if(!groups.length) return '';
+  const nf = n => (+n||0).toLocaleString('en-AU');
+  const last = groups[groups.length-1];
+  const now = new Date();
+  const curKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const isMTD = String(last.periodDate||'').slice(0,7) === curKey;
+  const complete = groups.filter(g => String(g.periodDate||'').slice(0,7) !== curKey);
+
+  let s = `Across Instagram and Facebook, Manor on High has <b>${nf(last.t.followers)} combined followers</b> (IG ${nf(last.ig.followers)} · FB ${nf(last.fb.followers)}).`;
+  s += isMTD
+    ? ` So far in ${last.month}, content has reached <b>${nf(last.t.reach)}</b> accounts and driven <b>${nf(last.t.engagement)}</b> engagements (month still in progress).`
+    : ` In ${last.month}, content reached <b>${nf(last.t.reach)}</b> accounts and drove <b>${nf(last.t.engagement)}</b> engagements.`;
+  if(complete.length>=2){
+    const a=complete[complete.length-2], b=complete[complete.length-1];
+    const chg=(x,y)=> x ? Math.round((y-x)/x*100) : 0;
+    const word=p=> p>=0?`up ${p}%`:`down ${Math.abs(p)}%`;
+    s += ` Month on month (${a.month} → ${b.month}), reach is <b>${word(chg(a.t.reach,b.t.reach))}</b> and engagement <b>${word(chg(a.t.engagement,b.t.engagement))}</b>.`;
+  }
+  return s;
 }
 
 function drawSocialChart(groups){
