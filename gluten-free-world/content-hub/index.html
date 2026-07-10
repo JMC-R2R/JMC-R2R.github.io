@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Gluten Free World — Blog Content Calendar | Ready to Rank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#008361; --green-d:#00674c; --cream:#FFFBE3; --yellow:#FFCC37;
+    --ink:#1B1B1B; --mut:#6B7A72; --line:#E4DFC6; --card:#FFFFFF;
+    --r2r:#1E9E6A;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+  h1,h2,h3,.disp{font-family:'Archivo',system-ui,sans-serif;font-weight:800;letter-spacing:-.01em}
+  .micro{font-family:'Archivo',sans-serif;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+
+  header{background:var(--green);color:var(--cream);padding:34px 0 30px}
+  .brandbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+  .brandbar .micro{color:rgba(255,251,227,.72)}
+  .r2r-mark{display:inline-flex;align-items:center;gap:8px;font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;letter-spacing:.02em}
+  .r2r-dot{width:9px;height:9px;border-radius:50%;background:var(--yellow)}
+  header h1{margin:0;font-size:clamp(26px,4vw,42px);line-height:1.1}
+  header p.sub{margin:12px 0 0;max-width:720px;font-size:15px;color:rgba(255,251,227,.86)}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+  .stat{background:rgba(255,251,227,.10);border:1px solid rgba(255,251,227,.20);border-radius:12px;padding:10px 14px;min-width:112px}
+  .stat .micro{color:rgba(255,251,227,.66);display:block;margin-bottom:3px}
+  .stat b{font-family:'Archivo',sans-serif;font-size:20px;font-weight:800}
+
+  .tabsbar{position:sticky;top:0;z-index:20;background:var(--cream);border-bottom:1px solid var(--line)}
+  .tabs{display:flex;gap:8px;padding:14px 0;overflow-x:auto}
+  .tab{white-space:nowrap;font-family:'Archivo',sans-serif;font-size:13px;font-weight:700;padding:8px 16px;border:1px solid var(--line);border-radius:20px;background:transparent;color:#4A5A52;cursor:pointer;transition:.15s}
+  .tab:hover{border-color:var(--green);color:var(--green)}
+  .tab[aria-selected="true"]{background:var(--green);border-color:var(--green);color:var(--cream)}
+  .savebadge{margin-left:auto;align-self:center;font-size:11.5px;color:var(--mut);white-space:nowrap;padding-left:12px}
+  .savebadge.ok{color:var(--green)} .savebadge.err{color:#B5462F}
+
+  main{padding:28px 0 60px}
+  .mhead{display:flex;align-items:baseline;gap:14px;margin:6px 0 14px;flex-wrap:wrap}
+  .mhead h2{margin:0;font-size:24px}
+  .mhead .micro{color:var(--mut)}
+
+  .tablecard{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .scroll{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:1040px}
+  thead th{background:#FFFDF2;border-bottom:1px solid var(--line);text-align:left;padding:13px 14px;font-family:'Archivo',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+  tbody td{border-bottom:1px solid #F1EDDC;padding:13px 14px;font-size:14px;vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#FFFDF4}
+  td.date{white-space:nowrap;font-weight:600}
+  td.day{white-space:nowrap;color:var(--mut);font-size:13px}
+  td.kw{color:#33443C;font-size:13.5px}
+  td.title{min-width:300px;font-weight:500}
+  .vol{display:inline-block;font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;background:rgba(0,131,97,.09);color:var(--green-d);padding:3px 9px;border-radius:9px;white-space:nowrap}
+  .kd{display:inline-block;font-size:11.5px;color:var(--mut);margin-left:6px}
+  .note{display:inline-block;font-size:11px;font-weight:700;background:var(--yellow);color:#4A3A00;padding:3px 9px;border-radius:9px;white-space:nowrap}
+
+  input[type=checkbox]{width:19px;height:19px;accent-color:var(--green);cursor:pointer}
+  select{font-family:'Inter',sans-serif;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer;min-width:118px}
+  select:focus,input:focus{outline:2px solid var(--green);outline-offset:1px}
+  tr.saving{background:#FFFBE8}
+  tr.savefail{background:#FDF0EC}
+
+  footer{border-top:1px solid var(--line);padding:26px 0 44px;color:var(--mut);font-size:12.5px}
+  footer b{color:var(--ink)}
+  .legend{margin-top:8px;line-height:1.7}
+  @media(max-width:640px){ header{padding:26px 0 24px} .stat{min-width:96px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brandbar">
+      <span class="micro">Gluten Free World &nbsp;×&nbsp; Ready to Rank</span>
+      <span class="r2r-mark"><span class="r2r-dot"></span>READY TO RANK</span>
+    </div>
+    <h1>Blog Content Calendar</h1>
+    <p class="sub">August to October 2026. Thirty-nine search-led articles built around the six hero flours and mixes, every keyword validated against live Ahrefs data for Australia. Tick to approve, assign a writer and track status. Changes save automatically.</p>
+    <div class="stats">
+      <div class="stat"><span class="micro">Articles</span><b>39</b></div>
+      <div class="stat"><span class="micro">Months</span><b>3</b></div>
+      <div class="stat"><span class="micro">Combined AU volume</span><b id="totalvol">—</b></div>
+      <div class="stat"><span class="micro">Approved</span><b id="approvedcount">—</b></div>
+    </div>
+  </div>
+</header>
+
+<div class="tabsbar">
+  <div class="wrap tabs" role="tablist">
+    <button class="tab" role="tab" data-month="2026-08" aria-selected="true">August 2026</button>
+    <button class="tab" role="tab" data-month="2026-09" aria-selected="false">September 2026</button>
+    <button class="tab" role="tab" data-month="2026-10" aria-selected="false">October 2026</button>
+    <button class="tab" role="tab" data-month="all" aria-selected="false">All three</button>
+    <span class="savebadge" id="savebadge">Connecting…</span>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="mhead">
+    <h2 id="monthtitle">August 2026</h2>
+    <span class="micro" id="monthmeta"></span>
+  </div>
+  <div class="tablecard">
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Day</th><th>Main keyword</th><th>Volume</th>
+            <th>Title / topic</th><th>Approved?</th><th>Assigned to</th><th>Status</th><th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer class="wrap">
+  <div><b>Keyword data:</b> Ahrefs Keywords Explorer, location Australia, pulled 10/07/2026. Volume is average monthly AU searches; KD is Ahrefs Keyword Difficulty (0 to 100).</div>
+  <div class="legend">
+    <b>Note on seasonal keywords:</b> "fathers day cake", "halloween cupcakes" and "halloween biscuits" target the broad term rather than a gluten-free variant, because the gluten-free versions have negligible AU search volume. Titles remain gluten-free.<br>
+    <b>Note on 17 August:</b> Coeliac Australia advises that oats are not suitable for people with coeliac disease. This article should take that position. Angle to be confirmed before writing.<br>
+    Prepared by Ready to Rank for Gluten Free World.
+  </div>
+</footer>
+
+<script>
+const SUPABASE_URL = "https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SUPABASE_KEY = "sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
+const TABLE = "gfw_content_calendar";
+const TEAM = ["Rishikesh","Hannah","Janice"];
+const STATUSES = ["Not Started","Started","For Approval","Published"];
+const MONTHS = {"2026-08":"August 2026","2026-09":"September 2026","2026-10":"October 2026"};
+
+/* Embedded fallback: the page still renders the calendar if Supabase is unreachable.
+   Live approve/assign/status values always come from Supabase when it responds. */
+const SEED = [
+{id:1,publish_date:"2026-08-03",month_key:"2026-08",main_keyword:"gluten free gravy",search_volume:1100,difficulty:2,title:"How to Make Gluten-Free Gravy That Isn't Thin or Lumpy",notes:null},
+{id:2,publish_date:"2026-08-05",month_key:"2026-08",main_keyword:"is cornflour gluten free",search_volume:1300,difficulty:1,title:"Is Cornflour Gluten-Free? What Australian Labels Actually Mean",notes:null},
+{id:3,publish_date:"2026-08-07",month_key:"2026-08",main_keyword:"gluten free dumplings",search_volume:600,difficulty:0,title:"Gluten-Free Dumpling Wrappers You Can Actually Fold",notes:null},
+{id:4,publish_date:"2026-08-10",month_key:"2026-08",main_keyword:"gluten free breadcrumbs",search_volume:800,difficulty:1,title:"How to Make Gluten-Free Breadcrumbs from Leftover Loaf Ends",notes:null},
+{id:5,publish_date:"2026-08-12",month_key:"2026-08",main_keyword:"gluten free meat pie",search_volume:150,difficulty:0,title:"Gluten-Free Meat Pie: Getting the Pastry to Hold Its Filling",notes:null},
+{id:6,publish_date:"2026-08-14",month_key:"2026-08",main_keyword:"gluten free bread rolls",search_volume:500,difficulty:4,title:"Gluten-Free Bread Rolls: Soft Inside, Crusty Outside",notes:null},
+{id:7,publish_date:"2026-08-17",month_key:"2026-08",main_keyword:"are oats gluten free",search_volume:3800,difficulty:30,title:"Are Oats Gluten-Free? The Honest Answer for Australian Coeliacs",notes:"Confirm angle with Paul"},
+{id:8,publish_date:"2026-08-19",month_key:"2026-08",main_keyword:"gluten free yorkshire pudding",search_volume:200,difficulty:1,title:"Gluten-Free Yorkshire Puddings That Actually Rise",notes:null},
+{id:9,publish_date:"2026-08-21",month_key:"2026-08",main_keyword:"gluten free damper",search_volume:200,difficulty:0,title:"Gluten-Free Damper: The Camp Oven Classic, Done Properly",notes:null},
+{id:10,publish_date:"2026-08-24",month_key:"2026-08",main_keyword:"how to make self raising flour from plain flour",search_volume:900,difficulty:13,title:"How to Make Self-Raising Flour from Plain Flour (Gluten-Free Version)",notes:null},
+{id:11,publish_date:"2026-08-26",month_key:"2026-08",main_keyword:"gluten free crumbed chicken",search_volume:150,difficulty:0,title:"Gluten-Free Crumbed Chicken with a Coating That Stays On",notes:null},
+{id:12,publish_date:"2026-08-28",month_key:"2026-08",main_keyword:"gluten free bread maker recipe",search_volume:70,difficulty:5,title:"Gluten-Free Bread Maker Recipe: Settings, Timing and Flour Choice",notes:null},
+{id:13,publish_date:"2026-08-31",month_key:"2026-08",main_keyword:"gluten free waffles",search_volume:800,difficulty:4,title:"Gluten-Free Waffles: Crisp Outside, Fluffy Middle",notes:null},
+{id:14,publish_date:"2026-09-02",month_key:"2026-09",main_keyword:"gluten free caramel slice",search_volume:600,difficulty:0,title:"Gluten-Free Caramel Slice with a Base That Doesn't Crumble",notes:null},
+{id:15,publish_date:"2026-09-04",month_key:"2026-09",main_keyword:"fathers day cake",search_volume:400,difficulty:0,title:"8 Gluten-Free Father's Day Cake Ideas He'll Actually Finish",notes:"Father's Day"},
+{id:16,publish_date:"2026-09-07",month_key:"2026-09",main_keyword:"gluten free scones",search_volume:1400,difficulty:2,title:"Gluten-Free Scones: Tall, Light and Ready in 20 Minutes",notes:null},
+{id:17,publish_date:"2026-09-09",month_key:"2026-09",main_keyword:"gluten free sausage rolls",search_volume:800,difficulty:0,title:"Gluten-Free Sausage Rolls for the Footy Finals",notes:"Finals season"},
+{id:18,publish_date:"2026-09-11",month_key:"2026-09",main_keyword:"gluten free party food",search_volume:600,difficulty:0,title:"Gluten-Free Party Food: 12 Ideas for Finals Weekend",notes:"Finals season"},
+{id:19,publish_date:"2026-09-14",month_key:"2026-09",main_keyword:"is rice flour gluten free",search_volume:700,difficulty:1,title:"Is Rice Flour Gluten-Free? And Where It Belongs in Your Baking",notes:null},
+{id:20,publish_date:"2026-09-16",month_key:"2026-09",main_keyword:"can you freeze pizza dough",search_volume:600,difficulty:5,title:"Can You Freeze Gluten-Free Pizza Dough? Yes, Here's How",notes:null},
+{id:21,publish_date:"2026-09-18",month_key:"2026-09",main_keyword:"gluten free garlic bread",search_volume:800,difficulty:0,title:"Gluten-Free Garlic Bread to Go with Finals Night Pizza",notes:"Finals season"},
+{id:22,publish_date:"2026-09-21",month_key:"2026-09",main_keyword:"gluten free pikelets",search_volume:250,difficulty:0,title:"Gluten-Free Pikelets: A Lunchbox Win with Self-Raising Flour",notes:null},
+{id:23,publish_date:"2026-09-23",month_key:"2026-09",main_keyword:"is icing sugar gluten free",search_volume:700,difficulty:0,title:"Is Icing Sugar Gluten-Free? Check This Before You Decorate",notes:null},
+{id:24,publish_date:"2026-09-25",month_key:"2026-09",main_keyword:"gluten free lemon drizzle cake",search_volume:150,difficulty:2,title:"Gluten-Free Lemon Drizzle Cake: A Lighter Bake for Spring",notes:null},
+{id:25,publish_date:"2026-09-28",month_key:"2026-09",main_keyword:"gluten free naan bread",search_volume:1100,difficulty:5,title:"Gluten-Free Naan Bread That Puffs and Folds",notes:null},
+{id:26,publish_date:"2026-09-30",month_key:"2026-09",main_keyword:"gluten free vanilla slice",search_volume:150,difficulty:0,title:"Gluten-Free Vanilla Slice: Custard, Pastry and Patience",notes:null},
+{id:27,publish_date:"2026-10-02",month_key:"2026-10",main_keyword:"gluten free wraps",search_volume:2000,difficulty:0,title:"Gluten-Free Wraps That Bend Without Breaking",notes:null},
+{id:28,publish_date:"2026-10-05",month_key:"2026-10",main_keyword:"gluten free biscuits",search_volume:2300,difficulty:0,title:"14 Gluten-Free Biscuits Worth Keeping in the Tin",notes:null},
+{id:29,publish_date:"2026-10-07",month_key:"2026-10",main_keyword:"gluten free focaccia",search_volume:600,difficulty:9,title:"Gluten-Free Focaccia: Dimples, Olive Oil and a Proper Crumb",notes:null},
+{id:30,publish_date:"2026-10-09",month_key:"2026-10",main_keyword:"gluten free picnic food",search_volume:150,difficulty:0,title:"Gluten-Free Picnic Food That Travels Well",notes:"Spring"},
+{id:31,publish_date:"2026-10-12",month_key:"2026-10",main_keyword:"is semolina gluten free",search_volume:800,difficulty:4,title:"Is Semolina Gluten-Free? A Short Answer and a Safer Swap",notes:null},
+{id:32,publish_date:"2026-10-14",month_key:"2026-10",main_keyword:"gluten free flatbread",search_volume:450,difficulty:1,title:"Gluten-Free Flatbread You Can Make in a Frying Pan",notes:null},
+{id:33,publish_date:"2026-10-16",month_key:"2026-10",main_keyword:"gluten free lamingtons",search_volume:250,difficulty:0,title:"Gluten-Free Lamingtons Using a Vanilla Cake Mix",notes:null},
+{id:34,publish_date:"2026-10-19",month_key:"2026-10",main_keyword:"what is xanthan gum",search_volume:500,difficulty:21,title:"What Is Xanthan Gum, and Do You Really Need It?",notes:null},
+{id:35,publish_date:"2026-10-21",month_key:"2026-10",main_keyword:"gluten free doughnuts",search_volume:250,difficulty:3,title:"Gluten-Free Doughnuts: Baked or Fried, Both Done Right",notes:null},
+{id:36,publish_date:"2026-10-23",month_key:"2026-10",main_keyword:"gluten free shortbread",search_volume:1100,difficulty:1,title:"Gluten-Free Shortbread with a Proper Snap",notes:null},
+{id:37,publish_date:"2026-10-26",month_key:"2026-10",main_keyword:"halloween biscuits",search_volume:150,difficulty:0,title:"Gluten-Free Halloween Biscuits Kids Can Decorate",notes:"Halloween"},
+{id:38,publish_date:"2026-10-28",month_key:"2026-10",main_keyword:"gluten free cookies",search_volume:2400,difficulty:2,title:"Gluten-Free Cookies for Halloween: 9 Ideas from One Dough",notes:"Halloween"},
+{id:39,publish_date:"2026-10-30",month_key:"2026-10",main_keyword:"halloween cupcakes",search_volume:900,difficulty:7,title:"Gluten-Free Halloween Cupcakes from a Vanilla Cake Mix",notes:"Halloween"}
+];
+
+let DATA = SEED.map(r => ({...r, approved:false, assigned_to:null, status:"Not Started"}));
+let current = "2026-08";
+let live = false;
+
+const $ = id => document.getElementById(id);
+const badge = (msg, cls="") => { const b=$("savebadge"); b.textContent=msg; b.className="savebadge "+cls; };
+const fmtDate = iso => { const [y,m,d]=iso.split("-").map(Number); return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1]} ${y}`; };
+const dayName = iso => { const [y,m,d]=iso.split("-").map(Number);
+  return ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][new Date(Date.UTC(y,m-1,d)).getUTCDay()]; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+async function load(){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?select=*&order=sort_order.asc`,
+      {headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`}});
+    if(!res.ok) throw new Error(res.status);
+    const rows = await res.json();
+    if(Array.isArray(rows) && rows.length){ DATA = rows; live = true; badge("Saved changes sync live","ok"); }
+  }catch(e){
+    live = false;
+    badge("Offline — changes will not save","err");
+  }
+  render();
+}
+
+async function patch(id, payload, tr){
+  if(!live){ badge("Offline — change not saved","err"); return false; }
+  tr.classList.add("saving"); badge("Saving…");
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${id}`,{
+      method:"PATCH",
+      headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`,
+               "Content-Type":"application/json", Prefer:"return=minimal"},
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error(res.status);
+    tr.classList.remove("saving","savefail"); badge("All changes saved","ok");
+    return true;
+  }catch(e){
+    tr.classList.remove("saving"); tr.classList.add("savefail");
+    badge("Could not save — check connection","err");
+    return false;
+  }
+}
+
+function stats(){
+  const vol = DATA.reduce((a,r)=>a+(r.search_volume||0),0);
+  $("totalvol").textContent = vol.toLocaleString("en-AU");
+  $("approvedcount").textContent = `${DATA.filter(r=>r.approved).length}/39`;
+}
+
+function render(){
+  const rows = current==="all" ? DATA : DATA.filter(r=>r.month_key===current);
+  $("monthtitle").textContent = current==="all" ? "All three months" : MONTHS[current];
+  const v = rows.reduce((a,r)=>a+(r.search_volume||0),0);
+  $("monthmeta").textContent = `${rows.length} articles · ${v.toLocaleString("en-AU")} combined AU searches/mo`;
+
+  const tb = $("rows"); tb.innerHTML = "";
+  rows.forEach(r=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="date">${fmtDate(r.publish_date)}</td>
+      <td class="day">${dayName(r.publish_date)}</td>
+      <td class="kw">${esc(r.main_keyword)}</td>
+      <td><span class="vol">${(r.search_volume||0).toLocaleString("en-AU")}</span><span class="kd">KD ${r.difficulty ?? "—"}</span></td>
+      <td class="title">${esc(r.title)}</td>
+      <td><input type="checkbox" ${r.approved?"checked":""} aria-label="Approve ${esc(r.title)}"></td>
+      <td><select aria-label="Assign writer">
+        <option value=""${!r.assigned_to?" selected":""}>—</option>
+        ${TEAM.map(t=>`<option${r.assigned_to===t?" selected":""}>${t}</option>`).join("")}
+      </select></td>
+      <td><select aria-label="Status">
+        ${STATUSES.map(s=>`<option${r.status===s?" selected":""}>${s}</option>`).join("")}
+      </select></td>
+      <td>${r.notes?`<span class="note">${esc(r.notes)}</span>`:""}</td>`;
+
+    const [cb, assign, status] = [tr.querySelector("input"), ...tr.querySelectorAll("select")];
+
+    cb.addEventListener("change", async ()=>{
+      const prev = r.approved; r.approved = cb.checked; stats();
+      if(!await patch(r.id,{approved:cb.checked},tr)){ r.approved=prev; cb.checked=prev; stats(); }
+    });
+    assign.addEventListener("change", async ()=>{
+      const prev = r.assigned_to; const val = assign.value || null; r.assigned_to = val;
+      if(!await patch(r.id,{assigned_to:val},tr)){ r.assigned_to=prev; assign.value=prev||""; }
+    });
+    status.addEventListener("change", async ()=>{
+      const prev = r.status; r.status = status.value;
+      if(!await patch(r.id,{status:status.value},tr)){ r.status=prev; status.value=prev; }
+    });
+
+    tb.appendChild(tr);
+  });
+  stats();
+}
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected","false"));
+    t.setAttribute("aria-selected","true");
+    current = t.dataset.month;
+    render();
+  });
+});
+
+load();
+</script>
+</body>
+</html>
