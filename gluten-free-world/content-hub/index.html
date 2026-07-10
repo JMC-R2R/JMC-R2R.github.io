@@ -63,7 +63,7 @@
 
   .tablecard{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
   .scroll{overflow-x:auto}
-  table{border-collapse:collapse;width:100%;min-width:1040px}
+  table{border-collapse:collapse;width:100%;min-width:900px}
   thead th{background:#FFFDF2;border-bottom:1px solid var(--line);text-align:left;padding:13px 14px;font-family:'Archivo',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
   tbody td{border-bottom:1px solid #F1EDDC;padding:13px 14px;font-size:14px;vertical-align:middle}
   tbody tr:last-child td{border-bottom:none}
@@ -71,12 +71,31 @@
   td.date{white-space:nowrap;font-weight:600}
   td.day{white-space:nowrap;color:var(--mut);font-size:13px}
   td.kw{color:#33443C;font-size:13.5px}
-  td.title{min-width:280px;font-weight:500}
-  td.notes{min-width:210px}
-  .noteflag{display:block;margin-bottom:6px}
-  textarea.cnote{width:100%;min-width:190px;font-family:'Inter',sans-serif;font-size:12.5px;line-height:1.45;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);resize:vertical;min-height:38px}
+  td.title{min-width:320px;font-weight:500}
+  .titletext{margin-bottom:5px}
+  .noteflag{margin-right:8px;vertical-align:middle}
+
+  .notetoggle{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--line);border-radius:20px;
+    padding:3px 11px 3px 8px;font-family:'Archivo',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--mut);cursor:pointer;transition:.15s;vertical-align:middle}
+  .notetoggle:hover{border-color:var(--green);color:var(--green)}
+  .notetoggle:focus-visible{outline:2px solid var(--green);outline-offset:1px}
+  .chev{display:inline-block;transition:transform .18s ease;font-size:10px}
+  tr.blogrow.open .chev{transform:rotate(90deg)}
+  tr.blogrow.open .notetoggle{border-color:var(--green);color:var(--green);background:rgba(0,131,97,.06)}
+  .notedot{width:6px;height:6px;border-radius:50%;background:var(--yellow);display:inline-block}
+  .notedot[hidden]{display:none}
+
+  tr.noterow[hidden]{display:none}
+  tr.noterow:hover{background:transparent}
+  tr.noterow td{background:#FFFDF2;border-bottom:1px solid #F1EDDC;padding:0}
+  .notepanel{padding:14px 18px 16px;max-width:820px}
+  .notehead{display:block;color:var(--mut);margin-bottom:8px}
+  textarea.cnote{width:100%;font-family:'Inter',sans-serif;font-size:13.5px;line-height:1.5;padding:10px 12px;border:1px solid var(--line);
+    border-radius:10px;background:#fff;color:var(--ink);resize:vertical;min-height:70px}
   textarea.cnote::placeholder{color:#A9B5AE}
   textarea.cnote:focus{outline:2px solid var(--green);outline-offset:1px}
+  .notestate{margin-top:6px;min-height:15px;font-size:11.5px;color:var(--green);font-weight:600}
   .vol{display:inline-block;font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;background:rgba(0,131,97,.09);color:var(--green-d);padding:3px 9px;border-radius:9px;white-space:nowrap}
   .kd{display:inline-block;font-size:11.5px;color:var(--mut);margin-left:6px}
   .note{display:inline-block;font-size:11px;font-weight:700;background:var(--yellow);color:#4A3A00;padding:3px 9px;border-radius:9px;white-space:nowrap}
@@ -138,7 +157,7 @@
         <thead>
           <tr>
             <th>Date</th><th>Day</th><th>Main keyword</th><th>Volume</th>
-            <th>Title / topic</th><th>Approved by Paul</th><th>Assigned to</th><th>Status</th><th>Notes</th>
+            <th>Title / topic</th><th>Approved by Paul</th><th>Assigned to</th><th>Status</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -302,13 +321,23 @@ function render(){
 
   const tb = $("rows"); tb.innerHTML = "";
   rows.forEach(r=>{
+    const hasNote = !!(r.client_notes && r.client_notes.trim());
     const tr = document.createElement("tr");
+    tr.className = "blogrow";
     tr.innerHTML = `
       <td class="date">${fmtDate(r.publish_date)}</td>
       <td class="day">${dayName(r.publish_date)}</td>
       <td class="kw">${esc(r.main_keyword)}</td>
       <td><span class="vol">${(r.search_volume||0).toLocaleString("en-AU")}</span><span class="kd">KD ${r.difficulty ?? "n/a"}</span></td>
-      <td class="title">${esc(r.title)}</td>
+      <td class="title">
+        <div class="titletext">${esc(r.title)}</div>
+        ${r.notes?`<span class="note noteflag">${esc(r.notes)}</span>`:""}
+        <button class="notetoggle" type="button" aria-expanded="false">
+          <span class="chev" aria-hidden="true">▸</span>
+          <span class="notelabel">${hasNote?"Notes":"Add note"}</span>
+          <span class="notedot" ${hasNote?"":'hidden'} aria-hidden="true"></span>
+        </button>
+      </td>
       <td><input type="checkbox" ${r.approved?"checked":""} aria-label="Approve ${esc(r.title)}"></td>
       <td><select aria-label="Assign writer">
         <option value=""${!r.assigned_to?" selected":""}>Unassigned</option>
@@ -316,14 +345,37 @@ function render(){
       </select></td>
       <td><select aria-label="Status">
         ${STATUSES.map(s=>`<option${r.status===s?" selected":""}>${s}</option>`).join("")}
-      </select></td>
-      <td class="notes">
-        ${r.notes?`<span class="note noteflag">${esc(r.notes)}</span>`:""}
-        <textarea class="cnote" rows="1" placeholder="Add a note" aria-label="Notes for ${esc(r.title)}">${esc(r.client_notes||"")}</textarea>
+      </select></td>`;
+
+    /* Notes live in their own full-width row directly beneath the blog, so the client
+       never has to scroll sideways to reach them. Collapsed by default to save space. */
+    const nr = document.createElement("tr");
+    nr.className = "noterow";
+    nr.hidden = true;
+    nr.innerHTML = `
+      <td colspan="8">
+        <div class="notepanel">
+          <label class="micro notehead">Notes on "${esc(r.title)}"</label>
+          <textarea class="cnote" rows="3" placeholder="Add a note for this blog. Saves automatically."
+                    aria-label="Notes for ${esc(r.title)}">${esc(r.client_notes||"")}</textarea>
+          <div class="notestate" data-state></div>
+        </div>
       </td>`;
 
     const [cb, assign, status] = [tr.querySelector("input"), ...tr.querySelectorAll("select")];
-    const cnote = tr.querySelector("textarea.cnote");
+    const cnote = nr.querySelector("textarea.cnote");
+    const toggle = tr.querySelector(".notetoggle");
+    const dot = tr.querySelector(".notedot");
+    const label = tr.querySelector(".notelabel");
+    const state = nr.querySelector("[data-state]");
+
+    toggle.addEventListener("click", ()=>{
+      const open = toggle.getAttribute("aria-expanded")==="true";
+      toggle.setAttribute("aria-expanded", String(!open));
+      tr.classList.toggle("open", !open);
+      nr.hidden = open;
+      if(!open) cnote.focus();
+    });
 
     cb.addEventListener("change", async ()=>{
       const prev = r.approved; r.approved = cb.checked; stats(); progress();
@@ -337,10 +389,21 @@ function render(){
       const val = cnote.value.trim() || null;
       if(val === (r.client_notes||null)) return;
       const prev = r.client_notes; r.client_notes = val;
-      if(!await patch(r.id,{client_notes:val},tr)){ r.client_notes = prev; cnote.value = prev||""; }
+      state.textContent = "Saving";
+      if(await patch(r.id,{client_notes:val},tr)){
+        state.textContent = "Saved";
+        setTimeout(()=>{ state.textContent = ""; }, 2000);
+      } else {
+        r.client_notes = prev; cnote.value = prev||"";
+        state.textContent = "Not saved";
+      }
+      const has = !!(r.client_notes && r.client_notes.trim());
+      dot.hidden = !has;
+      label.textContent = has ? "Notes" : "Add note";
     };
     cnote.addEventListener("input", ()=>{ clearTimeout(noteTimer); noteTimer = setTimeout(saveNote, 800); });
     cnote.addEventListener("blur", saveNote);
+
     assign.addEventListener("change", async ()=>{
       const prev = r.assigned_to; const val = assign.value || null; r.assigned_to = val;
       if(!await patch(r.id,{assigned_to:val},tr)){ r.assigned_to=prev; assign.value=prev||""; }
@@ -351,6 +414,7 @@ function render(){
     });
 
     tb.appendChild(tr);
+    tb.appendChild(nr);
   });
   stats();
   progress();
