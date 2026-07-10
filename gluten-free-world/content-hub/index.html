@@ -52,8 +52,16 @@
 
   .progress{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;margin-bottom:14px}
   .progress + .progress{margin-top:-4px}
-  .prow{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:9px;flex-wrap:wrap}
+  .prow{display:flex;align-items:center;gap:14px;margin-bottom:9px;flex-wrap:wrap}
   .prow .micro{color:var(--mut)}
+  .prow .spacer{flex:1}
+  .bulkbtn{font-family:'Archivo',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:6px 14px;border-radius:20px;border:1px solid var(--green);background:var(--green);color:var(--cream);cursor:pointer;transition:.15s}
+  .bulkbtn:hover{background:var(--green-d);border-color:var(--green-d)}
+  .bulkbtn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .bulkbtn[data-mode="clear"]{background:transparent;color:var(--mut);border-color:var(--line)}
+  .bulkbtn[data-mode="clear"]:hover{border-color:#B5462F;color:#B5462F}
+  .bulkbtn[disabled]{opacity:.55;cursor:default}
   .pcount{font-family:'Archivo',sans-serif;font-weight:800;font-size:13.5px;color:var(--green-d)}
   .pcount.done{color:var(--green)}
   .ptrack{height:9px;background:#F1EDDC;border-radius:99px;overflow:hidden}
@@ -278,6 +286,49 @@ function stats(){
   $("approvedcount").textContent = `${DATA.filter(r=>r.approved).length}/${DATA.length}`;
 }
 
+/* Approve or unapprove a whole month in one request, rather than 13 round trips.
+   PostgREST applies the filter server-side, so this is a single PATCH. */
+async function bulkApprove(monthKey, value, btn){
+  const rows = DATA.filter(r=>r.month_key===monthKey);
+  const changing = rows.filter(r=>r.approved !== value);
+  if(!changing.length) return;
+
+  const what = value ? `Approve all ${changing.length} unapproved articles in ${MONTHS[monthKey]}?`
+                     : `Remove approval from all ${changing.length} approved articles in ${MONTHS[monthKey]}?`;
+  if(!confirm(what)) return;
+
+  if(!live){ badge("Offline. Change not saved.","err"); return; }
+  btn.disabled = true; badge("Saving…");
+  const before = changing.map(r=>r.approved);
+  changing.forEach(r=>r.approved = value);
+  syncCheckboxes(); stats(); progress();
+
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?month_key=eq.${encodeURIComponent(monthKey)}`,{
+      method:"PATCH",
+      headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`,
+               "Content-Type":"application/json", Prefer:"return=minimal"},
+      body: JSON.stringify({approved:value})
+    });
+    if(!res.ok) throw new Error(res.status);
+    badge("All changes saved","ok");
+  }catch(e){
+    changing.forEach((r,i)=>r.approved = before[i]);
+    syncCheckboxes(); stats(); progress();
+    badge("Could not save. Check connection.","err");
+  }
+  btn.disabled = false;
+}
+
+/* Push model state onto the rendered checkboxes without a full re-render,
+   so any open note panels stay open. */
+function syncCheckboxes(){
+  document.querySelectorAll("tr.blogrow").forEach(tr=>{
+    const r = DATA.find(x=>String(x.id)===tr.dataset.id);
+    if(r) tr.querySelector('input[type=checkbox]').checked = !!r.approved;
+  });
+}
+
 /* One approval progress bar per month on show. Rebuilt in place so the fill animates. */
 function progress(){
   const keys = current==="all" ? Object.keys(MONTHS) : [current];
@@ -289,10 +340,19 @@ function progress(){
         <div class="prow">
           <span class="micro">${MONTHS[k]} approval</span>
           <span class="pcount" data-count></span>
+          <span class="spacer"></span>
+          <button class="bulkbtn" type="button" data-bulk="${k}"></button>
         </div>
         <div class="ptrack"><div class="pfill" data-fill></div></div>
         <div class="phint" data-hint></div>
       </div>`).join("");
+    host.querySelectorAll("[data-bulk]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const k = btn.dataset.bulk;
+        const allOn = DATA.filter(r=>r.month_key===k).every(r=>r.approved);
+        bulkApprove(k, !allOn, btn);
+      });
+    });
   }
   keys.forEach(k=>{
     const rows = DATA.filter(r=>r.month_key===k);
@@ -310,6 +370,11 @@ function progress(){
     hint.textContent = left===0
       ? "All articles approved for this month."
       : `${left} still to approve.`;
+
+    const btn = box.querySelector("[data-bulk]");
+    const allOn = pct===100;
+    btn.textContent = allOn ? "Unapprove all" : `Approve all ${MONTHS[k].split(" ")[0]}`;
+    btn.dataset.mode = allOn ? "clear" : "approve";
   });
 }
 
@@ -324,6 +389,7 @@ function render(){
     const hasNote = !!(r.client_notes && r.client_notes.trim());
     const tr = document.createElement("tr");
     tr.className = "blogrow";
+    tr.dataset.id = r.id;
     tr.innerHTML = `
       <td class="date">${fmtDate(r.publish_date)}</td>
       <td class="day">${dayName(r.publish_date)}</td>
