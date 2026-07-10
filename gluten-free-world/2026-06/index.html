@@ -387,20 +387,27 @@ new Chart(document.getElementById('bars'), {
 </script>
 <script>
 // Month tabs — reads the shared manifest published alongside the reports.
+// The content-calendar link is always rendered, even if the manifest fetch fails,
+// so the client can never get stranded on a report with no way back.
 (async function(){
   var CUR = "2026-06";
+  var el = document.getElementById('tabs');
+  var CAL = '<a class="tab" href="../content-hub/">Content calendar</a>';
+  var html = '';
   try {
     var res = await fetch('../months.json', {cache:'no-store'});
-    if(!res.ok) return;
-    var data = await res.json();
-    var months = (data.months||[]).slice().sort(function(a,b){return a.key<b.key?-1:1;});
-    if(!months.length) return;
-    var el = document.getElementById('tabs');
-    el.innerHTML = '<span class="lbl">Reports</span>' + months.map(function(m){
-      return '<a class="tab'+(m.key===CUR?' active':'')+'" href="../'+m.key+'/">'+m.label+'</a>';
-    }).join('');
-    el.style.display = 'flex';
+    if(res.ok) {
+      var data = await res.json();
+      var months = (data.months||[]).slice().sort(function(a,b){return a.key<b.key?-1:1;});
+      if(months.length) {
+        html = '<span class="lbl">Reports</span>' + months.map(function(m){
+          return '<a class="tab'+(m.key===CUR?' active':'')+'" href="../'+m.key+'/">'+m.label+'</a>';
+        }).join('');
+      }
+    }
   } catch(e) {}
+  el.innerHTML = html + '<span class="lbl" style="margin-left:10px">Planning</span>' + CAL;
+  el.style.display = 'flex';
 })();
 </script>
 </body>

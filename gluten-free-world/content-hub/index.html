@@ -32,6 +32,11 @@
   .stat .micro{color:rgba(255,251,227,.66);display:block;margin-bottom:3px}
   .stat b{font-family:'Archivo',sans-serif;font-size:20px;font-weight:800}
 
+  .sitenav{display:flex;gap:8px;margin-bottom:22px}
+  .sitenav a{text-decoration:none;font-family:'Archivo',sans-serif;font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:20px;border:1px solid rgba(255,251,227,.28);color:rgba(255,251,227,.82);transition:.15s}
+  .sitenav a:hover{border-color:var(--yellow);color:var(--yellow)}
+  .sitenav a[aria-current="page"]{background:var(--yellow);border-color:var(--yellow);color:#4A3A00}
+
   .tabsbar{position:sticky;top:0;z-index:20;background:var(--cream);border-bottom:1px solid var(--line)}
   .tabs{display:flex;gap:8px;padding:14px 0;overflow-x:auto}
   .tab{white-space:nowrap;font-family:'Archivo',sans-serif;font-size:13px;font-weight:700;padding:8px 16px;border:1px solid var(--line);border-radius:20px;background:transparent;color:#4A5A52;cursor:pointer;transition:.15s}
@@ -45,6 +50,17 @@
   .mhead h2{margin:0;font-size:24px}
   .mhead .micro{color:var(--mut)}
 
+  .progress{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;margin-bottom:14px}
+  .progress + .progress{margin-top:-4px}
+  .prow{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:9px;flex-wrap:wrap}
+  .prow .micro{color:var(--mut)}
+  .pcount{font-family:'Archivo',sans-serif;font-weight:800;font-size:13.5px;color:var(--green-d)}
+  .pcount.done{color:var(--green)}
+  .ptrack{height:9px;background:#F1EDDC;border-radius:99px;overflow:hidden}
+  .pfill{height:100%;background:var(--green);border-radius:99px;width:0;transition:width .35s ease}
+  .pfill.done{background:var(--yellow)}
+  .phint{margin-top:7px;font-size:11.5px;color:var(--mut)}
+
   .tablecard{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
   .scroll{overflow-x:auto}
   table{border-collapse:collapse;width:100%;min-width:1040px}
@@ -55,7 +71,12 @@
   td.date{white-space:nowrap;font-weight:600}
   td.day{white-space:nowrap;color:var(--mut);font-size:13px}
   td.kw{color:#33443C;font-size:13.5px}
-  td.title{min-width:300px;font-weight:500}
+  td.title{min-width:280px;font-weight:500}
+  td.notes{min-width:210px}
+  .noteflag{display:block;margin-bottom:6px}
+  textarea.cnote{width:100%;min-width:190px;font-family:'Inter',sans-serif;font-size:12.5px;line-height:1.45;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);resize:vertical;min-height:38px}
+  textarea.cnote::placeholder{color:#A9B5AE}
+  textarea.cnote:focus{outline:2px solid var(--green);outline-offset:1px}
   .vol{display:inline-block;font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;background:rgba(0,131,97,.09);color:var(--green-d);padding:3px 9px;border-radius:9px;white-space:nowrap}
   .kd{display:inline-block;font-size:11.5px;color:var(--mut);margin-left:6px}
   .note{display:inline-block;font-size:11px;font-weight:700;background:var(--yellow);color:#4A3A00;padding:3px 9px;border-radius:9px;white-space:nowrap}
@@ -80,6 +101,10 @@
       <span class="micro">Gluten Free World &nbsp;×&nbsp; Ready to Rank</span>
       <span class="r2r-mark"><span class="r2r-dot"></span>READY TO RANK</span>
     </div>
+    <nav class="sitenav" aria-label="Sections">
+      <a href="./" aria-current="page">Content calendar</a>
+      <a href="../">Monthly reporting</a>
+    </nav>
     <h1>Blog Content Calendar</h1>
     <p class="sub">August to October 2026. Thirty-nine search-led articles built around the six hero flours and mixes, every keyword validated against live Ahrefs data for Australia. Tick to approve, assign a writer and track status. Changes save automatically.</p>
     <div class="stats">
@@ -106,13 +131,14 @@
     <h2 id="monthtitle">August 2026</h2>
     <span class="micro" id="monthmeta"></span>
   </div>
+  <div id="progressbars"></div>
   <div class="tablecard">
     <div class="scroll">
       <table>
         <thead>
           <tr>
             <th>Date</th><th>Day</th><th>Main keyword</th><th>Volume</th>
-            <th>Title / topic</th><th>Approved?</th><th>Assigned to</th><th>Status</th><th>Notes</th>
+            <th>Title / topic</th><th>Approved by Paul</th><th>Assigned to</th><th>Status</th><th>Notes</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -182,7 +208,7 @@ const SEED = [
 {id:39,publish_date:"2026-10-30",month_key:"2026-10",main_keyword:"halloween cupcakes",search_volume:900,difficulty:7,title:"Gluten-Free Halloween Cupcakes from a Vanilla Cake Mix",notes:"Halloween"}
 ];
 
-let DATA = SEED.map(r => ({...r, approved:false, assigned_to:null, status:"Not Started"}));
+let DATA = SEED.map(r => ({...r, approved:false, assigned_to:null, status:"Not Started", client_notes:null}));
 let current = "2026-08";
 let live = false;
 
@@ -230,7 +256,42 @@ async function patch(id, payload, tr){
 function stats(){
   const vol = DATA.reduce((a,r)=>a+(r.search_volume||0),0);
   $("totalvol").textContent = vol.toLocaleString("en-AU");
-  $("approvedcount").textContent = `${DATA.filter(r=>r.approved).length}/39`;
+  $("approvedcount").textContent = `${DATA.filter(r=>r.approved).length}/${DATA.length}`;
+}
+
+/* One approval progress bar per month on show. Rebuilt in place so the fill animates. */
+function progress(){
+  const keys = current==="all" ? Object.keys(MONTHS) : [current];
+  const host = $("progressbars");
+  if(host.dataset.keys !== keys.join(",")){
+    host.dataset.keys = keys.join(",");
+    host.innerHTML = keys.map(k=>`
+      <div class="progress" data-month="${k}">
+        <div class="prow">
+          <span class="micro">${MONTHS[k]} approval</span>
+          <span class="pcount" data-count></span>
+        </div>
+        <div class="ptrack"><div class="pfill" data-fill></div></div>
+        <div class="phint" data-hint></div>
+      </div>`).join("");
+  }
+  keys.forEach(k=>{
+    const rows = DATA.filter(r=>r.month_key===k);
+    const ok = rows.filter(r=>r.approved).length;
+    const pct = rows.length ? Math.round(ok/rows.length*100) : 0;
+    const box = host.querySelector(`.progress[data-month="${k}"]`);
+    const fill = box.querySelector("[data-fill]");
+    const count = box.querySelector("[data-count]");
+    const hint = box.querySelector("[data-hint]");
+    fill.style.width = pct + "%";
+    fill.classList.toggle("done", pct===100);
+    count.classList.toggle("done", pct===100);
+    count.textContent = `${ok} of ${rows.length} approved (${pct}%)`;
+    const left = rows.length - ok;
+    hint.textContent = left===0
+      ? "All articles approved for this month."
+      : `${left} still to approve.`;
+  });
 }
 
 function render(){
@@ -256,14 +317,30 @@ function render(){
       <td><select aria-label="Status">
         ${STATUSES.map(s=>`<option${r.status===s?" selected":""}>${s}</option>`).join("")}
       </select></td>
-      <td>${r.notes?`<span class="note">${esc(r.notes)}</span>`:""}</td>`;
+      <td class="notes">
+        ${r.notes?`<span class="note noteflag">${esc(r.notes)}</span>`:""}
+        <textarea class="cnote" rows="1" placeholder="Add a note" aria-label="Notes for ${esc(r.title)}">${esc(r.client_notes||"")}</textarea>
+      </td>`;
 
     const [cb, assign, status] = [tr.querySelector("input"), ...tr.querySelectorAll("select")];
+    const cnote = tr.querySelector("textarea.cnote");
 
     cb.addEventListener("change", async ()=>{
-      const prev = r.approved; r.approved = cb.checked; stats();
-      if(!await patch(r.id,{approved:cb.checked},tr)){ r.approved=prev; cb.checked=prev; stats(); }
+      const prev = r.approved; r.approved = cb.checked; stats(); progress();
+      if(!await patch(r.id,{approved:cb.checked},tr)){ r.approved=prev; cb.checked=prev; stats(); progress(); }
     });
+
+    /* Notes save on blur, and 800ms after typing stops, so we do not PATCH per keystroke. */
+    let noteTimer;
+    const saveNote = async ()=>{
+      clearTimeout(noteTimer);
+      const val = cnote.value.trim() || null;
+      if(val === (r.client_notes||null)) return;
+      const prev = r.client_notes; r.client_notes = val;
+      if(!await patch(r.id,{client_notes:val},tr)){ r.client_notes = prev; cnote.value = prev||""; }
+    };
+    cnote.addEventListener("input", ()=>{ clearTimeout(noteTimer); noteTimer = setTimeout(saveNote, 800); });
+    cnote.addEventListener("blur", saveNote);
     assign.addEventListener("change", async ()=>{
       const prev = r.assigned_to; const val = assign.value || null; r.assigned_to = val;
       if(!await patch(r.id,{assigned_to:val},tr)){ r.assigned_to=prev; assign.value=prev||""; }
@@ -276,6 +353,7 @@ function render(){
     tb.appendChild(tr);
   });
   stats();
+  progress();
 }
 
 document.querySelectorAll(".tab").forEach(t=>{
