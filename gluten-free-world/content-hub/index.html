@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Gluten Free World — Blog Content Calendar | Ready to Rank</title>
+<title>Gluten Free World Blog Content Calendar | Ready to Rank</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -85,8 +85,8 @@
     <div class="stats">
       <div class="stat"><span class="micro">Articles</span><b>39</b></div>
       <div class="stat"><span class="micro">Months</span><b>3</b></div>
-      <div class="stat"><span class="micro">Combined AU volume</span><b id="totalvol">—</b></div>
-      <div class="stat"><span class="micro">Approved</span><b id="approvedcount">—</b></div>
+      <div class="stat"><span class="micro">Combined AU volume</span><b id="totalvol">30,670</b></div>
+      <div class="stat"><span class="micro">Approved</span><b id="approvedcount">0/39</b></div>
     </div>
   </div>
 </header>
@@ -97,7 +97,7 @@
     <button class="tab" role="tab" data-month="2026-09" aria-selected="false">September 2026</button>
     <button class="tab" role="tab" data-month="2026-10" aria-selected="false">October 2026</button>
     <button class="tab" role="tab" data-month="all" aria-selected="false">All three</button>
-    <span class="savebadge" id="savebadge">Connecting…</span>
+    <span class="savebadge" id="savebadge">Connecting</span>
   </div>
 </div>
 
@@ -199,16 +199,16 @@ async function load(){
       {headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`}});
     if(!res.ok) throw new Error(res.status);
     const rows = await res.json();
-    if(Array.isArray(rows) && rows.length){ DATA = rows; live = true; badge("Saved changes sync live","ok"); }
+    if(Array.isArray(rows) && rows.length){ DATA = rows; live = true; badge("Changes save automatically","ok"); }
   }catch(e){
     live = false;
-    badge("Offline — changes will not save","err");
+    badge("Offline. Changes will not save.","err");
   }
   render();
 }
 
 async function patch(id, payload, tr){
-  if(!live){ badge("Offline — change not saved","err"); return false; }
+  if(!live){ badge("Offline. Change not saved.","err"); return false; }
   tr.classList.add("saving"); badge("Saving…");
   try{
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${id}`,{
@@ -222,7 +222,7 @@ async function patch(id, payload, tr){
     return true;
   }catch(e){
     tr.classList.remove("saving"); tr.classList.add("savefail");
-    badge("Could not save — check connection","err");
+    badge("Could not save. Check connection.","err");
     return false;
   }
 }
@@ -246,11 +246,11 @@ function render(){
       <td class="date">${fmtDate(r.publish_date)}</td>
       <td class="day">${dayName(r.publish_date)}</td>
       <td class="kw">${esc(r.main_keyword)}</td>
-      <td><span class="vol">${(r.search_volume||0).toLocaleString("en-AU")}</span><span class="kd">KD ${r.difficulty ?? "—"}</span></td>
+      <td><span class="vol">${(r.search_volume||0).toLocaleString("en-AU")}</span><span class="kd">KD ${r.difficulty ?? "n/a"}</span></td>
       <td class="title">${esc(r.title)}</td>
       <td><input type="checkbox" ${r.approved?"checked":""} aria-label="Approve ${esc(r.title)}"></td>
       <td><select aria-label="Assign writer">
-        <option value=""${!r.assigned_to?" selected":""}>—</option>
+        <option value=""${!r.assigned_to?" selected":""}>Unassigned</option>
         ${TEAM.map(t=>`<option${r.assigned_to===t?" selected":""}>${t}</option>`).join("")}
       </select></td>
       <td><select aria-label="Status">
