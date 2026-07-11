@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Cobalt Constructions — Marketing Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ground:#0F0F12; --s1:#141419; --s2:#1B1B21; --s3:#212129;
+  --bd:#2A2A32; --bd2:#33333d;
+  --ink:#FFFFFF; --ink2:#B4B4BE; --ink3:#7A7A86;
+  --r2r:#17B4F0; --cobalt:#2CABE1; --cobalt-deep:#3D7BFF;
+  --good:#10B981; --warn:#F59E0B; --bad:#EF4444;
+  --ig:#d63f77; --fb:#3a78e6; --li:#0f9e94;
+  --f1:#7FB2FF; --f2:#3D7BFF; --f3:#1E45C9;
+  --savvas:#E4572E; --savvas-soft:rgba(228,87,46,.13);
+  --sans:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --mono:'Space Mono',ui-monospace,Menlo,monospace;
+  --maxw:1180px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+.mono{font-family:var(--mono)}
+.tnum{font-variant-numeric:tabular-nums}
+a{color:inherit}
+
+/* ---- login gate ---- */
+#gate{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(130% 130% at 50% 0%,#16161c,var(--ground));}
+.gatecard{width:100%;max-width:400px;background:var(--s2);border:1px solid var(--bd);border-radius:16px;padding:32px 30px;display:flex;flex-direction:column;gap:18px}
+.gatelogos{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:2px}
+.gatelogos img{height:22px;width:auto}
+.gatelogos .x{color:var(--ink3);font-size:12px}
+.gatecard h1{font-size:17px;font-weight:800;text-align:center;margin:0;letter-spacing:-.01em}
+.gatecard p{font-size:12.5px;color:var(--ink3);text-align:center;margin:-8px 0 4px}
+.gatecard label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.gatecard input{width:100%;background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--ink);font-family:var(--sans);font-size:15px;padding:12px 14px;outline:none;transition:border-color .15s}
+.gatecard input:focus{border-color:var(--cobalt)}
+.gatecard button{width:100%;background:var(--cobalt);color:#03242e;font-family:var(--sans);font-size:14px;font-weight:800;letter-spacing:.02em;border:none;border-radius:40px;padding:13px;cursor:pointer;transition:filter .15s}
+.gatecard button:hover{filter:brightness(1.08)}
+.gatecard button:disabled{opacity:.6;cursor:default}
+.gateerr{color:var(--bad);font-size:12.5px;text-align:center;min-height:16px;margin-top:-6px}
+.field{display:flex;flex-direction:column;gap:6px}
+
+/* header */
+#app{display:none}
+header{position:sticky;top:0;z-index:20;background:rgba(15,15,18,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd)}
+.hrow{display:flex;align-items:center;gap:16px;padding:12px 22px;max-width:var(--maxw);margin:0 auto;flex-wrap:wrap}
+.hlogo{height:30px;width:auto;display:block}
+.hdiv{width:1px;height:24px;background:var(--bd2)}
+.htitle{font-weight:800;font-size:15px;letter-spacing:-.01em}
+.hspace{flex:1}
+.hmeta{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-family:var(--mono);font-size:10.5px;color:var(--ink3);text-align:right}
+.hmeta b{color:var(--ink2);font-weight:700}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--good);margin-right:5px;box-shadow:0 0 0 3px rgba(16,185,129,.18)}
+.logout{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);background:none;border:1px solid var(--bd);border-radius:20px;padding:5px 11px;cursor:pointer}
+.logout:hover{color:var(--ink2);border-color:var(--bd2)}
+
+/* team strip */
+.team{background:linear-gradient(90deg,rgba(44,171,225,.06),rgba(228,87,46,.05));border-bottom:1px solid var(--bd)}
+.teamrow{display:flex;align-items:center;gap:22px;padding:11px 22px;flex-wrap:wrap}
+.team-eyebrow{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);flex:none}
+.team-logos{display:flex;align-items:center;gap:20px;flex-wrap:wrap;flex:1}
+.tmem{display:flex;flex-direction:column;gap:5px}
+.tmem img{height:22px;width:auto;display:block;opacity:.96}
+.tmem-role{font-size:10px;color:var(--ink3)}
+.tsep{width:1px;height:30px;background:var(--bd);flex:none}
+@media(max-width:720px){.team-eyebrow{display:none}.teamrow{gap:14px}}
+
+/* tabs */
+nav.tabs{position:sticky;top:57px;z-index:15;background:rgba(15,15,18,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd)}
+.tabrow{display:flex;gap:2px;max-width:var(--maxw);margin:0 auto;padding:0 14px;overflow-x:auto}
+.tab{appearance:none;background:none;border:none;color:var(--ink3);font-family:var(--sans);font-size:13.5px;font-weight:600;padding:13px 16px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--ink2)}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--cobalt)}
+.tab[data-tab="social"][aria-selected=true]{border-bottom-color:var(--savvas)}
+.tab:focus-visible{outline:2px solid var(--r2r);outline-offset:-2px;border-radius:4px}
+
+main{padding:26px 0 70px}
+section[hidden]{display:none}
+.eyebrow{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin:2px 0 14px}
+.h2{font-size:19px;font-weight:800;letter-spacing:-.015em;margin:34px 0 4px}
+.sub{color:var(--ink2);font-size:13px;margin:0 0 16px;max-width:64ch}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px}
+.kpi{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:15px 16px;display:flex;flex-direction:column;gap:7px;min-height:104px}
+.kpi .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.kpi .val{font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.kpi .foot{font-size:11.5px;color:var(--ink3);margin-top:auto}
+.chip{font-family:var(--mono);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px}
+.chip.dn{color:var(--bad);background:rgba(239,68,68,.12)}
+.chip.warnc{color:var(--warn);background:rgba(245,158,11,.13)}
+.swatch{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr 1fr}
+@media(max-width:820px){.g2{grid-template-columns:1fr}}
+.card{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:16px 16px 12px}
+.card h3{margin:0;font-size:14px;font-weight:700}
+.card .ch3sub{font-size:11.5px;color:var(--ink3);margin:2px 0 0}
+.cardhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);font-family:var(--mono)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+.callouts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+@media(max-width:820px){.callouts{grid-template-columns:1fr}}
+.callout{border:1px solid var(--bd);border-radius:12px;padding:14px 15px;background:var(--s1);display:flex;gap:12px}
+.callout .bar{width:3px;border-radius:3px;flex:none}
+.callout.bad .bar{background:var(--bad)} .callout.warn .bar{background:var(--warn)} .callout.good .bar{background:var(--good)}
+.callout h4{margin:0 0 3px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.callout p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.55}
+.sig{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:20px}
+.sig.bad{color:var(--bad);background:rgba(239,68,68,.12)} .sig.warn{color:var(--warn);background:rgba(245,158,11,.13)} .sig.good{color:var(--good);background:rgba(16,185,129,.12)}
+
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:right;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:700;padding:9px 10px;border-bottom:1px solid var(--bd)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:10px;border-bottom:1px solid var(--bd);color:var(--ink2)}
+.tbl td.k{color:var(--ink);font-weight:600}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr.tot td{border-top:1px solid var(--bd2);font-weight:700;color:var(--ink)}
+.rankpill{font-family:var(--mono);font-weight:700;font-size:12px;padding:2px 9px;border-radius:20px}
+.rankpill.win{color:var(--good);background:rgba(16,185,129,.12)}
+.rankpill.mid{color:var(--warn);background:rgba(245,158,11,.12)}
+.rankpill.out{color:var(--ink3);background:rgba(122,122,134,.12)}
+.tscroll{overflow-x:auto}
+.small{font-size:11px;color:var(--ink3)}
+.url{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+
+.chart{position:relative}
+svg{display:block;width:100%;overflow:visible}
+.gridline{stroke:var(--bd);stroke-width:1}
+.axtxt{fill:var(--ink3);font-family:var(--mono);font-size:10px}
+.tip{position:absolute;pointer-events:none;background:#000;border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;font-size:12px;opacity:0;transition:opacity .1s;z-index:5;min-width:120px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+.tip .td{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-bottom:5px}
+.tip .tr{display:flex;justify-content:space-between;gap:14px}
+.tip .tr b{font-variant-numeric:tabular-nums}
+.tip .tk{display:inline-flex;align-items:center;gap:6px;color:var(--ink2)}
+.tip .tk i{width:8px;height:8px;border-radius:2px}
+.crosshair{stroke:var(--bd2);stroke-width:1;stroke-dasharray:3 3}
+
+/* top posts */
+.posthead{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.pill-ig,.pill-fb{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:20px}
+.pill-ig{color:var(--ig);background:rgba(214,63,119,.13)}
+.pill-fb{color:var(--fb);background:rgba(58,120,230,.14)}
+.postgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.post{display:flex;flex-direction:column;background:var(--s2);border:1px solid var(--bd);border-radius:12px;overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s}
+.post:hover{border-color:var(--bd2);transform:translateY(-2px)}
+.post:focus-visible{outline:2px solid var(--r2r);outline-offset:2px}
+.post .cover{position:relative;aspect-ratio:4/5;overflow:hidden;background:#0c0c0f}
+.post .cover img{width:100%;height:100%;object-fit:cover;display:block}
+.typebadge{position:absolute;top:9px;left:9px;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);padding:3px 8px;border-radius:6px}
+.pcorner{position:absolute;top:9px;right:9px;width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px}
+.pc-ig{background:rgba(214,63,119,.85)} .pc-fb{background:rgba(58,120,230,.85)}
+.post .pbody{padding:11px 12px 12px;display:flex;flex-direction:column;gap:9px;flex:1}
+.post .pcap{font-size:12px;line-height:1.45;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.post .pmetrics{display:flex;gap:13px;margin-top:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+.post .pmetrics .m{display:inline-flex;align-items:center;gap:4px}
+.post .pmetrics .m svg{width:13px;height:13px;opacity:.7}
+.post .pmetrics .mlab{color:var(--ink3)}
+
+/* savvas hero */
+.savvas-hero{display:flex;align-items:center;gap:16px;background:linear-gradient(100deg,var(--savvas-soft),rgba(228,87,46,.02) 60%);border:1px solid rgba(228,87,46,.28);border-left:3px solid var(--savvas);border-radius:12px;padding:15px 18px;margin-bottom:16px}
+.savvas-hero .sv-icon{height:44px;width:auto;flex:none}
+.sv-body{flex:1;min-width:0}
+.sv-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sv-by{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--savvas)}
+.sv-word{height:20px;width:auto;display:block}
+.sv-tag{margin:5px 0 0;font-size:12.5px;color:var(--ink2)}
+.sv-tag a{color:var(--savvas);text-decoration:none;font-weight:600}
+.sv-tag a:hover{text-decoration:underline}
+.sv-stat{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}
+.sv-stat-v{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.sv-stat-l{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+@media(max-width:640px){.savvas-hero .sv-stat{display:none}}
+
+footer{border-top:1px solid var(--bd);padding:22px 0;color:var(--ink3);font-size:11.5px}
+.foot-in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-family:var(--mono);align-items:center}
+.foot-team{display:flex;align-items:center;gap:14px}
+.foot-team img{height:16px;width:auto;opacity:.7}
+.foot-team .fx{color:var(--ink3)}
+.loading{text-align:center;color:var(--ink3);padding:60px;font-family:var(--mono);font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div id="gate">
+  <form class="gatecard" id="gateform">
+    <div class="gatelogos">
+      <img src="assets/cobalt.webp" alt="Cobalt Constructions"/>
+      <span class="x">&times;</span>
+      <img src="assets/r2r.png" alt="Ready to Rank"/>
+      <span class="x">&times;</span>
+      <img src="assets/savvas.webp" alt="Savvas Studio"/>
+    </div>
+    <h1>Marketing Dashboard</h1>
+    <p>Shared workspace for Cobalt Constructions, Ready to Rank &amp; Savvas Studio.</p>
+    <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="username" placeholder="you@company.com"/></div>
+    <div class="field"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" placeholder="Enter password"/></div>
+    <div class="gateerr" id="gateerr"></div>
+    <button type="submit" id="gatebtn">Sign in</button>
+  </form>
+</div>
+
+<!-- APP -->
+<div id="app">
+<header>
+  <div class="hrow">
+    <img class="hlogo" src="assets/cobalt.webp" alt="Cobalt Constructions"/>
+    <span class="hdiv"></span>
+    <span class="htitle">Marketing Dashboard</span>
+    <span class="hspace"></span>
+    <div class="hmeta">
+      <span><span class="dot"></span><b>Live</b> · <span id="freshdate">—</span></span>
+      <span>SEO · Paid · Social &nbsp;|&nbsp; last 90 days</span>
+    </div>
+    <button class="logout" id="logout">Sign out</button>
+  </div>
+</header>
+
+<div class="team"><div class="wrap teamrow">
+  <span class="team-eyebrow">The team</span>
+  <div class="team-logos">
+    <div class="tmem"><img src="assets/cobalt.webp" alt="Cobalt Constructions"/><span class="tmem-role">Client · Custom home builds</span></div>
+    <span class="tsep"></span>
+    <div class="tmem"><img src="assets/r2r.png" alt="Ready to Rank"/><span class="tmem-role">SEO &amp; Paid Ads</span></div>
+    <span class="tsep"></span>
+    <div class="tmem"><img src="assets/savvas.webp" alt="Savvas Studio"/><span class="tmem-role">Social &amp; Creative</span></div>
+  </div>
+</div></div>
+
+<nav class="tabs"><div class="tabrow" role="tablist">
+  <button class="tab" role="tab" aria-selected="true" data-tab="overview">Overview</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="seo">SEO</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="paid">Paid Ads</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="social">Social</button>
+</div></nav>
+
+<main class="wrap">
+  <section id="overview">
+    <div class="eyebrow">Snapshot · last 90 days</div>
+    <div class="kpis" id="kpi-overview"></div>
+    <div class="callouts">
+      <div class="callout bad"><div class="bar"></div><div>
+        <h4>Meta ads: spend, no leads yet <span class="sig bad">Action</span></h4>
+        <p>Since launch on 09/07, the three lead campaigns have spent <b id="co-spend">—</b> for <b id="co-clicks">—</b> clicks but <b>0 recorded leads</b>. Either the lead event isn't firing back to Meta or clicks aren't converting yet — worth checking the form/pixel before spend climbs.</p>
+      </div></div>
+      <div class="callout warn"><div class="bar"></div><div>
+        <h4>Organic Google position is slipping <span class="sig warn">Watch</span></h4>
+        <p>Average position has drifted from ~22 in April to ~35 in July, and most tracked keywords sit outside the top 100. Only <b>"Home builders Yarra Valley"</b> ranks strongly.</p>
+      </div></div>
+    </div>
+    <h2 class="h2">Website traffic</h2>
+    <p class="sub">Daily sessions from all channels (GA4). The spikes on 25/06 and 09/07 line up with campaign activity.</p>
+    <div class="card chart" id="c-sessions"></div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card chart" id="c-ov-social"></div>
+      <div class="card" id="c-ov-channels"></div>
+    </div>
+  </section>
+
+  <section id="seo" hidden>
+    <div class="eyebrow">Organic search · Google</div>
+    <div class="kpis" id="kpi-seo"></div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card chart" id="c-clicks"></div>
+      <div class="card chart" id="c-position"></div>
+    </div>
+    <h2 class="h2">Keyword rankings</h2>
+    <p class="sub">Tracked in SE Ranking. "—" means the site isn't ranking in the top 100 for that term right now.</p>
+    <div class="card tscroll"><table class="tbl" id="t-rank"></table></div>
+  </section>
+
+  <section id="paid" hidden>
+    <div class="eyebrow">Paid ads · Meta (Google campaigns paused)</div>
+    <div class="callouts" style="margin-top:0;margin-bottom:16px;grid-template-columns:1fr">
+      <div class="callout bad"><div class="bar"></div><div>
+        <h4>0 leads recorded across all spend <span class="sig bad">Action</span></h4>
+        <p>3 days of data (09–11/07) is early, but no lead has been attributed on any campaign. Confirm the lead form and Meta pixel are tracking before scaling budget.</p>
+      </div></div>
+    </div>
+    <div class="kpis" id="kpi-paid"></div>
+    <div class="card chart" style="margin-top:14px" id="c-spend"></div>
+    <h2 class="h2">By campaign</h2>
+    <p class="sub">Meta lead campaigns, funnel stages. CPL is blank because no leads have been recorded yet.</p>
+    <div class="card tscroll"><table class="tbl" id="t-paid"></table></div>
+  </section>
+
+  <section id="social" hidden>
+    <div class="savvas-hero">
+      <img class="sv-icon" src="assets/savvas-icon.png" alt=""/>
+      <div class="sv-body">
+        <div class="sv-top"><span class="sv-by">Social managed by</span><img class="sv-word" src="assets/savvas.webp" alt="Savvas Studio"/></div>
+        <p class="sv-tag">Creative Problem Solvers — video, social &amp; brand. <a href="https://www.savvasstudio.com/" target="_blank" rel="noopener">savvasstudio.com&nbsp;↗</a></p>
+      </div>
+      <div class="sv-stat"><span class="sv-stat-v tnum" id="sv-reach">—</span><span class="sv-stat-l">reach · 90 days</span></div>
+    </div>
+    <div class="eyebrow">Organic social · Instagram · Facebook · LinkedIn</div>
+    <div class="kpis" id="kpi-social"></div>
+    <div class="card chart" style="margin-top:14px" id="c-reach"></div>
+    <h2 class="h2">Top performing posts</h2>
+    <p class="sub">Highest-reach organic posts in the last 90 days — the Warrandyte build series is carrying both channels.</p>
+    <div class="posthead"><span class="pill-ig">Instagram</span><span class="small">by reach · @cobaltconstructions</span></div>
+    <div class="postgrid" id="ig-posts"></div>
+    <div class="posthead" style="margin-top:20px"><span class="pill-fb">Facebook</span><span class="small">by reach · Cobalt Constructions</span></div>
+    <div class="postgrid" id="fb-posts"></div>
+    <div class="grid g2" style="margin-top:22px">
+      <div class="card chart" id="c-eng"></div>
+      <div class="card chart" id="c-fbfoll"></div>
+    </div>
+    <div class="callouts" style="grid-template-columns:1fr">
+      <div class="callout good"><div class="bar"></div><div>
+        <h4>Paid is lifting organic reach <span class="sig good">Signal</span></h4>
+        <p>Instagram reach jumped from a ~60–150/day baseline to <b>500–830/day</b> around the 08–09/07 ad launch, and Facebook engagement spiked the same week. The ad audience is finding the organic profiles too.</p>
+      </div></div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap foot-in">
+  <span class="foot-team"><img src="assets/cobalt.webp" alt="Cobalt"/><span class="fx">&times;</span><img src="assets/r2r.png" alt="R2R"/><span class="fx">&times;</span><img src="assets/savvas.webp" alt="Savvas"/></span>
+  <span>Sources: GA4 · Search Console · SE Ranking · Meta Ads · Windsor.ai</span>
+  <span id="genstamp">—</span>
+</div></footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL="https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY="sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+/* data vars */
+let N=0,DATES=[],SESSIONS=[],USERS=[],CONV=[],CLICKS=[],IMPR=[],POS=[];
+let IG_REACH=[],IG_ENG=[],FB_REACH=[],FB_IMPR=[],FB_ENG=[],FB_FOLL=[],LI_IMPR=[],LI_ENG=[];
+let PAID={days:[],TOFU:{sp:[],cl:[],im:[]},MOFU:{sp:[],cl:[],im:[]},BOFU:{sp:[],cl:[],im:[]}};
+let RANK=[],FOLL={ig:0,fb:0,li:0},IG_POSTS=[],FB_POSTS=[],REFRESH=[];
+let seoSessions=0,seoClicks=0,seoConv=0,socReach=0,socEng=0,totFoll=0,paidSpend=0,paidClicks=0,paidImpr=0;
+
+const sum=a=>a.reduce((s,v)=>s+(v==null?0:v),0);
+const fmt=n=>{n=Math.round(n);return n>=1000?(n>=100000?Math.round(n/1000)+"k":(n/1000).toFixed(n>=10000?0:1)+"k"):(""+n);};
+const money=n=>"$"+Number(n).toLocaleString("en-AU",{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+async function loadData(){
+  const [seo,social,paid,rank,posts,refresh]=await Promise.all([
+    sb.from('cobalt_seo_daily').select('*').order('period_date'),
+    sb.from('cobalt_social_daily').select('*').order('period_date'),
+    sb.from('cobalt_paid_daily').select('*').order('period_date'),
+    sb.from('cobalt_rankings').select('*'),
+    sb.from('cobalt_social_posts').select('*'),
+    sb.from('cobalt_refresh').select('*')
+  ]);
+  const S=seo.data||[];
+  N=S.length; DATES=S.map(r=>r.period_date.slice(5));
+  const idx={}; S.forEach((r,i)=>idx[r.period_date]=i);
+  const F=()=>new Array(N).fill(null);
+  SESSIONS=F();USERS=F();CONV=F();CLICKS=F();IMPR=F();POS=F();
+  S.forEach((r,i)=>{SESSIONS[i]=r.sessions;USERS[i]=r.users;CONV[i]=r.conversions;CLICKS[i]=r.clicks;IMPR[i]=r.impressions;POS[i]=r.avg_position;});
+  IG_REACH=F();IG_ENG=F();FB_REACH=F();FB_IMPR=F();FB_ENG=F();FB_FOLL=F();LI_IMPR=F();LI_ENG=F();
+  let igf=0,lif=0;
+  (social.data||[]).forEach(r=>{const i=idx[r.period_date];if(i==null)return;
+    if(r.platform==='instagram'){IG_REACH[i]=r.reach;IG_ENG[i]=r.engagement;if(r.followers)igf=r.followers;}
+    else if(r.platform==='facebook'){FB_REACH[i]=r.reach;FB_IMPR[i]=r.impressions;FB_ENG[i]=r.engagement;FB_FOLL[i]=r.followers;}
+    else if(r.platform==='linkedin'){LI_IMPR[i]=r.impressions;LI_ENG[i]=r.engagement;if(r.followers)lif=r.followers;}
+  });
+  const lastNon=a=>{for(let i=a.length-1;i>=0;i--)if(a[i]!=null)return a[i];return 0;};
+  FOLL={ig:igf,fb:lastNon(FB_FOLL),li:lif};
+  const days=[...new Set((paid.data||[]).map(r=>r.period_date))].sort();
+  const camp=n=>{const rows=(paid.data||[]).filter(r=>(r.campaign_name||'').includes(n));
+    const pick=(d,f)=>{const x=rows.find(r=>r.period_date===d);return x?Number(x[f]):0;};
+    return {sp:days.map(d=>pick(d,'spend')),cl:days.map(d=>pick(d,'clicks')),im:days.map(d=>pick(d,'impressions'))};};
+  PAID={days:days.map(d=>d.slice(5)),TOFU:camp('TOFU'),MOFU:camp('MOFU'),BOFU:camp('BOFU')};
+  RANK=(rank.data||[]).slice().sort((a,b)=>((a.position==null?999:a.position)-(b.position==null?999:b.position))).map(r=>[r.keyword,r.position,r.search_volume,(r.url||'—').replace(/^https?:\/\//,'')]);
+  const mp=p=>({img:p.image_path,type:p.media_type,reach:p.reach,eng:p.engagement,url:p.permalink,cap:p.caption});
+  IG_POSTS=(posts.data||[]).filter(p=>p.platform==='instagram').sort((a,b)=>b.reach-a.reach).map(mp);
+  FB_POSTS=(posts.data||[]).filter(p=>p.platform==='facebook').sort((a,b)=>b.reach-a.reach).map(mp);
+  REFRESH=refresh.data||[];
+  // aggregates
+  seoSessions=sum(SESSIONS);seoClicks=sum(CLICKS);seoConv=sum(CONV);
+  socReach=sum(IG_REACH)+sum(FB_REACH);socEng=sum(IG_ENG)+sum(FB_ENG)+sum(LI_ENG);
+  totFoll=FOLL.ig+FOLL.fb+FOLL.li;
+  paidSpend=sum(PAID.TOFU.sp)+sum(PAID.MOFU.sp)+sum(PAID.BOFU.sp);
+  paidClicks=sum(PAID.TOFU.cl)+sum(PAID.MOFU.cl)+sum(PAID.BOFU.cl);
+  paidImpr=sum(PAID.TOFU.im)+sum(PAID.MOFU.im)+sum(PAID.BOFU.im);
+}
+
+/* KPIs */
+const kpi=(lab,val,foot)=>`<div class="kpi"><div class="lab">${lab}</div><div class="val tnum">${val}</div><div class="foot">${foot||""}</div></div>`;
+function renderKPIs(){
+  document.getElementById("kpi-overview").innerHTML=
+    kpi("Website sessions",fmt(seoSessions),"last 90 days · GA4")+
+    kpi("SEO clicks",fmt(seoClicks),"Google organic")+
+    kpi("Ad spend",money(paidSpend),'<span class="chip warnc">3 days</span> since 09/07')+
+    kpi("Ad leads","0",'<span class="chip dn">0 CPL</span> tracking check')+
+    kpi("Social reach",fmt(socReach),"IG + FB · 90 days")+
+    kpi("Total followers",fmt(totFoll),"IG + FB + LinkedIn");
+  const avgPos=POS.filter(v=>v!=null);
+  document.getElementById("kpi-seo").innerHTML=
+    kpi("Clicks",fmt(seoClicks),"90 days")+
+    kpi("Impressions",fmt(sum(IMPR)),"90 days")+
+    kpi("Avg CTR",(seoClicks/sum(IMPR)*100).toFixed(2)+"%","clicks ÷ impressions")+
+    kpi("Avg position","~"+(avgPos.reduce((s,v)=>s+v,0)/avgPos.length).toFixed(1),'<span class="chip dn">slipping</span>')+
+    kpi("Conversions",fmt(seoConv),"GA4 key events");
+  document.getElementById("kpi-paid").innerHTML=
+    kpi("Spend",money(paidSpend),"09–11/07 · AUD")+
+    kpi("Impressions",fmt(paidImpr),"Meta")+
+    kpi("Clicks",fmt(paidClicks),"link clicks")+
+    kpi("Avg CPC",money(paidSpend/paidClicks),"cost per click")+
+    kpi("Leads","0",'<span class="chip dn">investigate</span>');
+  document.getElementById("kpi-social").innerHTML=
+    kpi("Total reach",fmt(socReach),"IG + FB · 90 days")+
+    kpi("Engagements",fmt(socEng),"reactions, comments…")+
+    kpi("Instagram",fmt(FOLL.ig),'<span class="swatch" style="background:var(--ig)"></span> followers')+
+    kpi("Facebook",fmt(FOLL.fb),'<span class="swatch" style="background:var(--fb)"></span> page likes')+
+    kpi("LinkedIn",fmt(FOLL.li),'<span class="swatch" style="background:var(--li)"></span> followers');
+  document.getElementById("sv-reach").textContent=fmt(socReach);
+  document.getElementById("co-spend").textContent=money(paidSpend);
+  document.getElementById("co-clicks").textContent=paidClicks;
+}
+
+/* line chart */
+function lineChart(mount,{series,title,sub,legend,yfmt,invert,area}){
+  const W=mount.clientWidth||560,H=248,P={t:14,r:16,b:26,l:40};
+  const iw=W-P.l-P.r,ih=H-P.t-P.b; yfmt=yfmt||(v=>fmt(v));
+  let vals=[];series.forEach(s=>s.data.forEach(v=>{if(v!=null)vals.push(v);}));
+  if(!vals.length)vals=[0,1];
+  let mn=Math.min(...vals),mx=Math.max(...vals); if(invert){const t=mn;mn=mx;mx=t;}
+  const lo=Math.min(mn,mx),hi=Math.max(mn,mx),pad=(hi-lo)*0.08||1,y0=lo-pad,y1=hi+pad;
+  const X=i=>P.l+(N<=1?0:iw*i/(N-1)), Y=v=>P.t+ih-((v-y0)/(y1-y0))*ih;
+  const head=`<div class="cardhead"><div><h3>${title}</h3>${sub?`<p class="ch3sub">${sub}</p>`:""}</div>${legend?`<div class="legend">${series.map(s=>`<span><i style="background:${s.color}"></i>${s.name}</span>`).join("")}</div>`:""}</div>`;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${title}">`;
+  const ticks=4;
+  for(let t=0;t<=ticks;t++){const val=y0+(y1-y0)*t/ticks,yy=Y(val);
+    svg+=`<line class="gridline" x1="${P.l}" y1="${yy.toFixed(1)}" x2="${W-P.r}" y2="${yy.toFixed(1)}"/><text class="axtxt" x="${P.l-6}" y="${yy+3}" text-anchor="end">${yfmt(val)}</text>`;}
+  const step=Math.max(1,Math.floor(N/6));
+  for(let i=0;i<N;i+=step){svg+=`<text class="axtxt" x="${X(i)}" y="${H-8}" text-anchor="middle">${DATES[i]}</text>`;}
+  series.forEach(s=>{let d="",started=false,fx=null,lx=null;
+    s.data.forEach((v,i)=>{if(v==null)return;const x=X(i),y=Y(v);if(!started){d+=`M${x} ${y}`;started=true;fx=x;}else d+=`L${x} ${y}`;lx=x;});
+    if(area&&started)svg+=`<path d="${d}L${lx} ${Y(y0)}L${fx} ${Y(y0)}Z" fill="${s.color}" opacity="0.10"/>`;
+    svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;});
+  svg+=`<line class="crosshair" id="ch" x1="0" y1="${P.t}" x2="0" y2="${P.t+ih}" style="opacity:0"/>`;
+  series.forEach((s,si)=>svg+=`<circle id="hd${si}" r="4" fill="${s.color}" stroke="var(--s2)" stroke-width="2" style="opacity:0"/>`);
+  svg+=`</svg>`;
+  mount.innerHTML=head+`<div class="chart">`+svg+`<div class="tip" id="tip"></div></div>`;
+  const svgEl=mount.querySelector("svg"),tip=mount.querySelector("#tip"),ch=mount.querySelector("#ch");
+  svgEl.addEventListener("pointermove",e=>{
+    const r=svgEl.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W;
+    let i=Math.round((px-P.l)/iw*(N-1));i=Math.max(0,Math.min(N-1,i));const xx=X(i);
+    ch.setAttribute("x1",xx);ch.setAttribute("x2",xx);ch.style.opacity=1;
+    let rows="";series.forEach((s,si)=>{const v=s.data[i],hd=mount.querySelector("#hd"+si);
+      if(v==null){hd.style.opacity=0;return;}
+      hd.setAttribute("cx",xx);hd.setAttribute("cy",Y(v));hd.style.opacity=1;
+      rows+=`<div class="tr"><span class="tk"><i style="background:${s.color}"></i>${s.name}</span><b>${s.tip?s.tip(v):yfmt(v)}</b></div>`;});
+    tip.innerHTML=`<div class="td">${DATES[i]}</div>${rows}`;tip.style.opacity=1;
+    const tw=tip.offsetWidth,left=Math.min(Math.max(xx/W*r.width-tw/2,4),r.width-tw-4);
+    tip.style.left=left+"px";tip.style.top="6px";});
+  svgEl.addEventListener("pointerleave",()=>{tip.style.opacity=0;ch.style.opacity=0;series.forEach((s,si)=>mount.querySelector("#hd"+si).style.opacity=0);});
+}
+
+function stackBar(mount,{title,sub,labels,stacks,vfmt}){
+  vfmt=vfmt||(v=>money(v));
+  const W=mount.clientWidth||560,H=240,P={t:14,r:16,b:28,l:44},iw=W-P.l-P.r,ih=H-P.t-P.b;
+  const totals=labels.map((_,i)=>stacks.reduce((s,st)=>s+st.data[i],0)),mx=Math.max(...totals,1)*1.12;
+  const Y=v=>P.t+ih-(v/mx)*ih,bw=Math.min(70,iw/labels.length*0.5),cx=i=>P.l+iw*(i+0.5)/labels.length;
+  const head=`<div class="cardhead"><div><h3>${title}</h3>${sub?`<p class="ch3sub">${sub}</p>`:""}</div><div class="legend">${stacks.map(s=>`<span><i style="background:${s.color}"></i>${s.name}</span>`).join("")}</div></div>`;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">`;
+  for(let t=0;t<=4;t++){const val=mx*t/4,yy=Y(val);svg+=`<line class="gridline" x1="${P.l}" y1="${yy.toFixed(1)}" x2="${W-P.r}" y2="${yy.toFixed(1)}"/><text class="axtxt" x="${P.l-6}" y="${yy+3}" text-anchor="end">${t===0?"0":vfmt(val).replace(".00","")}</text>`;}
+  labels.forEach((lb,i)=>{let acc=0;const x=cx(i)-bw/2;
+    stacks.forEach(st=>{const v=st.data[i],h=(v/mx)*ih,y=Y(acc+v);svg+=`<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(0,h-2)}" rx="3" fill="${st.color}"><title>${st.name} ${lb}: ${vfmt(v)}</title></rect>`;acc+=v;});
+    svg+=`<text class="axtxt" x="${cx(i)}" y="${H-9}" text-anchor="middle">${lb}</text><text x="${cx(i)}" y="${Y(acc)-7}" text-anchor="middle" fill="var(--ink)" font-family="var(--mono)" font-size="11" font-weight="700">${vfmt(acc).replace(".00","")}</text>`;});
+  svg+=`</svg>`;mount.innerHTML=head+svg;
+}
+
+function renderCharts(){
+  lineChart(document.getElementById("c-sessions"),{title:"Daily sessions",sub:"All channels · GA4",area:true,legend:false,series:[{name:"Sessions",color:"var(--cobalt)",data:SESSIONS}]});
+  lineChart(document.getElementById("c-ov-social"),{title:"Social reach",sub:"Instagram vs Facebook · daily",legend:true,series:[{name:"Instagram",color:"var(--ig)",data:IG_REACH},{name:"Facebook",color:"var(--fb)",data:FB_REACH}]});
+  document.getElementById("c-ov-channels").innerHTML=`<div class="cardhead"><div><h3>Channels at a glance</h3><p class="ch3sub">Last 90 days</p></div></div>
+   <table class="tbl"><tbody>
+    <tr><td class="k"><span class="swatch" style="background:var(--cobalt)"></span> Organic search</td><td class="tnum">${fmt(seoClicks)} clicks</td><td class="tnum">${fmt(seoSessions)} sessions</td></tr>
+    <tr><td class="k"><span class="swatch" style="background:var(--f2)"></span> Paid ads</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">0 leads</td></tr>
+    <tr><td class="k"><span class="swatch" style="background:var(--ig)"></span> Social organic</td><td class="tnum">${fmt(socReach)} reach</td><td class="tnum">${fmt(totFoll)} followers</td></tr>
+   </tbody></table>`;
+  lineChart(document.getElementById("c-clicks"),{title:"Clicks & impressions",sub:"Google organic · daily",legend:true,series:[{name:"Clicks",color:"var(--cobalt)",data:CLICKS},{name:"Impressions ÷10",color:"var(--r2r)",data:IMPR.map(v=>v==null?null:v/10),tip:v=>fmt(Math.round(v*10))}]});
+  lineChart(document.getElementById("c-position"),{title:"Average Google position",sub:"Lower is better · axis inverted",legend:false,invert:true,yfmt:v=>v.toFixed(0),series:[{name:"Avg position",color:"var(--warn)",data:POS,tip:v=>v.toFixed(1)}]});
+  stackBar(document.getElementById("c-spend"),{title:"Daily ad spend by campaign",sub:"Meta lead campaigns · AUD",labels:PAID.days,stacks:[{name:"TOFU",color:"var(--f1)",data:PAID.TOFU.sp},{name:"MOFU",color:"var(--f2)",data:PAID.MOFU.sp},{name:"BOFU",color:"var(--f3)",data:PAID.BOFU.sp}]});
+  lineChart(document.getElementById("c-reach"),{title:"Reach & impressions by platform",sub:"Daily · IG/FB reach, LinkedIn impressions",legend:true,series:[{name:"Instagram",color:"var(--ig)",data:IG_REACH},{name:"Facebook",color:"var(--fb)",data:FB_REACH},{name:"LinkedIn",color:"var(--li)",data:LI_IMPR}]});
+  lineChart(document.getElementById("c-eng"),{title:"Engagement",sub:"Interactions per day",legend:true,series:[{name:"Instagram",color:"var(--ig)",data:IG_ENG},{name:"Facebook",color:"var(--fb)",data:FB_ENG},{name:"LinkedIn",color:"var(--li)",data:LI_ENG}]});
+  lineChart(document.getElementById("c-fbfoll"),{title:"Facebook page followers",sub:"Steady organic growth",legend:false,area:true,yfmt:v=>v.toFixed(0),series:[{name:"Followers",color:"var(--fb)",data:FB_FOLL}]});
+}
+
+const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9A5 5 0 0 1 12 6a5 5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9Z"/></svg>';
+const CURSOR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l7 17 2.5-7.5L21 11 4 4Z"/></svg>';
+function posts(){
+  document.getElementById("ig-posts").innerHTML=IG_POSTS.map(p=>`
+    <a class="post" href="${p.url}" target="_blank" rel="noopener">
+      <div class="cover"><span class="typebadge">${p.type}</span><img src="${p.img}" alt="" loading="lazy"/></div>
+      <div class="pbody"><div class="pcap">${esc(p.cap)}</div>
+        <div class="pmetrics"><span class="m">${EYE}${fmt(p.reach)}</span><span class="m">${HEART}${p.eng}<span class="mlab"> eng</span></span></div>
+      </div></a>`).join("");
+  document.getElementById("fb-posts").innerHTML=FB_POSTS.map(p=>`
+    <a class="post" href="${p.url}" target="_blank" rel="noopener">
+      <div class="cover"><span class="typebadge">${p.type}</span><img src="${p.img}" alt="" loading="lazy"/></div>
+      <div class="pbody"><div class="pcap">${esc(p.cap)}</div>
+        <div class="pmetrics"><span class="m">${EYE}${fmt(p.reach)}</span><span class="m">${CURSOR}${p.eng}<span class="mlab"> clicks</span></span></div>
+      </div></a>`).join("");
+}
+
+function tables(){
+  document.getElementById("t-rank").innerHTML=`<thead><tr><th>Keyword</th><th>Position</th><th>Volume/mo</th><th>Landing page</th></tr></thead><tbody>`+
+    RANK.map(([k,p,v,u])=>{const cls=p==null?"out":(p<=10?"win":"mid"),lbl=p==null?"—":"#"+p;
+      return `<tr><td class="k">${esc(k)}</td><td><span class="rankpill ${cls}">${lbl}</span></td><td class="tnum">${v}</td><td class="url">${esc(u)}</td></tr>`;}).join("")+`</tbody>`;
+  const rows=[["TOFU",PAID.TOFU,"var(--f1)"],["MOFU",PAID.MOFU,"var(--f2)"],["BOFU",PAID.BOFU,"var(--f3)"]];
+  document.getElementById("t-paid").innerHTML=`<thead><tr><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>CPC</th><th>Leads</th><th>CPL</th></tr></thead><tbody>`+
+    rows.map(([n,c,col])=>{const sp=sum(c.sp),cl=sum(c.cl),im=sum(c.im);
+      return `<tr><td class="k"><span class="swatch" style="background:${col}"></span> ${n}</td><td class="tnum">${fmt(im)}</td><td class="tnum">${cl}</td><td class="tnum">${money(sp)}</td><td class="tnum">${cl?money(sp/cl):"—"}</td><td class="tnum">0</td><td class="tnum">—</td></tr>`;}).join("")+
+    `<tr class="tot"><td>Total</td><td class="tnum">${fmt(paidImpr)}</td><td class="tnum">${paidClicks}</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${paidClicks?money(paidSpend/paidClicks):"—"}</td><td class="tnum">0</td><td class="tnum">—</td></tr></tbody>`;
+}
+
+/* tabs */
+const tabs=[...document.querySelectorAll(".tab")];
+const secs={overview:document.getElementById("overview"),seo:document.getElementById("seo"),paid:document.getElementById("paid"),social:document.getElementById("social")};
+function show(name){
+  tabs.forEach(t=>t.setAttribute("aria-selected",t.dataset.tab===name));
+  Object.entries(secs).forEach(([k,s])=>s.hidden=k!==name);
+  renderCharts();
+  window.scrollTo({top:0});
+}
+tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.tab)));
+window.addEventListener("resize",()=>{clearTimeout(window._rz);window._rz=setTimeout(renderCharts,180);});
+
+function fmtStamp(){
+  const r=REFRESH.find(x=>x.source==='ga4')||REFRESH[0];
+  let d="data to 11/07/2026";
+  document.getElementById("freshdate").textContent=d;
+  if(r&&r.last_run){const dt=new Date(r.last_run);document.getElementById("genstamp").textContent="Refreshed "+dt.toLocaleDateString("en-AU");}
+  else document.getElementById("genstamp").textContent="Live";
+}
+
+async function boot(){
+  await loadData();
+  renderKPIs();posts();tables();renderCharts();fmtStamp();
+  document.getElementById("gate").style.display="none";
+  document.getElementById("app").style.display="block";
+}
+
+/* auth */
+async function checkSession(){
+  const {data}=await sb.auth.getSession();
+  if(data.session){await boot();}
+}
+document.getElementById("gateform").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const btn=document.getElementById("gatebtn"),err=document.getElementById("gateerr");
+  err.textContent="";btn.disabled=true;btn.textContent="Signing in…";
+  const email=document.getElementById("email").value.trim(),pw=document.getElementById("pw").value;
+  const {error}=await sb.auth.signInWithPassword({email,password:pw});
+  if(error){err.textContent=error.message||"Incorrect email or password.";btn.disabled=false;btn.textContent="Sign in";return;}
+  await boot();
+});
+document.getElementById("logout").addEventListener("click",async()=>{await sb.auth.signOut();location.reload();});
+checkSession();
+</script>
+</body>
+</html>
