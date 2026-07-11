@@ -28,6 +28,16 @@ test('dashboard queries and labels publication targets separately from internal 
   assert.doesNotMatch(browser, /Due date/);
 });
 
+test('dashboard exposes current research packages as safe plain text', async () => {
+  const app = await source('app.mjs');
+  const browser = await source('browser.mjs');
+  assert.match(app, /current_article_version:article_versions/);
+  assert.match(app, /body_markdown/);
+  assert.match(browser, /Research package/);
+  assert.match(browser, /assignment\.current_article_version\.body_markdown/);
+  assert.doesNotMatch(browser, /innerHTML\s*=/);
+});
+
 test('browser bootstrap uses runtime staging config and the tested controller', async () => {
   const browser = await source('browser.mjs');
 
