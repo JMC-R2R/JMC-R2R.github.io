@@ -15,7 +15,7 @@ export async function handleAuthEvent(event, { controller, view }) {
   }
 }
 
-export function createAuthController({ client, view, redirectUrl }) {
+export function createAuthController({ client, view, redirectUrl, clientId }) {
   return {
     async initialize() {
       view.showLoading();
@@ -34,15 +34,30 @@ export function createAuthController({ client, view, redirectUrl }) {
         .select('id, display_name, account_type, is_platform_admin')
         .eq('id', session.user.id)
         .single();
-      if (profileResult.error || !profileResult.data?.is_platform_admin) {
+      if (profileResult.error || !profileResult.data) {
         view.showDenied();
         return;
+      }
+
+      let membership = null;
+      if (!profileResult.data.is_platform_admin) {
+        const membershipResult = await client
+          .from('client_memberships')
+          .select('client_id, user_id, role')
+          .eq('client_id', clientId)
+          .eq('user_id', session.user.id)
+          .single();
+        if (membershipResult.error || membershipResult.data?.role !== 'executive_assistant') {
+          view.showDenied();
+          return;
+        }
+        membership = membershipResult.data;
       }
 
       const clientResult = await client
         .from('clients')
         .select('id, slug, name')
-        .eq('slug', 'gluten-free-world')
+        .eq('id', clientId)
         .single();
       if (clientResult.error) {
         throw clientResult.error;
@@ -59,6 +74,7 @@ export function createAuthController({ client, view, redirectUrl }) {
 
       view.showDashboard({
         profile: profileResult.data,
+        membership,
         client: clientResult.data,
         assignments: assignmentsResult.data,
       });
