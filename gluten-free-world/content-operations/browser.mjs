@@ -1,5 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/+esm';
-import { createAuthController, formatAssignmentStatus, handleAuthEvent } from './app.mjs';
+import { createAuthController, formatAssignmentStatus, formatTargetPublishAt, handleAuthEvent } from './app.mjs';
 
 const config = window.R2R_STAGING_CONFIG;
 const sections = ['loading', 'sign-in', 'denied', 'dashboard', 'fatal'];
@@ -20,7 +20,7 @@ function assignmentMarkup(assignment) {
   title.textContent = assignment.title;
   const meta = document.createElement('div');
   meta.className = 'assignment-meta';
-  meta.textContent = assignment.primary_keyword || 'No primary keyword';
+  meta.textContent = `${assignment.primary_keyword || 'No primary keyword'} · Publication target: ${formatTargetPublishAt(assignment.target_publish_at)}`;
   copy.append(title, meta);
 
   const status = document.createElement('span');

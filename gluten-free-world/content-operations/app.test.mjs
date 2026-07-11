@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createAuthController, formatAssignmentStatus, handleAuthEvent } from './app.mjs';
+import { createAuthController, formatAssignmentStatus, formatTargetPublishAt, handleAuthEvent } from './app.mjs';
 
 
 test('initialization shows sign-in when no session exists', async () => {
@@ -205,6 +205,11 @@ test('signed-out auth events clear protected data and return to sign-in', async 
   await handleAuthEvent('SIGNED_OUT', { controller, view });
 
   assert.deepEqual(calls, ['clear', 'sign-in']);
+});
+
+test('publication targets render in Sydney time without becoming due dates', () => {
+  assert.equal(formatTargetPublishAt('2026-08-03T07:00:00Z'), '3 Aug 2026');
+  assert.equal(formatTargetPublishAt(null), 'Publication date not set');
 });
 
 test('malformed assignment status renders a defensive label', () => {
