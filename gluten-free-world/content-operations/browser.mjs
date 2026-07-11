@@ -1,5 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/+esm';
-import { createAuthController } from './app.mjs';
+import { createAuthController, formatAssignmentStatus, handleAuthEvent } from './app.mjs';
 
 const config = window.R2R_STAGING_CONFIG;
 const sections = ['loading', 'sign-in', 'denied', 'dashboard', 'fatal'];
@@ -25,7 +25,7 @@ function assignmentMarkup(assignment) {
 
   const status = document.createElement('span');
   status.className = 'assignment-status';
-  status.textContent = assignment.status.replaceAll('_', ' ');
+  status.textContent = formatAssignmentStatus(assignment.status);
   row.append(copy, status);
   return row;
 }
@@ -39,6 +39,12 @@ const view = {
   showDenied() { showSection('denied'); },
   showNotice(message) {
     document.getElementById('notice').textContent = message;
+  },
+  clearProtectedData() {
+    document.getElementById('assignment-list').replaceChildren();
+    document.getElementById('assignment-count').textContent = '0';
+    document.getElementById('client-name').textContent = 'Gluten Free World';
+    document.title = 'Content Operations — Ready to Rank';
   },
   showDashboard({ profile, client, assignments }) {
     showSection('dashboard');
@@ -85,9 +91,7 @@ if (!config?.supabaseUrl || !config?.publishableKey) {
   document.getElementById('denied-sign-out').addEventListener('click', () => controller.signOut().catch(view.showFatal));
 
   client.auth.onAuthStateChange((event) => {
-    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-      queueMicrotask(() => controller.initialize().catch(view.showFatal));
-    }
+    queueMicrotask(() => handleAuthEvent(event, { controller, view }).catch(view.showFatal));
   });
   controller.initialize().catch(view.showFatal);
 }
