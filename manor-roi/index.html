@@ -98,6 +98,29 @@
   #neonFrame{position:fixed;inset:0;pointer-events:none;z-index:400;border:1.5px solid transparent;opacity:0;transition:opacity .35s ease}
   body[data-theme="roi"] #neonFrame{opacity:1;border-color:rgba(23,180,240,.5);box-shadow:inset 0 0 26px rgba(23,180,240,.22),inset 0 0 3px rgba(23,180,240,.55)}
   body[data-theme="social"] #neonFrame{opacity:1;border-color:rgba(208,83,30,.5);box-shadow:inset 0 0 26px rgba(208,83,30,.22),inset 0 0 3px rgba(208,83,30,.55)}
+
+  /* ===== Social v2: legend note, Sini's Insights, benchmarks ===== */
+  .legend-note{margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:11px}
+  .insights{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .insight{position:relative;background:linear-gradient(180deg,rgba(208,83,30,.12),rgba(208,83,30,.03));border:1px solid rgba(208,83,30,.35);border-radius:12px;padding:13px 15px}
+  .insight::after{content:"";position:absolute;left:22px;bottom:-8px;width:14px;height:14px;background:inherit;border-right:1px solid rgba(208,83,30,.35);border-bottom:1px solid rgba(208,83,30,.35);transform:rotate(45deg)}
+  .insight .ihead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .insight .iav{width:22px;height:22px;border-radius:50%;background:var(--manor-gold);color:#1b1618;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;font-family:var(--sans)}
+  .insight .iwho{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#E5713C;font-weight:700}
+  .insight .idate{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted)}
+  .insight .inum{position:absolute;top:-9px;right:-9px;width:22px;height:22px;border-radius:50%;background:#D0531E;color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink)}
+  .insight .inote{font-size:13px;line-height:1.5;color:var(--white)}
+  .insight .ilabel{font-weight:800}
+  .insights .muted{grid-column:1/-1}
+  .bench{display:grid;gap:10px}
+  .bench .brow{display:grid;grid-template-columns:150px 1fr 84px;align-items:center;gap:12px}
+  .bench .bname{font-family:var(--mono);font-size:12px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bench .bname.me{color:var(--manor-gold);font-weight:700}
+  .bench .btrack{height:16px;background:var(--panel-2);border-radius:8px;overflow:hidden}
+  .bench .bfill{height:100%;border-radius:8px;background:linear-gradient(90deg,#8C8C99,#B7B7C2)}
+  .bench .brow.me .bfill{background:linear-gradient(90deg,var(--manor-gold),#f5c400)}
+  .bench .bval{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right}
+  .bench .bhead{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
   .head-left .sub{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:6px}
   .head-right{text-align:right;font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
   .head-right .period{color:var(--white);font-size:13px}
@@ -209,8 +232,12 @@
   .field{margin-bottom:12px}
   .field.full{grid-column:1/3}
   .field label{display:block;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
-  .field input{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 11px;color:var(--white);font-family:var(--sans);font-size:15px}
-  .field input:focus{outline:none;border-color:var(--blue)}
+  .field input,.field textarea{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 11px;color:var(--white);font-family:var(--sans);font-size:15px}
+  .field textarea{resize:vertical;font-size:14px;line-height:1.4}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--blue)}
+  .modal .subhead{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);margin:14px 0 8px;padding-top:12px;border-top:1px solid var(--line)}
+  .modal .subhead:first-of-type{border-top:none;padding-top:0}
+  .modal-actions.inline{margin-top:2px}
   .field .pre{font-size:13px;color:var(--muted);position:absolute;margin:11px 0 0 11px;pointer-events:none}
   .field.money{position:relative}
   .field.money input{padding-left:22px}
@@ -257,7 +284,7 @@
     <div class="period" id="period">—</div>
     <div id="updated">Last updated —</div>
     <button onclick="loadData()">↻ Refresh</button>
-    <button class="edit" onclick="openForm()">✎ Update data</button>
+    <button class="edit" onclick="openUpdate()">✎ Update data</button>
     <button class="signout" id="signoutBtn" onclick="signOut()" hidden>Sign out</button>
   </div>
 </header>
@@ -350,36 +377,49 @@
   </div>
   <div class="seclabel">Summary</div>
   <div class="card" id="sSummary" style="line-height:1.65;font-size:14.5px;color:var(--white)"></div>
-  <div class="seclabel">Instagram &amp; Facebook · audience</div>
-  <div class="grid g3">
-    <div class="card hero">
-      <div class="lbl">Followers</div>
-      <div class="big" id="sFollowers">—</div>
-      <div class="small" id="sFollowersSplit"></div>
-      <div class="delta" id="sFollowersDelta"></div>
-    </div>
+  <div class="seclabel">Organic performance · this month</div>
+  <div class="grid g4">
     <div class="card hero accent">
-      <div class="lbl">Reach · this month</div>
-      <div class="big" id="sReach">—</div>
-      <div class="small" id="sReachSplit"></div>
-      <div class="delta" id="sReachDelta"></div>
-    </div>
-    <div class="card hero">
-      <div class="lbl">Engagement · this month</div>
+      <div class="lbl">Organic engagement</div>
       <div class="big" id="sEng">—</div>
       <div class="small" id="sEngSplit"></div>
       <div class="delta" id="sEngDelta"></div>
     </div>
+    <div class="card hero">
+      <div class="lbl">Website clicks</div>
+      <div class="big" id="sClicks">—</div>
+      <div class="small" id="sClicksSplit"></div>
+      <div class="delta" id="sClicksDelta"></div>
+    </div>
+    <div class="card hero">
+      <div class="lbl">DMs</div>
+      <div class="big" id="sDms">—</div>
+      <div class="small" id="sDmsNote"></div>
+      <div class="delta" id="sDmsDelta"></div>
+    </div>
+    <div class="card hero">
+      <div class="lbl">Follower growth</div>
+      <div class="big" id="sFollowers">—</div>
+      <div class="small" id="sFollowersSplit"></div>
+      <div class="delta" id="sFollowersDelta"></div>
+    </div>
   </div>
 
-  <div class="seclabel">Reach &amp; engagement over time</div>
+  <div class="seclabel">Reach &amp; Views over time — Instagram</div>
   <div class="trend">
     <div class="legend">
-      <span><i style="background:var(--blue)"></i>Reach</span>
-      <span><i style="background:var(--good)"></i>Engagement</span>
+      <span><i style="background:var(--blue)"></i>Views</span>
+      <span><i style="background:var(--good)"></i>Reach</span>
+      <span class="legend-note">◆ = Sini's insight — tap to read</span>
     </div>
-    <div id="sChart"></div>
+    <div id="sDailyChart"></div>
   </div>
+
+  <div class="seclabel">Sini's Insights</div>
+  <div class="insights" id="sInsights"></div>
+
+  <div class="seclabel">Competitive benchmarks</div>
+  <div class="bench" id="sBench"></div>
 
   <div class="seclabel">Top Instagram posts this month</div>
   <div class="posts" id="sPostsIg"></div>
@@ -415,6 +455,41 @@
       <button class="btn primary" id="saveBtn" onclick="saveForm()">Save</button>
       <button class="btn ghost" onclick="closeForm()">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== Social update modal (Sini) ===== -->
+<div class="modal-bg" id="socialModalBg">
+  <div class="modal">
+    <h2>Update social</h2>
+    <div class="msub">Add an insight pinned to a spike, a competitor benchmark, or this month's DMs. Enter the edit code once, then save each section.</div>
+
+    <div class="subhead">Sini's insight</div>
+    <div class="frow">
+      <div class="field"><label>Date (the spike)</label><input type="date" id="a_date"></div>
+      <div class="field"><label>Short label</label><input type="text" id="a_label" placeholder="e.g. Lion-dance reel"></div>
+    </div>
+    <div class="field full"><label>Insight</label><textarea id="a_note" rows="2" placeholder="Why this spike happened…"></textarea></div>
+    <div class="modal-actions inline"><button class="btn primary" id="aBtn" onclick="saveInsight()">Add insight</button></div>
+
+    <div class="subhead">Competitor benchmark</div>
+    <div class="frow">
+      <div class="field full"><label>Competitor</label><input type="text" id="b_name" placeholder="e.g. Vogue Ballroom"></div>
+      <div class="field"><label>Followers</label><input type="number" id="b_followers" min="0" step="1"></div>
+      <div class="field"><label>Engagement / mo</label><input type="number" id="b_eng" min="0" step="1"></div>
+    </div>
+    <div class="modal-actions inline"><button class="btn primary" id="bBtn" onclick="saveBenchmark()">Save benchmark</button></div>
+
+    <div class="subhead">DMs this month</div>
+    <div class="frow">
+      <div class="field"><label>Month</label><input type="month" id="d_month"></div>
+      <div class="field"><label>DM count</label><input type="number" id="d_dms" min="0" step="1"></div>
+    </div>
+    <div class="modal-actions inline"><button class="btn primary" id="dBtn" onclick="saveDms()">Save DMs</button></div>
+
+    <div class="field full" style="margin-top:16px"><label>Edit code</label><input type="password" id="s_code" placeholder="required to save" autocomplete="off"></div>
+    <div class="msg" id="socialMsg"></div>
+    <div class="modal-actions"><button class="btn ghost" onclick="closeSocialForm()">Close</button></div>
   </div>
 </div>
 
@@ -581,9 +656,15 @@ const SAMPLE = [
 /* Social REST endpoints (same project + public key as ROI). */
 SUPA.social  = SUPA.url + "/rest/v1/manor_social_monthly";
 SUPA.sposts  = SUPA.url + "/rest/v1/manor_social_top_posts";
+SUPA.daily   = SUPA.url + "/rest/v1/manor_social_daily";
+SUPA.ann     = SUPA.url + "/rest/v1/manor_social_annotations";
+SUPA.bench   = SUPA.url + "/rest/v1/manor_social_benchmarks";
+SUPA.smeta   = SUPA.url + "/rest/v1/manor_social_meta";
+SUPA.rpc     = SUPA.url + "/rest/v1/rpc/";
 const PUBLIC_IMG = SUPA.url + "/storage/v1/object/public/manor-social/";
 
 let SOCIAL_LOADED = [];
+let SOCIAL_DATA = {daily:[],anns:[],bench:[],meta:[]};
 
 /* Sample social data — shown only if the database can't be reached. One row per platform per month. */
 const SOCIAL_SAMPLE = [
@@ -794,6 +875,52 @@ async function saveForm(){
 document.getElementById('f_month').addEventListener('change', prefillFromMonth);
 document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id==='modalBg') closeForm(); });
 
+/* ---------- social update modal (Sini): insights / benchmarks / DMs via edit-code RPCs ---------- */
+function openUpdate(){ (document.body.dataset.theme==='social') ? openSocialForm() : openForm(); }
+function openSocialForm(){
+  $('socialMsg').textContent=''; $('socialMsg').className='msg';
+  $('s_code').value = localStorage.getItem('manorEditCode') || '';
+  const now=new Date(); const mk=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  if(!$('d_month').value) $('d_month').value=mk;
+  if(!$('a_date').value) $('a_date').value=now.toISOString().slice(0,10);
+  $('socialModalBg').classList.add('show');
+}
+function closeSocialForm(){ $('socialModalBg').classList.remove('show'); }
+function socMsg(t, ok){ const m=$('socialMsg'); m.className='msg '+(ok?'ok':'err'); m.textContent=t; }
+// Call a PostgREST RPC (edit-code gated, granted to anon) with the public key.
+async function rpcCall(fn, args){
+  const res=await fetch(SUPA.rpc+fn, { method:'POST', headers:{'Content-Type':'application/json', apikey:SUPA.key, Authorization:'Bearer '+SUPA.key}, body:JSON.stringify(args) });
+  if(!res.ok){ let e='HTTP '+res.status; try{ const j=await res.json(); e=j.message||j.hint||j.details||e; }catch{} throw new Error(/unauthor/i.test(e)?'Wrong edit code':e); }
+  return res.json().catch(()=>null);
+}
+async function saveInsight(){
+  const code=$('s_code').value.trim(); if(!code) return socMsg('Enter the edit code.',false);
+  const date=$('a_date').value, note=$('a_note').value.trim();
+  if(!date||!note) return socMsg('Pick a date and write the insight.',false);
+  const b=$('aBtn'); b.disabled=true; b.textContent='Saving…';
+  try{ await rpcCall('manor_add_annotation',{edit_code:code,p_date:date,p_platform:'all',p_label:$('a_label').value.trim()||null,p_note:note});
+    localStorage.setItem('manorEditCode',code); socMsg('Insight added ✓',true); $('a_note').value=''; $('a_label').value=''; await loadSocial();
+  }catch(e){ socMsg(String(e.message||e),false); } finally{ b.disabled=false; b.textContent='Add insight'; }
+}
+async function saveBenchmark(){
+  const code=$('s_code').value.trim(); if(!code) return socMsg('Enter the edit code.',false);
+  const name=$('b_name').value.trim(); if(!name) return socMsg('Enter a competitor name.',false);
+  const now=new Date(); const period=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
+  const b=$('bBtn'); b.disabled=true; b.textContent='Saving…';
+  try{ await rpcCall('manor_save_benchmark',{edit_code:code,p_period:period,p_competitor:name,p_followers:(+$('b_followers').value||null),p_engagement:(+$('b_eng').value||null)});
+    localStorage.setItem('manorEditCode',code); socMsg('Benchmark saved ✓',true); $('b_name').value=''; $('b_followers').value=''; $('b_eng').value=''; await loadSocial();
+  }catch(e){ socMsg(String(e.message||e),false); } finally{ b.disabled=false; b.textContent='Save benchmark'; }
+}
+async function saveDms(){
+  const code=$('s_code').value.trim(); if(!code) return socMsg('Enter the edit code.',false);
+  const mv=$('d_month').value; if(!mv) return socMsg('Pick a month.',false);
+  const b=$('dBtn'); b.disabled=true; b.textContent='Saving…';
+  try{ await rpcCall('manor_save_dms',{edit_code:code,p_period:mv+'-01',p_dms:(+$('d_dms').value||0)});
+    localStorage.setItem('manorEditCode',code); socMsg('DMs saved ✓',true); await loadSocial();
+  }catch(e){ socMsg(String(e.message||e),false); } finally{ b.disabled=false; b.textContent='Save DMs'; }
+}
+document.getElementById('socialModalBg').addEventListener('click', e=>{ if(e.target.id==='socialModalBg') closeSocialForm(); });
+
 /* ---------- social ---------- */
 // Escape external (Instagram/Facebook) text before injecting into innerHTML.
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -833,54 +960,139 @@ function renderPosts(posts, isSample, elId){
 
 async function loadSocial(){
   try{
-    const [mRes, pRes] = await Promise.all([
+    const [mRes,pRes,dRes,aRes,bRes,tRes] = await Promise.all([
       fetch(`${SUPA.social}?select=*&order=period_date.asc`, {cache:'no-store', headers: authHeaders()}),
-      fetch(`${SUPA.sposts}?select=*&order=engagement.desc`,  {cache:'no-store', headers: authHeaders()})
+      fetch(`${SUPA.sposts}?select=*&order=engagement.desc`,  {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.daily}?select=*&order=metric_date.asc`,   {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.ann}?select=*&order=ann_date.asc`,        {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.bench}?select=*`,                          {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.smeta}?select=*`,                          {cache:'no-store', headers: authHeaders()})
     ]);
     if(mRes.status===401||mRes.status===403){ if(await reauthOrGate()) return loadSocial(); return; }
     if(!mRes.ok) throw new Error('HTTP '+mRes.status);
     const groups = groupSocial((await mRes.json()).map(fromSocial));
     const allPosts = pRes.ok ? await pRes.json() : [];
+    let daily = dRes.ok ? await dRes.json() : [];
+    // Fallback: if the daily DB table is empty/absent, use the static snapshot deployed alongside.
+    if(!daily.length){ try{ const jr=await fetch('social-daily.json',{cache:'no-store'}); if(jr.ok) daily=await jr.json(); }catch(e){} }
+    const extra = {
+      daily,
+      anns:  aRes.ok ? await aRes.json() : [],
+      bench: bRes.ok ? await bRes.json() : [],
+      meta:  tRes.ok ? await tRes.json() : []
+    };
+    SOCIAL_DATA = extra;
     if(groups.length){
       SOCIAL_LOADED = groups;
       const latest = groups[groups.length-1].periodDate;
       const posts = allPosts.filter(p=>p.period_date===latest).sort((a,b)=>(+b.engagement||0)-(+a.engagement||0));
-      renderSocial(groups, posts, false); return;
+      renderSocial(groups, posts, false, extra); return;
     }
-    renderSocial(groupSocial(SOCIAL_SAMPLE.map(fromSocial)), SOCIAL_POSTS_SAMPLE, true);
+    renderSocial(groupSocial(SOCIAL_SAMPLE.map(fromSocial)), SOCIAL_POSTS_SAMPLE, true, extra);
   }catch(e){
     console.warn('Social load failed, using sample:', e);
-    renderSocial(groupSocial(SOCIAL_SAMPLE.map(fromSocial)), SOCIAL_POSTS_SAMPLE, true);
+    renderSocial(groupSocial(SOCIAL_SAMPLE.map(fromSocial)), SOCIAL_POSTS_SAMPLE, true, {daily:[],anns:[],bench:[],meta:[]});
   }
 }
 
-function renderSocial(groups, posts, isSample){
+function renderSocial(groups, posts, isSample, extra){
+  extra = extra || {daily:[],anns:[],bench:[],meta:[]};
   const nf = n => (+n||0).toLocaleString('en-AU');
   const split = (ig,fb) => `IG ${nf(ig)} · FB ${nf(fb)}`;
   const last = groups[groups.length-1];
   const prev = groups.length>1 ? groups[groups.length-2] : null;
+  const curMonth  = String(last.periodDate||'').slice(0,7);
+  const prevMonth = prev ? String(prev.periodDate||'').slice(0,7) : null;
 
-  $('sFollowers').textContent = nf(last.t.followers);
-  $('sFollowersSplit').innerHTML = split(last.ig.followers, last.fb.followers);
-  // Followers MoM delta only when IG followers are known in BOTH months
-  // (Instagram has no historical follower data, so the first IG month has none).
-  if(prev && prev.ig.followers && last.ig.followers) deltaEl($('sFollowersDelta'), last.t.followers, prev.t.followers);
-  else $('sFollowersDelta').textContent='';
+  // website clicks: sum daily website_clicks per platform for a given month
+  const clicksFor = mk => { let ig=0,fb=0; (extra.daily||[]).forEach(r=>{ if(String(r.metric_date).slice(0,7)!==mk) return; const v=+r.website_clicks||0; if(r.platform==='facebook') fb+=v; else ig+=v; }); return {ig,fb,t:ig+fb}; };
+  const clk = clicksFor(curMonth), clkPrev = prevMonth ? clicksFor(prevMonth) : null;
+  // DMs: combined monthly, manual (from meta)
+  const dmsFor = mk => { const row=(extra.meta||[]).find(m=>String(m.period_date).slice(0,7)===mk); return row&&row.dms!=null?+row.dms:null; };
+  const dms = dmsFor(curMonth), dmsPrev = prevMonth ? dmsFor(prevMonth) : null;
 
-  $('sReach').textContent = nf(last.t.reach);
-  $('sReachSplit').innerHTML = split(last.ig.reach, last.fb.reach);
-  if(prev) deltaEl($('sReachDelta'), last.t.reach, prev.t.reach);
-
+  // KPI: Organic engagement
   $('sEng').textContent = nf(last.t.engagement);
   $('sEngSplit').innerHTML = split(last.ig.engagement, last.fb.engagement);
-  if(prev) deltaEl($('sEngDelta'), last.t.engagement, prev.t.engagement);
+  if(prev) deltaEl($('sEngDelta'), last.t.engagement, prev.t.engagement); else $('sEngDelta').textContent='';
+  // KPI: Website clicks
+  $('sClicks').textContent = clk.t ? nf(clk.t) : '—';
+  $('sClicksSplit').innerHTML = clk.t ? split(clk.ig, clk.fb) : 'no data yet';
+  if(clkPrev && clkPrev.t) deltaEl($('sClicksDelta'), clk.t, clkPrev.t); else $('sClicksDelta').textContent='';
+  // KPI: DMs (manual)
+  $('sDms').textContent = dms!=null ? nf(dms) : '—';
+  $('sDmsNote').textContent = dms!=null ? 'this month' : 'add via ✎ Update data';
+  if(dms!=null && dmsPrev!=null) deltaEl($('sDmsDelta'), dms, dmsPrev); else $('sDmsDelta').textContent='';
+  // KPI: Follower growth
+  $('sFollowers').textContent = nf(last.t.followers);
+  $('sFollowersSplit').innerHTML = split(last.ig.followers, last.fb.followers);
+  if(prev && prev.ig.followers && last.ig.followers) deltaEl($('sFollowersDelta'), last.t.followers, prev.t.followers); else $('sFollowersDelta').textContent='';
 
   $('sSummary').innerHTML = socialSummary(groups);
 
-  drawSocialChart(groups);
-  // posts arrive sorted by engagement desc; split per platform → top 3 each.
+  drawDailyChart((extra.daily||[]).filter(r=>r.platform==='instagram'), extra.anns||[]);
+  renderInsights(extra.anns||[]);
+  renderBench(extra.bench||[], last);
+
   renderPosts(posts.filter(p=>p.platform!=='facebook'), isSample, 'sPostsIg');
   renderPosts(posts.filter(p=>p.platform==='facebook'), isSample, 'sPostsFb');
+}
+
+/* Daily Instagram Reach & Views area chart with Sini's-Insight markers.
+   rows = daily IG rows (metric_date, reach, views); anns = annotations. */
+function drawDailyChart(rows, anns){
+  const el=$('sDailyChart'); if(!el) return;
+  rows=(rows||[]).slice().filter(r=>r.metric_date).sort((a,b)=> a.metric_date<b.metric_date?-1:1);
+  if(!rows.length){ el.innerHTML='<div class="muted" style="font-family:var(--mono);font-size:12px;padding:10px 2px">No daily data yet.</div>'; return; }
+  const W=1120,H=320,padL=52,padR=20,padT=28,padB=34, plotW=W-padL-padR, plotH=H-padT-padB;
+  const accent=getComputedStyle(document.body).getPropertyValue('--blue').trim()||'#D0531E', green='#3FD07F';
+  const kfmt=v=>Math.abs(v)>=1000?(v/1000).toFixed(v%1000?1:0)+'k':Math.round(v);
+  const n=rows.length;
+  const maxV=Math.max(1,...rows.map(r=>Math.max(+r.views||0,+r.reach||0)));
+  const X=i=> padL + (n<=1?plotW/2: plotW*i/(n-1));
+  const Y=v=> padT + plotH - (Math.max(0,v)/maxV)*plotH;
+  let grid='',yl='';
+  for(let g=0;g<=4;g++){ const yy=padT+plotH-(g/4)*plotH; grid+=`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="#2A2A33"/>`; yl+=`<text x="${padL-8}" y="${yy+4}" fill="#8C8C99" font-size="10" font-family="Space Mono, monospace" text-anchor="end">${kfmt(maxV*g/4)}</text>`; }
+  const line=k=> rows.map((r,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(+r[k]||0).toFixed(1)).join(' ');
+  const area=k=> `M${X(0).toFixed(1)} ${(padT+plotH).toFixed(1)} `+rows.map((r,i)=>'L'+X(i).toFixed(1)+' '+Y(+r[k]||0).toFixed(1)).join(' ')+` L${X(n-1).toFixed(1)} ${(padT+plotH).toFixed(1)} Z`;
+  let xl='',lastM='';
+  rows.forEach((r,i)=>{ const m=String(r.metric_date).slice(0,7); if(m!==lastM){ lastM=m; xl+=`<text x="${X(i).toFixed(1)}" y="${H-padB+18}" fill="#8C8C99" font-size="10" font-family="Space Mono, monospace" text-anchor="middle">${MONTHS[+m.slice(5,7)-1]}</text>`; } });
+  // annotation markers (numbered ◆), matching renderInsights order
+  const list=(anns||[]).slice().sort((a,b)=> a.ann_date<b.ann_date?-1:1);
+  let annSvg='';
+  list.forEach((a,idx)=>{ let ci=-1; for(let i=0;i<n;i++){ if(rows[i].metric_date<=String(a.ann_date)) ci=i; } if(ci<0) ci=0; const xx=X(ci).toFixed(1);
+    annSvg+=`<line x1="${xx}" y1="${padT}" x2="${xx}" y2="${padT+plotH}" stroke="${accent}" stroke-dasharray="3 3" opacity="0.5"/><path d="M${xx} ${padT-14} l7 7 l-7 7 l-7 -7 z" fill="${accent}"/><text x="${xx}" y="${padT-6}" fill="#fff" font-size="9" font-family="Space Mono, monospace" text-anchor="middle" font-weight="700">${idx+1}</text>`; });
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Instagram daily reach and views over time">${grid}${yl}`
+    +`<path d="${area('views')}" fill="${accent}" opacity="0.13"/><path d="${area('reach')}" fill="${green}" opacity="0.10"/>`
+    +`<path d="${line('views')}" fill="none" stroke="${accent}" stroke-width="2"/><path d="${line('reach')}" fill="none" stroke="${green}" stroke-width="2"/>`
+    +`${annSvg}${xl}</svg>`;
+}
+
+/* Sini's Insights — speech-bubble cards, numbered to match the chart markers. */
+function renderInsights(anns){
+  const el=$('sInsights'); if(!el) return;
+  const list=(anns||[]).slice().sort((a,b)=> a.ann_date<b.ann_date?-1:1);
+  if(!list.length){ el.innerHTML='<div class="muted" style="font-family:var(--mono);font-size:12px">No insights yet — Sini can add them via <b>✎ Update data</b>.</div>'; return; }
+  el.innerHTML=list.map((a,i)=>{
+    const d=new Date(String(a.ann_date)+'T00:00:00'); const dl=isNaN(d.getTime())?esc(a.ann_date):`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    const who=esc(a.author||'Sini'); const av=who.charAt(0).toUpperCase();
+    const lbl=a.label?`<span class="ilabel">${esc(a.label)}.</span> `:'';
+    return `<div class="insight"><div class="inum">${i+1}</div><div class="ihead"><span class="iav">${av}</span><span class="iwho">${who}</span><span class="idate">${dl}</span></div><div class="inote">${lbl}${esc(a.note||'')}</div></div>`;
+  }).join('');
+}
+
+/* Competitive benchmarks — Manor vs manually-entered competitors (by followers). */
+function renderBench(bench, last){
+  const el=$('sBench'); if(!el) return;
+  const rows=(bench||[]).slice();
+  if(!rows.length){ el.innerHTML='<div class="muted" style="font-family:var(--mono);font-size:12px">No benchmarks yet — add competitors via <b>✎ Update data</b>.</div>'; return; }
+  const latestByComp={}; rows.forEach(r=>{ const k=r.competitor; if(!latestByComp[k]||String(r.period_date)>String(latestByComp[k].period_date)) latestByComp[k]=r; });
+  const me={competitor:'Manor on High', followers:last.t.followers, me:true};
+  const all=[me, ...Object.values(latestByComp)].sort((a,b)=>(+b.followers||0)-(+a.followers||0));
+  const max=Math.max(1,...all.map(r=>+r.followers||0));
+  const nf=n=>(+n||0).toLocaleString('en-AU');
+  el.innerHTML=`<div class="brow"><span class="bhead">Account</span><span class="bhead">Followers</span><span class="bhead" style="text-align:right">Total</span></div>`
+    + all.map(r=>`<div class="brow ${r.me?'me':''}"><span class="bname ${r.me?'me':''}">${esc(r.competitor)}</span><div class="btrack"><div class="bfill" style="width:${Math.max(2,Math.round((+r.followers||0)/max*100))}%"></div></div><span class="bval">${nf(r.followers)}</span></div>`).join('');
 }
 
 /* Auto-updating recap. States current standing + current-month figures (labelled
