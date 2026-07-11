@@ -77,7 +77,7 @@ export function createAuthController({ client, view, redirectUrl, clientId }) {
 
       const assignmentsResult = await client
         .from('content_assignments')
-        .select('id, title, primary_keyword, status, target_publish_at, due_at, updated_at')
+        .select('id, title, primary_keyword, status, target_publish_at, due_at, updated_at, current_article_version:article_versions!content_assignments_current_version_fkey(id, body_markdown, version_number, created_at)')
         .eq('client_id', clientResult.data.id)
         .order('updated_at', { ascending: false });
       if (assignmentsResult.error) {

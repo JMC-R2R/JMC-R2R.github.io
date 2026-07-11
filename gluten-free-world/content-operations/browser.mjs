@@ -23,6 +23,21 @@ function assignmentMarkup(assignment) {
   meta.textContent = `${assignment.primary_keyword || 'No primary keyword'} · Publication target: ${formatTargetPublishAt(assignment.target_publish_at)}`;
   copy.append(title, meta);
 
+  if (assignment.current_article_version?.body_markdown) {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = `Research package · version ${assignment.current_article_version.version_number}`;
+    const body = document.createElement('pre');
+    body.className = 'research-package';
+    body.style.maxHeight = '32rem';
+    body.style.overflow = 'auto';
+    body.style.whiteSpace = 'pre-wrap';
+    body.style.wordBreak = 'break-word';
+    body.textContent = assignment.current_article_version.body_markdown;
+    details.append(summary, body);
+    copy.append(details);
+  }
+
   const status = document.createElement('span');
   status.className = 'assignment-status';
   status.textContent = formatAssignmentStatus(assignment.status);
