@@ -8,7 +8,7 @@
 <link rel="icon" href="rtr-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800;900&family=Space+Mono:wght@400;700&family=Playball&display=swap" rel="stylesheet">
 <style>
   /* ===== Ready to Rank brand ===== */
   :root{
@@ -24,20 +24,80 @@
     --bad:#FF6B6B;         /* negative delta */
     --sans:'Archivo',Arial,Helvetica,sans-serif;
     --mono:'Space Mono','Courier New',monospace;
+    --script:'Playball','Brush Script MT',cursive;   /* Manor on High accent script */
+    --r2r-blue:#17B4F0;   /* R2R blue, kept fixed as the co-brand secondary across themes */
+    --manor-gold:#e2b934; /* Manor on High primary brand gold */
+  }
+  /* ===== Per-tab co-branding =====
+     ROI tab  → Manor-led: gold accent on warm charcoal, R2R blue as blended secondary.
+     Social tab → Manor base + Sabah Studio accent (Sabah palette TBD — placeholder gold for now). */
+  body[data-theme="roi"]{
+    --ink:#1B1719; --panel:#241F21; --panel-2:#2C2629; --line:#3A3236;
+    --blue:#E2B934;        /* primary accent → Manor gold (dominant) */
+    --azure:#17B4F0;       /* secondary highlight → R2R blue (the blend) */
+  }
+  body[data-theme="social"]{
+    --ink:#1B1719; --panel:#241F21; --panel-2:#2C2629; --line:#3A3236;
+    --blue:#D0531E;        /* primary accent → Savvas Studio terracotta (--corduroy) */
+    --azure:#E2B934;       /* secondary → Manor gold (the Manor × Savvas blend) */
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:var(--ink);color:var(--white);font-family:var(--sans);-webkit-font-smoothing:antialiased}
   body{padding:28px 22px 40px;max-width:1180px;margin:0 auto}
   a{color:var(--blue)}
 
+  /* ===== Access gate ===== */
+  #gate{position:fixed;inset:0;z-index:1000;background:var(--ink);display:flex;align-items:center;justify-content:center;padding:24px}
+  #gate.hide{display:none}
+  .gate-card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:34px 30px;text-align:center}
+  .gate-card img{height:34px;margin-bottom:22px}
+  .gate-card h2{font-weight:900;font-size:22px;letter-spacing:-.01em;margin-bottom:6px}
+  .gate-card h2 span{color:var(--blue)}
+  .gate-card .gate-sub{color:var(--muted);font-size:13px;margin-bottom:24px;line-height:1.4}
+  .gate-card input{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;color:var(--white);font-family:var(--sans);font-size:15px;padding:13px 14px;margin-bottom:12px;outline:none}
+  .gate-card input:focus{border-color:var(--blue)}
+  .gate-card button{width:100%;background:var(--blue);color:var(--ink);border:none;border-radius:10px;font-family:var(--sans);font-weight:700;font-size:15px;padding:13px;cursor:pointer}
+  .gate-card button:disabled{opacity:.55;cursor:default}
+  .gate-msg{min-height:18px;margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--bad)}
+  .signout{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:6px 10px;cursor:pointer}
+  .signout:hover{color:var(--white);border-color:var(--muted)}
+
   .kicker{font-family:var(--mono);text-transform:uppercase;letter-spacing:.22em;font-size:11px;color:var(--blue)}
   .muted{color:var(--muted)}
 
   /* ===== Header ===== */
   header{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}
-  .head-left img{height:34px;display:block;margin-bottom:14px}
-  .head-left h1{font-weight:900;font-size:30px;line-height:1.02;letter-spacing:-.01em}
-  .head-left h1 span{color:var(--blue)}
+  .head-left .wordmark{font-family:var(--script);font-size:46px;line-height:.95;color:var(--manor-gold);letter-spacing:.01em}  /* Manor gold on every tab */
+  .head-left h1{font-weight:900;font-size:20px;line-height:1.05;letter-spacing:.02em;text-transform:uppercase;margin-top:4px}
+  .head-left h1 span{color:var(--white);font-weight:800}
+  .cobrand{display:flex;align-items:center;flex-wrap:wrap;gap:16px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-top:14px}
+  .cobrand .role{display:inline-flex;align-items:center;gap:7px}
+  .cobrand .role-lbl{opacity:.8}
+  .cobrand img{height:15px;display:block;opacity:.92}
+  .cobrand .savvas-logo{height:16px}
+  /* Savvas (social) credit shows only on the Social tab; R2R (marketing) shows on both */
+  .cobrand .role-social{display:none}
+  body[data-theme="social"] .cobrand .role-social{display:inline-flex}
+
+  /* ===== "Managed by" feature banners — Savvas (Social) + Ready to Rank (ROI) ===== */
+  .savvas-banner,.r2r-banner{display:flex;align-items:center;gap:20px;border-radius:14px;padding:16px 22px;margin-bottom:24px}
+  .savvas-banner .savvas-mascot,.r2r-banner .r2r-mark{height:54px;width:auto;flex:none}
+  .savvas-banner .sb-title,.r2r-banner .sb-title{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.16em;font-weight:700}
+  .savvas-banner .sb-wordmark{height:22px;display:block}
+  .savvas-banner .sb-sub,.r2r-banner .sb-sub{font-size:13px;color:var(--muted);margin-top:6px}
+  .savvas-banner .sb-sub a,.r2r-banner .sb-sub a{text-decoration:none;font-weight:600;white-space:nowrap}
+  /* Savvas — terracotta */
+  .savvas-banner{background:linear-gradient(100deg,rgba(208,83,30,.16),rgba(208,83,30,.03));border:1px solid rgba(208,83,30,.42);box-shadow:0 0 20px rgba(208,83,30,.16),inset 0 0 14px rgba(208,83,30,.06)}
+  .savvas-banner .sb-title,.savvas-banner .sb-sub a{color:#E5713C}
+  /* Ready to Rank — R2R blue */
+  .r2r-banner{background:linear-gradient(100deg,rgba(23,180,240,.15),rgba(23,180,240,.03));border:1px solid rgba(23,180,240,.42);box-shadow:0 0 20px rgba(23,180,240,.15),inset 0 0 14px rgba(23,180,240,.06)}
+  .r2r-banner .sb-title,.r2r-banner .sb-sub a{color:#39A0FE}
+  @media(max-width:640px){ .savvas-banner,.r2r-banner{gap:14px;padding:14px} .savvas-banner .savvas-mascot,.r2r-banner .r2r-mark{height:42px} }
+
+  /* Subtle neon frame around the whole page — per tab: R2R blue on ROI, Savvas terracotta on Social */
+  #neonFrame{position:fixed;inset:0;pointer-events:none;z-index:400;border:1.5px solid transparent;opacity:0;transition:opacity .35s ease}
+  body[data-theme="roi"] #neonFrame{opacity:1;border-color:rgba(23,180,240,.5);box-shadow:inset 0 0 26px rgba(23,180,240,.22),inset 0 0 3px rgba(23,180,240,.55)}
+  body[data-theme="social"] #neonFrame{opacity:1;border-color:rgba(208,83,30,.5);box-shadow:inset 0 0 26px rgba(208,83,30,.22),inset 0 0 3px rgba(208,83,30,.55)}
   .head-left .sub{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:6px}
   .head-right{text-align:right;font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
   .head-right .period{color:var(--white);font-size:13px}
@@ -165,13 +225,32 @@
   .head-right .edit{color:var(--ink);background:var(--blue);border-color:var(--blue)}
 </style>
 </head>
-<body>
+<body data-theme="roi">
+<div id="neonFrame"></div>
+
+<!-- ===== Access gate — hidden by default; shown by showGate() only when the gate is on and no valid session exists ===== -->
+<div id="gate" class="hide">
+  <div class="gate-card">
+    <img src="rtr-logo.png" alt="Ready to Rank">
+    <h2>Manor on High<br><span>Marketing ROI</span></h2>
+    <div class="gate-sub">This dashboard is private. Enter the access password to continue.</div>
+    <form id="gateForm" autocomplete="off">
+      <input id="gatePw" type="password" placeholder="Access password" aria-label="Access password" autocomplete="current-password">
+      <button id="gateBtn" type="submit">View dashboard</button>
+    </form>
+    <div class="gate-msg" id="gateMsg"></div>
+  </div>
+</div>
 
 <header>
   <div class="head-left">
-    <img src="rtr-logo.png" alt="Ready to Rank">
-    <h1>Manor on High<br><span>Marketing ROI</span></h1>
+    <div class="wordmark">Manor on High</div>
+    <h1><span id="viewLabel">Marketing ROI</span></h1>
     <div class="sub" id="subline">Wedding &amp; events venue · Epping, VIC</div>
+    <div class="cobrand">
+      <span class="role role-social"><span class="role-lbl">Social by</span><img class="savvas-logo" src="https://cdn.prod.website-files.com/67afd385cf839b0956c26535/67fd04f4b993a3a0bcee54ce_SAVVAS_Wordmark_Whitenoise.webp" alt="Savvas Studio"></span>
+      <span class="role role-mktg"><span class="role-lbl">Marketing by</span><img src="rtr-logo.png" alt="Ready to Rank"></span>
+    </div>
   </div>
   <div class="head-right">
     <div class="kicker">Reporting period</div>
@@ -179,6 +258,7 @@
     <div id="updated">Last updated —</div>
     <button onclick="loadData()">↻ Refresh</button>
     <button class="edit" onclick="openForm()">✎ Update data</button>
+    <button class="signout" id="signoutBtn" onclick="signOut()" hidden>Sign out</button>
   </div>
 </header>
 
@@ -191,6 +271,14 @@
 
 <!-- ===== ROI VIEW ===== -->
 <div class="view active" id="viewRoi">
+
+<div class="r2r-banner">
+  <img class="r2r-mark" src="rtr-logo.png" alt="Ready to Rank">
+  <div class="sb-body">
+    <div class="sb-title">Marketing &amp; SEO managed by Ready&nbsp;to&nbsp;Rank</div>
+    <div class="sb-sub">SEO · Google Ads · Website · Email — full-funnel growth. <a href="https://readytorank.com.au/" target="_blank" rel="noopener">readytorank.com.au&nbsp;↗</a></div>
+  </div>
+</div>
 
 <!-- ROW 1: ROI HEADLINE -->
 <div class="seclabel">Return on marketing investment</div>
@@ -253,6 +341,13 @@
 
 <!-- ===== SOCIAL VIEW ===== -->
 <div class="view" id="viewSocial">
+  <div class="savvas-banner">
+    <img class="savvas-mascot" src="https://cdn.prod.website-files.com/67afd385cf839b0956c26535/68313a1298a186b5fcc266c2_Savvas%20Icon%20Logomarks-05.png" alt="Savvas Studio">
+    <div class="sb-body">
+      <div class="sb-title">Social managed by <img class="sb-wordmark" src="https://cdn.prod.website-files.com/67afd385cf839b0956c26535/67fd04f4b993a3a0bcee54ce_SAVVAS_Wordmark_Whitenoise.webp" alt="Savvas Studio"></div>
+      <div class="sb-sub">Creative Problem Solvers — video, social &amp; brand. <a href="https://www.savvasstudio.com/" target="_blank" rel="noopener">savvasstudio.com&nbsp;↗</a></div>
+    </div>
+  </div>
   <div class="seclabel">Summary</div>
   <div class="card" id="sSummary" style="line-height:1.65;font-size:14.5px;color:var(--white)"></div>
   <div class="seclabel">Instagram &amp; Facebook · audience</div>
@@ -337,6 +432,105 @@ const SUPA = {
   get rest(){ return this.url + "/rest/v1/manor_roi_monthly"; },
   get fn(){ return this.url + "/functions/v1/manor-roi-save"; }
 };
+
+/* ============================================================
+   ACCESS GATE — Supabase Auth (shared director account)
+   Everyone signs in with ONE general password. The password is
+   NOT stored in this file; only the fixed account email is. Reads
+   are authorised with the signed-in user's JWT, and RLS on the
+   tables only serves rows to role `authenticated` — so the data
+   endpoint stops answering anonymous requests, not just this page.
+   Mario's "✎ Update data" flow is separate (edit-code gated) and
+   unaffected by sign-in.
+   ============================================================ */
+/* Login gate on/off. FALSE = dashboard is open by link (no password), same as
+   before the gate was built. To switch it on: set true, create the shared
+   account in Supabase Auth, and tighten RLS to authenticated-only — all three
+   together (see docs/auth-gate-setup.md), or the page blanks. */
+const GATE_ENABLED = false;
+
+const AUTH = {
+  email: "directors@manoronhigh.com.au",   // shared viewer account (create in Supabase Auth)
+  tokenUrl: SUPA.url + "/auth/v1/token",
+  store: "manorAuth"
+};
+let SESSION = null;  // { access_token, refresh_token, expires_at (unix s) }
+
+function loadSession(){
+  try{ SESSION = JSON.parse(localStorage.getItem(AUTH.store)||'null'); }catch{ SESSION=null; }
+  return SESSION;
+}
+function saveSession(s){
+  SESSION = s;
+  if(s) localStorage.setItem(AUTH.store, JSON.stringify(s));
+  else localStorage.removeItem(AUTH.store);
+}
+// Headers for every authenticated read: apikey identifies the project,
+// the Bearer JWT carries the authenticated role. Falls back to the
+// publishable key before sign-in (used only by the gate itself).
+function authHeaders(){
+  return { apikey:SUPA.key, Authorization:'Bearer '+((SESSION&&SESSION.access_token)||SUPA.key) };
+}
+function sessionValid(){
+  return !!(SESSION && SESSION.access_token && SESSION.expires_at*1000 > Date.now()+60000);
+}
+
+async function signIn(password){
+  const res = await fetch(AUTH.tokenUrl+'?grant_type=password',{
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', apikey:SUPA.key },
+    body:JSON.stringify({ email:AUTH.email, password })
+  });
+  const out = await res.json().catch(()=>({}));
+  if(!res.ok || !out.access_token){
+    const wrongPw = out.error_code==='invalid_credentials' || /invalid login/i.test(out.msg||'');
+    throw new Error(wrongPw ? 'Incorrect password — please try again.' : (out.error_description||out.msg||'Sign-in failed.'));
+  }
+  saveSession({ access_token:out.access_token, refresh_token:out.refresh_token, expires_at:out.expires_at });
+}
+async function tryRefresh(){
+  if(!SESSION||!SESSION.refresh_token) return false;
+  try{
+    const res = await fetch(AUTH.tokenUrl+'?grant_type=refresh_token',{
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', apikey:SUPA.key },
+      body:JSON.stringify({ refresh_token:SESSION.refresh_token })
+    });
+    const out = await res.json().catch(()=>({}));
+    if(!res.ok || !out.access_token) return false;
+    saveSession({ access_token:out.access_token, refresh_token:out.refresh_token, expires_at:out.expires_at });
+    return true;
+  }catch{ return false; }
+}
+function signOut(){ saveSession(null); showGate(); }
+
+function showGate(){ $('gate').classList.remove('hide'); const pw=$('gatePw'); if(pw){ pw.value=''; pw.focus(); } }
+function hideGate(){ $('gate').classList.add('hide'); }
+
+/* Called when an authenticated read returns 401/403 mid-session
+   (token expired/revoked). Try a silent refresh; if that fails,
+   re-show the gate. NEVER falls through to sample data. */
+async function reauthOrGate(){
+  if(await tryRefresh()) return true;
+  saveSession(null); showGate();
+  return false;
+}
+
+// Boot: use a valid stored session, else silently refresh, else gate.
+async function boot(){
+  if(!GATE_ENABLED){ startApp(); return; }   // gate off → open dashboard directly
+  loadSession();
+  if(sessionValid()){ startApp(); return; }
+  if(SESSION && await tryRefresh()){ startApp(); return; }
+  showGate();
+}
+// Runs once the viewer is authenticated (or immediately when the gate is off).
+function startApp(){
+  hideGate();
+  const so=$('signoutBtn'); if(so) so.hidden = !GATE_ENABLED;
+  if(location.hash === '#social') showView('social');
+  loadData();
+}
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 let LOADED = [];   // last data loaded from Supabase (for form pre-fill)
@@ -489,20 +683,22 @@ function drawChart(data){
   const yR = v => padT+plotH-(v/maxVal)*plotH;      // right axis: booked value (line)
   const xCenter = i => padL+slot*i+slot/2;
   const barW=Math.min(36,slot*0.46);
+  // accent follows the active tab's theme (Manor gold on ROI); value line stays green
+  const accent = getComputedStyle(document.body).getPropertyValue('--blue').trim() || '#17B4F0';
 
   // gridlines + dual axis labels
   let grid='',axL='',axR='';
   for(let g=0;g<=4;g++){
     const yy=padT+plotH-(g/4)*plotH;
     grid+=`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="#2A2A33" stroke-width="1"/>`;
-    axL+=`<text x="${padL-8}" y="${yy+4}" fill="#17B4F0" font-size="11" font-family="Space Mono, monospace" text-anchor="end">${Math.round(maxLeads*g/4)}</text>`;
+    axL+=`<text x="${padL-8}" y="${yy+4}" fill="${accent}" font-size="11" font-family="Space Mono, monospace" text-anchor="end">${Math.round(maxLeads*g/4)}</text>`;
     axR+=`<text x="${W-padR+8}" y="${yy+4}" fill="#3FD07F" font-size="11" font-family="Space Mono, monospace" text-anchor="start">${audK(maxVal*g/4)}</text>`;
   }
   // leads bars (left axis)
   let bars='',xlabels='';
   rows.forEach((r,i)=>{
     const cx=xCenter(i), bx=cx-barW/2, by=yL(r.leads);
-    bars+=`<rect x="${bx}" y="${by}" width="${barW}" height="${padT+plotH-by}" rx="3" fill="#17B4F0" opacity="0.9"/>`;
+    bars+=`<rect x="${bx}" y="${by}" width="${barW}" height="${padT+plotH-by}" rx="3" fill="${accent}" opacity="0.9"/>`;
     bars+=`<text x="${cx}" y="${by-6}" fill="#8C8C99" font-size="10" font-family="Space Mono, monospace" text-anchor="middle">${r.leads}</text>`;
     xlabels+=`<text x="${cx}" y="${H-padB+22}" fill="#8C8C99" font-size="11" font-family="Space Mono, monospace" text-anchor="middle">${String(r.month).split(' ')[0]}</text>`;
   });
@@ -525,8 +721,9 @@ async function loadData(){
   try{
     const res = await fetch(`${SUPA.rest}?select=*&order=period_date.asc`, {
       cache:'no-store',
-      headers:{ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key }
+      headers: authHeaders()
     });
+    if(res.status===401||res.status===403){ if(await reauthOrGate()) return loadData(); return; }
     if(!res.ok) throw new Error('HTTP '+res.status);
     const rows = await res.json();
     LOADED = rows.map(fromSupa);
@@ -612,7 +809,10 @@ function renderPosts(posts, isSample, elId){
   wrap.innerHTML = top.map(p=>{
     // image_path is normally a storage path "<period>/<media_id>.jpg" → prefix + encode each segment.
     // Be defensive: a full http(s) url (sample data, or a bad write) is used as-is rather than 400-ing.
-    const raw = p.image_path;
+    // Fallback: if image_path is null but the image was cached at the deterministic key
+    // (<YYYY-MM>/<media_id>.jpg), build that path so thumbnails still show without a DB write.
+    const raw = p.image_path
+      || (!isSample && p.media_id && p.period_date ? `${String(p.period_date).slice(0,7)}/${p.media_id}.jpg` : null);
     const img = !raw ? null
       : (isSample || /^https?:\/\//i.test(raw)) ? raw
       : PUBLIC_IMG + String(raw).split('/').map(encodeURIComponent).join('/');
@@ -634,9 +834,10 @@ function renderPosts(posts, isSample, elId){
 async function loadSocial(){
   try{
     const [mRes, pRes] = await Promise.all([
-      fetch(`${SUPA.social}?select=*&order=period_date.asc`, {cache:'no-store', headers:{apikey:SUPA.key, Authorization:'Bearer '+SUPA.key}}),
-      fetch(`${SUPA.sposts}?select=*&order=engagement.desc`,  {cache:'no-store', headers:{apikey:SUPA.key, Authorization:'Bearer '+SUPA.key}})
+      fetch(`${SUPA.social}?select=*&order=period_date.asc`, {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.sposts}?select=*&order=engagement.desc`,  {cache:'no-store', headers: authHeaders()})
     ]);
+    if(mRes.status===401||mRes.status===403){ if(await reauthOrGate()) return loadSocial(); return; }
     if(!mRes.ok) throw new Error('HTTP '+mRes.status);
     const groups = groupSocial((await mRes.json()).map(fromSocial));
     const allPosts = pRes.ok ? await pRes.json() : [];
@@ -720,18 +921,19 @@ function drawSocialChart(groups){
   const xCenter = i => padL+slot*i+slot/2;
   const barW=Math.min(36,slot*0.46);
   const kfmt = v => Math.abs(v)>=1000 ? (v/1000).toFixed(v%1000?1:0)+'k' : Math.round(v);
+  const accent = getComputedStyle(document.body).getPropertyValue('--blue').trim() || '#17B4F0';
 
   let grid='',axL='',axR='';
   for(let g=0;g<=4;g++){
     const yy=padT+plotH-(g/4)*plotH;
     grid+=`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="#2A2A33" stroke-width="1"/>`;
-    axL+=`<text x="${padL-8}" y="${yy+4}" fill="#17B4F0" font-size="11" font-family="Space Mono, monospace" text-anchor="end">${kfmt(maxReach*g/4)}</text>`;
+    axL+=`<text x="${padL-8}" y="${yy+4}" fill="${accent}" font-size="11" font-family="Space Mono, monospace" text-anchor="end">${kfmt(maxReach*g/4)}</text>`;
     axR+=`<text x="${W-padR+8}" y="${yy+4}" fill="#3FD07F" font-size="11" font-family="Space Mono, monospace" text-anchor="start">${kfmt(maxEng*g/4)}</text>`;
   }
   let bars='',xlabels='';
   rows.forEach((r,i)=>{
     const cx=xCenter(i), bx=cx-barW/2, by=yL(r.t.reach);
-    bars+=`<rect x="${bx}" y="${by}" width="${barW}" height="${padT+plotH-by}" rx="3" fill="#17B4F0" opacity="0.9"/>`;
+    bars+=`<rect x="${bx}" y="${by}" width="${barW}" height="${padT+plotH-by}" rx="3" fill="${accent}" opacity="0.9"/>`;
     xlabels+=`<text x="${cx}" y="${H-padB+22}" fill="#8C8C99" font-size="11" font-family="Space Mono, monospace" text-anchor="middle">${String(r.month).split(' ')[0]}</text>`;
   });
   const pts=rows.map((r,i)=>`${xCenter(i)},${yR(r.t.engagement)}`);
@@ -748,13 +950,30 @@ function showView(v){
   $('viewSocial').classList.toggle('active', social);
   $('tabRoi').classList.toggle('active', !social);
   $('tabSocial').classList.toggle('active', social);
+  // Per-tab co-branding: ROI = Manor+R2R, Social = Manor+Sabah.
+  document.body.dataset.theme = social ? 'social' : 'roi';
+  $('viewLabel').textContent = social ? 'Social' : 'Marketing ROI';
   if(social){ history.replaceState(null,'','#social'); loadSocial(); }
   else history.replaceState(null,'','#roi');
 }
-// honour the hash on first load
-if(location.hash === '#social'){ showView('social'); }
+/* ---------- gate form + boot ---------- */
+document.getElementById('gateForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const msg=$('gateMsg'), btn=$('gateBtn');
+  const pw=$('gatePw').value;
+  if(!pw){ msg.textContent='Enter the access password.'; return; }
+  msg.textContent=''; btn.disabled=true; btn.textContent='Checking…';
+  try{
+    await signIn(pw);
+    startApp();
+  }catch(err){
+    msg.textContent = err.message || 'Sign-in failed.';
+  }finally{
+    btn.disabled=false; btn.textContent='View dashboard';
+  }
+});
 
-loadData();
+boot();
 </script>
 </body>
 </html>
