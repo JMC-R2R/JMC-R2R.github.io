@@ -38,6 +38,15 @@ test('dashboard exposes current research packages as safe plain text', async () 
   assert.doesNotMatch(browser, /innerHTML\s*=/);
 });
 
+test('staging configuration provides and validates the fixed GFW client UUID', async () => {
+  const config = await source('config.js');
+  const browser = await source('browser.mjs');
+
+  assert.match(config, /clientId:\s*['"]9f4a60c9-bf15-4b7b-8e31-d8e2ea9e8d74['"]/);
+  assert.match(browser, /config\?\.clientId/);
+  assert.match(browser, /Staging configuration is unavailable/);
+});
+
 test('browser bootstrap uses runtime staging config and the tested controller', async () => {
   const browser = await source('browser.mjs');
 
