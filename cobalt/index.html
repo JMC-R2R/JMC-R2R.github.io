@@ -187,6 +187,56 @@ footer{border-top:1px solid var(--bd);padding:22px 0;color:var(--ink3);font-size
 .foot-team img{height:16px;width:auto;opacity:.7}
 .foot-team .fx{color:var(--ink3)}
 .loading{text-align:center;color:var(--ink3);padding:60px;font-family:var(--mono);font-size:13px}
+
+/* ---- Sini's Insights ---- */
+.addins{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--savvas);background:var(--savvas-soft);border:1px solid rgba(228,87,46,.4);border-radius:20px;padding:5px 12px;cursor:pointer;display:none;align-items:center;gap:6px}
+.addins.on{background:var(--savvas);color:#fff;border-color:var(--savvas)}
+body.pinmode{cursor:crosshair}
+body.pinmode svg{cursor:crosshair}
+.pinhint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;background:var(--savvas);color:#fff;font-size:12.5px;font-weight:600;padding:9px 16px;border-radius:24px;box-shadow:0 6px 24px rgba(0,0,0,.4);display:none}
+body.pinmode .pinhint{display:block}
+/* pin marker (drawn in svg as foreignObject-free: an html overlay) */
+.pin{position:absolute;transform:translate(-50%,-100%);z-index:4;cursor:pointer;width:26px;height:26px;border-radius:50%;border:2px solid var(--savvas);overflow:hidden;background:var(--s3);box-shadow:0 2px 8px rgba(0,0,0,.5);transition:transform .12s}
+.pin:hover{transform:translate(-50%,-100%) scale(1.12)}
+.pin img{width:100%;height:100%;object-fit:cover}
+.pin::after{content:"";position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--savvas)}
+/* popover + composer */
+.inspop{position:fixed;z-index:70;width:300px;max-width:calc(100vw - 24px);background:var(--s2);border:1px solid var(--bd2);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.55);padding:15px;display:none}
+.inspop.show{display:block}
+.ins-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ins-av{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--savvas);flex:none}
+.ins-who{font-size:13px;font-weight:700;line-height:1.2}
+.ins-role{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--ink3);text-transform:uppercase}
+.ins-meta{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-left:auto;text-align:right}
+.ins-body{font-size:13px;color:var(--ink);line-height:1.5;white-space:pre-wrap}
+.ins-audio{width:100%;margin-top:10px;height:34px}
+.ins-x{position:absolute;top:10px;right:12px;color:var(--ink3);cursor:pointer;font-size:16px;line-height:1;background:none;border:none}
+.ins-del{font-family:var(--mono);font-size:10px;color:var(--bad);background:none;border:none;cursor:pointer;margin-top:8px;padding:0}
+.compose textarea{width:100%;min-height:70px;resize:vertical;background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--ink);font-family:var(--sans);font-size:13px;padding:10px;outline:none}
+.compose textarea:focus{border-color:var(--savvas)}
+.crow{display:flex;align-items:center;gap:8px;margin-top:10px}
+.rec{font-family:var(--mono);font-size:11px;font-weight:700;border:1px solid var(--bd2);background:var(--s1);color:var(--ink2);border-radius:20px;padding:7px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.rec.recording{color:#fff;background:var(--bad);border-color:var(--bad);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.6}}
+.rec .dotr{width:8px;height:8px;border-radius:50%;background:currentColor}
+.csave{margin-left:auto;font-family:var(--sans);font-size:12px;font-weight:700;background:var(--savvas);color:#fff;border:none;border-radius:20px;padding:8px 16px;cursor:pointer}
+.csave:disabled{opacity:.5;cursor:default}
+.ccancel{font-family:var(--mono);font-size:11px;color:var(--ink3);background:none;border:none;cursor:pointer}
+.rectime{font-family:var(--mono);font-size:11px;color:var(--bad)}
+/* per-tab insights panel */
+.inspanel{margin-top:26px;border:1px solid rgba(228,87,46,.28);border-left:3px solid var(--savvas);border-radius:12px;background:linear-gradient(100deg,var(--savvas-soft),transparent 70%);padding:16px 18px}
+.inspanel h3{margin:0 0 3px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px}
+.inspanel .ip-sub{font-size:12px;color:var(--ink3);margin:0 0 14px}
+.ip-empty{font-size:12.5px;color:var(--ink3);font-style:italic}
+.ip-item{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--bd)}
+.ip-item:first-of-type{border-top:none}
+.ip-item .ins-av{width:40px;height:40px}
+.ip-main{flex:1;min-width:0}
+.ip-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ip-name{font-size:13px;font-weight:700}
+.ip-where{font-family:var(--mono);font-size:10px;color:var(--savvas);background:var(--savvas-soft);padding:1px 7px;border-radius:20px}
+.ip-when{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-left:auto}
+.ip-body{font-size:13px;color:var(--ink2);line-height:1.5;margin-top:4px;white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -222,9 +272,12 @@ footer{border-top:1px solid var(--bd);padding:22px 0;color:var(--ink3);font-size
       <span><span class="dot"></span><b>Live</b> · <span id="freshdate">—</span></span>
       <span>SEO · Paid · Social &nbsp;|&nbsp; last 90 days</span>
     </div>
+    <button class="addins" id="addins">✎ Add insight</button>
     <button class="logout" id="logout">Sign out</button>
   </div>
 </header>
+<div class="pinhint">Click a point on any chart to pin your insight — or press Esc to cancel</div>
+<div class="inspop" id="inspop"></div>
 
 <div class="team"><div class="wrap teamrow">
   <span class="team-eyebrow">The team</span>
@@ -343,6 +396,7 @@ let N=0,DATES=[],SESSIONS=[],USERS=[],CONV=[],CLICKS=[],IMPR=[],POS=[];
 let IG_REACH=[],IG_ENG=[],FB_REACH=[],FB_IMPR=[],FB_ENG=[],FB_FOLL=[],LI_IMPR=[],LI_ENG=[];
 let PAID={days:[],TOFU:{sp:[],cl:[],im:[]},MOFU:{sp:[],cl:[],im:[]},BOFU:{sp:[],cl:[],im:[]}};
 let RANK=[],FOLL={ig:0,fb:0,li:0},IG_POSTS=[],FB_POSTS=[],REFRESH=[];
+let INSIGHTS=[],AUTHORS=[],ME={email:null,isAuthor:false,name:null,avatar:null,role:null},PINMODE=false;
 let seoSessions=0,seoClicks=0,seoConv=0,socReach=0,socEng=0,totFoll=0,paidSpend=0,paidClicks=0,paidImpr=0;
 
 const sum=a=>a.reduce((s,v)=>s+(v==null?0:v),0);
@@ -351,14 +405,17 @@ const money=n=>"$"+Number(n).toLocaleString("en-AU",{minimumFractionDigits:2,max
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 async function loadData(){
-  const [seo,social,paid,rank,posts,refresh]=await Promise.all([
+  const [seo,social,paid,rank,posts,refresh,ins,auth]=await Promise.all([
     sb.from('cobalt_seo_daily').select('*').order('period_date'),
     sb.from('cobalt_social_daily').select('*').order('period_date'),
     sb.from('cobalt_paid_daily').select('*').order('period_date'),
     sb.from('cobalt_rankings').select('*'),
     sb.from('cobalt_social_posts').select('*'),
-    sb.from('cobalt_refresh').select('*')
+    sb.from('cobalt_refresh').select('*'),
+    sb.from('cobalt_insights').select('*').order('created_at'),
+    sb.from('cobalt_insight_authors').select('*')
   ]);
+  INSIGHTS=ins.data||[]; AUTHORS=auth.data||[];
   const S=seo.data||[];
   N=S.length; DATES=S.map(r=>r.period_date.slice(5));
   const idx={}; S.forEach((r,i)=>idx[r.period_date]=i);
@@ -464,6 +521,24 @@ function lineChart(mount,{series,title,sub,legend,yfmt,invert,area}){
     const tw=tip.offsetWidth,left=Math.min(Math.max(xx/W*r.width-tw/2,4),r.width-tw-4);
     tip.style.left=left+"px";tip.style.top="6px";});
   svgEl.addEventListener("pointerleave",()=>{tip.style.opacity=0;ch.style.opacity=0;series.forEach((s,si)=>mount.querySelector("#hd"+si).style.opacity=0);});
+  // ---- Sini's Insights: pins + pin-mode ----
+  const chartBox=mount.querySelector(".chart"), chartId=mount.id;
+  const k=svgEl.clientWidth/W || 1;
+  (typeof INSIGHTS!=="undefined"?INSIGHTS:[]).filter(o=>o.chart_id===chartId&&o.anchor_date).forEach(o=>{
+    const i=DATES.indexOf(o.anchor_date.slice(5)); if(i<0)return;
+    const pin=document.createElement("div");pin.className="pin";
+    pin.style.left=(X(i)*k)+"px";pin.style.top=((P.t+2)*k)+"px";
+    pin.innerHTML=`<img src="${authorAvatar(o.author_email)}" alt=""/>`;
+    pin.addEventListener("click",ev=>{ev.stopPropagation();openInsightPopover(o,ev.clientX,ev.clientY);});
+    chartBox.appendChild(pin);
+  });
+  if(typeof PINMODE!=="undefined"&&PINMODE&&ME.isAuthor){
+    svgEl.addEventListener("click",e=>{
+      const r=svgEl.getBoundingClientRect(),cxp=(e.clientX-r.left)/r.width*W;
+      let i=Math.round((cxp-P.l)/iw*(N-1));i=Math.max(0,Math.min(N-1,i));
+      openComposer(chartId,DATES[i],currentTab(),e.clientX,e.clientY);
+    });
+  }
 }
 
 function stackBar(mount,{title,sub,labels,stacks,vfmt}){
@@ -526,6 +601,125 @@ function tables(){
     `<tr class="tot"><td>Total</td><td class="tnum">${fmt(paidImpr)}</td><td class="tnum">${paidClicks}</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${paidClicks?money(paidSpend/paidClicks):"—"}</td><td class="tnum">0</td><td class="tnum">—</td></tr></tbody>`;
 }
 
+/* ---------- Sini's Insights ---------- */
+const AV_FALLBACK="assets/sini.jpg";
+const authorAvatar=e=>{const a=AUTHORS.find(x=>x.email===e);return a?.avatar_path||AV_FALLBACK;};
+const authorRole=e=>{const a=AUTHORS.find(x=>x.email===e);return a?.role_title||"";};
+const currentTab=()=>document.querySelector('.tab[aria-selected=true]')?.dataset.tab||'overview';
+const chartTitleOf=id=>({"c-sessions":"Website traffic","c-ov-social":"Social reach","c-clicks":"SEO clicks","c-position":"Google position","c-spend":"Ad spend","c-reach":"Social reach","c-eng":"Engagement","c-fbfoll":"FB followers"}[id]||id);
+const fmtDay=d=>{if(!d)return"";const[y,m,day]=d.split("-");return `${day}/${m}`;};
+const inspop=document.getElementById("inspop");
+function closePop(){inspop.classList.remove("show");inspop.innerHTML="";}
+document.addEventListener("click",e=>{if(inspop.classList.contains("show")&&!inspop.contains(e.target)&&!e.target.closest(".pin"))closePop();});
+function posPop(x,y){const w=300,pw=inspop.offsetWidth||w,ph=inspop.offsetHeight||160;
+  let L=Math.min(Math.max(x-pw/2,10),innerWidth-pw-10),T=y+16;if(T+ph>innerHeight-10)T=Math.max(10,y-ph-16);
+  inspop.style.left=L+"px";inspop.style.top=T+"px";}
+
+async function openInsightPopover(o,x,y){
+  const mine=o.author_email===ME.email;
+  inspop.innerHTML=`<button class="ins-x" aria-label="Close">&times;</button>
+    <div class="ins-head"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/>
+      <div><div class="ins-who">${esc(o.author_name)}</div><div class="ins-role">${esc(authorRole(o.author_email))}</div></div>
+      <div class="ins-meta">${chartTitleOf(o.chart_id)}<br>${fmtDay(o.anchor_date)||esc(o.anchor_label||"")}</div></div>
+    ${o.body?`<div class="ins-body">${esc(o.body)}</div>`:""}
+    <div id="pop-audio"></div>
+    ${mine?`<button class="ins-del">Delete</button>`:""}`;
+  inspop.classList.add("show");posPop(x,y);
+  inspop.querySelector(".ins-x").onclick=closePop;
+  if(mine)inspop.querySelector(".ins-del").onclick=async()=>{await deleteInsight(o);closePop();};
+  if(o.audio_path){
+    const {data}=await sb.storage.from("cobalt-insights").createSignedUrl(o.audio_path,3600);
+    if(data?.signedUrl)document.getElementById("pop-audio").innerHTML=`<audio class="ins-audio" controls src="${data.signedUrl}"></audio>`;
+  }
+}
+
+let rec=null,chunks=[],recBlob=null,recMime="",recTimer=null;
+function openComposer(chartId,date,tab,x,y){
+  recBlob=null;chunks=[];
+  inspop.innerHTML=`<button class="ins-x" aria-label="Close">&times;</button>
+    <div class="ins-head"><img class="ins-av" src="${ME.avatar||AV_FALLBACK}" alt=""/>
+      <div><div class="ins-who">${esc(ME.name||"You")}</div><div class="ins-role">${chartTitleOf(chartId)} · ${fmtDay(date)}</div></div></div>
+    <div class="compose">
+      <textarea id="c-text" placeholder="What happened here? Explain the spike, dip or campaign moment…"></textarea>
+      <div class="crow">
+        <button class="rec" id="c-rec"><span class="dotr"></span>Record</button>
+        <span class="rectime" id="c-time"></span>
+        <button class="ccancel" id="c-cancel">Cancel</button>
+        <button class="csave" id="c-save">Pin insight</button>
+      </div>
+      <div id="c-preview"></div>
+    </div>`;
+  inspop.classList.add("show");posPop(x,y);
+  inspop.querySelector(".ins-x").onclick=()=>{stopRec(true);closePop();};
+  document.getElementById("c-cancel").onclick=()=>{stopRec(true);closePop();};
+  document.getElementById("c-rec").onclick=toggleRec;
+  document.getElementById("c-save").onclick=()=>saveInsight(chartId,date,tab);
+}
+async function toggleRec(){
+  const btn=document.getElementById("c-rec");
+  if(rec&&rec.state==="recording"){stopRec(false);return;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    recMime=["audio/webm","audio/mp4","audio/ogg"].find(t=>MediaRecorder.isTypeSupported(t))||"";
+    rec=new MediaRecorder(stream,recMime?{mimeType:recMime}:undefined);
+    chunks=[];
+    rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+    rec.onstop=()=>{recBlob=new Blob(chunks,{type:recMime||"audio/webm"});stream.getTracks().forEach(t=>t.stop());
+      const url=URL.createObjectURL(recBlob);document.getElementById("c-preview").innerHTML=`<audio class="ins-audio" controls src="${url}"></audio>`;};
+    rec.start();btn.classList.add("recording");btn.querySelector(".dotr").nextSibling.textContent="Stop";
+    let s=0;const t=document.getElementById("c-time");recTimer=setInterval(()=>{s++;t.textContent=`${String((s/60|0)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;},1000);
+  }catch(err){document.getElementById("c-time").textContent="Mic access denied";}
+}
+function stopRec(discard){
+  if(recTimer){clearInterval(recTimer);recTimer=null;}
+  if(rec&&rec.state==="recording"){if(discard)rec.onstop=()=>rec.stream?.getTracks().forEach(t=>t.stop());rec.stop();}
+  const btn=document.getElementById("c-rec");if(btn){btn.classList.remove("recording");const tn=btn.querySelector(".dotr").nextSibling;if(tn)tn.textContent="Record";}
+  if(discard)recBlob=null;
+}
+async function saveInsight(chartId,date,tab){
+  const save=document.getElementById("c-save");save.disabled=true;save.textContent="Saving…";
+  stopRec(false); await new Promise(r=>setTimeout(r,150)); // let onstop finalise the blob
+  const body=document.getElementById("c-text").value.trim();
+  if(!body&&!recBlob){save.disabled=false;save.textContent="Pin insight";document.getElementById("c-time").textContent="Add a note or a recording";return;}
+  let audio_path=null;
+  try{
+    if(recBlob){
+      const ext=recMime.includes("mp4")?"mp4":recMime.includes("ogg")?"ogg":"webm";
+      audio_path=`${crypto.randomUUID()}.${ext}`;
+      const up=await sb.storage.from("cobalt-insights").upload(audio_path,recBlob,{contentType:recMime||"audio/webm"});
+      if(up.error)throw up.error;
+    }
+    const {error}=await sb.from("cobalt_insights").insert({tab,chart_id:chartId,anchor_date:date?`2026-${date}`:null,anchor_label:date?null:chartId,body:body||null,audio_path,author_email:ME.email,author_name:ME.name});
+    if(error)throw error;
+    const {data}=await sb.from("cobalt_insights").select("*").order("created_at");INSIGHTS=data||[];
+    setPinMode(false);closePop();renderCharts();renderInsightPanels();
+  }catch(err){save.disabled=false;save.textContent="Pin insight";document.getElementById("c-time").textContent="Couldn't save — try again";}
+}
+async function deleteInsight(o){
+  await sb.from("cobalt_insights").delete().eq("id",o.id);
+  if(o.audio_path)await sb.storage.from("cobalt-insights").remove([o.audio_path]);
+  const {data}=await sb.from("cobalt_insights").select("*").order("created_at");INSIGHTS=data||[];
+  renderCharts();renderInsightPanels();
+}
+function renderInsightPanels(){
+  for(const tab of ["overview","seo","paid","social"]){
+    const sec=secs[tab];if(!sec)continue;
+    let panel=sec.querySelector(".inspanel");
+    if(!panel){panel=document.createElement("div");panel.className="inspanel";sec.appendChild(panel);}
+    const items=INSIGHTS.filter(o=>o.tab===tab);
+    panel.innerHTML=`<h3><img class="ins-av" style="width:20px;height:20px" src="${AV_FALLBACK}" alt=""/> Sini's Insights</h3>
+      <p class="ip-sub">Context from Savvas Studio on what's moving the numbers${ME.isAuthor?" — click <b>✎ Add insight</b>, then a point on any chart":""}.</p>`+
+      (items.length?items.map(o=>`<div class="ip-item"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/>
+        <div class="ip-main"><div class="ip-top"><span class="ip-name">${esc(o.author_name)}</span><span class="ip-where">${chartTitleOf(o.chart_id)} · ${fmtDay(o.anchor_date)||esc(o.anchor_label||"")}</span><span class="ip-when">${new Date(o.created_at).toLocaleDateString("en-AU")}</span></div>
+        ${o.body?`<div class="ip-body">${esc(o.body)}</div>`:""}<div class="ip-audio" data-audio="${o.audio_path||""}"></div></div></div>`).join(""):`<div class="ip-empty">No insights yet on this tab.</div>`);
+    panel.querySelectorAll(".ip-audio[data-audio]").forEach(async el=>{const p=el.getAttribute("data-audio");if(!p)return;
+      const {data}=await sb.storage.from("cobalt-insights").createSignedUrl(p,3600);if(data?.signedUrl)el.innerHTML=`<audio class="ins-audio" controls src="${data.signedUrl}"></audio>`;});
+  }
+}
+function setPinMode(on){PINMODE=on;document.body.classList.toggle("pinmode",on);document.getElementById("addins").classList.toggle("on",on);renderCharts();}
+document.getElementById("addins").addEventListener("click",()=>setPinMode(!PINMODE));
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(PINMODE)setPinMode(false);closePop();}});
+
 /* tabs */
 const tabs=[...document.querySelectorAll(".tab")];
 const secs={overview:document.getElementById("overview"),seo:document.getElementById("seo"),paid:document.getElementById("paid"),social:document.getElementById("social")};
@@ -548,7 +742,12 @@ function fmtStamp(){
 
 async function boot(){
   await loadData();
-  renderKPIs();posts();tables();renderCharts();fmtStamp();
+  const {data:{session}}=await sb.auth.getSession();
+  const email=session?.user?.email||null;
+  const me=AUTHORS.find(a=>a.email===email);
+  ME={email,isAuthor:!!me,name:me?.name||null,avatar:me?.avatar_path||null,role:me?.role_title||null};
+  if(ME.isAuthor)document.getElementById("addins").style.display="inline-flex";
+  renderKPIs();posts();tables();renderCharts();fmtStamp();renderInsightPanels();
   document.getElementById("gate").style.display="none";
   document.getElementById("app").style.display="block";
 }
