@@ -120,6 +120,26 @@ section[hidden]{display:none}
 .mmfield input{background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--ink);font-family:var(--sans);font-size:14px;padding:9px 11px;outline:none;font-variant-numeric:tabular-nums}
 .mmfield input:focus{border-color:var(--savvas)}
 .mmactions{display:flex;justify-content:flex-end;gap:14px;align-items:center;margin-top:16px}
+/* content plan */
+.cp-row-add{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 12px;flex-wrap:wrap}
+.plat{font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:20px}
+.plat.instagram{color:var(--ig);background:rgba(214,63,119,.13)} .plat.facebook{color:var(--fb);background:rgba(58,120,230,.14)} .plat.linkedin{color:var(--li);background:rgba(15,158,148,.14)} .plat.tiktok,.plat.youtube,.plat.other{color:var(--ink2);background:rgba(180,180,190,.12)}
+.st{font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px}
+.st.Idea{color:var(--ink3);background:rgba(122,122,134,.14)} .st.Planned{color:var(--r2r);background:rgba(23,180,240,.12)} .st.Scheduled{color:var(--warn);background:rgba(245,158,11,.13)} .st.Published{color:var(--good);background:rgba(16,185,129,.12)}
+.cp-form{display:grid;grid-template-columns:120px 130px 1fr 130px;gap:8px;align-items:end;margin-bottom:12px}
+@media(max-width:700px){.cp-form{grid-template-columns:1fr 1fr}}
+.cp-form input,.cp-form select{background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--ink);font-family:var(--sans);font-size:13px;padding:8px 10px;outline:none;width:100%}
+.cp-form input:focus,.cp-form select:focus{border-color:var(--savvas)}
+.cp-del{color:var(--ink3);background:none;border:none;cursor:pointer;font-size:14px}
+.cp-del:hover{color:var(--bad)}
+/* corrections */
+.corr{margin-top:26px;border:1px dashed var(--bd2);border-radius:12px;background:var(--s1);padding:16px 18px}
+.corr h3{margin:0 0 3px;font-size:14px;font-weight:800}
+.corr .ch3sub{font-size:12px;color:var(--ink3);margin:0 0 12px}
+.corr-form{display:grid;grid-template-columns:1fr 120px 110px 1fr auto;gap:8px;align-items:end;margin-bottom:12px}
+@media(max-width:760px){.corr-form{grid-template-columns:1fr 1fr}}
+.corr-form input,.corr-form select{background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--ink);font-family:var(--sans);font-size:13px;padding:8px 10px;outline:none;width:100%}
+.corr-lab{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px;display:block}
 .swatch{width:8px;height:8px;border-radius:2px;display:inline-block}
 
 .grid{display:grid;gap:14px}
@@ -345,6 +365,7 @@ body.pinmode .pinhint{display:block}
       <div class="card chart" id="c-ov-social"></div>
       <div class="card" id="c-ov-channels"></div>
     </div>
+    <div id="corrections"></div>
   </section>
 
   <section id="seo" hidden>
@@ -386,6 +407,7 @@ body.pinmode .pinhint{display:block}
     <div class="eyebrow">Organic social · Instagram · Facebook · LinkedIn</div>
     <div class="kpis" id="kpi-social"></div>
     <div class="mmwrap" id="manual-social" style="margin-top:16px"></div>
+    <div class="mmwrap" id="content-plan" style="margin-top:16px"></div>
     <div class="card chart" style="margin-top:14px" id="c-reach"></div>
     <h2 class="h2">Top performing posts</h2>
     <p class="sub">Highest-reach organic posts in the last 90 days — the Warrandyte build series is carrying both channels.</p>
@@ -426,6 +448,7 @@ let PAID={days:[],TOFU:{sp:[],cl:[],im:[]},MOFU:{sp:[],cl:[],im:[]},BOFU:{sp:[],
 let RANK=[],FOLL={ig:0,fb:0,li:0},IG_POSTS=[],FB_POSTS=[],REFRESH=[];
 let INSIGHTS=[],AUTHORS=[],ME={email:null,isAuthor:false,name:null,avatar:null,role:null},PINMODE=false;
 let MANUAL_DEFS=[],MANUAL=[],MSEL=null;
+let CONTENT=[],OVERRIDES=[];
 let seoSessions=0,seoClicks=0,seoConv=0,socReach=0,socEng=0,totFoll=0,paidSpend=0,paidClicks=0,paidImpr=0;
 
 const sum=a=>a.reduce((s,v)=>s+(v==null?0:v),0);
@@ -434,7 +457,7 @@ const money=n=>"$"+Number(n).toLocaleString("en-AU",{minimumFractionDigits:2,max
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 async function loadData(){
-  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval]=await Promise.all([
+  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr]=await Promise.all([
     sb.from('cobalt_seo_daily').select('*').order('period_date'),
     sb.from('cobalt_social_daily').select('*').order('period_date'),
     sb.from('cobalt_paid_daily').select('*').order('period_date'),
@@ -444,10 +467,13 @@ async function loadData(){
     sb.from('cobalt_insights').select('*').order('created_at'),
     sb.from('cobalt_insight_authors').select('*'),
     sb.from('cobalt_manual_metric_defs').select('*').order('sort'),
-    sb.from('cobalt_manual_metrics').select('*')
+    sb.from('cobalt_manual_metrics').select('*'),
+    sb.from('cobalt_content_plan').select('*').order('plan_date'),
+    sb.from('cobalt_metric_overrides').select('*')
   ]);
   INSIGHTS=ins.data||[]; AUTHORS=auth.data||[];
   MANUAL_DEFS=mdef.data||[]; MANUAL=mval.data||[];
+  CONTENT=cplan.data||[]; OVERRIDES=ovr.data||[];
   const S=seo.data||[];
   N=S.length; DATES=S.map(r=>r.period_date.slice(5));
   const idx={}; S.forEach((r,i)=>idx[r.period_date]=i);
@@ -461,6 +487,7 @@ async function loadData(){
     else if(r.platform==='facebook'){FB_REACH[i]=r.reach;FB_IMPR[i]=r.impressions;FB_ENG[i]=r.engagement;FB_FOLL[i]=r.followers;}
     else if(r.platform==='linkedin'){LI_IMPR[i]=r.impressions;LI_ENG[i]=r.engagement;if(r.followers)lif=r.followers;}
   });
+  applyOverrides();
   const lastNon=a=>{for(let i=a.length-1;i>=0;i--)if(a[i]!=null)return a[i];return 0;};
   FOLL={ig:igf,fb:lastNon(FB_FOLL),li:lif};
   const days=[...new Set((paid.data||[]).map(r=>r.period_date))].sort();
@@ -602,6 +629,110 @@ async function saveManual(e){
   const {data}=await sb.from("cobalt_manual_metrics").select("*");MANUAL=data||[];
   renderManual();
 }
+
+/* ===== metric overrides (corrections) ===== */
+const OV_METRICS=[
+ {label:"Website sessions",t:"seo",f:"sessions"},
+ {label:"SEO clicks",t:"seo",f:"clicks"},
+ {label:"SEO impressions",t:"seo",f:"impressions"},
+ {label:"Avg Google position",t:"seo",f:"avg_position"},
+ {label:"Instagram reach",t:"social",p:"instagram",f:"reach"},
+ {label:"Instagram engagement",t:"social",p:"instagram",f:"engagement"},
+ {label:"Facebook reach",t:"social",p:"facebook",f:"reach"},
+ {label:"Facebook impressions",t:"social",p:"facebook",f:"impressions"},
+ {label:"Facebook engagement",t:"social",p:"facebook",f:"engagement"},
+ {label:"Facebook followers",t:"social",p:"facebook",f:"followers"},
+ {label:"LinkedIn impressions",t:"social",p:"linkedin",f:"impressions"},
+ {label:"LinkedIn engagement",t:"social",p:"linkedin",f:"engagement"}
+];
+function ovArray(t,p,f){
+  if(t==="seo")return {sessions:SESSIONS,users:USERS,conversions:CONV,clicks:CLICKS,impressions:IMPR,avg_position:POS}[f]||null;
+  const m={instagram:{reach:IG_REACH,engagement:IG_ENG},facebook:{reach:FB_REACH,impressions:FB_IMPR,engagement:FB_ENG,followers:FB_FOLL},linkedin:{impressions:LI_IMPR,engagement:LI_ENG}};
+  return (m[p]||{})[f]||null;
+}
+function applyOverrides(){
+  OVERRIDES.forEach(o=>{const i=DATES.indexOf(o.period_date.slice(5));if(i<0)return;const a=ovArray(o.target_table,o.platform,o.field);if(a)a[i]=o.value==null?null:Number(o.value);});
+}
+const ovLabel=o=>{const m=OV_METRICS.find(x=>x.t===o.target_table&&(x.p||"")===(o.platform||"")&&x.f===o.field);return m?m.label:`${o.target_table} ${o.field}`;};
+function renderCorrections(){
+  const box=document.getElementById("corrections");if(!box)return;
+  if(!ME.isAuthor){box.style.display="none";return;} box.style.display="block";
+  const opts=OV_METRICS.map((m,i)=>`<option value="${i}">${m.label}</option>`).join("");
+  const rows=OVERRIDES.slice().sort((a,b)=>(b.updated_at||"").localeCompare(a.updated_at||"")).map(o=>`<div class="ip-item" style="align-items:center">
+     <div class="ip-main"><div class="ip-top"><span class="ip-name">${esc(ovLabel(o))}</span><span class="ip-where">${o.period_date}</span><span class="ip-when">by ${esc((o.updated_by||"").split("@")[0])}</span></div>
+     <div class="ip-body">Set to <b>${o.value==null?"—":fmt(o.value)}</b>${o.reason?` · ${esc(o.reason)}`:""}</div></div>
+     <button class="cp-del" data-ovid="${o.id}" title="Remove">✕</button></div>`).join("");
+  box.innerHTML=`<div class="corr"><h3>Data corrections <span class="sig warn" style="vertical-align:middle">Authors only</span></h3>
+    <p class="ch3sub">Override an automated figure (an API glitch or outlier). The change shows for everyone, is logged with your name / date / reason, and the nightly refresh won't undo it.</p>
+    <form class="corr-form" id="corr-form">
+      <div><span class="corr-lab">Metric</span><select id="corr-metric">${opts}</select></div>
+      <div><span class="corr-lab">Date</span><input type="date" id="corr-date" min="2026-04-12" max="2026-12-31"></div>
+      <div><span class="corr-lab">New value</span><input type="number" step="any" id="corr-val"></div>
+      <div><span class="corr-lab">Reason</span><input type="text" id="corr-reason" placeholder="Why?"></div>
+      <div><button type="submit" class="csave" id="corr-save">Apply</button></div>
+    </form>
+    ${OVERRIDES.length?rows:`<div class="ip-empty">No corrections yet — auto data is showing as-is.</div>`}</div>`;
+  document.getElementById("corr-form").onsubmit=saveCorrection;
+  box.querySelectorAll(".cp-del[data-ovid]").forEach(b=>b.onclick=()=>deleteCorrection(b.dataset.ovid));
+}
+async function saveCorrection(e){
+  e.preventDefault();
+  const m=OV_METRICS[+document.getElementById("corr-metric").value];
+  const date=document.getElementById("corr-date").value,val=document.getElementById("corr-val").value,reason=document.getElementById("corr-reason").value.trim();
+  const btn=document.getElementById("corr-save");
+  if(!date||val===""){btn.textContent="Need date + value";return;}
+  btn.disabled=true;btn.textContent="Applying…";
+  const i=DATES.indexOf(date.slice(5)),cur=i>=0?ovArray(m.t,m.p||"",m.f):null,old=cur?cur[i]:null;
+  const rec={target_table:m.t,period_date:date,platform:m.p||"",field:m.f,value:Number(val),reason:reason||null,updated_by:ME.email,updated_at:new Date().toISOString()};
+  const up=await sb.from("cobalt_metric_overrides").upsert(rec,{onConflict:"target_table,period_date,platform,field"});
+  if(up.error){btn.disabled=false;btn.textContent="Apply";alert("Couldn't save: "+up.error.message);return;}
+  await sb.from("cobalt_metric_override_log").insert({target_table:m.t,period_date:date,platform:m.p||"",field:m.f,old_value:old==null?null:Number(old),new_value:Number(val),action:"set",reason:reason||null,changed_by:ME.email});
+  await loadData();renderAll();
+}
+async function deleteCorrection(id){
+  const o=OVERRIDES.find(x=>x.id===id);
+  await sb.from("cobalt_metric_overrides").delete().eq("id",id);
+  if(o)await sb.from("cobalt_metric_override_log").insert({target_table:o.target_table,period_date:o.period_date,platform:o.platform,field:o.field,old_value:o.value,new_value:null,action:"remove",reason:"reverted to auto",changed_by:ME.email});
+  await loadData();renderAll();
+}
+
+/* ===== content plan ===== */
+const CP_PLATFORMS=["instagram","facebook","linkedin","tiktok","youtube","other"];
+const CP_STATUS=["Idea","Planned","Scheduled","Published"];
+const canEditContent=()=>ME.isAuthor&&(ME.isAdmin||TAB_OWNER.social===ME.email);
+function renderContent(){
+  const box=document.getElementById("content-plan");if(!box)return;
+  const items=CONTENT.slice().sort((a,b)=>(a.plan_date||"9999").localeCompare(b.plan_date||"9999"));
+  const editable=canEditContent();
+  const form=editable?`<form class="cp-form" id="cp-form">
+     <div><span class="corr-lab">Date</span><input type="date" id="cp-date"></div>
+     <div><span class="corr-lab">Platform</span><select id="cp-plat">${CP_PLATFORMS.map(p=>`<option>${p}</option>`).join("")}</select></div>
+     <div><span class="corr-lab">Title</span><input type="text" id="cp-title" placeholder="Post / content idea"></div>
+     <div><span class="corr-lab">Status</span><select id="cp-status">${CP_STATUS.map(s=>`<option>${s}</option>`).join("")}</select></div>
+   </form><div style="text-align:right;margin-bottom:10px"><button class="csave" id="cp-add">Add to plan</button></div>`:"";
+  const list=items.length?`<div class="tscroll"><table class="tbl"><thead><tr><th>Date</th><th>Platform</th><th>Title / theme</th><th>Status</th>${editable?"<th></th>":""}</tr></thead><tbody>`+
+    items.map(o=>`<tr><td class="tnum">${o.plan_date?o.plan_date.slice(8)+"/"+o.plan_date.slice(5,7):"—"}</td>
+      <td><span class="plat ${o.platform||'other'}">${esc(o.platform||"")}</span></td>
+      <td class="k">${esc(o.title)}${o.theme?`<span class="small"> · ${esc(o.theme)}</span>`:""}</td>
+      <td><span class="st ${o.status}">${esc(o.status)}</span></td>
+      ${editable?`<td>${(o.created_by===ME.email||ME.isAdmin)?`<button class="cp-del" data-cpid="${o.id}">✕</button>`:""}</td>`:""}</tr>`).join("")+`</tbody></table></div>`:
+    `<div class="ip-empty">No planned content yet${editable?" — add the first item above":""}.</div>`;
+  box.innerHTML=`<div class="mmhead"><div><h3><img class="ins-av" style="width:20px;height:20px" src="assets/savvas-icon.png" alt=""/> Content plan</h3><p class="ch3sub">Upcoming posts &amp; content themes from Savvas Studio</p></div></div>${form}${list}`;
+  if(editable){document.getElementById("cp-add").onclick=addContent;box.querySelectorAll(".cp-del[data-cpid]").forEach(b=>b.onclick=()=>delContent(b.dataset.cpid));}
+}
+async function addContent(){
+  const title=document.getElementById("cp-title").value.trim();if(!title){document.getElementById("cp-title").focus();return;}
+  const rec={plan_date:document.getElementById("cp-date").value||null,platform:document.getElementById("cp-plat").value,title,status:document.getElementById("cp-status").value,created_by:ME.email};
+  const {error}=await sb.from("cobalt_content_plan").insert(rec);
+  if(error){alert("Couldn't add: "+error.message);return;}
+  const {data}=await sb.from("cobalt_content_plan").select("*").order("plan_date");CONTENT=data||[];renderContent();
+}
+async function delContent(id){
+  await sb.from("cobalt_content_plan").delete().eq("id",id);
+  const {data}=await sb.from("cobalt_content_plan").select("*").order("plan_date");CONTENT=data||[];renderContent();
+}
+
+function renderAll(){renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();updateAddButton();}
 
 /* line chart */
 function lineChart(mount,{series,title,sub,legend,yfmt,invert,area}){
@@ -879,7 +1010,7 @@ async function boot(){
   const email=session?.user?.email||null;
   const me=AUTHORS.find(a=>a.email===email);
   ME={email,isAuthor:!!me,isAdmin:!!me?.is_admin,name:me?.name||null,avatar:me?.avatar_path||null,role:me?.role_title||null};
-  renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();updateAddButton();
+  renderAll();
   document.getElementById("gate").style.display="none";
   document.getElementById("app").style.display="block";
 }
