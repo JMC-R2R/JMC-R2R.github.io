@@ -106,6 +106,20 @@ section[hidden]{display:none}
 .momcard .mcap{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:-2px}
 .momcard .mspark{width:100%;height:40px;display:block;margin-top:2px}
 .momcard .mspark-x{display:flex;justify-content:space-around;font-family:var(--mono);font-size:9px;color:var(--ink3);margin-top:1px}
+/* Savvas manual metrics */
+.mmwrap{border:1px solid rgba(228,87,46,.28);border-left:3px solid var(--savvas);border-radius:12px;background:linear-gradient(100deg,var(--savvas-soft),transparent 70%);padding:16px 18px}
+.mmhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.mmhead h3{margin:0;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
+.mmhead .ch3sub{font-size:12px;color:var(--ink3);margin:2px 0 0}
+.mmctrl{display:flex;align-items:center;gap:8px}
+.mmctrl select{background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--ink);font-family:var(--mono);font-size:12px;padding:7px 10px;cursor:pointer}
+.mmgroup{margin-top:14px}
+.mmgrp-lab{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--savvas);margin-bottom:8px}
+.mmform-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.mmfield{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink2)}
+.mmfield input{background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--ink);font-family:var(--sans);font-size:14px;padding:9px 11px;outline:none;font-variant-numeric:tabular-nums}
+.mmfield input:focus{border-color:var(--savvas)}
+.mmactions{display:flex;justify-content:flex-end;gap:14px;align-items:center;margin-top:16px}
 .swatch{width:8px;height:8px;border-radius:2px;display:inline-block}
 
 .grid{display:grid;gap:14px}
@@ -371,6 +385,7 @@ body.pinmode .pinhint{display:block}
     </div>
     <div class="eyebrow">Organic social · Instagram · Facebook · LinkedIn</div>
     <div class="kpis" id="kpi-social"></div>
+    <div class="mmwrap" id="manual-social" style="margin-top:16px"></div>
     <div class="card chart" style="margin-top:14px" id="c-reach"></div>
     <h2 class="h2">Top performing posts</h2>
     <p class="sub">Highest-reach organic posts in the last 90 days — the Warrandyte build series is carrying both channels.</p>
@@ -410,6 +425,7 @@ let IG_REACH=[],IG_ENG=[],FB_REACH=[],FB_IMPR=[],FB_ENG=[],FB_FOLL=[],LI_IMPR=[]
 let PAID={days:[],TOFU:{sp:[],cl:[],im:[]},MOFU:{sp:[],cl:[],im:[]},BOFU:{sp:[],cl:[],im:[]}};
 let RANK=[],FOLL={ig:0,fb:0,li:0},IG_POSTS=[],FB_POSTS=[],REFRESH=[];
 let INSIGHTS=[],AUTHORS=[],ME={email:null,isAuthor:false,name:null,avatar:null,role:null},PINMODE=false;
+let MANUAL_DEFS=[],MANUAL=[],MSEL=null;
 let seoSessions=0,seoClicks=0,seoConv=0,socReach=0,socEng=0,totFoll=0,paidSpend=0,paidClicks=0,paidImpr=0;
 
 const sum=a=>a.reduce((s,v)=>s+(v==null?0:v),0);
@@ -418,7 +434,7 @@ const money=n=>"$"+Number(n).toLocaleString("en-AU",{minimumFractionDigits:2,max
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 async function loadData(){
-  const [seo,social,paid,rank,posts,refresh,ins,auth]=await Promise.all([
+  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval]=await Promise.all([
     sb.from('cobalt_seo_daily').select('*').order('period_date'),
     sb.from('cobalt_social_daily').select('*').order('period_date'),
     sb.from('cobalt_paid_daily').select('*').order('period_date'),
@@ -426,9 +442,12 @@ async function loadData(){
     sb.from('cobalt_social_posts').select('*'),
     sb.from('cobalt_refresh').select('*'),
     sb.from('cobalt_insights').select('*').order('created_at'),
-    sb.from('cobalt_insight_authors').select('*')
+    sb.from('cobalt_insight_authors').select('*'),
+    sb.from('cobalt_manual_metric_defs').select('*').order('sort'),
+    sb.from('cobalt_manual_metrics').select('*')
   ]);
   INSIGHTS=ins.data||[]; AUTHORS=auth.data||[];
+  MANUAL_DEFS=mdef.data||[]; MANUAL=mval.data||[];
   const S=seo.data||[];
   N=S.length; DATES=S.map(r=>r.period_date.slice(5));
   const idx={}; S.forEach((r,i)=>idx[r.period_date]=i);
@@ -534,6 +553,54 @@ function renderMoM(){
       <div class="mspark-x">${xlabels}</div>
     </div>`;
   }).join("");
+}
+
+/* Savvas manual metrics — content & activity */
+const monLabel=iso=>{const[y,m]=iso.split("-");return (MON[m]||m)+" "+y;};
+const prevMonthISO=iso=>{let[y,m]=iso.split("-").map(Number);m--;if(m<1){m=12;y--;}return `${y}-${String(m).padStart(2,"0")}-01`;};
+const mVal=(month,key)=>{const r=MANUAL.find(x=>x.period_month===month&&x.metric_key===key);return r?Number(r.value):null;};
+function manualMonths(){
+  const set=new Set(MANUAL.map(r=>r.period_month));
+  const n=new Date();set.add(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-01`);
+  return [...set].sort().reverse();
+}
+const canEditManual=()=>ME.isAuthor&&(ME.isAdmin||TAB_OWNER.social===ME.email);
+function groupDefs(){const g={};MANUAL_DEFS.forEach(d=>{(g[d.grp]=g[d.grp]||[]).push(d);});return g;}
+function renderManual(){
+  const box=document.getElementById("manual-social");if(!box)return;
+  if(!MANUAL_DEFS.length){box.style.display="none";return;} box.style.display="block";
+  const months=manualMonths();if(!MSEL||!months.includes(MSEL))MSEL=months[0];
+  const prev=prevMonthISO(MSEL), g=groupDefs();
+  const monthSel=`<select id="mm-month">${months.map(m=>`<option value="${m}" ${m===MSEL?"selected":""}>${monLabel(m)}</option>`).join("")}</select>`;
+  const card=d=>{const v=mVal(MSEL,d.key),pv=mVal(prev,d.key);
+    let chip="";if(v!=null&&pv!=null&&pv!==0){const pc=Math.round((v-pv)/pv*100),cls=pc>0?"up":pc<0?"dn":"flat";chip=`<span class="chip ${cls}">${pc>0?"▲":pc<0?"▼":"–"} ${Math.abs(pc)}%</span>`;}
+    const disp=v==null?"—":(d.unit==="$"?money(v):fmt(v));
+    return `<div class="momcard"><div class="mlab">${esc(d.label)}</div><div class="mval">${disp} ${chip}</div></div>`;};
+  box.innerHTML=`<div class="mmhead"><div><h3><img class="ins-av" style="width:20px;height:20px" src="assets/savvas-icon.png" alt=""/> Content &amp; activity</h3><p class="ch3sub">Entered by Savvas Studio — the work behind the numbers</p></div>
+    <div class="mmctrl">${monthSel}${canEditManual()?`<button class="addins on" id="mm-edit" style="display:inline-flex">✎ Edit</button>`:""}</div></div>
+    ${Object.entries(g).map(([grp,ds])=>`<div class="mmgroup"><div class="mmgrp-lab">${esc(grp)}</div><div class="momgrid">${ds.map(card).join("")}</div></div>`).join("")}`;
+  document.getElementById("mm-month").onchange=e=>{MSEL=e.target.value;renderManual();};
+  if(canEditManual())document.getElementById("mm-edit").onclick=openManualEdit;
+}
+function openManualEdit(){
+  const box=document.getElementById("manual-social"),months=manualMonths(),g=groupDefs();
+  box.innerHTML=`<div class="mmhead"><div><h3>Edit content &amp; activity</h3><p class="ch3sub">Enter this month's numbers. Blank leaves a value unchanged; enter 0 to clear it.</p></div>
+    <div class="mmctrl"><select id="mm-emonth">${months.map(m=>`<option value="${m}" ${m===MSEL?"selected":""}>${monLabel(m)}</option>`).join("")}</select></div></div>
+    <form id="mm-form">${Object.entries(g).map(([grp,ds])=>`<div class="mmgroup"><div class="mmgrp-lab">${esc(grp)}</div><div class="mmform-grid">${ds.map(d=>`<label class="mmfield"><span>${esc(d.label)}${d.unit==="$"?" ($)":""}</span><input type="number" step="any" min="0" data-key="${d.key}" value="${mVal(MSEL,d.key)??""}"></label>`).join("")}</div></div>`).join("")}
+    <div class="mmactions"><button type="button" class="ccancel" id="mm-cancel">Cancel</button><button type="submit" class="csave" id="mm-save">Save ${monLabel(MSEL)}</button></div></form>`;
+  document.getElementById("mm-emonth").onchange=e=>{MSEL=e.target.value;openManualEdit();};
+  document.getElementById("mm-cancel").onclick=renderManual;
+  document.getElementById("mm-form").onsubmit=saveManual;
+}
+async function saveManual(e){
+  e.preventDefault();
+  const btn=document.getElementById("mm-save");btn.disabled=true;btn.textContent="Saving…";
+  const rows=[...document.querySelectorAll("#mm-form input[data-key]")].filter(i=>i.value!=="")
+    .map(i=>({period_month:MSEL,metric_key:i.dataset.key,value:Number(i.value),updated_by:ME.email,updated_at:new Date().toISOString()}));
+  if(rows.length){const {error}=await sb.from("cobalt_manual_metrics").upsert(rows,{onConflict:"period_month,metric_key"});
+    if(error){btn.disabled=false;btn.textContent="Save month";alert("Couldn't save: "+error.message);return;}}
+  const {data}=await sb.from("cobalt_manual_metrics").select("*");MANUAL=data||[];
+  renderManual();
 }
 
 /* line chart */
@@ -812,7 +879,7 @@ async function boot(){
   const email=session?.user?.email||null;
   const me=AUTHORS.find(a=>a.email===email);
   ME={email,isAuthor:!!me,isAdmin:!!me?.is_admin,name:me?.name||null,avatar:me?.avatar_path||null,role:me?.role_title||null};
-  renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();updateAddButton();
+  renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();updateAddButton();
   document.getElementById("gate").style.display="none";
   document.getElementById("app").style.display="block";
 }
