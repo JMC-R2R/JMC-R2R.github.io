@@ -97,8 +97,15 @@ section[hidden]{display:none}
 .chip.up{color:var(--good);background:rgba(16,185,129,.12)}
 .chip.flat{color:var(--ink2);background:rgba(180,180,190,.1)}
 .chip.warnc{color:var(--warn);background:rgba(245,158,11,.13)}
-.tbl td.up{color:var(--good);font-weight:700}
-#mom th:last-child,#mom td:last-child{text-align:right}
+/* month-on-month cards */
+.momgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.momcard{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:15px 16px 12px;display:flex;flex-direction:column;gap:8px}
+.momcard .mlab{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.momcard .mval{font-size:26px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:1}
+.momcard .mval .chip{font-size:11px}
+.momcard .mcap{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:-2px}
+.momcard .mspark{width:100%;height:40px;display:block;margin-top:2px}
+.momcard .mspark-x{display:flex;justify-content:space-around;font-family:var(--mono);font-size:9px;color:var(--ink3);margin-top:1px}
 .swatch{width:8px;height:8px;border-radius:2px;display:inline-block}
 
 .grid{display:grid;gap:14px}
@@ -315,7 +322,7 @@ body.pinmode .pinhint{display:block}
     </div>
     <h2 class="h2">Month on month</h2>
     <p class="sub">Monthly totals across the core metrics, with last month's change. May and June are full months; April (from the 12th) and July (to date) are partial, marked *.</p>
-    <div class="card tscroll"><table class="tbl" id="mom"></table></div>
+    <div class="momgrid" id="mom"></div>
 
     <h2 class="h2">Website traffic</h2>
     <p class="sub">Daily sessions from all channels (GA4). The spikes on 25/06 and 09/07 line up with campaign activity.</p>
@@ -510,16 +517,23 @@ function renderMoM(){
   ];
   const fullMonths=present.filter(mk=>!partial(mk));
   const cur=fullMonths[fullMonths.length-1], prev=fullMonths[fullMonths.length-2];
-  const head=`<thead><tr><th>Metric</th>${present.map(mk=>`<th>${MON[mk]}${partial(mk)?" *":""}</th>`).join("")}${(cur&&prev)?`<th>${MON[prev]}→${MON[cur]}</th>`:""}</tr></thead>`;
-  const body=rows.map(r=>{
-    const cells=present.map(mk=>{const v=r.fn(mk);return `<td class="tnum">${v==null?"—":fmt(v)}</td>`;}).join("");
-    let chg="";
-    if(cur&&prev){const a=r.fn(prev),b=r.fn(cur);
-      if(a&&b!=null){const p=Math.round((b-a)/a*100),cls=p>0?"up":p<0?"dn":"flat";chg=`<td><span class="chip ${cls}">${p>0?"▲":p<0?"▼":"–"} ${Math.abs(p)}%</span></td>`;}
-      else chg=`<td class="tnum">—</td>`;}
-    return `<tr><td class="k">${r.label}</td>${cells}${(cur&&prev)?chg:""}</tr>`;
+  tbl.innerHTML=rows.map(r=>{
+    const vals=present.map(mk=>({mk,v:r.fn(mk),p:partial(mk)}));
+    const big=cur?r.fn(cur):(vals.filter(x=>x.v!=null).slice(-1)[0]||{}).v;
+    let chip="";
+    if(cur&&prev){const a=r.fn(prev),b=r.fn(cur);if(a&&b!=null){const pc=Math.round((b-a)/a*100),cls=pc>0?"up":pc<0?"dn":"flat";chip=`<span class="chip ${cls}">${pc>0?"▲":pc<0?"▼":"–"} ${Math.abs(pc)}%</span>`;}}
+    const mx=Math.max(...vals.map(x=>x.v||0),1), bw=100/vals.length;
+    const bars=vals.map((x,i)=>{const h=x.v!=null?(x.v/mx)*34:0,y=36-h,X=i*bw+bw*0.18,w=bw*0.64;
+      return `<rect x="${X.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="var(--cobalt)" opacity="${x.p?0.32:1}"><title>${MON[x.mk]}${x.p?" (partial)":""}: ${x.v==null?"—":fmt(x.v)}</title></rect>`;}).join("");
+    const xlabels=vals.map(x=>`<span>${MON[x.mk]}${x.p?"*":""}</span>`).join("");
+    return `<div class="momcard">
+      <div class="mlab">${r.label}</div>
+      <div class="mval">${big==null?"—":fmt(big)} ${chip}</div>
+      <div class="mcap">${cur?MON[cur]+" total · vs "+(prev?MON[prev]:"—"):"latest"}</div>
+      <svg class="mspark" viewBox="0 0 100 36" preserveAspectRatio="none">${bars}</svg>
+      <div class="mspark-x">${xlabels}</div>
+    </div>`;
   }).join("");
-  tbl.innerHTML=head+`<tbody>${body}</tbody>`;
 }
 
 /* line chart */
