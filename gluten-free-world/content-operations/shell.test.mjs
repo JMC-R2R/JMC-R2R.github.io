@@ -19,6 +19,15 @@ test('staging shell exposes passwordless sign-in and protected dashboard regions
   assert.doesNotMatch(html, /service[_-]?role/i);
 });
 
+test('dashboard queries and labels publication targets separately from internal due dates', async () => {
+  const app = await source('app.mjs');
+  const browser = await source('browser.mjs');
+  assert.match(app, /target_publish_at/);
+  assert.match(browser, /formatTargetPublishAt\(assignment\.target_publish_at\)/);
+  assert.match(browser, /Publication target/);
+  assert.doesNotMatch(browser, /Due date/);
+});
+
 test('browser bootstrap uses runtime staging config and the tested controller', async () => {
   const browser = await source('browser.mjs');
 

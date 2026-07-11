@@ -1,3 +1,15 @@
+export function formatTargetPublishAt(value) {
+  if (!value) {
+    return 'Publication date not set';
+  }
+  return new Intl.DateTimeFormat('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Australia/Sydney',
+  }).format(new Date(value));
+}
+
 export function formatAssignmentStatus(status) {
   return typeof status === 'string' && status.length > 0
     ? status.replaceAll('_', ' ')
@@ -65,7 +77,7 @@ export function createAuthController({ client, view, redirectUrl, clientId }) {
 
       const assignmentsResult = await client
         .from('content_assignments')
-        .select('id, title, primary_keyword, status, due_at, updated_at')
+        .select('id, title, primary_keyword, status, target_publish_at, due_at, updated_at')
         .eq('client_id', clientResult.data.id)
         .order('updated_at', { ascending: false });
       if (assignmentsResult.error) {
