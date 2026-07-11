@@ -533,7 +533,10 @@ function lineChart(mount,{series,title,sub,legend,yfmt,invert,area}){
     chartBox.appendChild(pin);
   });
   if(typeof PINMODE!=="undefined"&&PINMODE&&ME.isAuthor){
+    svgEl.style.cursor="crosshair";
     svgEl.addEventListener("click",e=>{
+      if(!PINMODE)return;
+      e.stopPropagation();
       const r=svgEl.getBoundingClientRect(),cxp=(e.clientX-r.left)/r.width*W;
       let i=Math.round((cxp-P.l)/iw*(N-1));i=Math.max(0,Math.min(N-1,i));
       openComposer(chartId,DATES[i],currentTab(),e.clientX,e.clientY);
