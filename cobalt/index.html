@@ -759,7 +759,7 @@ async function deleteInsight(o){
 // Each tab's insights belong to the channel owner: R2R (Jose) runs SEO + Paid,
 // Savvas (Sini) runs Social. Overview shows the whole team.
 const TAB_OWNER={overview:null,seo:"jose@readytorank.com.au",paid:"jose@readytorank.com.au",social:"social@savvasstudio.com"};
-const canAuthorTab=tab=>ME.isAuthor&&(!TAB_OWNER[tab]||TAB_OWNER[tab]===ME.email);
+const canAuthorTab=tab=>ME.isAuthor&&(ME.isAdmin||!TAB_OWNER[tab]||TAB_OWNER[tab]===ME.email);
 function updateAddButton(){const ok=canAuthorTab(currentTab());document.getElementById("addins").style.display=ok?"inline-flex":"none";if(!ok&&PINMODE)setPinMode(false);}
 function renderInsightPanels(){
   for(const tab of ["overview","seo","paid","social"]){
@@ -771,8 +771,7 @@ function renderInsightPanels(){
     const av=ow?ow.avatar_path:AV_FALLBACK;
     const team=ow?(ow.role_title||"").split(" · ").pop():"the team";
     const sub=ow?`Notes from ${ow.name.split(" ")[0]} at ${team} on what's moving the numbers`:"Notes from the team on what's moving the numbers";
-    let items=INSIGHTS.filter(o=>o.tab===tab);
-    if(owner)items=items.filter(o=>o.author_email===owner);
+    const items=INSIGHTS.filter(o=>o.tab===tab);
     const hint=canAuthorTab(tab)?" — click <b>✎ Add insight</b>, then a point on any chart":"";
     panel.innerHTML=`<h3><img class="ins-av" style="width:20px;height:20px" src="${av}" alt=""/> ${title}</h3>
       <p class="ip-sub">${esc(sub)}${hint}.</p>`+
@@ -812,7 +811,7 @@ async function boot(){
   const {data:{session}}=await sb.auth.getSession();
   const email=session?.user?.email||null;
   const me=AUTHORS.find(a=>a.email===email);
-  ME={email,isAuthor:!!me,name:me?.name||null,avatar:me?.avatar_path||null,role:me?.role_title||null};
+  ME={email,isAuthor:!!me,isAdmin:!!me?.is_admin,name:me?.name||null,avatar:me?.avatar_path||null,role:me?.role_title||null};
   renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();updateAddButton();
   document.getElementById("gate").style.display="none";
   document.getElementById("app").style.display="block";
