@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Content Operations — Ready to Rank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="../content-hub/" aria-label="Ready to Rank content hub">
+      <span class="brand-mark">R</span>
+      <span>Ready to Rank</span>
+    </a>
+    <span class="environment"><i></i> Staging</span>
+  </header>
+
+  <main class="shell">
+    <section id="loading" class="panel compact" aria-live="polite">
+      <p class="eyebrow">Secure workspace</p>
+      <h1>Opening the vault.</h1>
+      <p class="muted">Checking your session and permissions.</p>
+      <div class="loader" aria-hidden="true"></div>
+    </section>
+
+    <section id="sign-in" class="panel auth-panel" hidden>
+      <div>
+        <p class="eyebrow">Content operations</p>
+        <h1>Enter the editorial control room.</h1>
+        <p class="lede">A passwordless sign-in link will be sent to your authorised work email. No public access. No haunted spreadsheets.</p>
+      </div>
+      <form id="sign-in-form" class="sign-in-form">
+        <label for="email">Work email</label>
+        <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required placeholder="name@company.com">
+        <button type="submit">Send secure link <span aria-hidden="true">→</span></button>
+        <p class="fine-print">Only pre-authorised identities can sign in.</p>
+      </form>
+      <p id="notice" class="notice" aria-live="polite"></p>
+    </section>
+
+    <section id="denied" class="panel compact" hidden>
+      <p class="eyebrow danger">Access denied</p>
+      <h1>This door remains closed.</h1>
+      <p class="muted">Your identity is valid, but it does not have platform-administrator access.</p>
+      <button id="denied-sign-out" class="secondary" type="button">Sign out</button>
+    </section>
+
+    <section id="dashboard" hidden>
+      <div class="dashboard-head">
+        <div>
+          <p class="eyebrow">Platform administrator</p>
+          <h1 id="client-name">Gluten Free World</h1>
+          <p class="muted">Authenticated staging workspace</p>
+        </div>
+        <button id="sign-out" class="secondary" type="button">Sign out</button>
+      </div>
+
+      <div class="stats" aria-label="Workspace summary">
+        <article><span class="stat-value" id="assignment-count">0</span><span class="stat-label">Assignments</span></article>
+        <article><span class="stat-value">Protected</span><span class="stat-label">Access</span></article>
+        <article><span class="stat-value">Staging</span><span class="stat-label">Environment</span></article>
+      </div>
+
+      <section class="work-panel">
+        <div class="section-head">
+          <div><p class="eyebrow">Current queue</p><h2>Content assignments</h2></div>
+          <span class="status-chip"><i></i> Live staging data</span>
+        </div>
+        <div id="empty-state" class="empty-state">
+          <span class="empty-icon" aria-hidden="true">◇</span>
+          <h3>No assignments yet</h3>
+          <p>The secure workspace is ready. The queue is merely enjoying its brief, doomed innocence.</p>
+        </div>
+        <div id="assignment-list" class="assignment-list" hidden></div>
+      </section>
+    </section>
+
+    <section id="fatal" class="panel compact" hidden>
+      <p class="eyebrow danger">Connection error</p>
+      <h1>The machinery objected.</h1>
+      <p id="fatal-message" class="muted" aria-live="polite">Please refresh and try again.</p>
+    </section>
+  </main>
+
+  <footer>Ready to Rank · Staging content operations · Not for public use</footer>
+  <script src="./config.js"></script>
+  <script type="module" src="./browser.mjs"></script>
+</body>
+</html>

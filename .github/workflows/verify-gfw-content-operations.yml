@@ -1,0 +1,26 @@
+name: Verify GFW content operations
+
+on:
+  pull_request:
+    paths:
+      - "gluten-free-world/content-operations/**"
+      - ".github/workflows/verify-gfw-content-operations.yml"
+  push:
+    branches: [main]
+    paths:
+      - "gluten-free-world/content-operations/**"
+      - ".github/workflows/verify-gfw-content-operations.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run content-operations tests
+        run: node --test gluten-free-world/content-operations/*.test.mjs
