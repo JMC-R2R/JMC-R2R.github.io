@@ -94,7 +94,44 @@ test('authenticated platform admin receives the GFW dashboard', async () => {
   assert.deepEqual(dashboards[0].assignments, []);
 });
 
-test('authenticated non-admin is denied before tenant data is queried', async () => {
+test('authenticated GFW executive assistant receives the tenant dashboard', async () => {
+  const user = { id: 'ea-1', email: 'jheny@readytorank.com.au' };
+  const queried = [];
+  const rows = {
+    user_profiles: { id: user.id, display_name: 'Jhen', is_platform_admin: false },
+    client_memberships: { client_id: 'client-1', user_id: user.id, role: 'executive_assistant' },
+    clients: { id: 'client-1', slug: 'gluten-free-world', name: 'Gluten Free World' },
+  };
+  const client = {
+    auth: { getSession: async () => ({ data: { session: { user } } }) },
+    from(table) {
+      queried.push(table);
+      if (table === 'content_assignments') {
+        return {
+          select() { return this; },
+          eq() { return this; },
+          order: async () => ({ data: [{ id: 'assignment-1' }], error: null }),
+        };
+      }
+      return {
+        select() { return this; },
+        eq() { return this; },
+        single: async () => ({ data: rows[table], error: null }),
+      };
+    },
+  };
+  const dashboards = [];
+  const view = { showLoading() {}, showDashboard: (data) => dashboards.push(data) };
+
+  await createAuthController({ client, view, clientId: 'client-1' }).initialize();
+
+  assert.equal(dashboards.length, 1);
+  assert.equal(dashboards[0].profile.display_name, 'Jhen');
+  assert.equal(dashboards[0].membership.role, 'executive_assistant');
+  assert.deepEqual(queried, ['user_profiles', 'client_memberships', 'clients', 'content_assignments']);
+});
+
+test('authenticated non-admin without an executive-assistant membership is denied before tenant data is queried', async () => {
   const queried = [];
   const client = {
     auth: {
@@ -105,10 +142,9 @@ test('authenticated non-admin is denied before tenant data is queried', async ()
       return {
         select() { return this; },
         eq() { return this; },
-        single: async () => ({
-          data: { id: 'writer-1', is_platform_admin: false },
-          error: null,
-        }),
+        single: async () => table === 'user_profiles'
+          ? { data: { id: 'writer-1', is_platform_admin: false }, error: null }
+          : { data: null, error: { code: 'PGRST116' } },
       };
     },
   };
@@ -118,10 +154,10 @@ test('authenticated non-admin is denied before tenant data is queried', async ()
     showDenied: () => calls.push('denied'),
   };
 
-  await createAuthController({ client, view }).initialize();
+  await createAuthController({ client, view, clientId: 'client-1' }).initialize();
 
   assert.deepEqual(calls, ['denied']);
-  assert.deepEqual(queried, ['user_profiles']);
+  assert.deepEqual(queried, ['user_profiles', 'client_memberships']);
 });
 
 test('sign out clears the session and returns to sign-in', async () => {

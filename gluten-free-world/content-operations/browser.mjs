@@ -73,6 +73,7 @@ if (!config?.supabaseUrl || !config?.publishableKey) {
     client,
     view,
     redirectUrl: window.location.origin + window.location.pathname,
+    clientId: config.clientId,
   });
 
   document.getElementById('sign-in-form').addEventListener('submit', async (event) => {
