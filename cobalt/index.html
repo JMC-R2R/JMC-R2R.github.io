@@ -94,7 +94,11 @@ section[hidden]{display:none}
 .kpi .foot{font-size:11.5px;color:var(--ink3);margin-top:auto}
 .chip{font-family:var(--mono);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px}
 .chip.dn{color:var(--bad);background:rgba(239,68,68,.12)}
+.chip.up{color:var(--good);background:rgba(16,185,129,.12)}
+.chip.flat{color:var(--ink2);background:rgba(180,180,190,.1)}
 .chip.warnc{color:var(--warn);background:rgba(245,158,11,.13)}
+.tbl td.up{color:var(--good);font-weight:700}
+#mom th:last-child,#mom td:last-child{text-align:right}
 .swatch{width:8px;height:8px;border-radius:2px;display:inline-block}
 
 .grid{display:grid;gap:14px}
@@ -309,6 +313,10 @@ body.pinmode .pinhint{display:block}
         <p>Average position has drifted from ~22 in April to ~35 in July, and most tracked keywords sit outside the top 100. Only <b>"Home builders Yarra Valley"</b> ranks strongly.</p>
       </div></div>
     </div>
+    <h2 class="h2">Month on month</h2>
+    <p class="sub">Monthly totals across the core metrics, with last month's change. May and June are full months; April (from the 12th) and July (to date) are partial, marked *.</p>
+    <div class="card tscroll"><table class="tbl" id="mom"></table></div>
+
     <h2 class="h2">Website traffic</h2>
     <p class="sub">Daily sessions from all channels (GA4). The spikes on 25/06 and 09/07 line up with campaign activity.</p>
     <div class="card chart" id="c-sessions"></div>
@@ -480,6 +488,38 @@ function renderKPIs(){
   document.getElementById("sv-reach").textContent=fmt(socReach);
   document.getElementById("co-spend").textContent=money(paidSpend);
   document.getElementById("co-clicks").textContent=paidClicks;
+}
+
+/* month-on-month */
+const MON={"04":"Apr","05":"May","06":"Jun","07":"Jul","08":"Aug","09":"Sep","10":"Oct","11":"Nov","12":"Dec"};
+function renderMoM(){
+  const tbl=document.getElementById("mom");if(!tbl)return;
+  const present=["04","05","06","07","08","09","10","11","12","01","02","03"].filter(mk=>DATES.some(d=>d.slice(0,2)===mk));
+  const partial=mk=>{const ds=DATES.filter(d=>d.slice(0,2)===mk);if(!ds.length)return false;const days=ds.map(d=>+d.slice(3));const dim=new Date(2026,+mk,0).getDate();return Math.min(...days)>1||Math.max(...days)<dim;};
+  const sumM=(arr,mk)=>{let s=0,any=false;DATES.forEach((d,i)=>{if(d.slice(0,2)===mk&&arr[i]!=null){s+=arr[i];any=true;}});return any?s:null;};
+  const endM=(arr,mk)=>{let v=null;DATES.forEach((d,i)=>{if(d.slice(0,2)===mk&&arr[i]!=null)v=arr[i];});return v;};
+  const combReach=DATES.map((_,i)=>(IG_REACH[i]||0)+(FB_REACH[i]||0));
+  const combEng=DATES.map((_,i)=>(IG_ENG[i]||0)+(FB_ENG[i]||0)+(LI_ENG[i]||0));
+  const rows=[
+    {label:"Website sessions",fn:mk=>sumM(SESSIONS,mk)},
+    {label:"SEO clicks",fn:mk=>sumM(CLICKS,mk)},
+    {label:"SEO impressions",fn:mk=>sumM(IMPR,mk)},
+    {label:"Social reach",fn:mk=>sumM(combReach,mk)},
+    {label:"Social engagement",fn:mk=>sumM(combEng,mk)},
+    {label:"Facebook followers",fn:mk=>endM(FB_FOLL,mk)}
+  ];
+  const fullMonths=present.filter(mk=>!partial(mk));
+  const cur=fullMonths[fullMonths.length-1], prev=fullMonths[fullMonths.length-2];
+  const head=`<thead><tr><th>Metric</th>${present.map(mk=>`<th>${MON[mk]}${partial(mk)?" *":""}</th>`).join("")}${(cur&&prev)?`<th>${MON[prev]}→${MON[cur]}</th>`:""}</tr></thead>`;
+  const body=rows.map(r=>{
+    const cells=present.map(mk=>{const v=r.fn(mk);return `<td class="tnum">${v==null?"—":fmt(v)}</td>`;}).join("");
+    let chg="";
+    if(cur&&prev){const a=r.fn(prev),b=r.fn(cur);
+      if(a&&b!=null){const p=Math.round((b-a)/a*100),cls=p>0?"up":p<0?"dn":"flat";chg=`<td><span class="chip ${cls}">${p>0?"▲":p<0?"▼":"–"} ${Math.abs(p)}%</span></td>`;}
+      else chg=`<td class="tnum">—</td>`;}
+    return `<tr><td class="k">${r.label}</td>${cells}${(cur&&prev)?chg:""}</tr>`;
+  }).join("");
+  tbl.innerHTML=head+`<tbody>${body}</tbody>`;
 }
 
 /* line chart */
@@ -702,17 +742,29 @@ async function deleteInsight(o){
   const {data}=await sb.from("cobalt_insights").select("*").order("created_at");INSIGHTS=data||[];
   renderCharts();renderInsightPanels();
 }
+// Each tab's insights belong to the channel owner: R2R (Jose) runs SEO + Paid,
+// Savvas (Sini) runs Social. Overview shows the whole team.
+const TAB_OWNER={overview:null,seo:"jose@readytorank.com.au",paid:"jose@readytorank.com.au",social:"social@savvasstudio.com"};
+const canAuthorTab=tab=>ME.isAuthor&&(!TAB_OWNER[tab]||TAB_OWNER[tab]===ME.email);
+function updateAddButton(){const ok=canAuthorTab(currentTab());document.getElementById("addins").style.display=ok?"inline-flex":"none";if(!ok&&PINMODE)setPinMode(false);}
 function renderInsightPanels(){
   for(const tab of ["overview","seo","paid","social"]){
     const sec=secs[tab];if(!sec)continue;
     let panel=sec.querySelector(".inspanel");
     if(!panel){panel=document.createElement("div");panel.className="inspanel";sec.appendChild(panel);}
-    const items=INSIGHTS.filter(o=>o.tab===tab);
-    panel.innerHTML=`<h3><img class="ins-av" style="width:20px;height:20px" src="${AV_FALLBACK}" alt=""/> Sini's Insights</h3>
-      <p class="ip-sub">Context from Savvas Studio on what's moving the numbers${ME.isAuthor?" — click <b>✎ Add insight</b>, then a point on any chart":""}.</p>`+
+    const owner=TAB_OWNER[tab], ow=owner?AUTHORS.find(a=>a.email===owner):null;
+    const title=ow?`${ow.name.split(" ")[0]}'s Insights`:"Team Insights";
+    const av=ow?ow.avatar_path:AV_FALLBACK;
+    const team=ow?(ow.role_title||"").split(" · ").pop():"the team";
+    const sub=ow?`Notes from ${ow.name.split(" ")[0]} at ${team} on what's moving the numbers`:"Notes from the team on what's moving the numbers";
+    let items=INSIGHTS.filter(o=>o.tab===tab);
+    if(owner)items=items.filter(o=>o.author_email===owner);
+    const hint=canAuthorTab(tab)?" — click <b>✎ Add insight</b>, then a point on any chart":"";
+    panel.innerHTML=`<h3><img class="ins-av" style="width:20px;height:20px" src="${av}" alt=""/> ${title}</h3>
+      <p class="ip-sub">${esc(sub)}${hint}.</p>`+
       (items.length?items.map(o=>`<div class="ip-item"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/>
         <div class="ip-main"><div class="ip-top"><span class="ip-name">${esc(o.author_name)}</span><span class="ip-where">${chartTitleOf(o.chart_id)} · ${fmtDay(o.anchor_date)||esc(o.anchor_label||"")}</span><span class="ip-when">${new Date(o.created_at).toLocaleDateString("en-AU")}</span></div>
-        ${o.body?`<div class="ip-body">${esc(o.body)}</div>`:""}<div class="ip-audio" data-audio="${o.audio_path||""}"></div></div></div>`).join(""):`<div class="ip-empty">No insights yet on this tab.</div>`);
+        ${o.body?`<div class="ip-body">${esc(o.body)}</div>`:""}<div class="ip-audio" data-audio="${o.audio_path||""}"></div></div></div>`).join(""):`<div class="ip-empty">No insights yet.</div>`);
     panel.querySelectorAll(".ip-audio[data-audio]").forEach(async el=>{const p=el.getAttribute("data-audio");if(!p)return;
       const {data}=await sb.storage.from("cobalt-insights").createSignedUrl(p,3600);if(data?.signedUrl)el.innerHTML=`<audio class="ins-audio" controls src="${data.signedUrl}"></audio>`;});
   }
@@ -727,7 +779,7 @@ const secs={overview:document.getElementById("overview"),seo:document.getElement
 function show(name){
   tabs.forEach(t=>t.setAttribute("aria-selected",t.dataset.tab===name));
   Object.entries(secs).forEach(([k,s])=>s.hidden=k!==name);
-  renderCharts();
+  renderCharts();updateAddButton();
   window.scrollTo({top:0});
 }
 tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.tab)));
@@ -747,8 +799,7 @@ async function boot(){
   const email=session?.user?.email||null;
   const me=AUTHORS.find(a=>a.email===email);
   ME={email,isAuthor:!!me,name:me?.name||null,avatar:me?.avatar_path||null,role:me?.role_title||null};
-  if(ME.isAuthor)document.getElementById("addins").style.display="inline-flex";
-  renderKPIs();posts();tables();renderCharts();fmtStamp();renderInsightPanels();
+  renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();updateAddButton();
   document.getElementById("gate").style.display="none";
   document.getElementById("app").style.display="block";
 }
