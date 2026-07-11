@@ -1,8 +1,28 @@
+export function formatAssignmentStatus(status) {
+  return typeof status === 'string' && status.length > 0
+    ? status.replaceAll('_', ' ')
+    : 'unknown';
+}
+
+export async function handleAuthEvent(event, { controller, view }) {
+  if (event === 'SIGNED_OUT') {
+    view.clearProtectedData();
+    view.showSignIn();
+    return;
+  }
+  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+    await controller.initialize();
+  }
+}
+
 export function createAuthController({ client, view, redirectUrl }) {
   return {
     async initialize() {
       view.showLoading();
-      const { data } = await client.auth.getSession();
+      const { data, error } = await client.auth.getSession();
+      if (error) {
+        throw error;
+      }
       const session = data.session;
       if (!session) {
         view.showSignIn();

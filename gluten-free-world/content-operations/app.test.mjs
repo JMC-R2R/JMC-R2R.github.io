@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createAuthController } from './app.mjs';
+import { createAuthController, formatAssignmentStatus, handleAuthEvent } from './app.mjs';
 
 
 test('initialization shows sign-in when no session exists', async () => {
@@ -141,4 +141,38 @@ test('sign out clears the session and returns to sign-in', async () => {
   await createAuthController({ client, view }).signOut();
 
   assert.deepEqual(calls, ['signed-out', 'sign-in']);
+});
+
+test('session lookup errors are surfaced instead of appearing signed out', async () => {
+  const failure = new Error('session storage unavailable');
+  const client = {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: failure }),
+    },
+  };
+  const view = { showLoading() {}, showSignIn() { throw new Error('must not show sign-in'); } };
+
+  await assert.rejects(
+    createAuthController({ client, view }).initialize(),
+    failure,
+  );
+});
+
+test('signed-out auth events clear protected data and return to sign-in', async () => {
+  const calls = [];
+  const controller = { initialize: async () => calls.push('initialize') };
+  const view = {
+    clearProtectedData: () => calls.push('clear'),
+    showSignIn: () => calls.push('sign-in'),
+  };
+
+  await handleAuthEvent('SIGNED_OUT', { controller, view });
+
+  assert.deepEqual(calls, ['clear', 'sign-in']);
+});
+
+test('malformed assignment status renders a defensive label', () => {
+  assert.equal(formatAssignmentStatus(null), 'unknown');
+  assert.equal(formatAssignmentStatus(undefined), 'unknown');
+  assert.equal(formatAssignmentStatus('in_review'), 'in review');
 });
