@@ -280,10 +280,8 @@ body.pinmode .pinhint{display:block}
 <div class="inspop" id="inspop"></div>
 
 <div class="team"><div class="wrap teamrow">
-  <span class="team-eyebrow">The team</span>
+  <span class="team-eyebrow">Delivered by</span>
   <div class="team-logos">
-    <div class="tmem"><img src="assets/cobalt.webp" alt="Cobalt Constructions"/><span class="tmem-role">Client · Custom home builds</span></div>
-    <span class="tsep"></span>
     <div class="tmem"><img src="assets/r2r.png" alt="Ready to Rank"/><span class="tmem-role">SEO &amp; Paid Ads</span></div>
     <span class="tsep"></span>
     <div class="tmem"><img src="assets/savvas.webp" alt="Savvas Studio"/><span class="tmem-role">Social &amp; Creative</span></div>
@@ -737,8 +735,8 @@ window.addEventListener("resize",()=>{clearTimeout(window._rz);window._rz=setTim
 
 function fmtStamp(){
   const r=REFRESH.find(x=>x.source==='ga4')||REFRESH[0];
-  let d="data to 11/07/2026";
-  document.getElementById("freshdate").textContent=d;
+  const last=DATES[N-1]||"";
+  document.getElementById("freshdate").textContent=last?`data to ${last.slice(3)}/${last.slice(0,2)}/2026`:"live";
   if(r&&r.last_run){const dt=new Date(r.last_run);document.getElementById("genstamp").textContent="Refreshed "+dt.toLocaleDateString("en-AU");}
   else document.getElementById("genstamp").textContent="Live";
 }
