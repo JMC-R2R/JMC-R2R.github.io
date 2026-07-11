@@ -78,7 +78,7 @@ const view = {
   },
 };
 
-if (!config?.supabaseUrl || !config?.publishableKey) {
+if (!config?.supabaseUrl || !config?.publishableKey || !config?.clientId) {
   view.showFatal(new Error('Staging configuration is unavailable.'));
 } else {
   const client = createClient(config.supabaseUrl, config.publishableKey, {
