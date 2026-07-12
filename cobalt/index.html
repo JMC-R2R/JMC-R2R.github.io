@@ -157,6 +157,9 @@ section[hidden]{display:none}
 .wt-dots{display:flex;gap:6px}
 .wt-dots span{width:7px;height:7px;border-radius:50%;background:var(--bd2)}
 .wt-dots span.on{background:var(--savvas)}
+.wt-progress{height:5px;background:var(--bd);border-radius:20px;overflow:hidden;margin:2px 0 4px}
+.wt-progress i{display:block;height:100%;background:var(--savvas);border-radius:20px;transition:width .35s ease}
+.wt-frac{font-family:var(--mono);font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums}
 .pin.pulse{box-shadow:0 0 0 4px rgba(228,87,46,.45);animation:pinpulse 1.1s ease-in-out infinite;z-index:6}
 @keyframes pinpulse{50%{box-shadow:0 0 0 10px rgba(228,87,46,.12)}}
 .swatch{width:8px;height:8px;border-radius:2px;display:inline-block}
@@ -772,10 +775,11 @@ async function wtStep(i){
   setTimeout(()=>{document.querySelectorAll(".pin.pulse").forEach(p=>p.classList.remove("pulse"));const pin=document.querySelector(`.pin[data-ins-id="${o.id}"]`);if(pin)pin.classList.add("pulse");},420);
   const wt=document.getElementById("walkthrough");
   wt.innerHTML=`<div class="wt-card"><button class="wt-x" id="wt-x" aria-label="Close">&times;</button>
-    <div class="wt-count">${esc((o.author_name||"").split(" ")[0])}'s insight · ${i+1} of ${WT.list.length}</div>
+    <div class="wt-count">${esc((o.author_name||"").split(" ")[0])}'s insight</div>
+    <div class="wt-progress"><i style="width:${Math.round((i+1)/WT.list.length*100)}%"></i></div>
     <div class="ins-head"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/><div><div class="ins-who">${esc(o.author_name)}</div><div class="ins-role">${chartTitleOf(o.chart_id)} · ${fmtDay(o.anchor_date)||esc(o.anchor_label||"")}</div></div></div>
     ${o.body?`<div class="wt-body">${esc(o.body)}</div>`:""}<div id="wt-audio"></div>
-    <div class="wt-nav"><button class="ccancel" id="wt-prev" ${i===0?"disabled":""}>← Prev</button><div class="wt-dots">${WT.list.map((_,k)=>`<span class="${k===i?"on":""}"></span>`).join("")}</div><button class="csave" id="wt-next">${last?"Finish ✓":"Next →"}</button></div></div>`;
+    <div class="wt-nav"><button class="ccancel" id="wt-prev" ${i===0?"disabled":""}>← Prev</button><span class="wt-frac">${i+1} / ${WT.list.length}</span><button class="csave" id="wt-next">${last?"Finish ✓":"Next →"}</button></div></div>`;
   document.getElementById("wt-x").onclick=wtClose;
   document.getElementById("wt-prev").onclick=()=>wtStep(WT.i-1);
   document.getElementById("wt-next").onclick=()=>last?wtClose():wtStep(WT.i+1);
