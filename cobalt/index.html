@@ -267,6 +267,18 @@ body.pinmode .pinhint{display:block}
 .pin:hover{transform:translate(-50%,-100%) scale(1.12)}
 .pin img{width:100%;height:100%;object-fit:cover}
 .pin::after{content:"";position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--savvas)}
+/* beacon marker: avatar off the point, arm pointing to it, pulsing ring at the point */
+.beacon{position:absolute;z-index:6;pointer-events:none}
+.beacon-ring{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:var(--savvas);pointer-events:auto;cursor:pointer;box-shadow:0 0 0 0 rgba(228,87,46,.55);animation:bpulse 1.7s ease-out infinite}
+@keyframes bpulse{0%{box-shadow:0 0 0 0 rgba(228,87,46,.5)}70%{box-shadow:0 0 0 18px rgba(228,87,46,0)}100%{box-shadow:0 0 0 0 rgba(228,87,46,0)}}
+.beacon-arm{position:absolute;left:-50px;top:-50px;width:56px;height:2px;background:var(--savvas);transform-origin:left center;transform:rotate(45deg);opacity:.85}
+.beacon-arm::after{content:"";position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left-color:var(--savvas)}
+.beacon-av{position:absolute;left:-74px;top:-74px;width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid var(--savvas);background:var(--s3);box-shadow:0 4px 14px rgba(0,0,0,.55);pointer-events:auto;cursor:pointer;transition:transform .12s}
+.beacon-av:hover{transform:scale(1.08)}
+.beacon-av img{width:100%;height:100%;object-fit:cover;display:block}
+.beacon.pulse .beacon-av{box-shadow:0 0 0 4px rgba(228,87,46,.55),0 4px 14px rgba(0,0,0,.55)}
+body.pinmode [data-anchor]{cursor:crosshair}
+#beacon-layer{position:absolute;top:0;left:0;width:0;height:0;z-index:6;pointer-events:none}
 /* popover + composer */
 .inspop{position:fixed;z-index:70;width:300px;max-width:calc(100vw - 24px);background:var(--s2);border:1px solid var(--bd2);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.55);padding:15px;display:none}
 .inspop.show{display:block}
@@ -346,6 +358,7 @@ body.pinmode .pinhint{display:block}
 <div class="pinhint">Click a point on any chart to pin your insight — or press Esc to cancel</div>
 <div class="inspop" id="inspop"></div>
 <div class="wt" id="walkthrough"></div>
+<div id="beacon-layer"></div>
 
 <div class="team"><div class="wrap teamrow">
   <span class="team-eyebrow">Delivered by</span>
@@ -364,7 +377,7 @@ body.pinmode .pinhint{display:block}
 </div></nav>
 
 <main class="wrap">
-  <section id="overview">
+  <section id="overview" data-anchor="sec:overview">
     <div class="eyebrow">Snapshot · last 90 days</div>
     <div class="kpis" id="kpi-overview"></div>
     <div class="callouts">
@@ -391,7 +404,7 @@ body.pinmode .pinhint{display:block}
     <div id="corrections"></div>
   </section>
 
-  <section id="seo" hidden>
+  <section id="seo" data-anchor="sec:seo" hidden>
     <div class="eyebrow">Organic search · Google</div>
     <div class="kpis" id="kpi-seo"></div>
     <div class="grid g2" style="margin-top:14px">
@@ -403,7 +416,7 @@ body.pinmode .pinhint{display:block}
     <div class="card tscroll"><table class="tbl" id="t-rank"></table></div>
   </section>
 
-  <section id="paid" hidden>
+  <section id="paid" data-anchor="sec:paid" hidden>
     <div class="eyebrow">Paid ads · Meta (Google campaigns paused)</div>
     <div class="callouts" style="margin-top:0;margin-bottom:16px;grid-template-columns:1fr">
       <div class="callout bad"><div class="bar"></div><div>
@@ -418,7 +431,7 @@ body.pinmode .pinhint{display:block}
     <div class="card tscroll"><table class="tbl" id="t-paid"></table></div>
   </section>
 
-  <section id="social" hidden>
+  <section id="social" data-anchor="sec:social" hidden>
     <div class="savvas-hero">
       <img class="sv-icon" src="assets/savvas-icon.png" alt=""/>
       <div class="sv-body">
@@ -756,7 +769,18 @@ async function delContent(id){
   const {data}=await sb.from("cobalt_content_plan").select("*").order("plan_date");CONTENT=data||[];renderContent();
 }
 
-function renderAll(){renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();updateAddButton();}
+function renderAll(){renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderBeacons();updateAddButton();}
+
+/* pin-anywhere: click any element (post, card, page area) while in pin mode */
+document.getElementById("app").addEventListener("click",e=>{
+  if(!PINMODE||!ME.isAuthor)return;
+  if(e.target.closest("svg,header,nav.tabs,.wt,.inspop,.beacon,.inspanel,.mmhead,.mmctrl,.corr,form,button,select,input,label,audio"))return;
+  const t=e.target.closest("[data-anchor]");if(!t)return;
+  e.preventDefault();e.stopPropagation();
+  const r=t.getBoundingClientRect();
+  const x=Math.min(Math.max((e.clientX-r.left)/r.width,0),1),y=Math.min(Math.max((e.clientY-r.top)/r.height,0),1);
+  openComposer({kind:"element",target_id:t.dataset.anchor,x,y,tab:currentTab()},e.clientX,e.clientY);
+},true);
 
 /* ===== Sini's Insights walkthrough (guided report) ===== */
 let WT={active:false,list:[],i:0};
@@ -770,14 +794,14 @@ function startWalkthrough(tab){
 async function wtStep(i){
   if(i<0||i>=WT.list.length)return; WT.i=i; const o=WT.list[i], last=i===WT.list.length-1;
   if(currentTab()!==o.tab)show(o.tab);
-  const chart=document.getElementById(o.chart_id);
-  if(chart)chart.scrollIntoView({behavior:"smooth",block:"center"});
-  setTimeout(()=>{document.querySelectorAll(".pin.pulse").forEach(p=>p.classList.remove("pulse"));const pin=document.querySelector(`.pin[data-ins-id="${o.id}"]`);if(pin)pin.classList.add("pulse");},420);
+  const tgt=o.anchor_kind==="element"?[...document.querySelectorAll("[data-anchor]")].find(el=>el.dataset.anchor===o.target_id):document.getElementById(o.chart_id);
+  if(tgt)tgt.scrollIntoView({behavior:"smooth",block:"center"});
+  setTimeout(()=>{document.querySelectorAll(".beacon.pulse").forEach(p=>p.classList.remove("pulse"));const bc=document.querySelector(`.beacon[data-ins-id="${o.id}"]`);if(bc)bc.classList.add("pulse");},450);
   const wt=document.getElementById("walkthrough");
   wt.innerHTML=`<div class="wt-card"><button class="wt-x" id="wt-x" aria-label="Close">&times;</button>
     <div class="wt-count">${esc((o.author_name||"").split(" ")[0])}'s insight</div>
     <div class="wt-progress"><i style="width:${Math.round((i+1)/WT.list.length*100)}%"></i></div>
-    <div class="ins-head"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/><div><div class="ins-who">${esc(o.author_name)}</div><div class="ins-role">${chartTitleOf(o.chart_id)} · ${fmtDay(o.anchor_date)||esc(o.anchor_label||"")}</div></div></div>
+    <div class="ins-head"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/><div><div class="ins-who">${esc(o.author_name)}</div><div class="ins-role">${whereLabel(o)}</div></div></div>
     ${o.body?`<div class="wt-body">${esc(o.body)}</div>`:""}<div id="wt-audio"></div>
     <div class="wt-nav"><button class="ccancel" id="wt-prev" ${i===0?"disabled":""}>← Prev</button><span class="wt-frac">${i+1} / ${WT.list.length}</span><button class="csave" id="wt-next">${last?"Finish ✓":"Next →"}</button></div></div>`;
   document.getElementById("wt-x").onclick=wtClose;
@@ -828,13 +852,9 @@ function lineChart(mount,{series,title,sub,legend,yfmt,invert,area}){
   // ---- Sini's Insights: pins + pin-mode ----
   const chartBox=mount.querySelector(".chart"), chartId=mount.id;
   const k=svgEl.clientWidth/W || 1;
-  (typeof INSIGHTS!=="undefined"?INSIGHTS:[]).filter(o=>o.chart_id===chartId&&o.anchor_date).forEach(o=>{
+  (typeof INSIGHTS!=="undefined"?INSIGHTS:[]).filter(o=>o.chart_id===chartId&&o.anchor_date&&o.anchor_kind!=="element").forEach(o=>{
     const i=DATES.indexOf(o.anchor_date.slice(5)); if(i<0)return;
-    const pin=document.createElement("div");pin.className="pin";pin.dataset.insId=o.id;
-    pin.style.left=(X(i)*k)+"px";pin.style.top=((P.t+2)*k)+"px";
-    pin.innerHTML=`<img src="${authorAvatar(o.author_email)}" alt=""/>`;
-    pin.addEventListener("click",ev=>{ev.stopPropagation();openInsightPopover(o,ev.clientX,ev.clientY);});
-    chartBox.appendChild(pin);
+    const b=beaconEl(o);b.style.left=(X(i)*k)+"px";b.style.top=((P.t+10)*k)+"px";chartBox.appendChild(b);
   });
   if(typeof PINMODE!=="undefined"&&PINMODE&&ME.isAuthor){
     svgEl.style.cursor="crosshair";
@@ -843,7 +863,7 @@ function lineChart(mount,{series,title,sub,legend,yfmt,invert,area}){
       e.stopPropagation();
       const r=svgEl.getBoundingClientRect(),cxp=(e.clientX-r.left)/r.width*W;
       let i=Math.round((cxp-P.l)/iw*(N-1));i=Math.max(0,Math.min(N-1,i));
-      openComposer(chartId,DATES[i],currentTab(),e.clientX,e.clientY);
+      openComposer({kind:"chart",chart_id:chartId,date:DATES[i],tab:currentTab()},e.clientX,e.clientY);
     });
   }
 }
@@ -884,13 +904,13 @@ const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 const CURSOR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l7 17 2.5-7.5L21 11 4 4Z"/></svg>';
 function posts(){
   document.getElementById("ig-posts").innerHTML=IG_POSTS.map(p=>`
-    <a class="post" href="${p.url}" target="_blank" rel="noopener">
+    <a class="post" data-anchor="post:${p.url}" href="${p.url}" target="_blank" rel="noopener">
       <div class="cover"><span class="typebadge">${p.type}</span><img src="${p.img}" alt="" loading="lazy"/></div>
       <div class="pbody"><div class="pcap">${esc(p.cap)}</div>
         <div class="pmetrics"><span class="m">${EYE}${fmt(p.reach)}</span><span class="m">${HEART}${p.eng}<span class="mlab"> eng</span></span></div>
       </div></a>`).join("");
   document.getElementById("fb-posts").innerHTML=FB_POSTS.map(p=>`
-    <a class="post" href="${p.url}" target="_blank" rel="noopener">
+    <a class="post" data-anchor="post:${p.url}" href="${p.url}" target="_blank" rel="noopener">
       <div class="cover"><span class="typebadge">${p.type}</span><img src="${p.img}" alt="" loading="lazy"/></div>
       <div class="pbody"><div class="pcap">${esc(p.cap)}</div>
         <div class="pmetrics"><span class="m">${EYE}${fmt(p.reach)}</span><span class="m">${CURSOR}${p.eng}<span class="mlab"> clicks</span></span></div>
@@ -927,7 +947,7 @@ async function openInsightPopover(o,x,y){
   inspop.innerHTML=`<button class="ins-x" aria-label="Close">&times;</button>
     <div class="ins-head"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/>
       <div><div class="ins-who">${esc(o.author_name)}</div><div class="ins-role">${esc(authorRole(o.author_email))}</div></div>
-      <div class="ins-meta">${chartTitleOf(o.chart_id)}<br>${fmtDay(o.anchor_date)||esc(o.anchor_label||"")}</div></div>
+      <div class="ins-meta">${whereLabel(o)}</div></div>
     ${o.body?`<div class="ins-body">${esc(o.body)}</div>`:""}
     <div id="pop-audio"></div>
     ${mine?`<button class="ins-del">Delete</button>`:""}`;
@@ -941,11 +961,12 @@ async function openInsightPopover(o,x,y){
 }
 
 let rec=null,chunks=[],recBlob=null,recMime="",recTimer=null;
-function openComposer(chartId,date,tab,x,y){
+function openComposer(anchor,x,y){
   recBlob=null;chunks=[];
+  const where=anchor.kind==="chart"?`${chartTitleOf(anchor.chart_id)} · ${fmtDay(anchor.date)}`:(String(anchor.target_id||"").startsWith("post:")?"On this post":"On this page");
   inspop.innerHTML=`<button class="ins-x" aria-label="Close">&times;</button>
     <div class="ins-head"><img class="ins-av" src="${ME.avatar||AV_FALLBACK}" alt=""/>
-      <div><div class="ins-who">${esc(ME.name||"You")}</div><div class="ins-role">${chartTitleOf(chartId)} · ${fmtDay(date)}</div></div></div>
+      <div><div class="ins-who">${esc(ME.name||"You")}</div><div class="ins-role">${where}</div></div></div>
     <div class="compose">
       <textarea id="c-text" placeholder="What happened here? Explain the spike, dip or campaign moment…"></textarea>
       <div class="crow">
@@ -960,7 +981,7 @@ function openComposer(chartId,date,tab,x,y){
   inspop.querySelector(".ins-x").onclick=()=>{stopRec(true);closePop();};
   document.getElementById("c-cancel").onclick=()=>{stopRec(true);closePop();};
   document.getElementById("c-rec").onclick=toggleRec;
-  document.getElementById("c-save").onclick=()=>saveInsight(chartId,date,tab);
+  document.getElementById("c-save").onclick=()=>saveInsight(anchor);
 }
 async function toggleRec(){
   const btn=document.getElementById("c-rec");
@@ -983,7 +1004,7 @@ function stopRec(discard){
   const btn=document.getElementById("c-rec");if(btn){btn.classList.remove("recording");const tn=btn.querySelector(".dotr").nextSibling;if(tn)tn.textContent="Record";}
   if(discard)recBlob=null;
 }
-async function saveInsight(chartId,date,tab){
+async function saveInsight(anchor){
   const save=document.getElementById("c-save");save.disabled=true;save.textContent="Saving…";
   stopRec(false); await new Promise(r=>setTimeout(r,150)); // let onstop finalise the blob
   const body=document.getElementById("c-text").value.trim();
@@ -996,10 +1017,14 @@ async function saveInsight(chartId,date,tab){
       const up=await sb.storage.from("cobalt-insights").upload(audio_path,recBlob,{contentType:recMime||"audio/webm"});
       if(up.error)throw up.error;
     }
-    const {error}=await sb.from("cobalt_insights").insert({tab,chart_id:chartId,anchor_date:date?`2026-${date}`:null,anchor_label:date?null:chartId,body:body||null,audio_path,author_email:ME.email,author_name:ME.name});
+    const base={tab:anchor.tab,body:body||null,audio_path,author_email:ME.email,author_name:ME.name};
+    const rec=anchor.kind==="chart"
+      ? {...base,anchor_kind:"chart",chart_id:anchor.chart_id,anchor_date:anchor.date?`2026-${anchor.date}`:null}
+      : {...base,anchor_kind:"element",target_id:anchor.target_id,x_frac:anchor.x,y_frac:anchor.y};
+    const {error}=await sb.from("cobalt_insights").insert(rec);
     if(error)throw error;
     const {data}=await sb.from("cobalt_insights").select("*").order("created_at");INSIGHTS=data||[];
-    setPinMode(false);closePop();renderCharts();renderInsightPanels();
+    setPinMode(false);closePop();renderAll();
   }catch(err){save.disabled=false;save.textContent="Pin insight";document.getElementById("c-time").textContent="Couldn't save — try again";}
 }
 async function deleteInsight(o){
@@ -1008,6 +1033,30 @@ async function deleteInsight(o){
   const {data}=await sb.from("cobalt_insights").select("*").order("created_at");INSIGHTS=data||[];
   renderCharts();renderInsightPanels();
 }
+function whereLabel(o){
+  if(o.anchor_kind==="element"){const t=o.target_id||"";return t.startsWith("post:")?"On a post":t.startsWith("sec:")?"On this page":"Pinned";}
+  return `${chartTitleOf(o.chart_id)} · ${fmtDay(o.anchor_date)||esc(o.anchor_label||"")}`;
+}
+function beaconEl(o){
+  const b=document.createElement("div");b.className="beacon";b.dataset.insId=o.id;
+  b.innerHTML=`<div class="beacon-arm"></div><div class="beacon-av"><img src="${authorAvatar(o.author_email)}" alt=""/></div><span class="beacon-ring"></span>`;
+  const open=ev=>{ev.stopPropagation();ev.preventDefault();openInsightPopover(o,ev.clientX,ev.clientY);};
+  b.querySelector(".beacon-av").addEventListener("click",open);
+  b.querySelector(".beacon-ring").addEventListener("click",open);
+  return b;
+}
+function renderBeacons(){
+  const layer=document.getElementById("beacon-layer");if(!layer)return;layer.innerHTML="";
+  INSIGHTS.filter(o=>o.anchor_kind==="element"&&o.target_id).forEach(o=>{
+    const t=[...document.querySelectorAll("[data-anchor]")].find(el=>el.dataset.anchor===o.target_id);
+    if(!t)return;const r=t.getBoundingClientRect();if(r.width===0||r.height===0)return; // target hidden
+    const b=beaconEl(o);b.classList.add("el");
+    b.style.left=(r.left+window.scrollX+(o.x_frac==null?0.5:o.x_frac)*r.width)+"px";
+    b.style.top=(r.top+window.scrollY+(o.y_frac==null?0.2:o.y_frac)*r.height)+"px";
+    layer.appendChild(b);
+  });
+}
+
 // Each tab's insights belong to the channel owner: R2R (Jose) runs SEO + Paid,
 // Savvas (Sini) runs Social. Overview shows the whole team.
 const TAB_OWNER={overview:null,seo:"jose@readytorank.com.au",paid:"jose@readytorank.com.au",social:"social@savvasstudio.com"};
@@ -1028,7 +1077,7 @@ function renderInsightPanels(){
     panel.innerHTML=`<h3><img class="ins-av" style="width:20px;height:20px" src="${av}" alt=""/> ${title}${items.length?`<button class="wt-btn" data-wt="${tab}">▶ Walkthrough</button>`:""}</h3>
       <p class="ip-sub">${esc(sub)}${hint}.</p>`+
       (items.length?items.map(o=>`<div class="ip-item"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/>
-        <div class="ip-main"><div class="ip-top"><span class="ip-name">${esc(o.author_name)}</span><span class="ip-where">${chartTitleOf(o.chart_id)} · ${fmtDay(o.anchor_date)||esc(o.anchor_label||"")}</span><span class="ip-when">${new Date(o.created_at).toLocaleDateString("en-AU")}</span></div>
+        <div class="ip-main"><div class="ip-top"><span class="ip-name">${esc(o.author_name)}</span><span class="ip-where">${whereLabel(o)}</span><span class="ip-when">${new Date(o.created_at).toLocaleDateString("en-AU")}</span></div>
         ${o.body?`<div class="ip-body">${esc(o.body)}</div>`:""}<div class="ip-audio" data-audio="${o.audio_path||""}"></div></div></div>`).join(""):`<div class="ip-empty">No insights yet.</div>`);
     panel.querySelectorAll(".ip-audio[data-audio]").forEach(async el=>{const p=el.getAttribute("data-audio");if(!p)return;
       const {data}=await sb.storage.from("cobalt-insights").createSignedUrl(p,3600);if(data?.signedUrl)el.innerHTML=`<audio class="ins-audio" controls src="${data.signedUrl}"></audio>`;});
@@ -1047,9 +1096,10 @@ function show(name){
   Object.entries(secs).forEach(([k,s])=>s.hidden=k!==name);
   renderCharts();updateAddButton();
   window.scrollTo({top:0});
+  renderBeacons();
 }
 tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.tab)));
-window.addEventListener("resize",()=>{clearTimeout(window._rz);window._rz=setTimeout(renderCharts,180);});
+window.addEventListener("resize",()=>{clearTimeout(window._rz);window._rz=setTimeout(()=>{renderCharts();renderBeacons();},180);});
 
 function fmtStamp(){
   const r=REFRESH.find(x=>x.source==='ga4')||REFRESH[0];
