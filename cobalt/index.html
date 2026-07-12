@@ -271,11 +271,15 @@ body.pinmode .pinhint{display:block}
 .beacon{position:absolute;z-index:6;pointer-events:none}
 .beacon-ring{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:var(--savvas);pointer-events:auto;cursor:pointer;box-shadow:0 0 0 0 rgba(228,87,46,.55);animation:bpulse 1.7s ease-out infinite}
 @keyframes bpulse{0%{box-shadow:0 0 0 0 rgba(228,87,46,.5)}70%{box-shadow:0 0 0 18px rgba(228,87,46,0)}100%{box-shadow:0 0 0 0 rgba(228,87,46,0)}}
-.beacon-arm{position:absolute;left:-50px;top:-50px;width:56px;height:2px;background:var(--savvas);transform-origin:left center;transform:rotate(45deg);opacity:.85}
-.beacon-arm::after{content:"";position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left-color:var(--savvas)}
-.beacon-av{position:absolute;left:-74px;top:-74px;width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid var(--savvas);background:var(--s3);box-shadow:0 4px 14px rgba(0,0,0,.55);pointer-events:auto;cursor:pointer;transition:transform .12s}
+.beacon-arm{position:absolute;left:-52px;top:-1px;width:52px;height:2px;background:var(--savvas);transform-origin:100% 50%;opacity:.9}
+.beacon-arm::after{content:"";position:absolute;right:-5px;top:-4px;border:5px solid transparent;border-left-color:var(--savvas)}
+.beacon-av{position:absolute;left:-57px;top:-57px;width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid var(--savvas);background:var(--s3);box-shadow:0 4px 14px rgba(0,0,0,.55);pointer-events:auto;cursor:pointer;transition:transform .12s}
 .beacon-av:hover{transform:scale(1.08)}
 .beacon-av img{width:100%;height:100%;object-fit:cover;display:block}
+.beacon.b-ul .beacon-arm{transform:rotate(45deg)} .beacon.b-ul .beacon-av{left:-57px;top:-57px}
+.beacon.b-ur .beacon-arm{transform:rotate(135deg)} .beacon.b-ur .beacon-av{left:17px;top:-57px}
+.beacon.b-dl .beacon-arm{transform:rotate(-45deg)} .beacon.b-dl .beacon-av{left:-57px;top:17px}
+.beacon.b-dr .beacon-arm{transform:rotate(-135deg)} .beacon.b-dr .beacon-av{left:17px;top:17px}
 .beacon.pulse .beacon-av{box-shadow:0 0 0 4px rgba(228,87,46,.55),0 4px 14px rgba(0,0,0,.55)}
 body.pinmode [data-anchor]{cursor:crosshair}
 #beacon-layer{position:absolute;top:0;left:0;width:0;height:0;z-index:6;pointer-events:none}
@@ -854,7 +858,10 @@ function lineChart(mount,{series,title,sub,legend,yfmt,invert,area}){
   const k=svgEl.clientWidth/W || 1;
   (typeof INSIGHTS!=="undefined"?INSIGHTS:[]).filter(o=>o.chart_id===chartId&&o.anchor_date&&o.anchor_kind!=="element").forEach(o=>{
     const i=DATES.indexOf(o.anchor_date.slice(5)); if(i<0)return;
-    const b=beaconEl(o);b.style.left=(X(i)*k)+"px";b.style.top=((P.t+10)*k)+"px";chartBox.appendChild(b);
+    const b=beaconEl(o);b.style.left=(X(i)*k)+"px";b.style.top=((P.t+10)*k)+"px";
+    const cr=chartBox.getBoundingClientRect();
+    b.classList.add(`b-${(cr.top+(P.t+10)*k)>120?"u":"d"}${(cr.left+X(i)*k)>120?"l":"r"}`);
+    chartBox.appendChild(b);
   });
   if(typeof PINMODE!=="undefined"&&PINMODE&&ME.isAuthor){
     svgEl.style.cursor="crosshair";
@@ -1051,8 +1058,10 @@ function renderBeacons(){
     const t=[...document.querySelectorAll("[data-anchor]")].find(el=>el.dataset.anchor===o.target_id);
     if(!t)return;const r=t.getBoundingClientRect();if(r.width===0||r.height===0)return; // target hidden
     const b=beaconEl(o);b.classList.add("el");
-    b.style.left=(r.left+window.scrollX+(o.x_frac==null?0.5:o.x_frac)*r.width)+"px";
-    b.style.top=(r.top+window.scrollY+(o.y_frac==null?0.2:o.y_frac)*r.height)+"px";
+    const xf=o.x_frac==null?0.5:o.x_frac, yf=o.y_frac==null?0.2:o.y_frac;
+    b.style.left=(r.left+window.scrollX+xf*r.width)+"px";
+    b.style.top=(r.top+window.scrollY+yf*r.height)+"px";
+    b.classList.add(`b-${(r.top+yf*r.height)>120?"u":"d"}${(r.left+xf*r.width)>120?"l":"r"}`);
     layer.appendChild(b);
   });
 }
