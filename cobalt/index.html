@@ -140,6 +140,25 @@ section[hidden]{display:none}
 @media(max-width:760px){.corr-form{grid-template-columns:1fr 1fr}}
 .corr-form input,.corr-form select{background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--ink);font-family:var(--sans);font-size:13px;padding:8px 10px;outline:none;width:100%}
 .corr-lab{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px;display:block}
+/* insights walkthrough */
+.wt-btn{font-family:var(--sans);font-size:11px;font-weight:800;letter-spacing:.02em;color:#fff;background:var(--savvas);border:none;border-radius:20px;padding:6px 13px;cursor:pointer;margin-left:auto;display:inline-flex;align-items:center;gap:6px}
+.wt-btn:hover{filter:brightness(1.08)}
+.inspanel h3{display:flex;align-items:center;gap:8px}
+.wt{position:fixed;left:0;right:0;bottom:0;z-index:80;display:none;justify-content:center;padding:0 16px 20px;pointer-events:none}
+.wt.on{display:flex}
+.wt-card{pointer-events:auto;width:100%;max-width:470px;background:var(--s2);border:1px solid var(--savvas);border-radius:16px;box-shadow:0 14px 50px rgba(0,0,0,.6);padding:18px 20px;position:relative;animation:wtup .25s ease}
+@keyframes wtup{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.wt-x{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--ink3);font-size:19px;line-height:1;cursor:pointer}
+.wt-count{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--savvas);margin-bottom:10px}
+.wt-body{font-size:14px;line-height:1.55;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.wt-card .ins-audio{margin-top:12px}
+.wt-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px}
+.wt-nav .ccancel:disabled{opacity:.3;cursor:default}
+.wt-dots{display:flex;gap:6px}
+.wt-dots span{width:7px;height:7px;border-radius:50%;background:var(--bd2)}
+.wt-dots span.on{background:var(--savvas)}
+.pin.pulse{box-shadow:0 0 0 4px rgba(228,87,46,.45);animation:pinpulse 1.1s ease-in-out infinite;z-index:6}
+@keyframes pinpulse{50%{box-shadow:0 0 0 10px rgba(228,87,46,.12)}}
 .swatch{width:8px;height:8px;border-radius:2px;display:inline-block}
 
 .grid{display:grid;gap:14px}
@@ -323,6 +342,7 @@ body.pinmode .pinhint{display:block}
 </header>
 <div class="pinhint">Click a point on any chart to pin your insight — or press Esc to cancel</div>
 <div class="inspop" id="inspop"></div>
+<div class="wt" id="walkthrough"></div>
 
 <div class="team"><div class="wrap teamrow">
   <span class="team-eyebrow">Delivered by</span>
@@ -406,16 +426,9 @@ body.pinmode .pinhint{display:block}
     </div>
     <div class="eyebrow">Organic social · Instagram · Facebook · LinkedIn</div>
     <div class="kpis" id="kpi-social"></div>
-    <div class="mmwrap" id="manual-social" style="margin-top:16px"></div>
-    <div class="mmwrap" id="content-plan" style="margin-top:16px"></div>
+    <div class="inspanel" id="ins-social" style="margin-top:16px"></div>
     <div class="card chart" style="margin-top:14px" id="c-reach"></div>
-    <h2 class="h2">Top performing posts</h2>
-    <p class="sub">Highest-reach organic posts in the last 90 days — the Warrandyte build series is carrying both channels.</p>
-    <div class="posthead"><span class="pill-ig">Instagram</span><span class="small">by reach · @cobaltconstructions</span></div>
-    <div class="postgrid" id="ig-posts"></div>
-    <div class="posthead" style="margin-top:20px"><span class="pill-fb">Facebook</span><span class="small">by reach · Cobalt Constructions</span></div>
-    <div class="postgrid" id="fb-posts"></div>
-    <div class="grid g2" style="margin-top:22px">
+    <div class="grid g2" style="margin-top:14px">
       <div class="card chart" id="c-eng"></div>
       <div class="card chart" id="c-fbfoll"></div>
     </div>
@@ -425,6 +438,14 @@ body.pinmode .pinhint{display:block}
         <p>Instagram reach jumped from a ~60–150/day baseline to <b>500–830/day</b> around the 08–09/07 ad launch, and Facebook engagement spiked the same week. The ad audience is finding the organic profiles too.</p>
       </div></div>
     </div>
+    <h2 class="h2">Top performing posts</h2>
+    <p class="sub">Highest-reach organic posts in the last 90 days — the Warrandyte build series is carrying both channels.</p>
+    <div class="posthead"><span class="pill-ig">Instagram</span><span class="small">by reach · @cobaltconstructions</span></div>
+    <div class="postgrid" id="ig-posts"></div>
+    <div class="posthead" style="margin-top:20px"><span class="pill-fb">Facebook</span><span class="small">by reach · Cobalt Constructions</span></div>
+    <div class="postgrid" id="fb-posts"></div>
+    <div class="mmwrap" id="manual-social" style="margin-top:22px"></div>
+    <div class="mmwrap" id="content-plan" style="margin-top:16px"></div>
   </section>
 </main>
 
@@ -734,6 +755,35 @@ async function delContent(id){
 
 function renderAll(){renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();updateAddButton();}
 
+/* ===== Sini's Insights walkthrough (guided report) ===== */
+let WT={active:false,list:[],i:0};
+function startWalkthrough(tab){
+  const list=INSIGHTS.filter(o=>o.tab===tab).slice().sort((a,b)=>((a.anchor_date||a.created_at||"")+"").localeCompare((b.anchor_date||b.created_at||"")+""));
+  if(!list.length)return;
+  WT={active:true,list,i:0};
+  document.getElementById("walkthrough").classList.add("on");
+  wtStep(0);
+}
+async function wtStep(i){
+  if(i<0||i>=WT.list.length)return; WT.i=i; const o=WT.list[i], last=i===WT.list.length-1;
+  if(currentTab()!==o.tab)show(o.tab);
+  const chart=document.getElementById(o.chart_id);
+  if(chart)chart.scrollIntoView({behavior:"smooth",block:"center"});
+  setTimeout(()=>{document.querySelectorAll(".pin.pulse").forEach(p=>p.classList.remove("pulse"));const pin=document.querySelector(`.pin[data-ins-id="${o.id}"]`);if(pin)pin.classList.add("pulse");},420);
+  const wt=document.getElementById("walkthrough");
+  wt.innerHTML=`<div class="wt-card"><button class="wt-x" id="wt-x" aria-label="Close">&times;</button>
+    <div class="wt-count">${esc((o.author_name||"").split(" ")[0])}'s insight · ${i+1} of ${WT.list.length}</div>
+    <div class="ins-head"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/><div><div class="ins-who">${esc(o.author_name)}</div><div class="ins-role">${chartTitleOf(o.chart_id)} · ${fmtDay(o.anchor_date)||esc(o.anchor_label||"")}</div></div></div>
+    ${o.body?`<div class="wt-body">${esc(o.body)}</div>`:""}<div id="wt-audio"></div>
+    <div class="wt-nav"><button class="ccancel" id="wt-prev" ${i===0?"disabled":""}>← Prev</button><div class="wt-dots">${WT.list.map((_,k)=>`<span class="${k===i?"on":""}"></span>`).join("")}</div><button class="csave" id="wt-next">${last?"Finish ✓":"Next →"}</button></div></div>`;
+  document.getElementById("wt-x").onclick=wtClose;
+  document.getElementById("wt-prev").onclick=()=>wtStep(WT.i-1);
+  document.getElementById("wt-next").onclick=()=>last?wtClose():wtStep(WT.i+1);
+  if(o.audio_path){const {data}=await sb.storage.from("cobalt-insights").createSignedUrl(o.audio_path,3600);if(data?.signedUrl)document.getElementById("wt-audio").innerHTML=`<audio class="ins-audio" controls autoplay src="${data.signedUrl}"></audio>`;}
+}
+function wtClose(){WT.active=false;const wt=document.getElementById("walkthrough");wt.classList.remove("on");wt.innerHTML="";document.querySelectorAll(".pin.pulse").forEach(p=>p.classList.remove("pulse"));}
+document.addEventListener("keydown",e=>{if(!WT.active)return;if(e.key==="Escape")wtClose();else if(e.key==="ArrowRight")wtStep(Math.min(WT.i+1,WT.list.length-1));else if(e.key==="ArrowLeft")wtStep(Math.max(WT.i-1,0));});
+
 /* line chart */
 function lineChart(mount,{series,title,sub,legend,yfmt,invert,area}){
   const W=mount.clientWidth||560,H=248,P={t:14,r:16,b:26,l:40};
@@ -776,7 +826,7 @@ function lineChart(mount,{series,title,sub,legend,yfmt,invert,area}){
   const k=svgEl.clientWidth/W || 1;
   (typeof INSIGHTS!=="undefined"?INSIGHTS:[]).filter(o=>o.chart_id===chartId&&o.anchor_date).forEach(o=>{
     const i=DATES.indexOf(o.anchor_date.slice(5)); if(i<0)return;
-    const pin=document.createElement("div");pin.className="pin";
+    const pin=document.createElement("div");pin.className="pin";pin.dataset.insId=o.id;
     pin.style.left=(X(i)*k)+"px";pin.style.top=((P.t+2)*k)+"px";
     pin.innerHTML=`<img src="${authorAvatar(o.author_email)}" alt=""/>`;
     pin.addEventListener("click",ev=>{ev.stopPropagation();openInsightPopover(o,ev.clientX,ev.clientY);});
@@ -971,13 +1021,14 @@ function renderInsightPanels(){
     const sub=ow?`Notes from ${ow.name.split(" ")[0]} at ${team} on what's moving the numbers`:"Notes from the team on what's moving the numbers";
     const items=INSIGHTS.filter(o=>o.tab===tab);
     const hint=canAuthorTab(tab)?" — click <b>✎ Add insight</b>, then a point on any chart":"";
-    panel.innerHTML=`<h3><img class="ins-av" style="width:20px;height:20px" src="${av}" alt=""/> ${title}</h3>
+    panel.innerHTML=`<h3><img class="ins-av" style="width:20px;height:20px" src="${av}" alt=""/> ${title}${items.length?`<button class="wt-btn" data-wt="${tab}">▶ Walkthrough</button>`:""}</h3>
       <p class="ip-sub">${esc(sub)}${hint}.</p>`+
       (items.length?items.map(o=>`<div class="ip-item"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/>
         <div class="ip-main"><div class="ip-top"><span class="ip-name">${esc(o.author_name)}</span><span class="ip-where">${chartTitleOf(o.chart_id)} · ${fmtDay(o.anchor_date)||esc(o.anchor_label||"")}</span><span class="ip-when">${new Date(o.created_at).toLocaleDateString("en-AU")}</span></div>
         ${o.body?`<div class="ip-body">${esc(o.body)}</div>`:""}<div class="ip-audio" data-audio="${o.audio_path||""}"></div></div></div>`).join(""):`<div class="ip-empty">No insights yet.</div>`);
     panel.querySelectorAll(".ip-audio[data-audio]").forEach(async el=>{const p=el.getAttribute("data-audio");if(!p)return;
       const {data}=await sb.storage.from("cobalt-insights").createSignedUrl(p,3600);if(data?.signedUrl)el.innerHTML=`<audio class="ins-audio" controls src="${data.signedUrl}"></audio>`;});
+    panel.querySelector(".wt-btn")?.addEventListener("click",()=>startWalkthrough(tab));
   }
 }
 function setPinMode(on){PINMODE=on;document.body.classList.toggle("pinmode",on);document.getElementById("addins").classList.toggle("on",on);renderCharts();}
