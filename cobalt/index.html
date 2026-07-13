@@ -269,6 +269,20 @@ footer{border-top:1px solid var(--bd);padding:22px 0;color:var(--ink3);font-size
 .fb-body{font-size:13.5px;color:var(--ink2);line-height:1.55;margin-top:4px;white-space:pre-wrap}
 .fb-audio{margin-top:8px}
 .avi{display:inline-flex;align-items:center;justify-content:center;background:var(--s3);color:var(--ink);font-weight:700;font-family:var(--sans);font-size:14px;border-color:var(--bd2)!important}
+/* first-time tour */
+.tour-help{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);background:none;border:1px solid var(--bd);border-radius:20px;padding:5px 11px;cursor:pointer}
+.tour-help:hover{color:var(--ink2);border-color:var(--bd2)}
+#tour{position:fixed;inset:0;z-index:90;display:none}
+#tour.on{display:block}
+.tour-hole{position:absolute;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.66);transition:all .2s ease;pointer-events:none}
+.tour-card{position:absolute;z-index:91;width:290px;max-width:calc(100vw - 24px);background:var(--s2);border:1px solid var(--cobalt);border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.6);padding:16px 18px;animation:wtup .2s ease}
+.tour-step{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cobalt);margin-bottom:6px}
+.tour-title{font-size:15px;font-weight:800;margin:0 0 6px}
+.tour-text{font-size:13px;color:var(--ink2);line-height:1.55}
+.tour-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+.tour-skip{font-family:var(--mono);font-size:11px;color:var(--ink3);background:none;border:none;cursor:pointer}
+.tour-next{background:var(--cobalt);color:#03242e;font-weight:800;font-size:13px;border:none;border-radius:20px;padding:8px 16px;cursor:pointer}
+.tour-back{font-size:12px;color:var(--ink2);background:none;border:1px solid var(--bd);border-radius:20px;padding:7px 12px;cursor:pointer}
 
 /* ---- Sini's Insights ---- */
 .addins{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--savvas);background:var(--savvas-soft);border:1px solid rgba(228,87,46,.4);border-radius:20px;padding:5px 12px;cursor:pointer;display:none;align-items:center;gap:6px}
@@ -371,12 +385,14 @@ body.pinmode [data-anchor]{cursor:crosshair}
       <span>SEO · Paid · Social &nbsp;|&nbsp; last 90 days</span>
     </div>
     <button class="addins" id="addins">✎ Add insight</button>
+    <button class="tour-help" id="tourbtn">? Tour</button>
     <button class="logout" id="logout">Sign out</button>
   </div>
 </header>
 <div class="pinhint">Click a point on any chart to pin your insight — or press Esc to cancel</div>
 <div class="inspop" id="inspop"></div>
 <div class="wt" id="walkthrough"></div>
+<div id="tour"></div>
 <div id="beacon-layer"></div>
 
 <div class="team"><div class="wrap teamrow">
@@ -900,6 +916,66 @@ async function wtStep(i){
 function wtClose(){WT.active=false;const wt=document.getElementById("walkthrough");wt.classList.remove("on");wt.innerHTML="";document.querySelectorAll(".pin.pulse").forEach(p=>p.classList.remove("pulse"));}
 document.addEventListener("keydown",e=>{if(!WT.active)return;if(e.key==="Escape")wtClose();else if(e.key==="ArrowRight")wtStep(Math.min(WT.i+1,WT.list.length-1));else if(e.key==="ArrowLeft")wtStep(Math.max(WT.i-1,0));});
 
+/* ===== first-time coach tour (per tab) ===== */
+const TOUR={
+ overview:[
+  {sel:"nav.tabs",title:"Your tabs",text:"Move between Overview, SEO, Paid Ads, Social and Updates up here."},
+  {sel:"#kpi-overview",title:"Headline numbers",text:"Top-line results across every channel for the last 90 days."},
+  {sel:"#mom",title:"Month on month",text:"Monthly totals and the change vs last month — the growth trend at a glance."},
+  {sel:"#c-sessions",title:"Daily traffic",text:"Website sessions day by day. Hover any chart for the exact figure."}
+ ],
+ seo:[
+  {sel:"#kpi-seo",title:"SEO snapshot",text:"Clicks, impressions, CTR and your average Google position."},
+  {sel:"#c-position",title:"Ranking trend",text:"Average Google position over time — remember, lower is better."},
+  {sel:"#t-rank",title:"Keyword rankings",text:"Every tracked keyword and where it currently ranks."}
+ ],
+ paid:[
+  {sel:"#kpi-paid",title:"Paid snapshot",text:"Spend, clicks, cost-per-click and leads."},
+  {sel:"#c-spend",title:"Daily spend",text:"Ad spend each day, stacked by campaign."},
+  {sel:"#t-paid",title:"By campaign",text:"The per-campaign breakdown of spend and results."}
+ ],
+ social:[
+  {sel:"#kpi-social",title:"Social snapshot",text:"Reach, engagement and followers across Instagram, Facebook & LinkedIn."},
+  {sel:"#ins-social",title:"Insights & walkthrough",text:"Notes pinned to the data. Tap “Walkthrough” to play them as a guided report."},
+  {sel:"#c-reach",title:"Your graphs",text:"Reach, engagement and follower growth over time."},
+  {sel:"#ig-posts",title:"Top posts",text:"Best-performing posts — you can pin an insight straight onto one."},
+  {sel:"#manual-social",title:"Content & activity",text:"Enter the monthly content numbers here — reels, stories, boosted spend and more."},
+  {sel:"#content-plan",title:"Content plan",text:"Plan upcoming posts and content themes here."}
+ ],
+ updates:[
+  {sel:"#fb-compose",title:"Post an update",text:"Suggest an edit or share an opinion — type it, or tap Record for a voice note. Anyone can post."}
+ ]
+};
+let TR={tab:null,steps:[],i:0};
+function tourDone(tab){try{return localStorage.getItem("cobalt_tour_"+tab)==="1";}catch(e){return false;}}
+function maybeTour(tab){if(WT.active)return;if(document.getElementById("tour").classList.contains("on"))return;if(TOUR[tab]&&!tourDone(tab))startTour(tab);}
+function startTour(tab){const steps=(TOUR[tab]||[]).filter(s=>document.querySelector(s.sel));if(!steps.length)return;TR={tab,steps,i:0};document.getElementById("tour").classList.add("on");tourStep(0);}
+function tourStep(i){
+  if(i<0||i>=TR.steps.length)return;TR.i=i;const s=TR.steps[i],el=document.querySelector(s.sel);
+  if(!el){tourStep(i+1);return;}
+  el.scrollIntoView({block:"center"});
+  setTimeout(()=>{
+    const r=el.getBoundingClientRect(),pad=8,tour=document.getElementById("tour");
+    tour.innerHTML=`<div class="tour-hole" style="left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
+      <div class="tour-card" id="tour-card">
+        <div class="tour-step">Step ${i+1} of ${TR.steps.length}</div>
+        <div class="tour-title">${esc(s.title)}</div>
+        <div class="tour-text">${esc(s.text)}</div>
+        <div class="tour-nav"><button class="tour-skip" id="tour-skip">Skip tour</button><div style="display:flex;gap:8px">${i>0?'<button class="tour-back" id="tour-back">Back</button>':''}<button class="tour-next" id="tour-next">${i===TR.steps.length-1?"Got it":"Next →"}</button></div></div>
+      </div>`;
+    const card=document.getElementById("tour-card"),cw=card.offsetWidth,ch=card.offsetHeight;
+    let left=Math.min(Math.max(r.left,12),innerWidth-cw-12),top=r.bottom+12;
+    if(top+ch>innerHeight-12)top=Math.max(12,r.top-ch-12);
+    card.style.left=left+"px";card.style.top=top+"px";
+    document.getElementById("tour-skip").onclick=endTour;
+    document.getElementById("tour-next").onclick=()=>{i===TR.steps.length-1?endTour():tourStep(i+1);};
+    const bk=document.getElementById("tour-back");if(bk)bk.onclick=()=>tourStep(i-1);
+  },70);
+}
+function endTour(){try{localStorage.setItem("cobalt_tour_"+TR.tab,"1");}catch(e){}const t=document.getElementById("tour");t.classList.remove("on");t.innerHTML="";TR={tab:null,steps:[],i:0};}
+document.getElementById("tourbtn").addEventListener("click",()=>startTour(currentTab()));
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("tour").classList.contains("on"))endTour();});
+
 /* line chart */
 function lineChart(mount,{series,title,sub,legend,yfmt,invert,area}){
   const W=mount.clientWidth||560,H=248,P={t:14,r:16,b:26,l:40};
@@ -1190,6 +1266,7 @@ function show(name){
   renderCharts();updateAddButton();
   window.scrollTo({top:0});
   renderBeacons();
+  maybeTour(name);
 }
 tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.tab)));
 window.addEventListener("resize",()=>{clearTimeout(window._rz);window._rz=setTimeout(()=>{renderCharts();renderBeacons();},180);});
@@ -1211,6 +1288,7 @@ async function boot(){
   renderAll();
   document.getElementById("gate").style.display="none";
   document.getElementById("app").style.display="block";
+  setTimeout(()=>maybeTour("overview"),500);
 }
 
 /* auth */
