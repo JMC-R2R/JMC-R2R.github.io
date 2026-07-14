@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Ready to Rank — Team Tasks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#17B4F0; --ink:#0B0E12; --panel:#141A21; --panel2:#1B232C;
+    --line:#28323D; --text:#E8EDF2; --muted:#8A97A6;
+    --green:#2ECC71; --amber:#F5A623; --red:#FF5A5F; --violet:#A78BFA;
+    --r:12px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:var(--ink); color:var(--text); font-family:'Archivo',system-ui,sans-serif; -webkit-font-smoothing:antialiased; line-height:1.45}
+  .mono{font-family:'Space Mono',monospace}
+  button{font-family:inherit; cursor:pointer}
+  input,select,textarea{font-family:inherit}
+
+  /* ---------- shell ---------- */
+  header{display:flex; align-items:center; gap:16px; padding:16px 24px; border-bottom:1px solid var(--line); background:var(--panel); position:sticky; top:0; z-index:20; flex-wrap:wrap}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.02em}
+  .dot{width:10px; height:10px; border-radius:50%; background:var(--blue); box-shadow:0 0 12px var(--blue)}
+  .spacer{flex:1}
+  .who{font-size:13px; color:var(--muted); text-align:right}
+  .who b{color:var(--text); display:block; font-size:14px}
+  .btn{background:var(--blue); color:#04212E; border:0; padding:9px 16px; border-radius:8px; font-weight:700; font-size:14px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent; color:var(--muted); border:1px solid var(--line)}
+  .btn.ghost:hover{color:var(--text); border-color:var(--blue)}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  main{padding:24px; max-width:1240px; margin:0 auto}
+  h2{font-size:20px; font-weight:700; letter-spacing:-.01em; margin-bottom:4px}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:20px}
+
+  /* ---------- login ---------- */
+  .login-wrap{min-height:100vh; display:grid; place-items:center; padding:24px}
+  .login{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:32px; width:100%; max-width:380px}
+  .login h1{font-size:22px; margin-bottom:6px; letter-spacing:-.02em}
+  .login p{color:var(--muted); font-size:14px; margin-bottom:22px}
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px; font-weight:600}
+  .field input, .field select, .field textarea{width:100%; background:var(--ink); border:1px solid var(--line); color:var(--text); padding:11px 12px; border-radius:8px; font-size:14px}
+  .field input:focus, .field select:focus, .field textarea:focus{outline:none; border-color:var(--blue)}
+  .err{color:var(--red); font-size:13px; margin-top:10px; min-height:18px}
+
+  /* ---------- stat tiles ---------- */
+  .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin-bottom:24px}
+  .tile{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px}
+  .tile .n{font-size:26px; font-weight:800; letter-spacing:-.02em; line-height:1.1}
+  .tile .l{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-top:4px; font-weight:600}
+  .tile.alert{border-color:rgba(245,166,35,.45)} .tile.alert .n{color:var(--amber)}
+  .tile.bad{border-color:rgba(255,90,95,.45)}   .tile.bad .n{color:var(--red)}
+  .tile.good .n{color:var(--green)}
+
+  /* ---------- filters ---------- */
+  .filters{display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:22px; background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px}
+  .filters .field{margin:0; min-width:190px}
+  .filters .field select{padding:9px 10px}
+
+  /* ---------- task card ---------- */
+  .group-h{display:flex; align-items:center; gap:10px; margin:22px 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:700}
+  .group-h::after{content:''; flex:1; height:1px; background:var(--line)}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:16px 18px; margin-bottom:10px}
+  .card.flag-stalled{border-left:3px solid var(--amber)}
+  .card.flag-overdue{border-left:3px solid var(--red)}
+  .card.flag-blocked{border-left:3px solid var(--violet)}
+  .card-top{display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap}
+  .card-title{font-weight:600; font-size:15px; flex:1; min-width:200px}
+  .card-title .detail{display:block; color:var(--muted); font-size:13px; font-weight:400; margin-top:3px}
+  .meta{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px}
+  .pill{font-size:11px; padding:3px 9px; border-radius:20px; border:1px solid var(--line); color:var(--muted); font-weight:600; white-space:nowrap}
+  .pill.client{color:var(--blue); border-color:rgba(23,180,240,.4)}
+  .pill.who{color:var(--text)}
+  .pill.warn{color:var(--amber); border-color:rgba(245,166,35,.45)}
+  .pill.bad{color:var(--red); border-color:rgba(255,90,95,.45)}
+  .pill.blocked{color:var(--violet); border-color:rgba(167,139,250,.45)}
+
+  /* progress */
+  .prow{display:flex; align-items:center; gap:14px; margin-top:14px; flex-wrap:wrap}
+  .bar{flex:1; min-width:160px; height:8px; background:var(--panel2); border-radius:20px; overflow:hidden}
+  .bar>span{display:block; height:100%; border-radius:20px; background:var(--blue); transition:width .25s ease}
+  .bar.done>span{background:var(--green)}
+  .bar.blocked>span{background:var(--violet)}
+  .pct{font-size:13px; font-weight:700; min-width:44px; text-align:right}
+  input[type=range]{flex:1; min-width:160px; -webkit-appearance:none; appearance:none; height:8px; border-radius:20px; background:var(--panel2); outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--blue); border:3px solid var(--panel); cursor:grab; box-shadow:0 0 0 1px var(--blue)}
+  input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:50%; background:var(--blue); border:3px solid var(--panel); cursor:grab}
+  .ctrl{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px}
+  .ctrl select, .ctrl input[type=text]{background:var(--ink); border:1px solid var(--line); color:var(--text); padding:8px 10px; border-radius:8px; font-size:13px}
+  .ctrl input[type=text]{flex:1; min-width:180px}
+  .saved{font-size:12px; color:var(--green); opacity:0; transition:opacity .2s}
+  .saved.show{opacity:1}
+  .empty{text-align:center; padding:48px 24px; color:var(--muted); background:var(--panel); border:1px dashed var(--line); border-radius:var(--r)}
+
+  /* add-task */
+  .adder{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px; margin-bottom:24px}
+  .adder-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; align-items:end}
+  details>summary{cursor:pointer; font-weight:700; font-size:14px; list-style:none}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary::before{content:'+ '; color:var(--blue); font-weight:800}
+  details[open]>summary::before{content:'− '}
+  details[open]>summary{margin-bottom:16px}
+  .hide{display:none !important}
+  @media(max-width:640px){ main{padding:16px} header{padding:12px 16px} }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView" class="login-wrap">
+  <form class="login" id="loginForm">
+    <h1><span class="dot" style="display:inline-block;margin-right:8px"></span>Team Tasks</h1>
+    <p>Ready to Rank — sign in to see your work.</p>
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" required />
+    </div>
+    <div class="field">
+      <label for="pw">Password</label>
+      <input id="pw" type="password" autocomplete="current-password" required />
+    </div>
+    <button class="btn" style="width:100%; margin-top:6px" id="loginBtn">Sign in</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<!-- APP -->
+<div id="appView" class="hide">
+  <header>
+    <div class="brand"><span class="dot"></span> Ready to Rank <span style="color:var(--muted);font-weight:500">/ Team Tasks</span></div>
+    <div class="spacer"></div>
+    <div class="who"><b id="meName">—</b><span id="meRole">—</span></div>
+    <button class="btn ghost" id="logout">Sign out</button>
+  </header>
+
+  <main>
+    <!-- ADMIN -->
+    <section id="adminView" class="hide">
+      <h2>Bird's-eye view</h2>
+      <p class="sub" id="adminSub">Everything on, across the team.</p>
+
+      <div class="tiles" id="tiles"></div>
+
+      <div class="filters">
+        <div class="field">
+          <label for="fPerson">Freelancer</label>
+          <select id="fPerson"><option value="">All freelancers</option></select>
+        </div>
+        <div class="field">
+          <label for="fClient">Client</label>
+          <select id="fClient"><option value="">All clients</option></select>
+        </div>
+        <div class="field">
+          <label for="fStatus">Status</label>
+          <select id="fStatus">
+            <option value="">All statuses</option>
+            <option value="needs_attention">⚠ Needs attention (stalled, overdue, blocked)</option>
+            <option value="not_started">Not started</option>
+            <option value="in_progress">In progress</option>
+            <option value="blocked">Blocked</option>
+            <option value="for_review">For review</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fGroup">Group by</label>
+          <select id="fGroup">
+            <option value="person">Freelancer</option>
+            <option value="client">Client</option>
+          </select>
+        </div>
+        <button class="btn ghost" id="clearF">Clear</button>
+      </div>
+
+      <details class="adder">
+        <summary>Add a task</summary>
+        <form id="addForm">
+          <div class="adder-grid">
+            <div class="field"><label>Client</label><select id="aClient" required></select></div>
+            <div class="field"><label>Assign to</label><select id="aPerson" required></select></div>
+            <div class="field"><label>Due date</label><input id="aDue" type="date" /></div>
+          </div>
+          <div class="adder-grid" style="margin-top:12px">
+            <div class="field" style="grid-column:1/-1"><label>Task</label><input id="aTitle" type="text" placeholder="e.g. August IG captions" required /></div>
+          </div>
+          <div class="adder-grid" style="margin-top:12px">
+            <div class="field" style="grid-column:1/-1"><label>Detail (optional)</label><input id="aDetail" type="text" placeholder="Any extra context" /></div>
+          </div>
+          <button class="btn" style="margin-top:14px" id="addBtn">Add task</button>
+          <span class="saved" id="addSaved">Added ✓</span>
+          <div class="err" id="addErr"></div>
+        </form>
+      </details>
+
+      <div id="adminList"></div>
+    </section>
+
+    <!-- FREELANCER -->
+    <section id="myView" class="hide">
+      <h2>My tasks</h2>
+      <p class="sub">Drag the bar to where you're up to. It saves on its own — no need to tell anyone.</p>
+      <div id="myList"></div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = "https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZ3J0cmF6eWVwdmJjbW1kaGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTM0MTEsImV4cCI6MjA4NzkyOTQxMX0.0nYnlrLC3pfDPpcQ9k5XsAMU8fu-ZhV543W8TMAoiUU";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+const STALL_DAYS = 7;
+const STATUS = {
+  not_started:{label:'Not started', cls:''},
+  in_progress:{label:'In progress', cls:''},
+  blocked:    {label:'Blocked',     cls:'blocked'},
+  for_review: {label:'For review',  cls:''},
+  done:       {label:'Done',        cls:'done'}
+};
+
+let ME = null, TASKS = [], PEOPLE = [], CLIENTS = [];
+const $ = id => document.getElementById(id);
+const esc = s => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- helpers ---------- */
+const clientName = id => CLIENTS.find(c => c.id === id)?.name ?? '—';
+const personName = id => PEOPLE.find(p => p.id === id)?.name ?? '—';
+const daysSince  = ts => Math.floor((Date.now() - new Date(ts)) / 86400000);
+const isStalled  = t => t.status !== 'done' && daysSince(t.last_moved_at) >= STALL_DAYS;
+const isOverdue  = t => t.status !== 'done' && t.due_date && new Date(t.due_date) < new Date(new Date().toDateString());
+const fmtDue     = d => { const [y,m,dd] = d.split('-'); return `${dd}/${m}`; };   // DD/MM, AU
+
+/* ---------- auth ---------- */
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('loginErr').textContent = ''; $('loginBtn').disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('pw').value });
+  $('loginBtn').disabled = false;
+  if (error) { $('loginErr').textContent = 'Email or password not recognised.'; return; }
+  boot();
+});
+$('logout').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+
+async function boot() {
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) { $('loginView').classList.remove('hide'); $('appView').classList.add('hide'); return; }
+
+  const { data: me } = await sb.from('tt_people').select('*').eq('id', session.user.id).single();
+  if (!me || !me.active) {
+    await sb.auth.signOut();
+    $('loginView').classList.remove('hide');
+    $('loginErr').textContent = 'That login has no access. Ask Jhen.';
+    return;
+  }
+  ME = me;
+
+  $('loginView').classList.add('hide');
+  $('appView').classList.remove('hide');
+  $('meName').textContent = me.name;
+  $('meRole').textContent = me.is_admin ? 'Admin — full view' : (me.role_title || '');
+
+  await loadAll();
+  ME.is_admin ? renderAdmin() : renderMine();
+}
+
+async function loadAll() {
+  const [c, p, t] = await Promise.all([
+    sb.from('tt_clients').select('*').eq('active', true).order('name'),
+    sb.from('tt_people').select('*').eq('active', true).order('name'),
+    sb.from('tt_tasks').select('*').eq('archived', false).order('due_date', { nullsFirst:false })
+  ]);
+  CLIENTS = c.data || []; PEOPLE = p.data || []; TASKS = t.data || [];
+  // RLS means a freelancer's TASKS/PEOPLE come back containing only themselves. Nothing to hide client-side.
+}
+
+/* ---------- shared task card ---------- */
+function card(t, opts = {}) {
+  const stalled = isStalled(t), overdue = isOverdue(t), blocked = t.status === 'blocked';
+  const flag = overdue ? 'flag-overdue' : blocked ? 'flag-blocked' : stalled ? 'flag-stalled' : '';
+  const sCls = STATUS[t.status].cls;
+
+  const pills = [
+    opts.showClient !== false ? `<span class="pill client">${esc(clientName(t.client_id))}</span>` : '',
+    opts.showPerson ? `<span class="pill who">${esc(personName(t.assignee_id))}</span>` : '',
+    `<span class="pill ${blocked ? 'blocked' : ''}">${STATUS[t.status].label}</span>`,
+    t.due_date ? `<span class="pill ${overdue ? 'bad' : ''}">${overdue ? 'Overdue ' : 'Due '}${fmtDue(t.due_date)}</span>` : '',
+    stalled ? `<span class="pill warn">No movement in ${daysSince(t.last_moved_at)}d</span>` : ''
+  ].join('');
+
+  // Admins get a read-only view; the person who owns the task gets the controls.
+  const mine = t.assignee_id === ME.id;
+  const controls = mine ? `
+    <div class="prow">
+      <input type="range" min="0" max="100" step="5" value="${t.progress}" data-range="${t.id}" aria-label="Progress" />
+      <span class="pct mono" data-pct="${t.id}">${t.progress}%</span>
+    </div>
+    <div class="ctrl">
+      <select data-status="${t.id}">
+        ${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${k===t.status?'selected':''}>${v.label}</option>`).join('')}
+      </select>
+      <input type="text" data-note="${t.id}" value="${esc(t.note)}" placeholder="Add a note — e.g. waiting on client copy" />
+      <span class="saved" data-saved="${t.id}">Saved ✓</span>
+    </div>` : `
+    <div class="prow">
+      <div class="bar ${sCls}"><span style="width:${t.progress}%"></span></div>
+      <span class="pct mono">${t.progress}%</span>
+    </div>
+    ${t.note ? `<div class="meta"><span class="pill">“${esc(t.note)}”</span></div>` : ''}`;
+
+  return `
+    <div class="card ${flag}">
+      <div class="card-top">
+        <div class="card-title">${esc(t.title)}${t.detail ? `<span class="detail">${esc(t.detail)}</span>` : ''}</div>
+      </div>
+      <div class="meta">${pills}</div>
+      ${controls}
+    </div>`;
+}
+
+/* ---------- freelancer view ---------- */
+function renderMine() {
+  $('myView').classList.remove('hide');
+  const mine = TASKS.filter(t => t.assignee_id === ME.id && t.status !== 'done');
+  const done = TASKS.filter(t => t.assignee_id === ME.id && t.status === 'done');
+
+  $('myList').innerHTML = mine.length || done.length
+    ? mine.map(t => card(t)).join('')
+      + (done.length ? `<div class="group-h">Done</div>` + done.map(t => card(t)).join('') : '')
+    : `<div class="empty">Nothing assigned to you right now.</div>`;
+
+  wireControls();
+}
+
+/* ---------- admin view ---------- */
+function renderAdmin() {
+  $('adminView').classList.remove('hide');
+
+  const opts = (arr, sel) => arr.map(x => `<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(x.name)}</option>`).join('');
+  const freelancers = PEOPLE.filter(p => !p.is_admin);
+  if (!$('fPerson').dataset.filled) {
+    $('fPerson').innerHTML = `<option value="">All freelancers</option>` + opts(freelancers);
+    $('fClient').innerHTML = `<option value="">All clients</option>` + opts(CLIENTS);
+    $('aPerson').innerHTML = `<option value="">Choose…</option>` + opts(freelancers);
+    $('aClient').innerHTML = `<option value="">Choose…</option>` + opts(CLIENTS);
+    $('fPerson').dataset.filled = '1';
+  }
+
+  const live = TASKS.filter(t => t.status !== 'done');
+  const stat = {
+    live: live.length,
+    progress: live.filter(t => t.status === 'in_progress').length,
+    blocked: live.filter(t => t.status === 'blocked').length,
+    stalled: live.filter(t => isStalled(t) && t.status !== 'blocked').length,
+    overdue: live.filter(isOverdue).length,
+    review: live.filter(t => t.status === 'for_review').length,
+    done: TASKS.filter(t => t.status === 'done').length
+  };
+  $('tiles').innerHTML = `
+    <div class="tile"><div class="n">${stat.live}</div><div class="l">Open</div></div>
+    <div class="tile"><div class="n">${stat.progress}</div><div class="l">In progress</div></div>
+    <div class="tile ${stat.review ? '' : ''}"><div class="n">${stat.review}</div><div class="l">For review</div></div>
+    <div class="tile ${stat.blocked ? 'alert' : ''}"><div class="n">${stat.blocked}</div><div class="l">Blocked</div></div>
+    <div class="tile ${stat.stalled ? 'alert' : ''}"><div class="n">${stat.stalled}</div><div class="l">Stalled ${STALL_DAYS}d+</div></div>
+    <div class="tile ${stat.overdue ? 'bad' : ''}"><div class="n">${stat.overdue}</div><div class="l">Overdue</div></div>
+    <div class="tile good"><div class="n">${stat.done}</div><div class="l">Done</div></div>`;
+
+  // filter
+  const fp = $('fPerson').value, fc = $('fClient').value, fs = $('fStatus').value, fg = $('fGroup').value;
+  let rows = TASKS.slice();
+  if (fp) rows = rows.filter(t => t.assignee_id === fp);
+  if (fc) rows = rows.filter(t => t.client_id === fc);
+  if (fs === 'needs_attention') rows = rows.filter(t => t.status !== 'done' && (isStalled(t) || isOverdue(t) || t.status === 'blocked'));
+  else if (fs) rows = rows.filter(t => t.status === fs);
+  else rows = rows.filter(t => t.status !== 'done');   // default hides completed
+
+  $('adminSub').textContent = fs === 'needs_attention'
+    ? 'Only what needs chasing.'
+    : `${rows.length} task${rows.length === 1 ? '' : 's'} shown.`;
+
+  if (!rows.length) {
+    $('adminList').innerHTML = `<div class="empty">Nothing matches those filters.</div>`;
+    return;
+  }
+
+  // Sort worst-first: overdue, then blocked, then stalled, then the rest.
+  const rank = t => isOverdue(t) ? 0 : t.status === 'blocked' ? 1 : isStalled(t) ? 2 : 3;
+  rows.sort((a,b) => rank(a) - rank(b) || a.progress - b.progress);
+
+  const keyOf   = t => fg === 'client' ? t.client_id : t.assignee_id;
+  const labelOf = k  => fg === 'client' ? clientName(k) : personName(k);
+
+  const groups = {};
+  rows.forEach(t => { (groups[keyOf(t)] ||= []).push(t); });
+
+  $('adminList').innerHTML = Object.entries(groups).map(([k, ts]) => {
+    const avg = Math.round(ts.reduce((s,t) => s + t.progress, 0) / ts.length);
+    return `<div class="group-h">${esc(labelOf(k))} — ${ts.length} task${ts.length===1?'':'s'}, ${avg}% avg</div>`
+      + ts.map(t => card(t, { showClient: fg !== 'client', showPerson: fg !== 'person' })).join('');
+  }).join('');
+
+  wireControls();
+}
+
+['fPerson','fClient','fStatus','fGroup'].forEach(id => $(id).addEventListener('change', renderAdmin));
+$('clearF').addEventListener('click', () => {
+  ['fPerson','fClient','fStatus'].forEach(id => $(id).value = '');
+  $('fGroup').value = 'person';
+  renderAdmin();
+});
+
+/* ---------- saving ---------- */
+const timers = {};
+function flash(id) {
+  const el = document.querySelector(`[data-saved="${id}"]`);
+  if (!el) return;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1400);
+}
+
+async function save(id, patch) {
+  const { error } = await sb.from('tt_tasks').update(patch).eq('id', id);
+  if (error) { alert("Couldn't save that — " + error.message); return; }
+
+  const t = TASKS.find(x => x.id === id);
+  Object.assign(t, patch);
+  if (patch.progress !== undefined || patch.status !== undefined) t.last_moved_at = new Date().toISOString();
+  if (patch.status === 'done') t.progress = 100;   // mirrors the DB trigger
+
+  flash(id);
+  if (ME.is_admin) renderAdmin();
+}
+
+function wireControls() {
+  document.querySelectorAll('[data-range]').forEach(el => {
+    const id = el.dataset.range;
+    el.addEventListener('input', () => { document.querySelector(`[data-pct="${id}"]`).textContent = el.value + '%'; });
+    el.addEventListener('change', () => {
+      const progress = +el.value;
+      const t = TASKS.find(x => x.id === id);
+      const patch = { progress };
+      // Moving the bar off zero obviously means you've started; hitting 100 means it's done.
+      if (progress === 100 && t.status !== 'done') patch.status = 'done';
+      else if (progress > 0 && progress < 100 && t.status === 'not_started') patch.status = 'in_progress';
+      save(id, patch).then(() => { if (!ME.is_admin) renderMine(); });
+    });
+  });
+
+  document.querySelectorAll('[data-status]').forEach(el => {
+    el.addEventListener('change', () => {
+      const id = el.dataset.status, status = el.value;
+      const patch = { status };
+      if (status === 'done') patch.progress = 100;
+      save(id, patch).then(() => { if (!ME.is_admin) renderMine(); });
+    });
+  });
+
+  document.querySelectorAll('[data-note]').forEach(el => {
+    const id = el.dataset.note;
+    el.addEventListener('input', () => {
+      clearTimeout(timers[id]);
+      timers[id] = setTimeout(() => save(id, { note: el.value }), 800);   // debounce typing
+    });
+  });
+}
+
+/* ---------- add task (admin) ---------- */
+$('addForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('addErr').textContent = ''; $('addBtn').disabled = true;
+  const { error } = await sb.from('tt_tasks').insert({
+    client_id:   $('aClient').value,
+    assignee_id: $('aPerson').value,
+    title:       $('aTitle').value.trim(),
+    detail:      $('aDetail').value.trim() || null,
+    due_date:    $('aDue').value || null,
+    created_by:  ME.id
+  });
+  $('addBtn').disabled = false;
+  if (error) { $('addErr').textContent = error.message; return; }
+
+  $('aTitle').value = ''; $('aDetail').value = ''; $('aDue').value = '';
+  $('addSaved').classList.add('show');
+  setTimeout(() => $('addSaved').classList.remove('show'), 1400);
+  await loadAll();
+  renderAdmin();
+});
+
+boot();
+</script>
+</body>
+</html>
