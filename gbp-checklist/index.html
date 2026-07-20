@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>The 10-Point Google Business Profile Checklist — Ready to Rank</title>
-<meta name="description" content="A free, no-nonsense 10-point checklist to get your Google Business Profile to baseline. Built for trade businesses.">
+<title>The 11-Point Google Business Profile Checklist — Ready to Rank</title>
+<meta name="description" content="A free, no-nonsense 11-point checklist to get your Google Business Profile to baseline. Built for trade businesses.">
 <meta name="robots" content="noindex,nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -103,8 +103,8 @@
     </div>
 
     <div class="kicker">Google Business Profile · the baseline</div>
-    <h1>10 things to fix on your <span class="a">Google Business Profile.</span></h1>
-    <p class="sub">Not fifty. Ten. The baseline every trade business should have in place — the things
+    <h1>11 things to fix on your <span class="a">Google Business Profile.</span></h1>
+    <p class="sub">Not fifty. Eleven. The baseline every trade business should have in place — the things
       that decide whether you turn up in the Map Pack, and whether AI has enough about you to
       recommend you.</p>
 
@@ -125,12 +125,16 @@
 
       <form id="f" novalidate>
         <div>
-          <label for="first_name">First name</label>
-          <input id="first_name" name="first_name" type="text" autocomplete="given-name" placeholder="Jose" maxlength="100" required>
+          <label for="full_name">Full name</label>
+          <input id="full_name" name="full_name" type="text" autocomplete="name" placeholder="Jose Chavez" maxlength="120" required>
         </div>
         <div>
           <label for="email">Email</label>
           <input id="email" name="email" type="email" autocomplete="email" placeholder="you@yourbusiness.com.au" maxlength="254" required>
+        </div>
+        <div>
+          <label for="phone">Mobile</label>
+          <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0412 345 678" maxlength="30" required>
         </div>
         <div>
           <label for="business">Business name <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
@@ -189,12 +193,15 @@
     // honeypot — silently pretend it worked
     if (document.getElementById('website_url').value) { deliver(); return; }
 
-    const first_name = document.getElementById('first_name').value.trim();
-    const email      = document.getElementById('email').value.trim();
-    const business   = document.getElementById('business').value.trim();
+    const full_name = document.getElementById('full_name').value.trim();
+    const email     = document.getElementById('email').value.trim();
+    const phone     = document.getElementById('phone').value.trim();
+    const business  = document.getElementById('business').value.trim();
 
-    if (!first_name) { fail("Pop your first name in and we'll get it sent."); return; }
+    if (!full_name) { fail("Pop your name in and we'll get it sent."); return; }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) { fail("That email doesn't look quite right — mind checking it?"); return; }
+    // lenient: AU mobiles arrive as 04xx xxx xxx, +61 4xx, with spaces or dashes
+    if (phone.replace(/[^0-9]/g, '').length < 8) { fail("That mobile looks a little short — mind checking it?"); return; }
 
     btn.disabled = true; btn.textContent = 'Sending…';
 
@@ -207,7 +214,7 @@
           'Prefer': 'return=minimal'
         },
         body: JSON.stringify({
-          email, first_name,
+          email, full_name, phone,
           business: business || null,
           source,
           user_agent: navigator.userAgent.slice(0, 300)
