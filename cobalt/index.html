@@ -418,8 +418,8 @@ body.pinmode [data-anchor]{cursor:crosshair}
     <div class="kpis" id="kpi-overview"></div>
     <div class="callouts">
       <div class="callout bad"><div class="bar"></div><div>
-        <h4>Meta ads: spend, no leads yet <span class="sig bad">Action</span></h4>
-        <p>Since launch on 09/07, the three lead campaigns have spent <b id="co-spend">—</b> for <b id="co-clicks">—</b> clicks but <b>0 recorded leads</b>. Either the lead event isn't firing back to Meta or clicks aren't converting yet — worth checking the form/pixel before spend climbs.</p>
+        <h4 id="co-head">Meta ads <span class="sig bad" id="co-sig">Action</span></h4>
+        <p id="co-body">Since launch on 09/07, the lead campaigns have spent <b id="co-spend">—</b> for <b id="co-clicks">—</b> clicks.</p>
       </div></div>
       <div class="callout warn"><div class="bar"></div><div>
         <h4>Organic Google position is slipping <span class="sig warn">Watch</span></h4>
@@ -463,7 +463,7 @@ body.pinmode [data-anchor]{cursor:crosshair}
     <div class="kpis" id="kpi-paid"></div>
     <div class="card chart" style="margin-top:14px" id="c-spend"></div>
     <h2 class="h2">By campaign</h2>
-    <p class="sub">Meta lead campaigns, funnel stages. CPL is blank because no leads have been recorded yet.</p>
+    <p class="sub" id="paid-sub">Meta lead campaigns, grouped by funnel stage.</p>
     <div class="card tscroll"><table class="tbl" id="t-paid"></table></div>
   </section>
 
@@ -525,12 +525,12 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 /* data vars */
 let N=0,DATES=[],SESSIONS=[],USERS=[],CONV=[],CLICKS=[],IMPR=[],POS=[];
 let IG_REACH=[],IG_ENG=[],FB_REACH=[],FB_IMPR=[],FB_ENG=[],FB_FOLL=[],LI_IMPR=[],LI_ENG=[];
-let PAID={days:[],TOFU:{sp:[],cl:[],im:[]},MOFU:{sp:[],cl:[],im:[]},BOFU:{sp:[],cl:[],im:[]}};
+let PAID={days:[],TOFU:{sp:[],cl:[],im:[],ld:[]},MOFU:{sp:[],cl:[],im:[],ld:[]},BOFU:{sp:[],cl:[],im:[],ld:[]}};
 let RANK=[],FOLL={ig:0,fb:0,li:0},IG_POSTS=[],FB_POSTS=[],REFRESH=[];
 let INSIGHTS=[],AUTHORS=[],ME={email:null,isAuthor:false,name:null,avatar:null,role:null},PINMODE=false;
 let MANUAL_DEFS=[],MANUAL=[],MSEL=null;
 let CONTENT=[],OVERRIDES=[],FEEDBACK=[];
-let seoSessions=0,seoClicks=0,seoConv=0,socReach=0,socEng=0,totFoll=0,paidSpend=0,paidClicks=0,paidImpr=0;
+let seoSessions=0,seoClicks=0,seoConv=0,socReach=0,socEng=0,totFoll=0,paidSpend=0,paidClicks=0,paidImpr=0,paidLeads=0,paidRange="";
 
 const sum=a=>a.reduce((s,v)=>s+(v==null?0:v),0);
 const fmt=n=>{n=Math.round(n);return n>=1000?(n>=100000?Math.round(n/1000)+"k":(n/1000).toFixed(n>=10000?0:1)+"k"):(""+n);};
@@ -574,9 +574,12 @@ async function loadData(){
   FOLL={ig:igf,fb:lastNon(FB_FOLL),li:lif};
   const days=[...new Set((paid.data||[]).map(r=>r.period_date))].sort();
   const camp=n=>{const rows=(paid.data||[]).filter(r=>(r.campaign_name||'').includes(n));
-    const pick=(d,f)=>{const x=rows.find(r=>r.period_date===d);return x?Number(x[f]):0;};
-    return {sp:days.map(d=>pick(d,'spend')),cl:days.map(d=>pick(d,'clicks')),im:days.map(d=>pick(d,'impressions'))};};
+    // Sum every campaign matching this funnel stage on the day — more than one can run at once.
+    const pick=(d,f)=>rows.filter(r=>r.period_date===d).reduce((s,x)=>s+(Number(x[f])||0),0);
+    return {sp:days.map(d=>pick(d,'spend')),cl:days.map(d=>pick(d,'clicks')),im:days.map(d=>pick(d,'impressions')),ld:days.map(d=>pick(d,'leads'))};};
   PAID={days:days.map(d=>d.slice(5)),TOFU:camp('TOFU'),MOFU:camp('MOFU'),BOFU:camp('BOFU')};
+  const dmy=d=>d.slice(8,10)+"/"+d.slice(5,7);
+  paidRange=days.length?(days.length===1?dmy(days[0]):dmy(days[0])+"–"+dmy(days[days.length-1])):"—";
   RANK=(rank.data||[]).slice().sort((a,b)=>((a.position==null?999:a.position)-(b.position==null?999:b.position))).map(r=>[r.keyword,r.position,r.search_volume,(r.url||'—').replace(/^https?:\/\//,'')]);
   const mp=p=>({img:p.image_path,type:p.media_type,reach:p.reach,eng:p.engagement,url:p.permalink,cap:p.caption});
   IG_POSTS=(posts.data||[]).filter(p=>p.platform==='instagram').sort((a,b)=>b.reach-a.reach).map(mp);
@@ -589,6 +592,7 @@ async function loadData(){
   paidSpend=sum(PAID.TOFU.sp)+sum(PAID.MOFU.sp)+sum(PAID.BOFU.sp);
   paidClicks=sum(PAID.TOFU.cl)+sum(PAID.MOFU.cl)+sum(PAID.BOFU.cl);
   paidImpr=sum(PAID.TOFU.im)+sum(PAID.MOFU.im)+sum(PAID.BOFU.im);
+  paidLeads=sum(PAID.TOFU.ld)+sum(PAID.MOFU.ld)+sum(PAID.BOFU.ld);
 }
 
 /* KPIs */
@@ -597,8 +601,8 @@ function renderKPIs(){
   document.getElementById("kpi-overview").innerHTML=
     kpi("Website sessions",fmt(seoSessions),"last 90 days · GA4")+
     kpi("SEO clicks",fmt(seoClicks),"Google organic")+
-    kpi("Ad spend",money(paidSpend),'<span class="chip warnc">3 days</span> since 09/07')+
-    kpi("Ad leads","0",'<span class="chip dn">0 CPL</span> tracking check')+
+    kpi("Ad spend",money(paidSpend),'<span class="chip warnc">'+PAID.days.length+' days</span> '+paidRange)+
+    kpi("Ad leads",fmt(paidLeads),paidLeads?'<span class="chip up">'+money(paidSpend/paidLeads)+' CPL</span> cost per lead':'<span class="chip dn">0 CPL</span> tracking check')+
     kpi("Social reach",fmt(socReach),"IG + FB · 90 days")+
     kpi("Total followers",fmt(totFoll),"IG + FB + LinkedIn");
   const avgPos=POS.filter(v=>v!=null);
@@ -609,11 +613,11 @@ function renderKPIs(){
     kpi("Avg position","~"+(avgPos.reduce((s,v)=>s+v,0)/avgPos.length).toFixed(1),'<span class="chip dn">slipping</span>')+
     kpi("Conversions",fmt(seoConv),"GA4 key events");
   document.getElementById("kpi-paid").innerHTML=
-    kpi("Spend",money(paidSpend),"09–11/07 · AUD")+
+    kpi("Spend",money(paidSpend),paidRange+" · AUD")+
     kpi("Impressions",fmt(paidImpr),"Meta")+
     kpi("Clicks",fmt(paidClicks),"link clicks")+
     kpi("Avg CPC",money(paidSpend/paidClicks),"cost per click")+
-    kpi("Leads","0",'<span class="chip dn">investigate</span>');
+    kpi("Leads",fmt(paidLeads),paidLeads?'<span class="chip up">'+money(paidSpend/paidLeads)+'</span> cost per lead':'<span class="chip dn">investigate</span>');
   document.getElementById("kpi-social").innerHTML=
     kpi("Total reach",fmt(socReach),"IG + FB · 90 days")+
     kpi("Engagements",fmt(socEng),"reactions, comments…")+
@@ -623,6 +627,17 @@ function renderKPIs(){
   document.getElementById("sv-reach").textContent=fmt(socReach);
   document.getElementById("co-spend").textContent=money(paidSpend);
   document.getElementById("co-clicks").textContent=paidClicks;
+  // Headline commentary follows the data — leads recorded or not.
+  const st=paidRange?" over "+paidRange:"";
+  if(paidLeads>0){
+    document.getElementById("co-head").innerHTML='Meta ads: leads coming through <span class="sig good">Working</span>';
+    document.getElementById("co-body").innerHTML='The lead campaigns have spent <b>'+money(paidSpend)+'</b>'+st+' for <b>'+paidClicks+'</b> clicks and <b>'+paidLeads+' recorded lead'+(paidLeads===1?'':'s')+'</b>, at <b>'+money(paidSpend/paidLeads)+'</b> per lead. Lead tracking is firing correctly.';
+  }else{
+    document.getElementById("co-head").innerHTML='Meta ads: spend, no leads yet <span class="sig bad">Action</span>';
+    document.getElementById("co-body").innerHTML='The lead campaigns have spent <b>'+money(paidSpend)+'</b>'+st+' for <b>'+paidClicks+'</b> clicks but <b>0 recorded leads</b>. Either the lead event is not firing back to Meta or clicks are not converting yet — worth checking the form/pixel before spend climbs.';
+  }
+  const psub=document.getElementById("paid-sub");
+  if(psub) psub.textContent="Meta lead campaigns, grouped by funnel stage."+(paidLeads?"":" CPL is blank because no leads have been recorded yet.");
 }
 
 /* month-on-month */
@@ -1090,9 +1105,9 @@ function tables(){
       return `<tr><td class="k">${esc(k)}</td><td><span class="rankpill ${cls}">${lbl}</span></td><td class="tnum">${v}</td><td class="url">${esc(u)}</td></tr>`;}).join("")+`</tbody>`;
   const rows=[["TOFU",PAID.TOFU,"var(--f1)"],["MOFU",PAID.MOFU,"var(--f2)"],["BOFU",PAID.BOFU,"var(--f3)"]];
   document.getElementById("t-paid").innerHTML=`<thead><tr><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>CPC</th><th>Leads</th><th>CPL</th></tr></thead><tbody>`+
-    rows.map(([n,c,col])=>{const sp=sum(c.sp),cl=sum(c.cl),im=sum(c.im);
-      return `<tr><td class="k"><span class="swatch" style="background:${col}"></span> ${n}</td><td class="tnum">${fmt(im)}</td><td class="tnum">${cl}</td><td class="tnum">${money(sp)}</td><td class="tnum">${cl?money(sp/cl):"—"}</td><td class="tnum">0</td><td class="tnum">—</td></tr>`;}).join("")+
-    `<tr class="tot"><td>Total</td><td class="tnum">${fmt(paidImpr)}</td><td class="tnum">${paidClicks}</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${paidClicks?money(paidSpend/paidClicks):"—"}</td><td class="tnum">0</td><td class="tnum">—</td></tr></tbody>`;
+    rows.map(([n,c,col])=>{const sp=sum(c.sp),cl=sum(c.cl),im=sum(c.im),ld=sum(c.ld);
+      return `<tr><td class="k"><span class="swatch" style="background:${col}"></span> ${n}</td><td class="tnum">${fmt(im)}</td><td class="tnum">${cl}</td><td class="tnum">${money(sp)}</td><td class="tnum">${cl?money(sp/cl):"—"}</td><td class="tnum">${ld}</td><td class="tnum">${ld?money(sp/ld):"—"}</td></tr>`;}).join("")+
+    `<tr class="tot"><td>Total</td><td class="tnum">${fmt(paidImpr)}</td><td class="tnum">${paidClicks}</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${paidClicks?money(paidSpend/paidClicks):"—"}</td><td class="tnum">${paidLeads}</td><td class="tnum">${paidLeads?money(paidSpend/paidLeads):"—"}</td></tr></tbody>`;
 }
 
 /* ---------- Sini's Insights ---------- */
