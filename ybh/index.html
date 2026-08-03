@@ -415,8 +415,8 @@ body.pinmode .pinhint{display:block}
     <div class="card tscroll"><table class="tbl" id="t-mom-social"></table></div>
 
     <h2 class="h2">Top performing posts</h2>
-    <p class="sub">The highest-reach organic posts of the last 90 days.</p>
-    <div class="posthead"><span class="pill-ig">Instagram</span><span class="small">by reach · @yourbodyhubaustralia</span></div>
+    <p class="sub" id="posts-sub">The highest-reach organic posts.</p>
+    <div class="posthead"><span class="pill-ig">Instagram</span><span class="small" id="posts-meta">by reach · @yourbodyhubaustralia</span></div>
     <div class="postgrid" id="ig-posts"></div>
   </section>
 
@@ -547,7 +547,8 @@ async function loadData(){
   RANK=(rank.data||[]).slice().sort((a,b)=>(b.impressions||0)-(a.impressions||0))
     .map(r=>[r.query,r.position,r.impressions,r.clicks,r.ctr]);
   IG_POSTS=(posts.data||[]).filter(p=>p.platform==='instagram').sort((a,b)=>b.reach-a.reach)
-    .map(p=>({img:p.image_path,type:p.media_type,reach:p.reach,eng:p.engagement,url:p.permalink,cap:p.caption}));
+    .map(p=>({img:p.image_path,type:p.media_type,reach:p.reach,eng:p.engagement,url:p.permalink,
+              cap:p.caption,date:p.period_date}));
   REFRESH=refresh.data||[];
 
   seoSessions=sum(SESSIONS);seoClicks=sum(CLICKS);seoConv=sum(CONV);
@@ -1038,12 +1039,20 @@ const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
 const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9A5 5 0 0 1 12 6a5 5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9Z"/></svg>';
 function posts(){
   const el=document.getElementById("ig-posts");
-  el.innerHTML=IG_POSTS.length?IG_POSTS.map(p=>`
+  /* Posts belong to the reporting month, matching every other figure on this tab. */
+  const inMonth=IG_POSTS.filter(p=>p.date&&p.date.slice(5,7)===MSEL);
+  const shown=inMonth.slice(0,8);
+  const sub=document.getElementById("posts-sub"),meta=document.getElementById("posts-meta");
+  if(sub)sub.textContent=inMonth.length
+    ? `The highest-reach organic posts published in ${MONTHNAME[MSEL]} 2026.`
+    : `No organic posts were published in ${MONTHNAME[MSEL]} 2026.`;
+  if(meta)meta.textContent=`by reach · @yourbodyhubaustralia · ${inMonth.length} post${inMonth.length===1?"":"s"} in ${MON[MSEL]}${inMonth.length>shown.length?` · showing top ${shown.length}`:""}`;
+  el.innerHTML=shown.length?shown.map(p=>`
     <a class="post" data-anchor="post:${esc(p.url)}" href="${esc(p.url)}" target="_blank" rel="noopener">
       <div class="cover"><span class="typebadge">${esc(p.type||"")}</span><img src="${esc(p.img)}" alt="" loading="lazy"/></div>
       <div class="pbody"><div class="pcap">${esc(p.cap)}</div>
         <div class="pmetrics"><span class="m">${EYE}${fmt(p.reach)}</span><span class="m">${HEART}${p.eng==null?"—":p.eng}<span class="mlab"> eng</span></span></div>
-      </div></a>`).join(""):`<div class="ip-empty">No post data for this period.</div>`;
+      </div></a>`).join(""):`<div class="ip-empty">No Instagram posts were published in ${MONTHNAME[MSEL]} 2026.</div>`;
 }
 
 function tables(){
