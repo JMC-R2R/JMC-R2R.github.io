@@ -91,7 +91,14 @@ section[hidden]{display:none}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px}
 .kpi{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:15px 16px;display:flex;flex-direction:column;gap:7px;min-height:104px}
 .kpi .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
-.kpi .val{font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.kpi .val{font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.kpi .val .chip{font-size:11px}
+.msel{background:var(--s2);border:1px solid var(--bd2);border-radius:8px;color:var(--ink);font-family:var(--mono);font-size:12px;font-weight:700;padding:6px 10px;cursor:pointer;outline:none}
+.msel:focus{border-color:var(--ybh)}
+.monthbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:2px 0 16px}
+.monthbar .mb-lab{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.monthbar .mb-note{font-size:12px;color:var(--ink3)}
+.partialflag{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--warn);background:rgba(245,158,11,.13);padding:2px 8px;border-radius:20px}
 .kpi .foot{font-size:11.5px;color:var(--ink3);margin-top:auto}
 .chip{font-family:var(--mono);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px}
 .chip.dn{color:var(--bad);background:rgba(239,68,68,.12)}
@@ -310,7 +317,7 @@ body.pinmode .pinhint{display:block}
     <span class="hspace"></span>
     <div class="hmeta">
       <span><span class="dot"></span><b>Live</b> · <span id="freshdate">—</span></span>
-      <span>SEO · Paid · Social &nbsp;|&nbsp; last 90 days</span>
+      <span>SEO · Paid · Social &nbsp;|&nbsp; month on month</span>
     </div>
     <button class="addins" id="addins">&#9998; Add insight</button>
     <button class="tour-help" id="tourbtn">? Tour</button>
@@ -339,7 +346,8 @@ body.pinmode .pinhint{display:block}
 
 <main class="wrap">
   <section id="overview" data-anchor="sec:overview">
-    <div class="eyebrow">Snapshot · last 90 days</div>
+    <div class="eyebrow">Monthly performance</div>
+    <div class="monthbar"></div>
     <div class="kpis" id="kpi-overview"></div>
     <div class="callouts" id="ov-callouts"></div>
 
@@ -362,11 +370,16 @@ body.pinmode .pinhint{display:block}
 
   <section id="seo" data-anchor="sec:seo" hidden>
     <div class="eyebrow">Organic search · Google</div>
+    <div class="monthbar"></div>
     <div class="kpis" id="kpi-seo"></div>
     <div class="grid g2" style="margin-top:14px">
       <div class="card chart" id="c-clicks"></div>
       <div class="card chart" id="c-position"></div>
     </div>
+    <h2 class="h2">Month on month</h2>
+    <p class="sub">Every organic metric by calendar month. Part months are marked *.</p>
+    <div class="card tscroll"><table class="tbl" id="t-mom-seo"></table></div>
+
     <h2 class="h2">Top search queries</h2>
     <p class="sub">The searches bringing Your Body Hub the most visibility on Google over the last 90 days, from Search Console. Position is the average across the period — lower is better.</p>
     <div class="card tscroll"><table class="tbl" id="t-rank"></table></div>
@@ -374,9 +387,14 @@ body.pinmode .pinhint{display:block}
 
   <section id="paid" data-anchor="sec:paid" hidden>
     <div class="eyebrow">Paid ads · Google Ads</div>
+    <div class="monthbar"></div>
     <div class="callouts" id="paid-callouts" style="margin-top:0;margin-bottom:16px;grid-template-columns:1fr"></div>
     <div class="kpis" id="kpi-paid"></div>
     <div class="card chart" style="margin-top:14px" id="c-spend"></div>
+    <h2 class="h2">Month on month</h2>
+    <p class="sub">Paid performance by calendar month. Part months are marked *.</p>
+    <div class="card tscroll"><table class="tbl" id="t-mom-paid"></table></div>
+
     <h2 class="h2">By campaign</h2>
     <p class="sub" id="paid-sub">Google Ads campaigns over the last 90 days, in AUD.</p>
     <div class="card tscroll"><table class="tbl" id="t-paid"></table></div>
@@ -384,6 +402,7 @@ body.pinmode .pinhint{display:block}
 
   <section id="social" data-anchor="sec:social" hidden>
     <div class="eyebrow">Organic social · Instagram · Facebook · LinkedIn</div>
+    <div class="monthbar"></div>
     <div class="kpis" id="kpi-social"></div>
     <div class="callouts" id="social-callouts" style="grid-template-columns:1fr"></div>
     <div class="card chart" style="margin-top:14px" id="c-reach"></div>
@@ -391,6 +410,10 @@ body.pinmode .pinhint{display:block}
       <div class="card chart" id="c-eng"></div>
       <div class="card chart" id="c-foll"></div>
     </div>
+    <h2 class="h2">Month on month</h2>
+    <p class="sub">Social performance by calendar month. Part months are marked *.</p>
+    <div class="card tscroll"><table class="tbl" id="t-mom-social"></table></div>
+
     <h2 class="h2">Top performing posts</h2>
     <p class="sub">The highest-reach organic posts of the last 90 days.</p>
     <div class="posthead"><span class="pill-ig">Instagram</span><span class="small">by reach · @yourbodyhubaustralia</span></div>
@@ -435,6 +458,29 @@ const fmt=n=>{n=Math.round(n);return n>=1000?(n>=100000?Math.round(n/1000)+"k":(
 const money=n=>"$"+Number(n).toLocaleString("en-AU",{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const dmy=d=>d.slice(8,10)+"/"+d.slice(5,7);
+
+/* ===== month-on-month scaffolding =====
+   Every tab reports a chosen month against the one before it. Daily arrays are
+   indexed against DATES (MM-DD), so a month is just a filter on the first two chars. */
+let MONTHS=[],MSEL=null,PAID_SP=[],PAID_CL=[],PAID_IM=[],PAID_CV=[];
+const MONTHNAME={"01":"January","02":"February","03":"March","04":"April","05":"May","06":"June",
+  "07":"July","08":"August","09":"September","10":"October","11":"November","12":"December"};
+const sumMonth=(arr,mk)=>{let s=0,any=false;DATES.forEach((d,i)=>{if(d.slice(0,2)===mk&&arr[i]!=null){s+=arr[i];any=true;}});return any?s:null;};
+const avgMonth=(arr,mk)=>{let s=0,n=0;DATES.forEach((d,i)=>{if(d.slice(0,2)===mk&&arr[i]!=null){s+=arr[i];n++;}});return n?s/n:null;};
+const endMonth=(arr,mk)=>{let v=null;DATES.forEach((d,i)=>{if(d.slice(0,2)===mk&&arr[i]!=null)v=arr[i];});return v;};
+const prevMonth=mk=>{const i=MONTHS.indexOf(mk);return i>0?MONTHS[i-1]:null;};
+const monthDays=mk=>DATES.filter(d=>d.slice(0,2)===mk).length;
+const isPartial=mk=>{const ds=DATES.filter(d=>d.slice(0,2)===mk);if(!ds.length)return false;
+  const days=ds.map(d=>+d.slice(3)),dim=new Date(2026,+mk,0).getDate();
+  return Math.min(...days)>1||Math.max(...days)<dim;};
+/* invert=true for metrics where lower is better (Google position, cost per conversion) */
+const deltaChip=(cur,prev,invert)=>{
+  if(cur==null||prev==null||!prev)return"";
+  const pc=Math.round((cur-prev)/Math.abs(prev)*100);
+  let cls=pc>0?"up":pc<0?"dn":"flat";
+  if(invert)cls=pc>0?"dn":pc<0?"up":"flat";
+  return `<span class="chip ${cls}">${pc>0?"▲":pc<0?"▼":"–"} ${Math.abs(pc)}%</span>`;};
+const vsLabel=mk=>{const p=prevMonth(mk);return p?`vs ${MON[p]}`:"no prior month";};
 
 async function loadData(){
   const [seo,social,paid,rank,posts,refresh,ins,auth,fb]=await Promise.all([
@@ -508,11 +554,93 @@ async function loadData(){
   socReach=sum(IG_REACH)+sum(FB_REACH);
   socEng=sum(IG_ENG)+sum(FB_ENG)+sum(LI_ENG);
   totFoll=FOLL.ig+FOLL.fb+FOLL.li;
+
+  /* Paid daily series aligned to DATES so paid can be reported per month like everything else. */
+  const pmap={};PAID.fulldays.forEach((d,i)=>{pmap[d.slice(5)]={
+    sp:PAID.camps.reduce((s,c)=>s+(c.sp[i]||0),0), cl:PAID.camps.reduce((s,c)=>s+(c.cl[i]||0),0),
+    im:PAID.camps.reduce((s,c)=>s+(c.im[i]||0),0), cv:PAID.camps.reduce((s,c)=>s+(c.cv[i]||0),0)};});
+  PAID_SP=DATES.map(d=>pmap[d]?pmap[d].sp:null);
+  PAID_CL=DATES.map(d=>pmap[d]?pmap[d].cl:null);
+  PAID_IM=DATES.map(d=>pmap[d]?pmap[d].im:null);
+  PAID_CV=DATES.map(d=>pmap[d]?pmap[d].cv:null);
+
+  /* Default to the most recent COMPLETE month — a part-month headline would understate results. */
+  MONTHS=[...new Set(DATES.map(d=>d.slice(0,2)))].sort();
+  const complete=MONTHS.filter(mk=>!isPartial(mk));
+  if(!MSEL||!MONTHS.includes(MSEL))MSEL=complete.length?complete[complete.length-1]:MONTHS[MONTHS.length-1];
 }
 
 /* KPIs */
-const kpi=(lab,val,foot)=>`<div class="kpi"><div class="lab">${lab}</div><div class="val tnum">${val}</div><div class="foot">${foot||""}</div></div>`;
+const kpi=(lab,val,foot,chip)=>`<div class="kpi"><div class="lab">${lab}</div><div class="val tnum">${val}${chip||""}</div><div class="foot">${foot||""}</div></div>`;
+
+/* A KPI reported for MSEL against the previous month. */
+function mkpi(lab,arr,{how="sum",fmtv=fmt,invert=false,foot=""}={}){
+  const f=how==="avg"?avgMonth:how==="end"?endMonth:sumMonth;
+  const cur=f(arr,MSEL),prv=f(arr,prevMonth(MSEL));
+  return kpi(lab,cur==null?"—":fmtv(cur),foot||vsLabel(MSEL),deltaChip(cur,prv,invert));
+}
+function renderMonthBars(){
+  const opts=MONTHS.slice().reverse().map(mk=>`<option value="${mk}" ${mk===MSEL?"selected":""}>${MONTHNAME[mk]} 2026${isPartial(mk)?" (part month)":""}</option>`).join("");
+  const days=monthDays(MSEL),part=isPartial(MSEL);
+  const note=part
+    ? `Showing ${days} day${days===1?"":"s"} of ${MONTHNAME[MSEL]} so far — an incomplete month, so totals are lower than a full one.`
+    : `Full month · ${days} days. Change is measured against ${prevMonth(MSEL)?MONTHNAME[prevMonth(MSEL)]:"the prior month"}.`;
+  document.querySelectorAll(".monthbar").forEach(bar=>{
+    bar.innerHTML=`<span class="mb-lab">Reporting month</span>
+      <select class="msel">${opts}</select>
+      ${part?'<span class="partialflag">PART MONTH</span>':''}
+      <span class="mb-note">${note}</span>`;
+    bar.querySelector(".msel").onchange=e=>{MSEL=e.target.value;renderAll();};
+  });
+}
 function renderKPIs(){
+  renderMonthBars();
+  const P=prevMonth(MSEL);
+  const spend=sumMonth(PAID_SP,MSEL), conv=sumMonth(PAID_CV,MSEL);
+  const clicks=sumMonth(PAID_CL,MSEL), impr=sumMonth(PAID_IM,MSEL);
+  const pSpend=sumMonth(PAID_SP,P), pConv=sumMonth(PAID_CV,P);
+  const pClicks=sumMonth(PAID_CL,P), pImpr=sumMonth(PAID_IM,P);
+  const cpc=clicks?spend/clicks:null, pCpc=pClicks?pSpend/pClicks:null;
+  const cpa=conv?spend/conv:null, pCpa=pConv?pSpend/pConv:null;
+  const reachM=mk=>{const a=DATES.map((_,i)=>(IG_REACH[i]||0)+(FB_REACH[i]||0));return sumMonth(a,mk);};
+  const engM=mk=>{const a=DATES.map((_,i)=>(IG_ENG[i]||0)+(FB_ENG[i]||0)+(LI_ENG[i]||0));return sumMonth(a,mk);};
+  const follM=mk=>(endMonth(IG_FOLL,mk)||0)+(endMonth(FB_FOLL,mk)||0)+(endMonth(LI_FOLL,mk)||0);
+
+  document.getElementById("kpi-overview").innerHTML=
+    mkpi("Website sessions",SESSIONS)+
+    mkpi("Search clicks",CLICKS)+
+    kpi("Ad spend",spend==null?"—":money(spend),vsLabel(MSEL)+" · AUD",deltaChip(spend,pSpend))+
+    kpi("Ad conversions",conv==null?"—":fmt(conv),conv?`${money(cpa)} per conversion`:vsLabel(MSEL),deltaChip(conv,pConv))+
+    kpi("Social reach",fmt(reachM(MSEL)||0),vsLabel(MSEL),deltaChip(reachM(MSEL),reachM(P)))+
+    kpi("Total followers",fmt(follM(MSEL)),"end of "+MONTHNAME[MSEL],deltaChip(follM(MSEL),follM(P)));
+
+  const impM=sumMonth(IMPR,MSEL),clkM=sumMonth(CLICKS,MSEL);
+  const pImpM=sumMonth(IMPR,P),pClkM=sumMonth(CLICKS,P);
+  const ctr=impM?clkM/impM*100:null, pCtr=pImpM?pClkM/pImpM*100:null;
+  document.getElementById("kpi-seo").innerHTML=
+    mkpi("Clicks",CLICKS)+
+    mkpi("Impressions",IMPR)+
+    kpi("Avg CTR",ctr==null?"—":ctr.toFixed(2)+"%",vsLabel(MSEL),deltaChip(ctr,pCtr))+
+    mkpi("Avg position",POS,{how:"avg",fmtv:v=>"~"+v.toFixed(1),invert:true,foot:vsLabel(MSEL)+" · lower is better"})+
+    mkpi("Conversions",CONV);
+
+  document.getElementById("kpi-paid").innerHTML=
+    kpi("Spend",spend==null?"—":money(spend),vsLabel(MSEL)+" · AUD",deltaChip(spend,pSpend))+
+    kpi("Impressions",impr==null?"—":fmt(impr),vsLabel(MSEL),deltaChip(impr,pImpr))+
+    kpi("Clicks",clicks==null?"—":fmt(clicks),vsLabel(MSEL),deltaChip(clicks,pClicks))+
+    kpi("Avg CPC",cpc==null?"—":money(cpc),vsLabel(MSEL)+" · lower is better",deltaChip(cpc,pCpc,true))+
+    kpi("Conversions",conv==null?"—":fmt(conv),vsLabel(MSEL),deltaChip(conv,pConv))+
+    kpi("Cost / conversion",cpa==null?"—":money(cpa),vsLabel(MSEL)+" · lower is better",deltaChip(cpa,pCpa,true));
+
+  document.getElementById("kpi-social").innerHTML=
+    kpi("Total reach",fmt(reachM(MSEL)||0),vsLabel(MSEL)+" · IG + FB",deltaChip(reachM(MSEL),reachM(P)))+
+    kpi("Engagements",fmt(engM(MSEL)||0),vsLabel(MSEL),deltaChip(engM(MSEL),engM(P)))+
+    mkpi("Instagram",IG_FOLL,{how:"end",foot:"followers · end of "+MON[MSEL]})+
+    mkpi("Facebook",FB_FOLL,{how:"end",foot:"page followers · end of "+MON[MSEL]})+
+    (LI_LIVE?mkpi("LinkedIn",LI_FOLL,{how:"end",foot:"followers · end of "+MON[MSEL]})
+            :kpi("LinkedIn","—",'<span class="chip off">not connected</span>'));
+}
+function renderKPIsOld(){
   const cpc=paidConv?money(paidSpend/paidConv):"—";
   document.getElementById("kpi-overview").innerHTML=
     kpi("Website sessions",fmt(seoSessions),GA4_START?`GA4 · from ${GA4_START.slice(3)}/${GA4_START.slice(0,2)}`:"last 90 days · GA4")+
@@ -691,7 +819,52 @@ async function deleteFeedback(id){
   FEEDBACK=data||[];renderFeedback();
 }
 
-function renderAll(){renderKPIs();renderCallouts();renderSources();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderFeedback();renderBeacons();updateAddButton();}
+/* Per-tab month-on-month tables: one row per metric, one column per month. */
+function momTable(elId,rows){
+  const el=document.getElementById(elId);if(!el)return;
+  const head=`<thead><tr><th>Metric</th>${MONTHS.map(mk=>`<th>${MON[mk]}${isPartial(mk)?"*":""}</th>`).join("")}<th>Change</th></tr></thead>`;
+  const body=rows.map(r=>{
+    const vals=MONTHS.map(mk=>r.fn(mk));
+    const cur=r.fn(MSEL),prv=r.fn(prevMonth(MSEL));
+    return `<tr><td class="k">${r.label}</td>`+
+      vals.map((v,i)=>`<td class="tnum"${MONTHS[i]===MSEL?' style="color:var(--ink);font-weight:700"':''}>${v==null?"—":r.f(v)}</td>`).join("")+
+      `<td>${deltaChip(cur,prv,r.invert)||'<span class="chip flat">–</span>'}</td></tr>`;
+  }).join("");
+  el.innerHTML=head+`<tbody>${body}</tbody>`;
+}
+function renderMoMTables(){
+  const combReach=DATES.map((_,i)=>(IG_REACH[i]||0)+(FB_REACH[i]||0));
+  const combEng=DATES.map((_,i)=>(IG_ENG[i]||0)+(FB_ENG[i]||0)+(LI_ENG[i]||0));
+  momTable("t-mom-seo",[
+    {label:"Clicks",fn:mk=>sumMonth(CLICKS,mk),f:fmt},
+    {label:"Impressions",fn:mk=>sumMonth(IMPR,mk),f:fmt},
+    {label:"CTR",fn:mk=>{const i=sumMonth(IMPR,mk),c=sumMonth(CLICKS,mk);return i?c/i*100:null;},f:v=>v.toFixed(2)+"%"},
+    {label:"Avg position",fn:mk=>avgMonth(POS,mk),f:v=>v.toFixed(1),invert:true},
+    {label:"Website sessions",fn:mk=>sumMonth(SESSIONS,mk),f:fmt},
+    {label:"Conversions (GA4)",fn:mk=>sumMonth(CONV,mk),f:fmt}
+  ]);
+  momTable("t-mom-paid",[
+    {label:"Spend",fn:mk=>sumMonth(PAID_SP,mk),f:v=>money(v).replace(".00","")},
+    {label:"Impressions",fn:mk=>sumMonth(PAID_IM,mk),f:fmt},
+    {label:"Clicks",fn:mk=>sumMonth(PAID_CL,mk),f:fmt},
+    {label:"CPC",fn:mk=>{const c=sumMonth(PAID_CL,mk),s=sumMonth(PAID_SP,mk);return c?s/c:null;},f:money,invert:true},
+    {label:"Conversions",fn:mk=>sumMonth(PAID_CV,mk),f:v=>fmt(Math.round(v))},
+    {label:"Cost / conversion",fn:mk=>{const c=sumMonth(PAID_CV,mk),s=sumMonth(PAID_SP,mk);return c?s/c:null;},f:money,invert:true}
+  ]);
+  const soc=[
+    {label:"Total reach (IG + FB)",fn:mk=>sumMonth(combReach,mk),f:fmt},
+    {label:"Engagements",fn:mk=>sumMonth(combEng,mk),f:fmt},
+    {label:"Instagram reach",fn:mk=>sumMonth(IG_REACH,mk),f:fmt},
+    {label:"Facebook reach",fn:mk=>sumMonth(FB_REACH,mk),f:fmt},
+    {label:"Instagram followers",fn:mk=>endMonth(IG_FOLL,mk),f:fmt},
+    {label:"Facebook followers",fn:mk=>endMonth(FB_FOLL,mk),f:fmt}
+  ];
+  if(LI_LIVE)soc.push({label:"LinkedIn impressions",fn:mk=>sumMonth(LI_IMPR,mk),f:fmt},
+                      {label:"LinkedIn followers",fn:mk=>endMonth(LI_FOLL,mk),f:fmt});
+  momTable("t-mom-social",soc);
+}
+
+function renderAll(){renderKPIs();renderCallouts();renderSources();renderMoM();renderMoMTables();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderFeedback();renderBeacons();updateAddButton();}
 
 /* pin-anywhere */
 document.getElementById("app").addEventListener("click",e=>{
@@ -877,12 +1050,17 @@ function tables(){
   document.getElementById("t-rank").innerHTML=`<thead><tr><th>Search query</th><th>Avg position</th><th>Impressions</th><th>Clicks</th><th>CTR</th></tr></thead><tbody>`+
     RANK.map(([k,p,im,cl,ctr])=>{const cls=p==null?"out":(p<=10?"win":p<=30?"mid":"out"),lbl=p==null?"—":p.toFixed(1);
       return `<tr><td class="k">${esc(k)}</td><td><span class="rankpill ${cls}">${lbl}</span></td><td class="tnum">${fmt(im)}</td><td class="tnum">${cl}</td><td class="tnum">${ctr==null?"—":(ctr*100).toFixed(1)+"%"}</td></tr>`;}).join("")+`</tbody>`;
-  document.getElementById("t-paid").innerHTML=`<thead><tr><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>CPC</th><th>Conversions</th><th>Cost / conv.</th></tr></thead><tbody>`+
-    PAID.camps.map((c,i)=>{const sp=sum(c.sp),cl=sum(c.cl),im=sum(c.im),cv=sum(c.cv);
-      return `<tr><td class="k"><span class="swatch" style="background:${PALETTE[i%PALETTE.length]}"></span> ${esc(c.name)}</td><td class="tnum">${fmt(im)}</td><td class="tnum">${cl}</td><td class="tnum">${money(sp)}</td><td class="tnum">${cl?money(sp/cl):"—"}</td><td class="tnum">${Math.round(cv)}</td><td class="tnum">${cv?money(sp/cv):"—"}</td></tr>`;}).join("")+
-    `<tr class="tot"><td>Total</td><td class="tnum">${fmt(paidImpr)}</td><td class="tnum">${paidClicks}</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${paidClicks?money(paidSpend/paidClicks):"—"}</td><td class="tnum">${Math.round(paidConv)}</td><td class="tnum">${paidConv?money(paidSpend/paidConv):"—"}</td></tr></tbody>`;
+  /* Campaign table is scoped to the selected month so it agrees with the KPIs above it. */
+  const inSel=PAID.fulldays.map(d=>d.slice(5,7)===MSEL);
+  const mSum=(a)=>a.reduce((s,v,i)=>s+(inSel[i]?(v||0):0),0);
+  let tI=0,tC=0,tS=0,tV=0;
+  const body=PAID.camps.map((c,i)=>{const sp=mSum(c.sp),cl=mSum(c.cl),im=mSum(c.im),cv=mSum(c.cv);
+      tI+=im;tC+=cl;tS+=sp;tV+=cv;
+      return `<tr><td class="k"><span class="swatch" style="background:${PALETTE[i%PALETTE.length]}"></span> ${esc(c.name)}</td><td class="tnum">${fmt(im)}</td><td class="tnum">${cl}</td><td class="tnum">${money(sp)}</td><td class="tnum">${cl?money(sp/cl):"—"}</td><td class="tnum">${Math.round(cv)}</td><td class="tnum">${cv?money(sp/cv):"—"}</td></tr>`;}).join("");
+  document.getElementById("t-paid").innerHTML=`<thead><tr><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>CPC</th><th>Conversions</th><th>Cost / conv.</th></tr></thead><tbody>`+body+
+    `<tr class="tot"><td>${MONTHNAME[MSEL]} total</td><td class="tnum">${fmt(tI)}</td><td class="tnum">${tC}</td><td class="tnum">${money(tS)}</td><td class="tnum">${tC?money(tS/tC):"—"}</td><td class="tnum">${Math.round(tV)}</td><td class="tnum">${tV?money(tS/tV):"—"}</td></tr></tbody>`;
   const psub=document.getElementById("paid-sub");
-  if(psub)psub.textContent="Google Ads campaigns over the last 90 days, in AUD. This account has no conversion value configured, so results are reported as cost per conversion — revenue and ROAS are not available.";
+  if(psub)psub.textContent=`Google Ads campaigns for ${MONTHNAME[MSEL]} 2026, in AUD. This account has no conversion value configured, so results are reported as cost per conversion — revenue and ROAS are not available.`;
 }
 
 /* ---------- insights ---------- */
