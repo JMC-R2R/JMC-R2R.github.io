@@ -179,6 +179,11 @@ svg{display:block;width:100%;overflow:visible}
 .post:focus-visible{outline:2px solid var(--ybh);outline-offset:2px}
 .post .cover{position:relative;aspect-ratio:4/5;overflow:hidden;background:#0c0c0f}
 .post .cover img{width:100%;height:100%;object-fit:cover;display:block}
+/* A post published since the last image sync has no hosted thumbnail — show a branded
+   tile rather than a broken image icon. */
+.post .cover.noimg{background:linear-gradient(140deg,rgba(194,100,192,.30),rgba(98,196,187,.18))}
+.post .cover.noimg::after{content:"Image syncing";position:absolute;inset:auto 0 12px;text-align:center;
+  font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
 .typebadge{position:absolute;top:9px;left:9px;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);padding:3px 8px;border-radius:6px}
 .post .pbody{padding:11px 12px 12px;display:flex;flex-direction:column;gap:9px;flex:1}
 .post .pcap{font-size:12px;line-height:1.45;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -710,11 +715,14 @@ function renderCallouts(){
     ? `Daily sessions from all channels (GA4). This property began recording on ${GA4_START.slice(3)}/${GA4_START.slice(0,2)}, so earlier days are blank — that is a reporting start date, not a drop in traffic.`
     : "Daily sessions from all channels (GA4).";
 
-  document.getElementById("c-ov-channels").innerHTML=`<div class="cardhead"><div><h3>Channels at a glance</h3><p class="ch3sub">Last 90 days</p></div></div>
+  /* Scoped to the reporting month so it cannot contradict the KPIs above it. */
+  const gReach=sumMonth(DATES.map((_,i)=>(IG_REACH[i]||0)+(FB_REACH[i]||0)),MSEL)||0;
+  const gFoll=(endMonth(IG_FOLL,MSEL)||0)+(endMonth(FB_FOLL,MSEL)||0)+(endMonth(LI_FOLL,MSEL)||0);
+  document.getElementById("c-ov-channels").innerHTML=`<div class="cardhead"><div><h3>Channels at a glance</h3><p class="ch3sub">${MONTHNAME[MSEL]} 2026</p></div></div>
    <table class="tbl"><tbody>
-    <tr><td class="k"><span class="swatch" style="background:var(--ybh)"></span> Organic search</td><td class="tnum">${fmt(seoClicks)} clicks</td><td class="tnum">${fmt(sum(IMPR))} impressions</td></tr>
-    <tr><td class="k"><span class="swatch" style="background:var(--ybh-teal)"></span> Paid ads</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${fmt(paidConv)} conversions</td></tr>
-    <tr><td class="k"><span class="swatch" style="background:var(--ig)"></span> Social organic</td><td class="tnum">${fmt(socReach)} reach</td><td class="tnum">${fmt(totFoll)} followers</td></tr>
+    <tr><td class="k"><span class="swatch" style="background:var(--ybh)"></span> Organic search</td><td class="tnum">${fmt(sumMonth(CLICKS,MSEL)||0)} clicks</td><td class="tnum">${fmt(sumMonth(IMPR,MSEL)||0)} impressions</td></tr>
+    <tr><td class="k"><span class="swatch" style="background:var(--ybh-teal)"></span> Paid ads</td><td class="tnum">${money(sumMonth(PAID_SP,MSEL)||0)}</td><td class="tnum">${fmt(sumMonth(PAID_CV,MSEL)||0)} conversions</td></tr>
+    <tr><td class="k"><span class="swatch" style="background:var(--ig)"></span> Social organic</td><td class="tnum">${fmt(gReach)} reach</td><td class="tnum">${gFoll?fmt(gFoll)+" followers":"—"}</td></tr>
    </tbody></table>`;
 }
 
@@ -724,8 +732,14 @@ function renderSources(){
   const st={ok:"Connected",paused:"Paused",not_connected:"Not connected"};
   const order=["ga4","gsc","google_ads","meta_ads","instagram","facebook","linkedin"];
   const rows=order.map(k=>REFRESH.find(r=>r.source===k)).filter(Boolean);
-  document.getElementById("sources").innerHTML=rows.map(r=>`<div class="src">
-    <div class="sname"><span class="sdot ${r.status}"></span>${esc(label[r.source]||r.source)}
+  st.warn="Check";st.error="Failed";
+  const job=REFRESH.find(r=>r.source==='refresh_job');
+  const jobCard=job?`<div class="src" style="border-color:${job.status==='ok'?'var(--bd)':'var(--warn)'}">
+    <div class="sname"><span class="sdot ${job.status==='ok'?'ok':'not_connected'}"></span>Automatic refresh
+      <span class="small" style="margin-left:auto">${job.last_run?new Date(job.last_run).toLocaleString("en-AU",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):"—"}</span></div>
+    <div class="snote">Runs every morning, ~6:45am. ${esc(job.note||"")}</div></div>`:"";
+  document.getElementById("sources").innerHTML=jobCard+rows.map(r=>`<div class="src">
+    <div class="sname"><span class="sdot ${r.status==='ok'?'ok':r.status==='paused'?'paused':'not_connected'}"></span>${esc(label[r.source]||r.source)}
       <span class="small" style="margin-left:auto">${esc(st[r.status]||r.status)}</span></div>
     <div class="snote">${esc(r.note||"")}</div></div>`).join("");
 }
@@ -1049,7 +1063,7 @@ function posts(){
   if(meta)meta.textContent=`by reach · @yourbodyhubaustralia · ${inMonth.length} post${inMonth.length===1?"":"s"} in ${MON[MSEL]}${inMonth.length>shown.length?` · showing top ${shown.length}`:""}`;
   el.innerHTML=shown.length?shown.map(p=>`
     <a class="post" data-anchor="post:${esc(p.url)}" href="${esc(p.url)}" target="_blank" rel="noopener">
-      <div class="cover"><span class="typebadge">${esc(p.type||"")}</span><img src="${esc(p.img)}" alt="" loading="lazy"/></div>
+      <div class="cover"><span class="typebadge">${esc(p.type||"")}</span><img src="${esc(p.img)}" alt="" loading="lazy" onerror="this.closest('.cover').classList.add('noimg');this.remove()"/></div>
       <div class="pbody"><div class="pcap">${esc(p.cap)}</div>
         <div class="pmetrics"><span class="m">${EYE}${fmt(p.reach)}</span><span class="m">${HEART}${p.eng==null?"—":p.eng}<span class="mlab"> eng</span></span></div>
       </div></a>`).join(""):`<div class="ip-empty">No Instagram posts were published in ${MONTHNAME[MSEL]} 2026.</div>`;
@@ -1196,11 +1210,22 @@ function viewFromHash(){const h=location.hash;const e=Object.entries(HASHES).fin
 window.addEventListener("resize",()=>{clearTimeout(window._rz);window._rz=setTimeout(()=>{renderCharts();renderBeacons();},180);});
 
 function fmtStamp(){
-  const r=REFRESH.find(x=>x.source==='ga4')||REFRESH[0];
+  /* Freshness comes from the scheduled job, not from a data source, so a job that
+     stopped running shows as stale instead of quietly serving old numbers. */
+  const job=REFRESH.find(x=>x.source==='refresh_job');
+  const r=job||REFRESH.find(x=>x.source==='ga4')||REFRESH[0];
   const last=DATES[N-1]||"";
+  const dot=document.querySelector("header .dot");
   document.getElementById("freshdate").textContent=last?`data to ${last.slice(3)}/${last.slice(0,2)}/2026`:"live";
-  if(r&&r.last_run){const dt=new Date(r.last_run);document.getElementById("genstamp").textContent="Refreshed "+dt.toLocaleDateString("en-AU");}
-  else document.getElementById("genstamp").textContent="Live";
+  if(r&&r.last_run){
+    const dt=new Date(r.last_run), hrs=(Date.now()-dt.getTime())/36e5;
+    const stale=hrs>36, bad=job&&job.status==="error";
+    document.getElementById("genstamp").textContent=
+      (bad?"Refresh failed ":stale?"Last refreshed ":"Refreshed ")+dt.toLocaleDateString("en-AU");
+    if(dot)dot.style.background=bad?"var(--bad)":stale?"var(--warn)":"var(--good)";
+    const lbl=document.querySelector("header .hmeta b");
+    if(lbl)lbl.textContent=bad?"Refresh failed":stale?"Stale":"Live";
+  } else document.getElementById("genstamp").textContent="Live";
 }
 
 async function boot(){
