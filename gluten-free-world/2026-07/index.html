@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gluten Free World — Organic Social Performance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+ *{box-sizing:border-box;margin:0;padding:0}
+ body{background:#0E1411;color:#EAF2ED;font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+ .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+ .mono{font-family:'Space Mono',monospace;letter-spacing:.04em;text-transform:uppercase}
+ a{color:inherit;text-decoration:none}
+ .tabbar{position:sticky;top:0;z-index:30;background:rgba(14,20,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid #22332B}
+ .tabs{display:none;gap:8px;padding:12px 0;overflow-x:auto;scrollbar-width:thin}
+ .tabs .lbl{align-self:center;font-size:11px;color:#8FA89B;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-right:4px;white-space:nowrap}
+ .tab{white-space:nowrap;font-size:12.5px;font-weight:700;padding:7px 14px;border:1px solid #22332B;border-radius:20px;color:#cfe0d8;transition:.15s}
+ .tab:hover{border-color:#1E9E6A}
+ .tab.active{background:#1E9E6A;color:#fff;border-color:#1E9E6A}
+ .cover{padding:56px 0 40px;border-bottom:1px solid #22332B;position:relative;overflow:hidden}
+ .logo-wrap{display:inline-flex;background:#F6F1E4;padding:16px 22px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+ .logo{height:60px;width:auto;display:block}
+ h1{font-size:46px;font-weight:900;line-height:1.04;margin:22px 0 10px;letter-spacing:-.02em}
+ h1 span{color:#1E9E6A}
+ .sub{color:#8FA89B;font-size:16px;max-width:660px}
+ .tags{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+ .tag{font-size:12px;padding:6px 12px;border:1px solid #22332B;border-radius:20px;color:#cfe0d8}
+ .tag b{color:#1E9E6A}
+ .section-h{font-size:13px;color:#8FA89B;margin:46px 0 16px;font-weight:700}
+ .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+ .kpi{background:#15201A;border:1px solid #22332B;border-radius:16px;padding:20px;position:relative;overflow:hidden}
+ .kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+ .kpi-label{font-size:12.5px;color:#8FA89B;font-weight:600;min-height:32px}
+ .kpi-val{font-size:34px;font-weight:900;margin:6px 0 2px;letter-spacing:-.01em}
+ .kpi-delta{font-size:13px;font-weight:800;display:flex;align-items:center;gap:6px;margin:2px 0 5px}
+ .kpi-delta.up{color:#37D389} .kpi-delta.down{color:#E7855F}
+ .kpi-delta .mult{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;background:rgba(55,211,137,.14);color:#37D389;padding:2px 7px;border-radius:12px}
+ .kpi-delta.down .mult{background:rgba(231,133,95,.14);color:#E7855F}
+ .kpi-sub{font-size:11.5px;color:#9fb6aa} .kpi-sub b{color:#cfe0d8}
+ .kpi-sub2{font-size:10.5px;color:#5f9c7f;margin-top:3px;font-family:'Space Mono',monospace;letter-spacing:.01em}
+ .summary{background:linear-gradient(135deg,rgba(30,158,106,.16),#15201A 60%);border:1px solid #22332B;border-left:4px solid #1E9E6A;border-radius:18px;padding:28px 30px;margin-top:38px}
+ .summary .to{font-size:12px;color:#1E9E6A;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+ .summary p{font-size:15.5px;color:#e9f2ec;line-height:1.65;max-width:760px}
+ .summary p+p{margin-top:12px} .summary b{color:#fff}
+ .wins{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+ .win{display:flex;align-items:center;gap:8px;background:rgba(55,211,137,.10);border:1px solid rgba(55,211,137,.28);border-radius:30px;padding:8px 14px;font-size:13px;font-weight:700}
+ .win .up{color:#37D389;font-size:13px} .win small{font-weight:600;color:#8FA89B}
+ .win.neg{background:rgba(231,133,95,.10);border-color:rgba(231,133,95,.28)}
+ .win .down{color:#E7855F;font-size:13px}
+ .sign{margin-top:16px;font-size:13px;color:#8FA89B}
+ .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+ .card{background:#15201A;border:1px solid #22332B;border-radius:16px;padding:22px}
+ .card h3{font-size:16px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+ .dot{width:10px;height:10px;border-radius:50%}
+ .card .note{color:#8FA89B;font-size:12.5px;margin-bottom:16px}
+ .rows{display:grid;gap:10px}
+ .row{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px dashed #22332B;padding-bottom:9px}
+ .row:last-child{border-bottom:0}
+ .row .k{color:#bcd0c6;font-size:13.5px} .row .v{font-weight:800;font-size:18px}
+ .chart-card{background:#15201A;border:1px solid #22332B;border-radius:16px;padding:22px}
+ .chart-box{position:relative;height:320px} .chart-box.sm{height:240px}
+ .posts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+ .post{background:#15201A;border:1px solid #22332B;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:.15s}
+ .post:hover{transform:translateY(-3px);border-color:#1E9E6A}
+ .post-img{aspect-ratio:1/1;background-size:cover;background-position:center;position:relative}
+ .post-tag{position:absolute;top:10px;left:10px;background:#1E9E6A;color:#fff;font-size:10.5px;font-weight:800;padding:4px 9px;border-radius:14px}
+ .post-type{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);color:#fff;font-size:10.5px;padding:4px 9px;border-radius:14px;backdrop-filter:blur(4px)}
+ .post-body{padding:14px 15px 16px}
+ .post-meta{font-size:11px;color:#8FA89B;margin-bottom:5px}
+ .post-title{font-size:14px;font-weight:700;line-height:1.3;min-height:37px}
+ .post-stats{display:flex;flex-wrap:wrap;gap:9px;margin-top:11px;font-size:12px;color:#bcd0c6;font-family:'Space Mono',monospace}
+ .liposts{display:grid;gap:10px}
+ .lipost{display:block;border:1px solid #22332B;border-radius:12px;padding:12px 14px;transition:.15s}
+ .lipost:hover{border-color:#4AA3E0;background:rgba(74,163,224,.06)}
+ .lipost-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+ .lipost-title{font-size:13.5px;font-weight:700;line-height:1.35}
+ .lipost-date{font-size:11px;color:#8FA89B;white-space:nowrap}
+ .lipost-stats{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:11.5px;color:#9fb6aa;font-family:'Space Mono',monospace}
+ .insight{background:linear-gradient(135deg,#15724D,#15201A);border:1px solid #22332B;border-radius:16px;padding:24px 26px}
+ .insight ul{margin:10px 0 0 18px} .insight li{margin:7px 0;font-size:14.5px;color:#e6f0ea} .insight b{color:#fff}
+ footer{border-top:1px solid #22332B;margin-top:54px;padding:28px 0 50px;color:#8FA89B;font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+ footer b{color:#17B4F0}
+ .meth{font-size:11.5px;color:#7e958a;margin-top:8px;max-width:820px;line-height:1.6}
+ @media(max-width:880px){.kpis,.posts{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}h1{font-size:34px}}
+ @media(max-width:520px){.kpis,.posts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="tabbar"><div class="wrap"><div id="tabs" class="tabs"></div></div></div>
+<div class="cover"><div class="wrap">
+  <div class="logo-wrap"><img class="logo" src="assets/gfw-logo.png" alt="Gluten Free World"></div>
+  <h1>Organic Social <span>Performance</span></h1>
+  <p class="sub"><b style="color:#cfe0d8">July 2026 monthly report</b> — Instagram, Facebook &amp; LinkedIn results for the gluten-free content campaign, with June and the pre-campaign baseline shown for comparison.</p>
+  <div class="tags">
+    <span class="tag"><b>IG</b> &nbsp;@glutenfreeworld_au</span>
+    <span class="tag"><b>FB</b> &nbsp;Gluten Free World</span>
+    <span class="tag"><b>in</b> &nbsp;Company page</span>
+    <span class="tag">Data via Windsor.ai</span>
+  </div>
+</div></div>
+
+<div class="wrap">
+
+  <div class="summary">
+    <div class="to">Summary for Paul · July 2026</div>
+    <p>Hi Paul — here's your <b>July 2026 performance report</b> for Gluten Free World's social channels, with last month (June) and the pre-campaign baseline shown alongside so you can see the trend clearly.</p>
+    <p>Month-on-month, engagement is <b>mixed</b>: Instagram interactions fell <b>−60%</b> on June and content views rose <b>+28%</b>, while your Facebook audience and post engagement grew again. Instagram reached <b>2,256</b> accounts in July, the highest month since the campaign began and 62% ahead of June. Against the pre-campaign baseline (April), it's night and day: reach up <b>70×</b>, views <b>20×</b> and interactions <b>5×</b>.</p>
+    <p>We've also opened up <b>LinkedIn</b> as a B2B channel — distributor and foodservice thought-leadership posts building authority with trade buyers. It's early and deliberately niche, but the page is live and growing.</p>
+    <div class="wins">
+      <div class="win neg"><span class="down">▼</span> IG interactions 146 <small>vs 366 in June</small></div>
+      <div class="win"><span class="up">▲</span> IG views 5,561 <small>vs 4,330 in June</small></div>
+      <div class="win"><span class="up">▲</span> +41 IG followers <small>this month</small></div>
+      <div class="win"><span class="up">▲</span> +29 FB fans <small>vs June</small></div>
+      <div class="win"><span class="up">▲</span> +1 LinkedIn <small>followers</small></div>
+    </div>
+    <div class="sign">— The Ready to Rank team</div>
+  </div>
+
+  <div class="section-h mono">At a glance &nbsp;·&nbsp; Jul vs June (month-on-month)</div>
+  <div class="kpis"><div class="kpi" style="--c:#1E9E6A">
+   <div class="kpi-label">Accounts reached · Instagram</div>
+   <div class="kpi-val">2,256</div>
+   <div class="kpi-delta up">▲ +866 <span class="mult">+62% MoM</span></div>
+   <div class="kpi-sub">vs June: <b>1,390</b></div>
+   <div class="kpi-sub2">▲ 70× vs April pre-campaign (32)</div>
+ </div>
+<div class="kpi" style="--c:#1E9E6A">
+   <div class="kpi-label">Content views · Instagram</div>
+   <div class="kpi-val">5,561</div>
+   <div class="kpi-delta up">▲ +1,231 <span class="mult">+28% MoM</span></div>
+   <div class="kpi-sub">vs June: <b>4,330</b></div>
+   <div class="kpi-sub2">▲ 20× vs April pre-campaign (272)</div>
+ </div>
+<div class="kpi" style="--c:#F0875F">
+   <div class="kpi-label">Interactions · Instagram</div>
+   <div class="kpi-val">146</div>
+   <div class="kpi-delta down">▼ −220 <span class="mult">−60% MoM</span></div>
+   <div class="kpi-sub">vs June: <b>366</b></div>
+   <div class="kpi-sub2">▲ 5× vs April pre-campaign (28)</div>
+ </div>
+<div class="kpi" style="--c:#1E9E6A">
+   <div class="kpi-label">Instagram followers</div>
+   <div class="kpi-val">852</div>
+   <div class="kpi-delta up">▲ +41 new in July</div>
+   <div class="kpi-sub">as at end of July</div>
+   
+ </div>
+<div class="kpi" style="--c:#17B4F0">
+   <div class="kpi-label">Facebook page likes</div>
+   <div class="kpi-val">1,456</div>
+   <div class="kpi-delta up">▲ +29 <span class="mult">+2% MoM</span></div>
+   <div class="kpi-sub">vs June: <b>1,427</b></div>
+   <div class="kpi-sub2">▲ vs April pre-campaign (1,394)</div>
+ </div>
+<div class="kpi" style="--c:#17B4F0">
+   <div class="kpi-label">Organic impressions · Facebook</div>
+   <div class="kpi-val">4,218</div>
+   <div class="kpi-delta up">▲ +1,563 <span class="mult">+59% MoM</span></div>
+   <div class="kpi-sub">vs June: <b>2,655</b></div>
+   <div class="kpi-sub2">▲ 9× vs April pre-campaign (493)</div>
+ </div>
+<div class="kpi" style="--c:#17B4F0">
+   <div class="kpi-label">Post engagements · Facebook</div>
+   <div class="kpi-val">83</div>
+   <div class="kpi-delta up">▲ +9 <span class="mult">+12% MoM</span></div>
+   <div class="kpi-sub">vs June: <b>74</b></div>
+   <div class="kpi-sub2">▲ vs April pre-campaign (28)</div>
+ </div>
+<div class="kpi" style="--c:#F0875F">
+   <div class="kpi-label">New followers · July</div>
+   <div class="kpi-val">41</div>
+   <div class="kpi-delta up">▲ net new audience</div>
+   <div class="kpi-sub">as at end of July</div>
+   
+ </div></div>
+
+  <div class="section-h mono">Reach &amp; views over time — Instagram</div>
+  <div class="chart-card"><div class="chart-box"><canvas id="trend"></canvas></div></div>
+
+  <div class="section-h mono">Momentum by month</div>
+  <div class="grid2">
+    <div class="chart-card"><div class="chart-box sm"><canvas id="bars"></canvas></div></div>
+    <div class="card">
+      <h3><span class="dot" style="background:#1E9E6A"></span>What the trend shows</h3>
+      <p class="note">Instagram reach, monthly</p>
+      <div class="rows"><div class="row"><span class="k">March</span><span class="v">372</span></div><div class="row"><span class="k">April (pre-campaign)</span><span class="v">32</span></div><div class="row"><span class="k">May</span><span class="v">1,903</span></div><div class="row"><span class="k">June</span><span class="v">1,390</span></div><div class="row"><span class="k">July (this month)</span><span class="v">2,256</span></div></div>
+    </div>
+  </div>
+
+  <div class="section-h mono">Platform breakdown</div>
+  <div class="grid2">
+    <div class="card">
+      <h3><span class="dot" style="background:#1E9E6A"></span>Instagram</h3>
+      <p class="note">@glutenfreeworld_au · 95 posts · following 1,463</p>
+      <div class="rows">
+        <div class="row"><span class="k">Followers</span><span class="v">852</span></div>
+        <div class="row"><span class="k">New followers (July)</span><span class="v" style="color:#37D389">▲ +41</span></div>
+        <div class="row"><span class="k">Accounts reached</span><span class="v">5,953</span></div>
+        <div class="row"><span class="k">Content views</span><span class="v">14,862</span></div>
+        <div class="row"><span class="k">Likes</span><span class="v">621</span></div>
+        <div class="row"><span class="k">Comments / Shares / Saves</span><span class="v">10 / 17 / 13</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:#17B4F0"></span>Facebook</h3>
+      <p class="note">Gluten Free World · organic page activity</p>
+      <div class="rows">
+        <div class="row"><span class="k">Page likes (fans)</span><span class="v">1,456</span></div>
+        <div class="row"><span class="k">Growth over period</span><span class="v" style="color:#37D389">▲ +67</span></div>
+        <div class="row"><span class="k">Organic impressions</span><span class="v">11,438</span></div>
+        <div class="row"><span class="k">Post engagements</span><span class="v">340</span></div>
+        <div class="row"><span class="k">Avg daily reach (unique)</span><span class="v">~75</span></div>
+        <div class="row"><span class="k">Starting fans</span><span class="v">1,389</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-h mono">LinkedIn &nbsp;·&nbsp; B2B channel</div>
+  <div class="grid2">
+    <div class="card">
+      <h3><span class="dot" style="background:#4AA3E0"></span>LinkedIn company page</h3>
+      <p class="note">Australian Gluten Free Blending · distributor &amp; foodservice audience</p>
+      <div class="rows">
+        <div class="row"><span class="k">Company followers</span><span class="v">20</span></div>
+        <div class="row"><span class="k">New followers (July)</span><span class="v" style="color:#37D389">▲ +1</span></div>
+        <div class="row"><span class="k">Impressions (July)</span><span class="v">236</span></div>
+        <div class="row"><span class="k">Post clicks (July)</span><span class="v">1</span></div>
+        <div class="row"><span class="k">Posts published (July)</span><span class="v">5</span></div>
+        <div class="row"><span class="k">Best post engagement rate</span><span class="v" style="color:#37D389">16.7%</span></div>
+      </div>
+      <p class="note" style="margin-top:14px;margin-bottom:0">A B2B play — thought-leadership posts &amp; newsletters aimed at distributors and foodservice buyers. The goal here is authority, not volume. July impressions (236) vs June (697).</p>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:#4AA3E0"></span>Top LinkedIn posts · Jul</h3>
+      <p class="note">Ranked by impressions</p>
+      <div class="liposts"><a class="lipost" href="https://www.linkedin.com/feed/update/urn:li:ugcPost:7477893682168242176" target="_blank" rel="noopener">
+   <div class="lipost-top"><span class="lipost-title">Why strictly gluten-free wins over generic GF claims</span><span class="lipost-date">12 Jul</span></div>
+   <div class="lipost-stats"><span>👁 108 impressions</span><span>🔗 1 clicks</span><span>❤ 1</span><span>◷ 1.9% eng</span></div>
+ </a>
+<a class="lipost" href="https://www.linkedin.com/feed/update/urn:li:ugcPost:7477896453437394944" target="_blank" rel="noopener">
+   <div class="lipost-top"><span class="lipost-title">Standing out to foodservice and manufacturers</span><span class="lipost-date">27 Jul</span></div>
+   <div class="lipost-stats"><span>👁 50 impressions</span><span>🔗 0 clicks</span><span>❤ 0</span><span>◷ 0.0% eng</span></div>
+ </a>
+<a class="lipost" href="https://www.linkedin.com/feed/update/urn:li:ugcPost:7477890108411510784" target="_blank" rel="noopener">
+   <div class="lipost-top"><span class="lipost-title">How to differentiate in a commodity ingredient market</span><span class="lipost-date">5 Jul</span></div>
+   <div class="lipost-stats"><span>👁 6 impressions</span><span>🔗 0 clicks</span><span>❤ 1</span><span>◷ 16.7% eng</span></div>
+ </a>
+<a class="lipost" href="https://www.linkedin.com/feed/update/urn:li:ugcPost:7477894324505038849" target="_blank" rel="noopener">
+   <div class="lipost-top"><span class="lipost-title">The role of specialty ingredients in winning better clients</span><span class="lipost-date">20 Jul</span></div>
+   <div class="lipost-stats"><span>👁 5 impressions</span><span>🔗 0 clicks</span><span>❤ 0</span><span>◷ 0.0% eng</span></div>
+ </a></div>
+    </div>
+  </div>
+
+  <div class="section-h mono">Instagram top posts &nbsp;·&nbsp; Jul</div>
+  <div class="posts"><a class="post" href="https://www.instagram.com/reel/DbC7k1KkS73/" target="_blank" rel="noopener">
+   <div class="post-img" style="background-image:url('assets/jul_reel21.jpg')">
+     <span class="post-tag">Highest reach</span>
+     <span class="post-type">Reel</span>
+   </div>
+   <div class="post-body">
+     <div class="post-meta">21 Jul · Instagram</div>
+     <div class="post-title">Not just gluten-free</div>
+     <div class="post-stats">
+       <span>👁 236</span><span>📍 215</span>
+       <span>❤ 3</span><span>💬 0</span>
+       <span>↪ 0</span><span>🔖 0</span>
+     </div>
+   </div>
+ </a>
+<a class="post" href="https://www.instagram.com/reel/Dah1mElToAM/" target="_blank" rel="noopener">
+   <div class="post-img" style="background-image:url('assets/jul_reel08.jpg')">
+     <span class="post-tag">Most liked</span>
+     <span class="post-type">Reel</span>
+   </div>
+   <div class="post-body">
+     <div class="post-meta">8 Jul · Instagram</div>
+     <div class="post-title">Clay Health and Organics shelf tour</div>
+     <div class="post-stats">
+       <span>👁 268</span><span>📍 198</span>
+       <span>❤ 12</span><span>💬 0</span>
+       <span>↪ 0</span><span>🔖 0</span>
+     </div>
+   </div>
+ </a>
+<a class="post" href="https://www.instagram.com/reel/DaT6FbrT68I/" target="_blank" rel="noopener">
+   <div class="post-img" style="background-image:url('assets/jul_reel03.jpg')">
+     <span class="post-tag">Community partner</span>
+     <span class="post-type">Reel</span>
+   </div>
+   <div class="post-body">
+     <div class="post-meta">3 Jul · Instagram</div>
+     <div class="post-title">Foodbank Victoria warehouse visit</div>
+     <div class="post-stats">
+       <span>👁 224</span><span>📍 194</span>
+       <span>❤ 3</span><span>💬 0</span>
+       <span>↪ 0</span><span>🔖 0</span>
+     </div>
+   </div>
+ </a>
+<a class="post" href="https://www.instagram.com/reel/Da_Ye_6TDoK/" target="_blank" rel="noopener">
+   <div class="post-img" style="background-image:url('assets/jul_reel19.jpg')">
+     <span class="post-tag">Creator collab</span>
+     <span class="post-type">Reel</span>
+   </div>
+   <div class="post-body">
+     <div class="post-meta">19 Jul · Instagram</div>
+     <div class="post-title">Coeliac at Home cinnamon scrolls</div>
+     <div class="post-stats">
+       <span>👁 219</span><span>📍 162</span>
+       <span>❤ 9</span><span>💬 1</span>
+       <span>↪ 0</span><span>🔖 1</span>
+     </div>
+   </div>
+ </a>
+<a class="post" href="https://www.instagram.com/p/DbcrvKwlTdz/" target="_blank" rel="noopener">
+   <div class="post-img" style="background-image:url('assets/jul_car31.jpg')">
+     <span class="post-tag">Top carousel</span>
+     <span class="post-type">Carousel</span>
+   </div>
+   <div class="post-body">
+     <div class="post-meta">31 Jul · Instagram</div>
+     <div class="post-title">Why self-raising flour makes fluffier pancakes</div>
+     <div class="post-stats">
+       <span>👁 263</span><span>📍 127</span>
+       <span>❤ 7</span><span>💬 0</span>
+       <span>↪ 0</span><span>🔖 1</span>
+     </div>
+   </div>
+ </a>
+<a class="post" href="https://www.instagram.com/p/DauVZsUH3Xv/" target="_blank" rel="noopener">
+   <div class="post-img" style="background-image:url('assets/jul_img13.jpg')">
+     <span class="post-tag">Top image</span>
+     <span class="post-type">Image</span>
+   </div>
+   <div class="post-body">
+     <div class="post-meta">13 Jul · Instagram</div>
+     <div class="post-title">Maybe it is not the recipe</div>
+     <div class="post-stats">
+       <span>👁 193</span><span>📍 108</span>
+       <span>❤ 5</span><span>💬 0</span>
+       <span>↪ 0</span><span>🔖 0</span>
+     </div>
+   </div>
+ </a></div>
+
+  <div class="section-h mono">Read-out</div>
+  <div class="insight">
+    <h3 style="font-size:17px">July: what the numbers show</h3>
+    <ul>
+      <li>Instagram <b>interactions −60%</b> on June (to 146) and <b>views +28%</b> to 5,561.</li>
+      <li>Instagram reached <b>2,256</b> accounts in July, the highest month since the campaign began and 62% ahead of June.</li>
+      <li><b>The interaction drop is a June artefact, not a July decline.</b> June logged 366 interactions, but 21 June alone accounted for 284 of them (273 likes from 268 accounts in a single day). Excluding that one day, June was 82 interactions and July's 146 is roughly 78% ahead on a like-for-like basis.</li><li><b>Partner and creator content drove the reach.</b> The three highest-reaching posts were all reshares: a Clay Health and Organics shelf tour (198 accounts reached), a Foodbank Victoria warehouse visit (194) and a Coeliac at Home cinnamon scroll reel (162). Owned brand posts peaked at 215. Reposting stockist and creator content is the cheapest reach lever available.</li><li><b>Facebook was the quiet winner:</b> 4,218 organic impressions, up 59% on June and the strongest month of the campaign, on 29 new page fans.</li><li><b>LinkedIn needs attention.</b> Impressions fell to 236 from 697 across five posts, returning one click and one new follower. The B2B track is not yet earning its place in the mix.</li>
+      <li>Audience: <b>+41</b> Instagram followers this month and <b>+29</b> Facebook fans vs June.</li>
+      <li><b>Next lever:</b> comments &amp; saves remain the low numbers — stronger CTAs and questions in captions will lift two-way engagement.</li>
+    </ul>
+  </div>
+
+  <p class="meth">Methodology: Organic (non-paid) Instagram, Facebook &amp; LinkedIn data pulled live via Windsor.ai for 1 March to 31 July 2026 (LinkedIn from campaign launch). "Accounts reached" and "Content views" are the sum of daily account-level figures and may count repeat viewers across days. Follower counts are end-of-month figures. Windsor.ai only serves Instagram follower gains for the trailing 30 days, so July's Instagram total (852) is the live 10 August snapshot (861) less the 9 followers gained 1 to 9 August, and July's new-follower figure is that total less the 811 recorded on 1 July. Post thumbnails saved locally so the report stays intact over time.</p>
+
+  <footer>
+    <div>Prepared by <b>Ready to Rank</b> · readytorank.com.au</div>
+    <div>Gluten Free World · Organic Social Report · Generated 10 Aug 2026</div>
+  </footer>
+</div>
+
+<script>
+const G="#1E9E6A", B="#17B4F0", MUT="#8FA89B", LINE="#22332B";
+Chart.defaults.color = MUT; Chart.defaults.font.family = "'Space Mono', monospace"; Chart.defaults.font.size = 10;
+const labels = ["03-01", "03-02", "03-03", "03-04", "03-05", "03-06", "03-07", "03-08", "03-09", "03-10", "03-11", "03-12", "03-13", "03-14", "03-15", "03-16", "03-17", "03-18", "03-19", "03-20", "03-21", "03-22", "03-23", "03-24", "03-25", "03-26", "03-27", "03-28", "03-29", "03-30", "03-31", "04-01", "04-02", "04-03", "04-04", "04-05", "04-06", "04-07", "04-08", "04-09", "04-10", "04-11", "04-12", "04-13", "04-14", "04-15", "04-16", "04-17", "04-18", "04-19", "04-20", "04-21", "04-22", "04-23", "04-24", "04-25", "04-26", "04-27", "04-28", "04-29", "04-30", "05-01", "05-02", "05-03", "05-04", "05-05", "05-06", "05-07", "05-08", "05-09", "05-10", "05-11", "05-12", "05-13", "05-14", "05-15", "05-16", "05-17", "05-18", "05-19", "05-20", "05-21", "05-22", "05-23", "05-24", "05-25", "05-26", "05-27", "05-28", "05-29", "05-30", "05-31", "06-01", "06-02", "06-03", "06-04", "06-05", "06-06", "06-07", "06-08", "06-09", "06-10", "06-11", "06-12", "06-13", "06-14", "06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28", "06-29", "06-30", "07-01", "07-02", "07-03", "07-04", "07-05", "07-06", "07-07", "07-08", "07-09", "07-10", "07-11", "07-12", "07-13", "07-14", "07-15", "07-16", "07-17", "07-18", "07-19", "07-20", "07-21", "07-22", "07-23", "07-24", "07-25", "07-26", "07-27", "07-28", "07-29", "07-30", "07-31"], reach = [239, 2, 3, 0, 0, 1, 0, 1, 0, 2, 3, 1, 0, 1, 1, 38, 38, 1, 0, 0, 1, 1, 1, 1, 20, 8, 4, 2, 1, 1, 1, 5, 1, 1, 3, 0, 1, 0, 0, 1, 1, 0, 2, 1, 0, 1, 0, 0, 3, 2, 1, 1, 1, 3, 0, 0, 1, 0, 2, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 5, 34, 21, 328, 43, 44, 45, 90, 64, 111, 76, 72, 31, 60, 38, 64, 306, 117, 68, 63, 72, 97, 51, 29, 193, 52, 27, 11, 11, 11, 47, 36, 65, 38, 76, 42, 23, 105, 100, 41, 31, 60, 19, 55, 50, 50, 36, 45, 72, 17, 11, 10, 27, 41, 277, 75, 23, 67, 56, 72, 167, 52, 57, 43, 25, 65, 145, 42, 39, 47, 19, 167, 54, 210, 48, 34, 56, 40, 54, 54, 37, 43, 53, 94], views = [363, 2, 11, 0, 0, 1, 0, 0, 1, 55, 13, 4, 0, 0, 9, 45, 44, 6, 0, 0, 3, 3, 3, 40, 30, 34, 4, 26, 39, 42, 1, 30, 2, 3, 14, 0, 3, 0, 0, 1, 3, 0, 13, 26, 0, 51, 1, 2, 39, 4, 1, 8, 18, 40, 12, 0, 0, 0, 1, 0, 0, 16, 0, 0, 0, 0, 0, 3, 0, 9, 46, 39, 565, 90, 68, 74, 164, 86, 147, 111, 122, 72, 100, 72, 125, 546, 346, 239, 165, 219, 305, 191, 64, 286, 76, 85, 48, 42, 63, 76, 66, 135, 74, 168, 84, 41, 237, 192, 75, 51, 143, 107, 982, 239, 166, 61, 79, 213, 251, 136, 41, 49, 112, 444, 194, 71, 193, 149, 158, 409, 149, 293, 481, 92, 195, 189, 124, 96, 105, 50, 308, 163, 251, 94, 81, 119, 72, 118, 418, 85, 69, 92, 187];
+new Chart(document.getElementById('trend'), {
+  type:'line', data:{labels:labels, datasets:[
+    {label:'Views', data:views, borderColor:B, backgroundColor:'rgba(23,180,240,.10)', fill:true, tension:.35, pointRadius:0, borderWidth:2},
+    {label:'Reach', data:reach, borderColor:G, backgroundColor:'rgba(30,158,106,.12)', fill:true, tension:.35, pointRadius:0, borderWidth:2}
+  ]},
+  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{usePointStyle:true,boxWidth:8,color:'#cfe0d8'}}},
+    scales:{x:{grid:{display:false}, ticks:{maxTicksLimit:12}}, y:{grid:{color:LINE}, beginAtZero:true}}}
+});
+new Chart(document.getElementById('bars'), {
+  type:'bar', data:{labels:["Mar", "Apr", "May", "Jun", "Jul"], datasets:[
+    {label:'Reach', data:[372, 32, 1903, 1390, 2256], backgroundColor:G, borderRadius:6},
+    {label:'Views', data:[779, 272, 3920, 4330, 5561], backgroundColor:B, borderRadius:6}
+  ]},
+  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{usePointStyle:true,boxWidth:8,color:'#cfe0d8'}}},
+    scales:{x:{grid:{display:false}}, y:{grid:{color:LINE}, beginAtZero:true}}}
+});
+</script>
+<script>
+// Month tabs — reads the shared manifest published alongside the reports.
+// The content-calendar link is always rendered, even if the manifest fetch fails,
+// so the client can never get stranded on a report with no way back.
+(async function(){
+  var CUR = "2026-07";
+  var el = document.getElementById('tabs');
+  var CAL = '<a class="tab" href="../content-hub/">Content calendar</a>';
+  var html = '';
+  try {
+    var res = await fetch('../months.json', {cache:'no-store'});
+    if(res.ok) {
+      var data = await res.json();
+      var months = (data.months||[]).slice().sort(function(a,b){return a.key<b.key?-1:1;});
+      if(months.length) {
+        html = '<span class="lbl">Reports</span>' + months.map(function(m){
+          return '<a class="tab'+(m.key===CUR?' active':'')+'" href="../'+m.key+'/">'+m.label+'</a>';
+        }).join('');
+      }
+    }
+  } catch(e) {}
+  el.innerHTML = html + '<span class="lbl" style="margin-left:10px">Planning</span>' + CAL;
+  el.style.display = 'flex';
+})();
+</script>
+</body>
+</html>
