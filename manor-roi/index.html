@@ -41,6 +41,11 @@
     --blue:#D0531E;        /* primary accent → Savvas Studio terracotta (--corduroy) */
     --azure:#E2B934;       /* secondary → Manor gold (the Manor × Savvas blend) */
   }
+  body[data-theme="search"]{
+    --ink:#1B1719; --panel:#241F21; --panel-2:#2C2629; --line:#3A3236;
+    --blue:#17B4F0;        /* primary accent → R2R blue (R2R runs search) */
+    --azure:#E2B934;       /* secondary → Manor gold */
+  }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:var(--ink);color:var(--white);font-family:var(--sans);-webkit-font-smoothing:antialiased}
   body{padding:28px 22px 40px;max-width:1180px;margin:0 auto}
@@ -98,6 +103,58 @@
   #neonFrame{position:fixed;inset:0;pointer-events:none;z-index:400;border:1.5px solid transparent;opacity:0;transition:opacity .35s ease}
   body[data-theme="roi"] #neonFrame{opacity:1;border-color:rgba(23,180,240,.5);box-shadow:inset 0 0 26px rgba(23,180,240,.22),inset 0 0 3px rgba(23,180,240,.55)}
   body[data-theme="social"] #neonFrame{opacity:1;border-color:rgba(208,83,30,.5);box-shadow:inset 0 0 26px rgba(208,83,30,.22),inset 0 0 3px rgba(208,83,30,.55)}
+  body[data-theme="search"] #neonFrame{opacity:1;border-color:rgba(23,180,240,.5);box-shadow:inset 0 0 26px rgba(23,180,240,.22),inset 0 0 3px rgba(23,180,240,.55)}
+
+  /* ===== Search tab ===== */
+  .league{display:flex;flex-direction:column;gap:8px}
+  .lrow{display:grid;grid-template-columns:26px 1fr 150px 84px;gap:12px;align-items:center;padding:9px 12px;border-radius:9px;background:var(--panel-2);border:1px solid transparent}
+  .lrow.me{border-color:var(--manor-gold);background:rgba(226,185,52,.09)}
+  .lrow .lpos{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:center}
+  .lrow.me .lpos{color:var(--manor-gold);font-weight:700}
+  .lrow .lname{font-size:13.5px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lrow.me .lname{font-weight:700;color:var(--manor-gold)}
+  .lrow .lname small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+  .ltrack{height:14px;background:rgba(255,255,255,.06);border-radius:7px;overflow:hidden}
+  .lfill{height:100%;border-radius:7px}
+  .lval{font-family:var(--mono);font-size:12.5px;color:var(--white);text-align:right}
+  .lval em{font-style:normal;color:var(--muted);font-size:11px;display:block}
+  .lmove{font-family:var(--mono);font-size:11px}
+  .lmove.up{color:var(--good)} .lmove.down{color:#FF6B6B} .lmove.flat{color:var(--muted)}
+
+  .bands{display:flex;flex-direction:column;gap:10px}
+  .bandrow{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center}
+  .bandrow .bl{font-size:12.5px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bandrow.me .bl{color:var(--manor-gold);font-weight:700}
+  .bandbar{display:flex;height:18px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.05)}
+  .bandbar span{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:#12100f;font-weight:700}
+  .bandkey{display:flex;flex-wrap:wrap;gap:14px;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px}
+  .bandkey i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+  .h2h{display:flex;flex-direction:column;gap:9px}
+  .h2hrow{display:grid;grid-template-columns:170px 1fr 96px;gap:12px;align-items:center}
+  .h2hrow .hl{font-size:12.5px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .h2htrack{height:15px;background:rgba(255,255,255,.06);border-radius:7px;overflow:hidden}
+  .h2hfill{height:100%;background:linear-gradient(90deg,var(--manor-gold),#f5c400);border-radius:7px}
+  .h2hval{font-family:var(--mono);font-size:12px;color:var(--white);text-align:right}
+
+  table.kw{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.kw th{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:left;padding:0 10px 9px;font-weight:400;border-bottom:1px solid var(--line)}
+  table.kw td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--white)}
+  table.kw td.num,table.kw th.num{text-align:right;font-family:var(--mono)}
+  table.kw tr:last-child td{border-bottom:none}
+  .pos{display:inline-block;min-width:30px;text-align:center;font-family:var(--mono);font-size:11.5px;padding:2px 6px;border-radius:5px;background:var(--panel-2);color:var(--white)}
+  .pos.p3{background:#2E7D52;color:#fff} .pos.p10{background:#3FD07F;color:#12100f}
+  .pos.p20{background:var(--manor-gold);color:#12100f} .pos.p50{background:#7a6a3a;color:#fff}
+  .pos.none{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+  .tblwrap{overflow-x:auto}
+  .mapbadge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:#12100f;background:var(--manor-gold);padding:3px 9px;border-radius:20px;font-weight:700}
+  .terms{display:flex;flex-wrap:wrap;gap:8px}
+  .term{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:12.5px}
+  .term b{font-family:var(--mono);font-size:11.5px;color:var(--blue)}
+  .term.brand{opacity:.55}
+  .note{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.6;margin-top:10px}
+  .splitbar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin-top:10px}
+  .splitbar span{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;color:#12100f}
 
   /* ===== Social v2: legend note, Sini's Insights, benchmarks ===== */
   .legend-note{margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:11px}
@@ -294,6 +351,7 @@
 <div class="tabs">
   <button class="tab active" id="tabRoi" onclick="showView('roi')">Marketing ROI</button>
   <button class="tab" id="tabSocial" onclick="showView('social')">Social</button>
+  <button class="tab" id="tabSearch" onclick="showView('search')">Search &amp; Local</button>
 </div>
 
 <!-- ===== ROI VIEW ===== -->
@@ -426,6 +484,94 @@
   <div class="seclabel">Top Facebook posts this month</div>
   <div class="posts" id="sPostsFb"></div>
 </div><!-- /viewSocial -->
+
+<!-- ===== SEARCH & LOCAL VIEW ===== -->
+<div class="view" id="viewSearch">
+  <div class="r2r-banner">
+    <img class="r2r-mark" src="rtr-logo.png" alt="Ready to Rank">
+    <div class="sb-body">
+      <div class="sb-title">Search &amp; local visibility managed by Ready&nbsp;to&nbsp;Rank</div>
+      <div class="sb-sub">Where Manor on High stands against competing venues on Google. <a href="https://readytorank.com.au/" target="_blank" rel="noopener">readytorank.com.au&nbsp;↗</a></div>
+    </div>
+  </div>
+
+  <div class="seclabel">Summary</div>
+  <div class="card" id="qSummary" style="line-height:1.65;font-size:14.5px;color:var(--white)">—</div>
+
+  <div class="seclabel">Where you stand · tracked wedding &amp; function keywords</div>
+  <div class="card">
+    <div class="league" id="qLeague"></div>
+    <div class="note" id="qLeagueNote"></div>
+  </div>
+
+  <div class="seclabel">Ranking depth · how many keywords sit in each band</div>
+  <div class="card">
+    <div class="bands" id="qBands"></div>
+    <div class="bandkey">
+      <span><i style="background:#2E7D52"></i>Top 3</span>
+      <span><i style="background:#3FD07F"></i>4–10</span>
+      <span><i style="background:#E2B934"></i>11–20</span>
+      <span><i style="background:#7a6a3a"></i>21–50</span>
+      <span><i style="background:rgba(255,255,255,.10)"></i>Not ranking</span>
+    </div>
+  </div>
+
+  <div class="seclabel">Head to head · keywords where you outrank each venue</div>
+  <div class="card"><div class="h2h" id="qH2H"></div></div>
+
+  <div class="seclabel">Keyword battleground · biggest opportunities first</div>
+  <div class="card"><div class="tblwrap"><table class="kw" id="qKw"></table></div>
+    <div class="note">Sorted by search volume. “Best rival” is the highest-ranking venue among the venues we track — not the whole search result, which also contains directories such as Easy Weddings and Tagvenue.</div>
+  </div>
+
+  <div class="seclabel">Google Business Profile · your local presence</div>
+  <div class="grid g4">
+    <div class="card hero accent">
+      <div class="lbl">Profile views</div><div class="big" id="gViews">—</div>
+      <div class="small">Google Search + Maps</div><div class="delta" id="gViewsDelta"></div>
+    </div>
+    <div class="card"><div class="lbl">Calls from profile</div><div class="big" id="gCalls2" style="font-size:30px">—</div><div class="small">tap-to-call</div><div class="delta" id="gCallsDelta"></div></div>
+    <div class="card"><div class="lbl">Website clicks</div><div class="big" id="gWeb" style="font-size:30px">—</div><div class="small">profile → site</div><div class="delta" id="gWebDelta"></div></div>
+    <div class="card"><div class="lbl">Direction requests</div><div class="big" id="gDir" style="font-size:30px">—</div><div class="small">planning a visit</div><div class="delta" id="gDirDelta"></div></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <div class="lbl">Reviews</div>
+      <div class="big" id="gRating" style="font-size:30px">—</div>
+      <div class="small" id="gReviews">—</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Where people see you</div>
+      <div class="splitbar" id="gSplit"></div>
+      <div class="note" id="gSplitNote"></div>
+    </div>
+  </div>
+
+  <div class="seclabel">Profile views over time</div>
+  <div class="trend">
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>Google Search</span>
+      <span><i style="background:var(--manor-gold)"></i>Google Maps</span>
+    </div>
+    <div id="gChart"></div>
+  </div>
+
+  <div class="seclabel">What people search to find you</div>
+  <div class="card">
+    <div class="terms" id="gTerms"></div>
+    <div class="note" id="gTermsNote"></div>
+  </div>
+
+  <div class="seclabel">Your own search performance · Google Search Console</div>
+  <div class="grid g4">
+    <div class="card"><div class="lbl">Clicks</div><div class="big" id="sc1" style="font-size:30px">—</div><div class="small">last 30 days</div></div>
+    <div class="card"><div class="lbl">Impressions</div><div class="big" id="sc2" style="font-size:30px">—</div><div class="small">last 30 days</div></div>
+    <div class="card"><div class="lbl">Average position</div><div class="big" id="sc3" style="font-size:30px">—</div><div class="small">all queries incl. brand</div></div>
+    <div class="card"><div class="lbl">Enquiry events</div><div class="big" id="sc4" style="font-size:30px">—</div><div class="small">GA4 key events</div></div>
+  </div>
+  <div class="note" id="scNote"></div>
+</div><!-- /viewSearch -->
 
 <footer>
   <div class="chans">Channels: <span>SEO</span> · <span>Google Ads</span> · <span>Meta (migrating)</span> · <span>Email</span> · Website maintenance</div>
@@ -604,6 +750,7 @@ function startApp(){
   hideGate();
   const so=$('signoutBtn'); if(so) so.hidden = !GATE_ENABLED;
   if(location.hash === '#social') showView('social');
+  else if(location.hash === '#search') showView('search');
   loadData();
 }
 
@@ -661,6 +808,15 @@ SUPA.ann     = SUPA.url + "/rest/v1/manor_social_annotations";
 SUPA.bench   = SUPA.url + "/rest/v1/manor_social_benchmarks";
 SUPA.smeta   = SUPA.url + "/rest/v1/manor_social_meta";
 SUPA.rpc     = SUPA.url + "/rest/v1/rpc/";
+/* Search & Local endpoints */
+SUPA.comps   = SUPA.url + "/rest/v1/manor_competitors";
+SUPA.vis     = SUPA.url + "/rest/v1/manor_visibility_monthly";
+SUPA.ranks   = SUPA.url + "/rest/v1/manor_rank_monthly";
+SUPA.kwuni   = SUPA.url + "/rest/v1/manor_keyword_universe";
+SUPA.gbp     = SUPA.url + "/rest/v1/manor_gbp_monthly";
+SUPA.gbpkw   = SUPA.url + "/rest/v1/manor_gbp_keywords";
+SUPA.seod    = SUPA.url + "/rest/v1/manor_seo_daily";
+const CLIENT_DOMAIN = 'manoronhigh.com.au';
 const PUBLIC_IMG = SUPA.url + "/storage/v1/object/public/manor-social/";
 
 let SOCIAL_LOADED = [];
@@ -706,7 +862,8 @@ function render(data, isSample){
   const inv = r => r.ourFee+r.socialFee+r.adSpend;
 
   // header
-  $('period').textContent = last.month;
+  ROI_PERIOD_LABEL = last.month;
+  if(document.body.dataset.theme !== 'search') $('period').textContent = last.month;
   $('updated').textContent = 'Last updated '+fmtDate(new Date());
   const b=$('banner');
   if(isSample){ b.className='banner show'; b.innerHTML='⚠ Showing <b>sample data</b> — could not reach the live database.'; }
@@ -1155,18 +1312,256 @@ function drawSocialChart(groups){
     `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Combined reach and engagement over time">${grid}${axL}${axR}${bars}${line}${xlabels}</svg>`;
 }
 
+/* ================= SEARCH & LOCAL ================= */
+let SEARCH_LOADED = false;
+let SEARCH_PERIOD_LABEL = null;   // latest measured search month, for the shared header
+let ROI_PERIOD_LABEL = null;      // headline ROI month, restored when leaving this tab
+const monLabel = d => MONTHS[+d.slice(5,7)-1] + ' ' + d.slice(0,4);
+const num = n => (+n||0).toLocaleString('en-AU');
+
+async function getJSON(url){
+  const r = await fetch(url, {headers: authHeaders()});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+async function loadSearch(){
+  try{
+    const [comps, vis, ranks, uni, gbp, gkw, seo] = await Promise.all([
+      getJSON(SUPA.comps + '?select=*&active=is.true&order=sort_order'),
+      getJSON(SUPA.vis   + '?select=*&order=period_date'),
+      getJSON(SUPA.ranks + '?select=*'),
+      getJSON(SUPA.kwuni + '?select=*'),
+      getJSON(SUPA.gbp   + '?select=*&order=period_date'),
+      getJSON(SUPA.gbpkw + '?select=*&order=searches.desc'),
+      getJSON(SUPA.seod  + '?select=*&order=period_date.desc&limit=30')
+    ]);
+    renderSearch({comps, vis, ranks, uni, gbp, gbpkw: gkw, seo});
+    SEARCH_LOADED = true;
+  }catch(e){
+    $('qSummary').innerHTML = '⚠ Could not reach the live database — no search data is shown rather than stale or sample figures. ('+(e.message||e)+')';
+  }
+}
+
+function renderSearch(D){
+  const nameOf = {}; const colourOf = {};
+  D.comps.forEach(c=>{ nameOf[c.domain]=c.label; colourOf[c.domain]=c.colour; });
+
+  /* ---- periods ---- */
+  const periods = [...new Set(D.vis.map(r=>r.period_date))].sort();
+  const P  = periods[periods.length-1];              // latest measured month
+  const PP = periods.length>1 ? periods[periods.length-2] : null;
+  const cur  = D.vis.filter(r=>r.period_date===P ).sort((a,b)=> b.visibility-a.visibility);
+  const prev = PP ? D.vis.filter(r=>r.period_date===PP).sort((a,b)=> b.visibility-a.visibility) : [];
+  const rankIn = (arr,d) => { const i = arr.findIndex(r=>r.domain===d); return i<0?null:i+1; };
+  const me = cur.find(r=>r.domain===CLIENT_DOMAIN);
+  // The shared header shows the ROI reporting month; on this tab the data is the
+  // latest measured search month, so relabel it rather than let the two disagree.
+  SEARCH_PERIOD_LABEL = monLabel(P);
+  if(document.body.dataset.theme==='search') $('period').textContent = SEARCH_PERIOD_LABEL;
+
+  /* ---- league table ---- */
+  const maxVis = Math.max(...cur.map(r=>+r.visibility), 0.001);
+  $('qLeague').innerHTML = cur.map((r,i)=>{
+    const isMe = r.domain===CLIENT_DOMAIN;
+    const was  = rankIn(prev, r.domain);
+    const now  = i+1;
+    let mv = '<span class="lmove flat">—</span>';
+    if(was){
+      if(was>now)      mv = `<span class="lmove up">▲ ${was-now}</span>`;
+      else if(was<now) mv = `<span class="lmove down">▼ ${now-was}</span>`;
+    } else mv = '<span class="lmove flat">new</span>';
+    const w = Math.max((+r.visibility/maxVis)*100, r.visibility>0?2:0);
+    return `<div class="lrow ${isMe?'me':''}">
+      <div class="lpos">${now}</div>
+      <div class="lname">${nameOf[r.domain]||r.domain}<small>${r.keywords_ranked} of ${r.keywords_tracked} keywords ranking${r.map_top3?' · map pack #1':''}</small></div>
+      <div><div class="ltrack"><div class="lfill" style="width:${w}%;background:${isMe?'linear-gradient(90deg,var(--manor-gold),#f5c400)':colourOf[r.domain]||'#666'}"></div></div></div>
+      <div class="lval">${(+r.visibility).toFixed(2)}%<em>${mv}</em></div>
+    </div>`;
+  }).join('');
+  $('qLeagueNote').innerHTML =
+    `<b>Search visibility</b> weights every tracked keyword by its monthly search volume and by how many people click a result in that position — so ranking #3 on a busy term counts for far more than #40 on a quiet one. Read it as: of all the searching happening across these ${me?me.keywords_tracked:''} keywords, this is the share landing on each venue. Movement is versus ${PP?monLabel(PP):'the previous month'}.`;
+
+  /* ---- position bands ---- */
+  const BAND = [['#2E7D52','top3'],['#3FD07F','b410'],['#E2B934','b1120'],['#7a6a3a','b2150'],['rgba(255,255,255,.10)','none']];
+  $('qBands').innerHTML = cur.map(r=>{
+    const t=r.keywords_tracked||1;
+    const seg=[+r.top3, r.top10-r.top3, r.top20-r.top10, r.top50-r.top20, t-r.top50];
+    return `<div class="bandrow ${r.domain===CLIENT_DOMAIN?'me':''}">
+      <div class="bl">${nameOf[r.domain]||r.domain}</div>
+      <div class="bandbar">${seg.map((v,i)=> v>0
+        ? `<span style="width:${(v/t)*100}%;background:${BAND[i][0]};color:${i===4?'transparent':'#12100f'}" title="${v} keywords">${(v/t)*100>6?v:''}</span>`
+        : '').join('')}</div>
+    </div>`;
+  }).join('');
+
+  /* ---- head to head (latest month, per keyword) ---- */
+  const rl = D.ranks.filter(r=>r.period_date===P);
+  const posOf = {}; // domain -> keyword -> position
+  rl.forEach(r=>{ (posOf[r.domain] = posOf[r.domain]||{})[r.keyword] = r.position; });
+  const mine = posOf[CLIENT_DOMAIN]||{};
+  const rivals = cur.filter(r=>r.domain!==CLIENT_DOMAIN);
+  $('qH2H').innerHTML = rivals.map(rv=>{
+    const theirs = posOf[rv.domain]||{};
+    const keys = new Set([...Object.keys(mine), ...Object.keys(theirs)]);
+    let win=0, total=0;
+    keys.forEach(k=>{
+      const a=mine[k], b=theirs[k];
+      if(a==null && b==null) return;
+      total++;
+      if(a!=null && (b==null || a<b)) win++;
+    });
+    const pct = total? (win/total)*100 : 0;
+    return `<div class="h2hrow">
+      <div class="hl">vs ${nameOf[rv.domain]||rv.domain}</div>
+      <div class="h2htrack"><div class="h2hfill" style="width:${pct}%"></div></div>
+      <div class="h2hval">${win} of ${total}</div>
+    </div>`;
+  }).join('') || '<div class="note">No contested keywords this month.</div>';
+
+  /* ---- keyword battleground ---- */
+  const volOf = {}; D.uni.filter(u=>u.period_date===P).forEach(u=> volOf[u.keyword]=u.volume);
+  const allKw = Object.keys(volOf).length ? Object.keys(volOf)
+              : [...new Set(rl.map(r=>r.keyword))];
+  const posBadge = p => p==null ? '<span class="pos none">—</span>'
+      : `<span class="pos ${p<=3?'p3':p<=10?'p10':p<=20?'p20':p<=50?'p50':''}">${p}</span>`;
+  const rows = allKw.map(k=>{
+    let best=null, bestDom=null;
+    rivals.forEach(rv=>{ const p=(posOf[rv.domain]||{})[k]; if(p!=null && (best==null || p<best)){ best=p; bestDom=rv.domain; } });
+    const mapPos = (rl.find(r=>r.domain===CLIENT_DOMAIN && r.keyword===k)||{}).map_position;
+    return {k, vol:volOf[k]??0, mine:mine[k]??null, best, bestDom, mapPos};
+  }).sort((a,b)=> b.vol-a.vol || (a.mine??999)-(b.mine??999)).slice(0,25);
+  $('qKw').innerHTML =
+    `<thead><tr><th>Keyword</th><th class="num">Searches / mo</th><th class="num">You</th><th>Best rival</th><th class="num">Their position</th></tr></thead><tbody>` +
+    rows.map(r=>`<tr>
+      <td>${r.k}${r.mapPos?` <span class="mapbadge">Map pack #${r.mapPos}</span>`:''}</td>
+      <td class="num">${r.vol?num(r.vol):'—'}</td>
+      <td class="num">${posBadge(r.mine)}</td>
+      <td style="color:var(--muted)">${r.bestDom?(nameOf[r.bestDom]||r.bestDom):'— none ranking'}</td>
+      <td class="num">${posBadge(r.best)}</td>
+    </tr>`).join('') + '</tbody>';
+
+  /* ---- summary ---- */
+  if(me){
+    const myRank = rankIn(cur, CLIENT_DOMAIN), wasRank = rankIn(prev, CLIENT_DOMAIN);
+    const moved = wasRank && wasRank!==myRank
+      ? ` You moved from ${ord(wasRank)} to ${ord(myRank)} since ${monLabel(PP)}.` : '';
+    // Coverage comparison must be against the venue with the MOST ranked keywords,
+    // which is not necessarily the visibility leader.
+    const topCover = cur.reduce((a,b)=> (b.keywords_ranked||0) > (a.keywords_ranked||0) ? b : a, cur[0]);
+    const coverPhrase = topCover.domain===CLIENT_DOMAIN
+      ? 'more than any other venue in the set'
+      : `second only to ${nameOf[topCover.domain]||topCover.domain} on ${topCover.keywords_ranked}`;
+    $('qSummary').innerHTML =
+      `Across the ${me.keywords_tracked} wedding and function keywords we track, <b>Manor on High ranks ${ord(myRank)} of ${cur.length}</b> venues on search visibility (${(+me.visibility).toFixed(2)}%).${moved} ` +
+      `You appear for <b>${me.keywords_ranked}</b> of them — ${coverPhrase} — with an average position of ${me.avg_position!=null?Math.round(me.avg_position):'—'}. ` +
+      (me.map_top3?`You also hold <b>#1 in the Google map pack</b>, which is where most local wedding searches actually convert. `:'') +
+      `The blue-link results for these terms are dominated by directories rather than venues, so the realistic near-term win is moving page-two rankings onto page one.`;
+  }
+
+  /* ---- Google Business Profile ---- */
+  const complete = D.gbp.filter(g=>!g.is_partial);
+  const g  = complete[complete.length-1];
+  const gp = complete[complete.length-2];
+  if(g){
+    const views = (g.impressions_maps||0)+(g.impressions_search||0);
+    const pviews = gp ? (gp.impressions_maps||0)+(gp.impressions_search||0) : null;
+    $('gViews').textContent = num(views);
+    $('gCalls2').textContent = num(g.call_clicks);
+    $('gWeb').textContent   = num(g.website_clicks);
+    $('gDir').textContent   = num(g.direction_requests);
+    deltaEl($('gViewsDelta'), views, pviews);
+    if(gp){
+      deltaEl($('gCallsDelta'), g.call_clicks, gp.call_clicks);
+      deltaEl($('gWebDelta'),   g.website_clicks, gp.website_clicks);
+      deltaEl($('gDirDelta'),   g.direction_requests, gp.direction_requests);
+    }
+    const latest = D.gbp[D.gbp.length-1];
+    $('gRating').textContent  = (latest.rating!=null? latest.rating : (g.rating??'—')) + ' ★';
+    $('gReviews').textContent = (latest.reviews_total!=null? num(latest.reviews_total) : '—') + ' Google reviews';
+    const mp = g.impressions_maps||0, sr = g.impressions_search||0, tt = mp+sr || 1;
+    $('gSplit').innerHTML =
+      `<span style="width:${(sr/tt)*100}%;background:var(--blue)">${Math.round((sr/tt)*100)}% Search</span>` +
+      `<span style="width:${(mp/tt)*100}%;background:var(--manor-gold)">${Math.round((mp/tt)*100)}% Maps</span>`;
+    $('gSplitNote').textContent =
+      `${monLabel(g.period_date)} — ${num(sr)} views on Google Search, ${num(mp)} on Google Maps.`;
+    gbpChart(D.gbp);
+  }
+
+  /* ---- search terms ---- */
+  const kwPeriods = [...new Set(D.gbpkw.map(r=>r.period_date))].sort();
+  const KP = kwPeriods[kwPeriods.length-1];
+  const terms = D.gbpkw.filter(r=>r.period_date===KP).sort((a,b)=> b.searches-a.searches).slice(0,22);
+  $('gTerms').innerHTML = terms.map(t=>
+    `<span class="term ${t.is_branded?'brand':''}">${t.keyword}<b>${num(t.searches)}</b></span>`).join('');
+  const nonBrand = terms.filter(t=>!t.is_branded).reduce((s,t)=>s+t.searches,0);
+  const brand    = terms.filter(t=> t.is_branded).reduce((s,t)=>s+t.searches,0);
+  $('gTermsNote').innerHTML = KP
+    ? `${monLabel(KP)} — the phrases people typed into Google before landing on the profile. Faded terms are branded (someone already looking for Manor on High); solid terms are people discovering you. <b>${num(nonBrand)}</b> discovery searches vs <b>${num(brand)}</b> branded across the terms shown.`
+    : '';
+
+  /* ---- GSC / GA4 ---- */
+  if(D.seo && D.seo.length){
+    const gsc = D.seo.filter(r=>r.clicks!=null);
+    const clicks = gsc.reduce((s,r)=>s+(+r.clicks||0),0);
+    const imps   = gsc.reduce((s,r)=>s+(+r.impressions||0),0);
+    const avg    = gsc.length ? gsc.reduce((s,r)=>s+(+r.avg_position||0),0)/gsc.length : null;
+    const conv   = D.seo.reduce((s,r)=>s+(+r.conversions||0),0);
+    $('sc1').textContent = num(clicks);
+    $('sc2').textContent = num(imps);
+    $('sc3').textContent = avg? avg.toFixed(1) : '—';
+    $('sc4').textContent = num(conv);
+    $('scNote').innerHTML = `Rolling ${D.seo.length}-day window to ${fmtDate(new Date(D.seo[0].period_date))}. Google Search Console reports about two days behind, so the most recent days carry analytics but not yet search data. <b>Average position here is not the same measure as the rankings above</b> — it is impressions-weighted across every query the site appears for, including people searching for “Manor on High” by name, so it always reads far stronger than a tracked-keyword position.`;
+  }
+}
+const ord = n => n+({1:'st',2:'nd',3:'rd'}[n%100>10&&n%100<14?0:n%10]||'th');
+
+/* GBP stacked monthly chart: Search + Maps views */
+function gbpChart(rows){
+  const el=$('gChart'); if(!el) return;
+  const data = rows.slice(-8);
+  if(!data.length){ el.innerHTML=''; return; }
+  const W=980,H=260,PL=54,PR=16,PT=14,PB=40;
+  const max = Math.max(...data.map(r=>(r.impressions_maps||0)+(r.impressions_search||0)))*1.12 || 1;
+  const iw=(W-PL-PR)/data.length, bw=Math.min(46, iw*0.5);
+  const y = v => PT+(H-PT-PB)*(1-v/max);
+  const xc = i => PL+iw*i+iw/2;
+  let grid='', bars='', labels='';
+  for(let g=0; g<=4; g++){
+    const v=max*g/4, yy=y(v);
+    grid += `<line x1="${PL}" y1="${yy}" x2="${W-PR}" y2="${yy}" stroke="rgba(255,255,255,.07)"/>`
+         +  `<text x="${PL-9}" y="${yy+4}" text-anchor="end" font-family="Space Mono,monospace" font-size="10" fill="#8A8A93">${Math.round(v).toLocaleString('en-AU')}</text>`;
+  }
+  data.forEach((r,i)=>{
+    const s=r.impressions_search||0, m=r.impressions_maps||0, t=s+m;
+    const x=xc(i)-bw/2, yTop=y(t), yMid=y(m), base=y(0);
+    bars += `<rect x="${x}" y="${yMid}" width="${bw}" height="${Math.max(base-yMid,0)}" fill="#E2B934" rx="2"><title>${monLabel(r.period_date)} — Maps ${m.toLocaleString('en-AU')}</title></rect>`
+         +  `<rect x="${x}" y="${yTop}" width="${bw}" height="${Math.max(yMid-yTop,0)}" fill="#17B4F0" rx="2"><title>${monLabel(r.period_date)} — Search ${s.toLocaleString('en-AU')}</title></rect>`;
+    labels += `<text x="${xc(i)}" y="${H-PB+20}" text-anchor="middle" font-family="Space Mono,monospace" font-size="10.5" fill="${r.is_partial?'#8A8A93':'#FFFFFF'}">${monLabel(r.period_date).replace(' ',' ')}${r.is_partial?' *':''}</text>`;
+  });
+  const anyPartial = data.some(r=>r.is_partial);
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Google Business Profile views by month">${grid}${bars}${labels}</svg>`
+    + (anyPartial? '<div class="note">* month still in progress — Google Business Profile also reports a few days behind, so the current month is always understated.</div>' : '');
+}
+
 /* ---------- view tabs ---------- */
 function showView(v){
-  const social = v === 'social';
-  $('viewRoi').classList.toggle('active', !social);
-  $('viewSocial').classList.toggle('active', social);
-  $('tabRoi').classList.toggle('active', !social);
-  $('tabSocial').classList.toggle('active', social);
-  // Per-tab co-branding: ROI = Manor+R2R, Social = Manor+Sabah.
-  document.body.dataset.theme = social ? 'social' : 'roi';
-  $('viewLabel').textContent = social ? 'Social' : 'Marketing ROI';
-  if(social){ history.replaceState(null,'','#social'); loadSocial(); }
-  else history.replaceState(null,'','#roi');
+  if(v!=='social' && v!=='search') v='roi';
+  $('viewRoi').classList.toggle('active',    v==='roi');
+  $('viewSocial').classList.toggle('active', v==='social');
+  $('viewSearch').classList.toggle('active', v==='search');
+  $('tabRoi').classList.toggle('active',     v==='roi');
+  $('tabSocial').classList.toggle('active',  v==='social');
+  $('tabSearch').classList.toggle('active',  v==='search');
+  // Per-tab co-branding: ROI = Manor+R2R, Social = Manor+Savvas, Search = R2R-led.
+  document.body.dataset.theme = v;
+  $('viewLabel').textContent = v==='social' ? 'Social' : v==='search' ? 'Search & Local' : 'Marketing ROI';
+  history.replaceState(null,'','#'+v);
+  // Keep the shared "Reporting period" honest per tab.
+  if(v==='search'){ if(SEARCH_PERIOD_LABEL) $('period').textContent = SEARCH_PERIOD_LABEL; }
+  else if(ROI_PERIOD_LABEL) $('period').textContent = ROI_PERIOD_LABEL;
+  if(v==='social') loadSocial();
+  if(v==='search' && !SEARCH_LOADED) loadSearch();
 }
 /* ---------- gate form + boot ---------- */
 document.getElementById('gateForm').addEventListener('submit', async (e)=>{
