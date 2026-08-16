@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Ready to Rank — Link Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#17B4F0; --ink:#0B0E12; --panel:#141A21; --panel2:#1B232C;
+    --line:#28323D; --text:#E8EDF2; --muted:#8A97A6; --faint:#5F6B79;
+    --green:#2ECC71; --amber:#F5C518; --orange:#FF8A3D; --red:#FF5A5F;
+    --r:12px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:var(--ink); color:var(--text); font-family:'Archivo',system-ui,sans-serif;
+       -webkit-font-smoothing:antialiased; line-height:1.45}
+  .mono{font-family:'Space Mono',monospace}
+  button{font-family:inherit; cursor:pointer}
+  input,select,textarea{font-family:inherit}
+  a{color:var(--blue)}
+
+  header{display:flex; align-items:center; gap:16px; padding:14px 22px; border-bottom:1px solid var(--line);
+         background:var(--panel); position:sticky; top:0; z-index:20; flex-wrap:wrap}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.02em}
+  .dot{width:10px; height:10px; border-radius:50%; background:var(--blue); box-shadow:0 0 12px var(--blue)}
+  .spacer{flex:1}
+  .who{font-size:13px; color:var(--muted); text-align:right}
+  .who b{color:var(--text); display:block; font-size:14px}
+  .btn{background:var(--blue); color:#04121A; border:0; border-radius:8px; padding:9px 15px;
+       font-weight:800; font-size:13px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent; color:var(--muted); border:1px solid var(--line); font-weight:600}
+  .btn.ghost:hover{color:var(--text); border-color:var(--blue)}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+       outline:2px solid var(--blue); outline-offset:2px}
+
+  main{max-width:1400px; margin:0 auto; padding:22px}
+  .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+  h2{font-size:16px; font-weight:800; letter-spacing:-.01em; margin-bottom:2px}
+  .sub{font-size:12.5px; color:var(--muted); margin-bottom:14px; max-width:78ch}
+  section{margin-top:26px}
+
+  /* ---- login ---- */
+  #login{max-width:390px; margin:12vh auto; background:var(--panel); border:1px solid var(--line);
+         border-radius:var(--r); padding:28px}
+  #login h1{font-size:22px; font-weight:900; margin-bottom:5px}
+  #login p{font-size:13px; color:var(--muted); margin-bottom:18px}
+  .fld{display:flex; flex-direction:column; gap:5px; margin-bottom:12px}
+  .fld label{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--faint);
+             font-family:'Space Mono',monospace}
+  .fld input,.fld select,.fld textarea{background:var(--ink); border:1px solid var(--line); color:var(--text);
+             border-radius:8px; padding:9px 11px; font-size:13.5px; width:100%}
+  .err{color:var(--red); font-size:12.5px; margin-top:8px; min-height:16px}
+
+  /* ---- standing cards ---- */
+  .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:15px 16px;
+        border-left:3px solid var(--line)}
+  .card.hit{border-left-color:var(--green)}
+  .card.close{border-left-color:var(--amber)}
+  .card.behind{border-left-color:var(--orange)}
+  .card.none{border-left-color:var(--red)}
+  .card .nm{font-weight:800; font-size:14.5px; margin-bottom:9px}
+  .card .big{font-family:'Space Mono',monospace; font-size:25px; font-weight:700; line-height:1}
+  .card .big i{font-style:normal; color:var(--faint); font-size:15px}
+  .card .lbl{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);
+        font-family:'Space Mono',monospace; margin-top:4px}
+  .chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:11px}
+  .chip{font-family:'Space Mono',monospace; font-size:10.5px; padding:3px 7px; border-radius:4px;
+        border:1px solid var(--line); color:var(--muted)}
+  .chip.w{border-color:rgba(245,197,24,.4); color:var(--amber)}
+  .chip.d{border-color:rgba(255,90,95,.4); color:var(--red)}
+  .chip.o{border-color:rgba(23,180,240,.4); color:var(--blue)}
+
+  /* ---- form ---- */
+  .form{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 19px}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px}
+  .grid.wide{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+  details.more{margin-top:14px; border-top:1px solid var(--line); padding-top:13px}
+  details.more summary{cursor:pointer; font-size:12px; color:var(--muted); font-family:'Space Mono',monospace;
+        letter-spacing:.07em; text-transform:uppercase; list-style:none}
+  details.more summary::-webkit-details-marker{display:none}
+  details.more summary::before{content:"▸ "; color:var(--blue)}
+  details.more[open] summary::before{content:"▾ "}
+  .formfoot{display:flex; gap:10px; align-items:center; margin-top:15px; flex-wrap:wrap}
+  .ok{color:var(--green); font-size:12.5px}
+
+  /* ---- table ---- */
+  .tw{overflow-x:auto; border:1px solid var(--line); border-radius:var(--r); background:var(--panel)}
+  table{border-collapse:collapse; width:100%; min-width:1080px}
+  th,td{text-align:left; padding:9px 11px; border-bottom:1px solid var(--line); font-size:12.4px;
+        vertical-align:middle; white-space:nowrap}
+  thead th{font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:.11em; text-transform:uppercase;
+        color:var(--faint); background:var(--panel2); position:sticky; top:0}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:rgba(255,255,255,.025)}
+  td.u{max-width:230px; overflow:hidden; text-overflow:ellipsis}
+  td.n{font-family:'Space Mono',monospace; text-align:right}
+  select.st{background:var(--ink); border:1px solid var(--line); color:var(--text); border-radius:6px;
+        padding:4px 7px; font-size:11.5px}
+  .vf{font-family:'Space Mono',monospace; font-size:10px; padding:2px 6px; border-radius:3px; letter-spacing:.05em}
+  .vf.y{background:rgba(46,204,113,.14); color:var(--green); border:1px solid rgba(46,204,113,.35)}
+  .vf.n{background:rgba(255,90,95,.12); color:var(--red); border:1px solid rgba(255,90,95,.35)}
+  .vf.p{background:rgba(138,151,166,.1); color:var(--muted); border:1px solid var(--line)}
+
+  .note{background:var(--panel2); border-left:3px solid var(--blue); border-radius:0 8px 8px 0;
+        padding:13px 15px; font-size:12.8px; color:var(--muted); line-height:1.55; margin-top:14px}
+  .note b{color:var(--text)}
+  .empty{padding:30px; text-align:center; color:var(--muted); font-size:13px}
+  .hide{display:none !important}
+  @media (max-width:640px){ main{padding:14px} header{padding:12px 14px} }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login">
+  <h1>Link Tracker</h1>
+  <p>Ready to Rank &mdash; sign in to log placements.</p>
+  <div class="fld"><label for="email">Email</label><input id="email" type="email" autocomplete="username"></div>
+  <div class="fld"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password"></div>
+  <button class="btn" id="signin" style="width:100%">Sign in</button>
+  <div class="err" id="loginErr"></div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="hide">
+  <header>
+    <div class="brand"><span class="dot"></span> Link Tracker</div>
+    <div class="fld" style="margin:0; min-width:130px">
+      <select id="month" style="background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px"></select>
+    </div>
+    <div class="spacer"></div>
+    <div class="who"><b id="whoName">—</b><span id="whoRole">—</span></div>
+    <button class="btn ghost" id="signout">Sign out</button>
+  </header>
+
+  <main>
+    <section>
+      <h2>This month</h2>
+      <p class="sub">What each client is owed, and how much of it is confirmed. <b>Only a link that has been fetched and found counts</b> &mdash; marking something Live records your claim, it doesn't tick the box.</p>
+      <div class="cards" id="cards"></div>
+    </section>
+
+    <section>
+      <h2>Log a placement</h2>
+      <p class="sub">Same fields as the spreadsheet. Client is a list, never typed &mdash; that's the one change, and it's why per-client totals will now add up.</p>
+      <div class="form">
+        <div class="grid">
+          <div class="fld"><label for="f_client">Client</label><select id="f_client"></select></div>
+          <div class="fld"><label for="f_type">Link Type</label><select id="f_type">
+            <option>Guest Post</option><option>Link Insert</option></select></div>
+          <div class="fld"><label for="f_status">Status</label><select id="f_status">
+            <option>In Progress</option><option>Waiting</option><option>For Publication</option>
+            <option selected>Live</option><option>Declined</option></select></div>
+          <div class="fld"><label for="f_targetdomain">Target Domain</label><input id="f_targetdomain" placeholder="example.com.au"></div>
+          <div class="fld"><label for="f_dr">DR</label><input id="f_dr" type="number" min="0" max="100"></div>
+          <div class="fld"><label for="f_st">ST</label><input id="f_st" type="number" min="0" max="100"></div>
+        </div>
+        <div class="grid wide" style="margin-top:12px">
+          <div class="fld"><label for="f_liveurl">Live URL</label><input id="f_liveurl" placeholder="https:// … the page the link sits on"></div>
+          <div class="fld"><label for="f_targeturl">Target URL</label><input id="f_targeturl" placeholder="https:// … the client page it points to"></div>
+          <div class="fld"><label for="f_anchor">Anchor Text</label><input id="f_anchor"></div>
+        </div>
+        <div class="grid" style="margin-top:12px">
+          <div class="fld"><label for="f_cost">Cost (ex GST)</label><input id="f_cost" type="number" step="0.01" min="0"></div>
+          <div class="fld"><label for="f_date">Date</label><input id="f_date" type="date"></div>
+          <div class="fld"><label for="f_category">Category</label><input id="f_category"></div>
+        </div>
+
+        <details class="more">
+          <summary>Outreach &amp; admin — publisher, content, invoice</summary>
+          <div class="grid" style="margin-top:13px">
+            <div class="fld"><label for="f_pubname">Publisher Name</label><input id="f_pubname"></div>
+            <div class="fld"><label for="f_pubemail">Publisher Email</label><input id="f_pubemail" type="email"></div>
+            <div class="fld"><label for="f_content">Content</label><input id="f_content" placeholder="e.g. Requested / Written / Sent"></div>
+            <div class="fld"><label for="f_doc">Doc Link</label><input id="f_doc" placeholder="Google Doc of the article"></div>
+            <div class="fld"><label for="f_invref">Invoice ref</label><input id="f_invref"></div>
+            <div class="fld"><label for="f_invstatus">Invoice status</label><select id="f_invstatus">
+              <option value="">—</option><option>Not raised</option><option>Raised</option><option>Paid</option></select></div>
+            <div class="fld"><label for="f_collab">Open to another collab?</label><select id="f_collab">
+              <option value="">—</option><option value="true">Yes</option><option value="false">No</option></select></div>
+          </div>
+          <div class="fld" style="margin-top:12px"><label for="f_notes">Notes</label><textarea id="f_notes" rows="2"></textarea></div>
+        </details>
+
+        <div class="formfoot">
+          <button class="btn" id="save">Add placement</button>
+          <button class="btn ghost" id="clear">Clear</button>
+          <span class="err" id="formErr" style="margin:0"></span>
+          <span class="ok hide" id="formOk">Saved.</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Placements this month</h2>
+      <p class="sub">Change a status here as it moves. <b>Verified</b> is set by the checker, not by hand &mdash; that column is the one nobody can type.</p>
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th>Client</th><th>Link Type</th><th>Target Domain</th><th>Live URL</th><th>Target URL</th>
+            <th>Anchor</th><th style="text-align:right">DR</th><th style="text-align:right">ST</th>
+            <th>Status</th><th>Verified</th><th style="text-align:right">Cost</th><th>Date</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="empty hide" id="noRows">Nothing logged for this month yet.</div>
+    </section>
+
+    <section>
+      <h2>Month note</h2>
+      <p class="sub">The roadblocks and per-client commentary you used to write at the top of the sheet. It was the most useful thing in there and it had nowhere to go.</p>
+      <div class="form">
+        <div class="fld"><textarea id="mnote" rows="5" placeholder="Roadblocks, what's slow, what's negotiating…"></textarea></div>
+        <div class="formfoot">
+          <button class="btn" id="saveNote">Save note</button>
+          <span class="ok hide" id="noteOk">Saved.</span>
+          <span class="err" id="noteErr" style="margin:0"></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="note">
+      <b>Why status and verified are two different columns.</b> Status is what you say the link is doing &mdash;
+      it's yours, and it's how the month gets planned. Verified is what fetching the page actually found.
+      Only verified counts toward the target, so a month is never short because of a typo, and never
+      complete because of an optimistic tick. <b>A shortfall carries into next month's target</b> rather
+      than disappearing.
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = "https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZ3J0cmF6eWVwdmJjbW1kaGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTM0MTEsImV4cCI6MjA4NzkyOTQxMX0.0nYnlrLC3pfDPpcQ9k5XsAMU8fu-ZhV543W8TMAoiUU";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const $ = id => document.getElementById(id);
+const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let CLIENTS = [], EMAIL = "";
+
+/* ---------- month options: this month ± a few ---------- */
+function monthKeys(){
+  const out = [], now = new Date();
+  for (let d = -3; d <= 1; d++){
+    const x = new Date(now.getFullYear(), now.getMonth() + d, 1);
+    out.push(x.toISOString().slice(0,7));
+  }
+  return out.reverse();
+}
+function monthLabel(k){
+  const [y,m] = k.split('-');
+  return new Date(y, m-1, 1).toLocaleDateString('en-AU',{month:'long', year:'numeric'});
+}
+
+/* ---------- auth ---------- */
+$('signin').onclick = async () => {
+  $('loginErr').textContent = "";
+  $('signin').disabled = true;
+  const { error } = await sb.auth.signInWithPassword({
+    email: $('email').value.trim(), password: $('pw').value });
+  $('signin').disabled = false;
+  if (error) { $('loginErr').textContent = error.message; return; }
+  boot();
+};
+$('pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('signin').click(); });
+$('signout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+async function boot(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) { $('login').classList.remove('hide'); $('app').classList.add('hide'); return; }
+  EMAIL = session.user.email || "";
+  $('login').classList.add('hide');
+  $('app').classList.remove('hide');
+  $('whoName').textContent = EMAIL;
+
+  const sel = $('month');
+  sel.innerHTML = monthKeys().map(k =>
+    `<option value="${k}">${esc(monthLabel(k))}</option>`).join('');
+  sel.value = new Date().toISOString().slice(0,7);
+  sel.onchange = refresh;
+
+  const { data:cl, error } = await sb.from('lb_clients').select('*');
+  if (error){ $('whoRole').textContent = "no access — ask Jose"; return; }
+  CLIENTS = cl || [];
+  $('whoRole').textContent = CLIENTS.length + " clients";
+  $('f_client').innerHTML = CLIENTS.map(c =>
+    `<option value="${esc(c.client_slug)}">${esc(c.client_name)}</option>`).join('');
+  $('f_date').value = new Date().toISOString().slice(0,10);
+  refresh();
+}
+
+/* ---------- read ---------- */
+async function refresh(){
+  const mk = $('month').value;
+  const [{ data:st }, { data:links }, { data:note }] = await Promise.all([
+    sb.from('lb_month_standing').select('*').eq('month_key', mk),
+    sb.from('lb_links').select('*').eq('month_key', mk).order('created_at',{ascending:false}),
+    sb.from('lb_month_notes').select('*').eq('month_key', mk).eq('author', EMAIL).maybeSingle()
+  ]);
+  drawCards(st || []);
+  drawRows(links || []);
+  $('mnote').value = note ? note.body : "";
+}
+
+function drawCards(st){
+  if (!st.length){ $('cards').innerHTML =
+    '<div class="empty">No targets set for this month yet.</div>'; return; }
+  $('cards').innerHTML = st.map(s => {
+    const name = (CLIENTS.find(c => c.client_slug === s.client_slug) || {}).client_name || s.client_slug;
+    const pct = s.due ? s.verified / s.due : 0;
+    const cls = s.hit ? 'hit' : pct >= .66 ? 'close' : pct > 0 ? 'behind' : 'none';
+    const chips = [];
+    if (s.owed_carried > 0) chips.push(`<span class="chip o">+${s.owed_carried} owed</span>`);
+    if (s.in_flight > 0)    chips.push(`<span class="chip w">${s.in_flight} in flight</span>`);
+    if (s.claimed_not_verified > 0) chips.push(`<span class="chip w">${s.claimed_not_verified} unverified</span>`);
+    if (s.gone_dead > 0)    chips.push(`<span class="chip d">${s.gone_dead} dead</span>`);
+    if (s.declined > 0)     chips.push(`<span class="chip">${s.declined} declined</span>`);
+    return `<div class="card ${cls}">
+      <div class="nm">${esc(name)}</div>
+      <div class="big">${s.verified}<i> / ${s.due}</i></div>
+      <div class="lbl">verified of due</div>
+      <div class="chips">${chips.join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+const STATUSES = ['In Progress','Waiting','For Publication','Live','Declined'];
+
+function drawRows(rows){
+  $('noRows').classList.toggle('hide', rows.length > 0);
+  $('rows').innerHTML = rows.map(r => {
+    const name = (CLIENTS.find(c => c.client_slug === r.client_slug) || {}).client_name || r.client_slug;
+    const vf = r.went_dead_on ? '<span class="vf n">dead</span>'
+             : r.verified_live === true  ? '<span class="vf y">verified</span>'
+             : r.verified_live === false ? '<span class="vf n">not found</span>'
+             : '<span class="vf p">not checked</span>';
+    const opts = STATUSES.map(s =>
+      `<option${s === r.status ? ' selected' : ''}>${s}</option>`).join('');
+    return `<tr>
+      <td>${esc(name)}</td>
+      <td>${esc(r.link_type)}</td>
+      <td>${esc(r.target_domain)}</td>
+      <td class="u">${r.live_url ? `<a href="${esc(r.live_url)}" target="_blank" rel="noopener">${esc(r.live_url)}</a>` : ''}</td>
+      <td class="u">${esc(r.target_url)}</td>
+      <td>${esc(r.anchor)}</td>
+      <td class="n">${r.dr ?? ''}</td>
+      <td class="n">${r.st ?? ''}</td>
+      <td><select class="st" data-id="${r.id}">${opts}</select></td>
+      <td>${vf}</td>
+      <td class="n">${r.cost_ex_gst != null ? '$' + Number(r.cost_ex_gst).toFixed(2) : ''}</td>
+      <td>${esc(r.placed_on)}</td>
+    </tr>`;
+  }).join('');
+
+  document.querySelectorAll('select.st').forEach(sel => {
+    sel.onchange = async () => {
+      sel.disabled = true;
+      const { error } = await sb.from('lb_links')
+        .update({ status: sel.value }).eq('id', sel.dataset.id);
+      sel.disabled = false;
+      if (error) alert(error.message); else refresh();
+    };
+  });
+}
+
+/* ---------- write ---------- */
+const val = id => { const v = $(id).value.trim(); return v === "" ? null : v; };
+const num = id => { const v = $(id).value.trim(); return v === "" ? null : Number(v); };
+
+$('clear').onclick = () => {
+  ['f_targetdomain','f_dr','f_st','f_liveurl','f_targeturl','f_anchor','f_cost','f_category',
+   'f_pubname','f_pubemail','f_content','f_doc','f_invref','f_notes'].forEach(i => $(i).value = "");
+  $('formErr').textContent = "";
+};
+
+$('save').onclick = async () => {
+  $('formErr').textContent = ""; $('formOk').classList.add('hide');
+  const status = $('f_status').value;
+  const liveUrl = val('f_liveurl');
+  // A link claimed Live with nowhere to look is the exact hole the old sheet had.
+  if (status === 'Live' && !liveUrl){
+    $('formErr').textContent = "A Live link needs a Live URL — otherwise it can never be verified.";
+    return;
+  }
+  const row = {
+    client_slug: $('f_client').value,
+    month_key:   $('month').value,
+    link_type:   $('f_type').value,
+    status:      status,
+    target_domain: val('f_targetdomain'),
+    live_url:    liveUrl,
+    target_url:  val('f_targeturl'),
+    anchor:      val('f_anchor'),
+    dr:          num('f_dr'),
+    st:          num('f_st'),
+    cost_ex_gst: num('f_cost'),
+    placed_on:   val('f_date'),
+    category:    val('f_category'),
+    publisher_name:  val('f_pubname'),
+    publisher_email: val('f_pubemail'),
+    content_status:  val('f_content'),
+    doc_link:    val('f_doc'),
+    invoice_ref: val('f_invref'),
+    invoice_status: $('f_invstatus').value || null,
+    open_to_collab: $('f_collab').value === "" ? null : $('f_collab').value === "true",
+    notes:       val('f_notes'),
+    submitted_by: EMAIL
+  };
+  $('save').disabled = true;
+  const { error } = await sb.from('lb_links').insert(row);
+  $('save').disabled = false;
+  if (error){ $('formErr').textContent = error.message; return; }
+  $('formOk').classList.remove('hide');
+  setTimeout(() => $('formOk').classList.add('hide'), 2500);
+  $('clear').click();
+  refresh();
+};
+
+$('saveNote').onclick = async () => {
+  $('noteErr').textContent = ""; $('noteOk').classList.add('hide');
+  const { error } = await sb.from('lb_month_notes')
+    .upsert({ month_key: $('month').value, author: EMAIL, body: $('mnote').value },
+            { onConflict: 'month_key,author' });
+  if (error){ $('noteErr').textContent = error.message; return; }
+  $('noteOk').classList.remove('hide');
+  setTimeout(() => $('noteOk').classList.add('hide'), 2500);
+};
+
+boot();
+</script>
+</body>
+</html>
