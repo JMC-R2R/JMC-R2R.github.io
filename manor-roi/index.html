@@ -504,6 +504,13 @@
     <div class="note" id="qLeagueNote"></div>
   </div>
 
+  <div class="seclabel">Visibility over time</div>
+  <div class="trend">
+    <div class="legend" id="qTrendLegend"></div>
+    <div id="qTrend"></div>
+    <div class="note" id="qTrendNote"></div>
+  </div>
+
   <div class="seclabel">Ranking depth · how many keywords sit in each band</div>
   <div class="card">
     <div class="bands" id="qBands"></div>
@@ -1382,6 +1389,9 @@ function renderSearch(D){
   $('qLeagueNote').innerHTML =
     `<b>Search visibility</b> weights every tracked keyword by its monthly search volume and by how many people click a result in that position — so ranking #3 on a busy term counts for far more than #40 on a quiet one. Read it as: of all the searching happening across these ${me?me.keywords_tracked:''} keywords, this is the share landing on each venue. Movement is versus ${PP?monLabel(PP):'the previous month'}.`;
 
+  /* ---- visibility trend ---- */
+  visTrend(D.vis, periods, nameOf, colourOf);
+
   /* ---- position bands ---- */
   const BAND = [['#2E7D52','top3'],['#3FD07F','b410'],['#E2B934','b1120'],['#7a6a3a','b2150'],['rgba(255,255,255,.10)','none']];
   $('qBands').innerHTML = cur.map(r=>{
@@ -1515,6 +1525,72 @@ function renderSearch(D){
   }
 }
 const ord = n => n+({1:'st',2:'nd',3:'rd'}[n%100>10&&n%100<14?0:n%10]||'th');
+
+/* Visibility trend, one line per venue.
+   Draws a dashed divider wherever the tracked keyword set changed size between two
+   consecutive months — visibility either side of that line is NOT like-for-like, and a
+   continuous line across it would imply a comparison that isn't real. */
+function visTrend(vis, periods, nameOf, colourOf){
+  const el=$('qTrend'); if(!el) return;
+  if(periods.length < 2){
+    el.innerHTML='';
+    $('qTrendLegend').innerHTML='';
+    $('qTrendNote').textContent =
+      'Only one month of competitor data so far — the trend line starts once a second month is measured. The league table above is the current standing.';
+    return;
+  }
+  const doms = [...new Set(vis.map(r=>r.domain))];
+  const val = (d,p) => { const r = vis.find(x=>x.domain===d && x.period_date===p); return r? +r.visibility : null; };
+  const tracked = p => { const r = vis.find(x=>x.period_date===p); return r? r.keywords_tracked : null; };
+
+  const W=980,H=280,PL=48,PR=18,PT=16,PB=42;
+  const max = Math.max(...vis.map(r=>+r.visibility), 0.5)*1.15;
+  const x = i => periods.length===1 ? PL+(W-PL-PR)/2 : PL + (W-PL-PR)*(i/(periods.length-1));
+  const y = v => PT + (H-PT-PB)*(1 - v/max);
+
+  let grid='';
+  for(let g=0; g<=4; g++){
+    const v=max*g/4, yy=y(v);
+    grid += `<line x1="${PL}" y1="${yy}" x2="${W-PR}" y2="${yy}" stroke="rgba(255,255,255,.07)"/>`
+         +  `<text x="${PL-9}" y="${yy+4}" text-anchor="end" font-family="Space Mono,monospace" font-size="10" fill="#8A8A93">${v.toFixed(1)}%</text>`;
+  }
+  // basis-change dividers
+  let breaks='';
+  for(let i=1;i<periods.length;i++){
+    if(tracked(periods[i]) !== tracked(periods[i-1])){
+      const bx=(x(i)+x(i-1))/2;
+      breaks += `<line x1="${bx}" y1="${PT}" x2="${bx}" y2="${H-PB}" stroke="#8A8A93" stroke-width="1.5" stroke-dasharray="5 5"/>`
+             +  `<text x="${bx+6}" y="${PT+13}" font-family="Space Mono,monospace" font-size="10" fill="#8A8A93">keyword set re-scoped</text>`;
+    }
+  }
+  let lines='';
+  doms.forEach(d=>{
+    const isMe = d===CLIENT_DOMAIN;
+    const col = isMe ? '#E2B934' : (colourOf[d]||'#666');
+    // break the polyline at any month with no measurement (e.g. a venue added later)
+    let seg=[], out='';
+    periods.forEach((p,i)=>{
+      const v=val(d,p);
+      if(v===null){ if(seg.length>1) out+=`<polyline points="${seg.join(' ')}" fill="none" stroke="${col}" stroke-width="${isMe?3:1.8}" stroke-linejoin="round" opacity="${isMe?1:.75}"/>`; seg=[]; return; }
+      seg.push(`${x(i)},${y(v)}`);
+      out += `<circle cx="${x(i)}" cy="${y(v)}" r="${isMe?4.5:3}" fill="${col}"><title>${nameOf[d]||d} — ${monLabel(p)}: ${v.toFixed(2)}%</title></circle>`;
+    });
+    if(seg.length>1) out+=`<polyline points="${seg.join(' ')}" fill="none" stroke="${col}" stroke-width="${isMe?3:1.8}" stroke-linejoin="round" opacity="${isMe?1:.75}"/>`;
+    lines += out;
+  });
+  // first/last labels anchor inward, otherwise they overflow the viewBox and get clipped
+  const xlabels = periods.map((p,i)=>{
+    const anchor = i===0 ? 'start' : i===periods.length-1 ? 'end' : 'middle';
+    return `<text x="${x(i)}" y="${H-PB+22}" text-anchor="${anchor}" font-family="Space Mono,monospace" font-size="10.5" fill="#FFFFFF">${monLabel(p)}</text>`;
+  }).join('');
+
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Search visibility by venue over time">${grid}${breaks}${lines}${xlabels}</svg>`;
+  $('qTrendLegend').innerHTML = doms.map(d=>
+    `<span><i style="background:${d===CLIENT_DOMAIN?'#E2B934':(colourOf[d]||'#666')}"></i>${nameOf[d]||d}</span>`).join('');
+  $('qTrendNote').innerHTML = breaks
+    ? 'The dashed line marks where the tracked keyword set was re-scoped. Visibility either side of it is measured against a different set of keywords, so the two sides are not directly comparable — the line is deliberately read as two separate runs, not one trend.'
+    : '';
+}
 
 /* GBP stacked monthly chart: Search + Maps views */
 function gbpChart(rows){
