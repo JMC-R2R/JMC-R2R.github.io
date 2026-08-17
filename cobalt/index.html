@@ -500,6 +500,18 @@ body.pinmode [data-anchor]{cursor:crosshair}
     <h2 class="h2">By campaign</h2>
     <p class="sub" id="gads-sub">Google Ads campaigns for the selected month.</p>
     <div class="card tscroll"><table class="tbl" id="t-gads"></table></div>
+
+    <h2 class="h2">What we're bidding on</h2>
+    <p class="sub" id="gkw-sub">Search is keyword-driven; Performance Max is not, so only the Search campaign appears below.</p>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card" id="c-adgroups"></div>
+      <div class="card" id="c-kwsummary"></div>
+    </div>
+    <div class="card tscroll" style="margin-top:14px"><table class="tbl" id="t-gkw"></table></div>
+
+    <h2 class="h2">What people actually searched</h2>
+    <p class="sub" id="gst-sub">The real queries that triggered an ad — this is where budget leaks show up.</p>
+    <div class="card tscroll"><table class="tbl" id="t-gst"></table></div>
   </section>
 
   <section id="social" data-anchor="sec:social" hidden>
@@ -590,7 +602,7 @@ const monthShort=key=>MONTH_ABBR[Number(key.split("-")[1])-1];
 const monthLong=key=>monthShort(key)+" "+key.split("-")[0];
 
 async function loadData(){
-  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr,fb]=await Promise.all([
+  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr,fb,gkw,gst]=await Promise.all([
     sb.from('cobalt_seo_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
     sb.from('cobalt_social_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
     sb.from('cobalt_paid_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
@@ -603,14 +615,17 @@ async function loadData(){
     sb.from('cobalt_manual_metrics').select('*'),
     sb.from('cobalt_content_plan').select('*').order('plan_date'),
     sb.from('cobalt_metric_overrides').select('*'),
-    sb.from('cobalt_feedback').select('*').order('created_at',{ascending:false})
+    sb.from('cobalt_feedback').select('*').order('created_at',{ascending:false}),
+    sb.from('cobalt_google_keywords').select('*'),
+    sb.from('cobalt_google_search_terms').select('*')
   ]);
   INSIGHTS=ins.data||[]; AUTHORS=auth.data||[];
   MANUAL_DEFS=mdef.data||[]; MANUAL=mval.data||[];
   CONTENT=cplan.data||[]; OVERRIDES=ovr.data||[]; FEEDBACK=fb.data||[];
   REFRESH=refresh.data||[];
   // Everything is kept in full so switching month is instant and needs no refetch.
-  RAW={seo:seo.data||[],social:social.data||[],paid:paid.data||[],rank:rank.data||[],posts:posts.data||[]};
+  RAW={seo:seo.data||[],social:social.data||[],paid:paid.data||[],rank:rank.data||[],posts:posts.data||[],
+       gkw:gkw.data||[],gst:gst.data||[]};
   MSERIES=buildMonths(RAW.seo,RAW.social);
   MONTHS_AVAILABLE=MSERIES.map(m=>m.key);
   if(!MONTH||!MONTHS_AVAILABLE.includes(MONTH))MONTH=MONTHS_AVAILABLE[MONTHS_AVAILABLE.length-1]||localISO(new Date()).slice(0,7);
@@ -774,6 +789,7 @@ function renderGoogleAds(ML){
     kpis.innerHTML="";
     if(sub)sub.textContent="";
     document.getElementById("t-gads").innerHTML="";
+    renderGoogleKeywords(ML);
     return;
   }
   if(box)box.className="callout "+(g.leads?"good":"bad");
@@ -790,10 +806,65 @@ function renderGoogleAds(ML){
     kpi("Avg CPC",rate(g.spend,g.clicks,money),"cost per click")+
     kpi("Conversions",fmt(g.leads),g.leads?'<span class="chip up">'+money(g.spend/g.leads)+'</span> per conversion':'<span class="chip dn">tracking check</span>');
   if(sub)sub.textContent="Google Ads campaigns in "+ML+".";
+  renderGoogleKeywords(ML);
   document.getElementById("t-gads").innerHTML=
     `<thead><tr><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>CPC</th><th>Conv.</th><th>Cost/conv.</th></tr></thead><tbody>`+
     g.campaigns.map(c=>`<tr><td class="k">${esc(c.name)}</td><td class="tnum">${fmt(c.im)}</td><td class="tnum">${c.cl}</td><td class="tnum">${money(c.sp)}</td><td class="tnum">${rate(c.sp,c.cl,money)}</td><td class="tnum">${c.ld}</td><td class="tnum">${rate(c.sp,c.ld,money)}</td></tr>`).join("")+
     `<tr class="tot"><td>Total</td><td class="tnum">${fmt(g.impr)}</td><td class="tnum">${g.clicks}</td><td class="tnum">${money(g.spend)}</td><td class="tnum">${rate(g.spend,g.clicks,money)}</td><td class="tnum">${g.leads}</td><td class="tnum">${rate(g.spend,g.leads,money)}</td></tr></tbody>`;
+}
+// Search ads are bought against keywords, so the client can see exactly what is being
+// targeted, what it cost, and what people actually typed. Performance Max has no
+// keywords at all, so everything here is the Search campaign by definition.
+function renderGoogleKeywords(ML){
+  const box=document.getElementById("t-gkw");if(!box)return;
+  const key=MONTH+"-01";
+  const kws=(RAW.gkw||[]).filter(r=>String(r.period_month).slice(0,7)===MONTH)
+    .sort((a,b)=>(Number(b.spend)||0)-(Number(a.spend)||0)||(b.impressions||0)-(a.impressions||0));
+  const sts=(RAW.gst||[]).filter(r=>String(r.period_month).slice(0,7)===MONTH)
+    .sort((a,b)=>(Number(b.spend)||0)-(Number(a.spend)||0)||(b.impressions||0)-(a.impressions||0));
+  // Derive when keyword tracking actually begins rather than naming a date in the copy.
+  const firstKw=[...new Set((RAW.gkw||[]).map(r=>String(r.period_month).slice(0,7)))].sort()[0];
+  const empty=`<div class="nodata">No Search keyword data for ${ML}.${firstKw?` Google Ads Search keywords start from <b>${monthLong(firstKw)}</b>.`:""}</div>`;
+  const ag=document.getElementById("c-adgroups"), ks=document.getElementById("c-kwsummary"),
+        gsub=document.getElementById("gkw-sub"), ssub=document.getElementById("gst-sub"),
+        stb=document.getElementById("t-gst");
+  if(!kws.length){box.innerHTML="";stb.innerHTML="";ag.innerHTML=empty;ks.innerHTML="";
+    if(gsub)gsub.textContent="";if(ssub)ssub.textContent="";return;}
+
+  // Ad group rollup — the "what are we going for" view.
+  const groups={};
+  kws.forEach(r=>{const g=groups[r.ad_group]=groups[r.ad_group]||{n:0,im:0,cl:0,sp:0,cv:0};
+    g.n++;g.im+=r.impressions||0;g.cl+=r.clicks||0;g.sp+=Number(r.spend)||0;g.cv+=r.conversions||0;});
+  const gl=Object.entries(groups).sort((a,b)=>b[1].sp-a[1].sp);
+  const totSp=gl.reduce((s,[,g])=>s+g.sp,0), totCl=gl.reduce((s,[,g])=>s+g.cl,0);
+  ag.innerHTML=`<div class="cardhead"><div><h3>Ad groups we're targeting</h3><p class="ch3sub">${gl.length} groups · ${kws.length} keywords · ${ML}</p></div></div>
+    <table class="tbl"><thead><tr><th>Ad group</th><th>Keywords</th><th>Impr.</th><th>Clicks</th><th>Spend</th></tr></thead><tbody>`+
+    gl.map(([n,g])=>`<tr><td class="k">${esc(n)}</td><td class="tnum">${g.n}</td><td class="tnum">${fmt(g.im)}</td><td class="tnum">${g.cl}</td><td class="tnum">${money(g.sp)}</td></tr>`).join("")+
+    `</tbody></table>`;
+
+  const active=kws.filter(r=>(r.clicks||0)>0), idle=kws.filter(r=>!(r.impressions||0));
+  const best=kws[0];
+  ks.innerHTML=`<div class="cardhead"><div><h3>Keyword summary</h3><p class="ch3sub">${ML}</p></div></div>
+    <table class="tbl"><tbody>
+      <tr><td class="k">Keywords live</td><td class="tnum">${kws.length}</td></tr>
+      <tr><td class="k">Earning clicks</td><td class="tnum">${active.length}</td></tr>
+      <tr><td class="k">No impressions yet</td><td class="tnum">${idle.length}</td></tr>
+      <tr><td class="k">Average CPC</td><td class="tnum">${rate(totSp,totCl,money)}</td></tr>
+      <tr><td class="k">Biggest spender</td><td class="tnum">${best?esc(best.keyword):"—"}</td></tr>
+      <tr><td class="k">Match type</td><td class="tnum">${[...new Set(kws.map(r=>r.match_type).filter(Boolean))].join(", ").toLowerCase()||"—"}</td></tr>
+    </tbody></table>`;
+  if(gsub)gsub.textContent=`Search is keyword-driven; Performance Max is not, so only the Search campaign appears here. ${kws.length} keywords live across ${gl.length} ad groups in ${ML}.`;
+
+  box.innerHTML=`<thead><tr><th>Keyword</th><th>Ad group</th><th>Match</th><th>Impr.</th><th>Clicks</th><th>CPC</th><th>Spend</th><th>Conv.</th></tr></thead><tbody>`+
+    kws.map(r=>{const sp=Number(r.spend)||0,cl=r.clicks||0;
+      return `<tr><td class="k">${esc(r.keyword)}</td><td>${esc(r.ad_group)}</td><td>${esc((r.match_type||"").toLowerCase())}</td><td class="tnum">${fmt(r.impressions||0)}</td><td class="tnum">${cl}</td><td class="tnum">${rate(sp,cl,money)}</td><td class="tnum">${money(sp)}</td><td class="tnum">${r.conversions||0}</td></tr>`;}).join("")+
+    `</tbody>`;
+
+  const stSpend=sts.reduce((s,r)=>s+(Number(r.spend)||0),0);
+  if(ssub)ssub.textContent=`The real queries that triggered an ad, highest cost first. ${sts.length} shown for ${ML}, accounting for ${money(stSpend)} of attributed spend.`;
+  stb.innerHTML=`<thead><tr><th>Search term</th><th>Ad group</th><th>Impr.</th><th>Clicks</th><th>Spend</th></tr></thead><tbody>`+
+    sts.map(r=>`<tr><td class="k">${esc(r.search_term)}</td><td>${esc(r.ad_group)}</td><td class="tnum">${fmt(r.impressions||0)}</td><td class="tnum">${r.clicks||0}</td><td class="tnum">${money(Number(r.spend)||0)}</td></tr>`).join("")+
+    `</tbody>`;
 }
 function renderKPIs(){
   const ML=MONTH?monthLong(MONTH):"—";
