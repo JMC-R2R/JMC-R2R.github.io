@@ -175,6 +175,20 @@ section[hidden]{display:none}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
 
+/* Reporting-month switcher. The dashboard reports whole calendar months, so the
+   selected month is the single source of scope for every tab. */
+.monthbar{border-bottom:1px solid var(--bd);background:var(--s1);position:sticky;top:0;z-index:12}
+.monthrow{display:flex;align-items:center;gap:14px;padding:9px 0;flex-wrap:wrap}
+.month-lab{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
+.monthchips{display:flex;gap:6px;flex-wrap:wrap}
+.mchip{font-family:var(--mono);font-size:12px;padding:5px 12px;border-radius:999px;border:1px solid var(--bd);
+  background:transparent;color:var(--ink2);cursor:pointer;transition:all .15s}
+.mchip:hover{border-color:var(--cobalt);color:var(--ink)}
+.mchip[aria-pressed=true]{background:var(--cobalt);border-color:var(--cobalt);color:#001018;font-weight:700}
+.mchip .part{opacity:.7}
+.month-note{font-size:11.5px;color:var(--ink2);margin-left:auto}
+.nodata{border:1px dashed var(--bd);border-radius:12px;padding:22px 20px;text-align:center;color:var(--ink2);font-size:13px;line-height:1.6}
+.nodata b{color:var(--ink)}
 .callouts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
 @media(max-width:820px){.callouts{grid-template-columns:1fr}}
 .callout{border:1px solid var(--bd);border-radius:12px;padding:14px 15px;background:var(--s1);display:flex;gap:12px}
@@ -407,10 +421,16 @@ body.pinmode [data-anchor]{cursor:crosshair}
 <nav class="tabs"><div class="tabrow" role="tablist">
   <button class="tab" role="tab" aria-selected="true" data-tab="overview">Overview</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="seo">SEO</button>
-  <button class="tab" role="tab" aria-selected="false" data-tab="paid">Paid Ads</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="paid">Meta Ads</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="google">Google Ads</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="social">Social</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="updates">Updates</button>
 </div></nav>
+<div class="monthbar"><div class="wrap monthrow">
+  <span class="month-lab">Reporting month</span>
+  <div class="monthchips" id="monthchips"></div>
+  <span class="month-note" id="month-note"></span>
+</div></div>
 
 <main class="wrap">
   <section id="overview" data-anchor="sec:overview">
@@ -448,12 +468,12 @@ body.pinmode [data-anchor]{cursor:crosshair}
       <div class="card chart" id="c-position"></div>
     </div>
     <h2 class="h2">Keyword rankings</h2>
-    <p class="sub">Tracked in SE Ranking. "—" means the site isn't ranking in the top 100 for that term right now.</p>
+    <p class="sub" id="rank-sub">Tracked in SE Ranking.</p>
     <div class="card tscroll"><table class="tbl" id="t-rank"></table></div>
   </section>
 
   <section id="paid" data-anchor="sec:paid" hidden>
-    <div class="eyebrow">Paid ads · Meta (Google campaigns paused)</div>
+    <div class="eyebrow">Paid ads · Meta (Facebook &amp; Instagram)</div>
     <div class="callouts" style="margin-top:0;margin-bottom:16px;grid-template-columns:1fr">
       <div class="callout bad" id="paid-callout"><div class="bar" id="paid-callout-bar"></div><div>
         <h4 id="paid-callout-head">Meta lead campaigns</h4>
@@ -465,6 +485,21 @@ body.pinmode [data-anchor]{cursor:crosshair}
     <h2 class="h2">By campaign</h2>
     <p class="sub" id="paid-sub">Meta lead campaigns, grouped by funnel stage.</p>
     <div class="card tscroll"><table class="tbl" id="t-paid"></table></div>
+  </section>
+
+  <section id="google" data-anchor="sec:google" hidden>
+    <div class="eyebrow">Paid ads · Google (Search &amp; Performance Max)</div>
+    <div class="callouts" style="margin-top:0;margin-bottom:16px;grid-template-columns:1fr">
+      <div class="callout bad" id="gads-callout"><div class="bar"></div><div>
+        <h4 id="gads-callout-head">Google Ads</h4>
+        <p id="gads-callout-body">—</p>
+      </div></div>
+    </div>
+    <div class="kpis" id="kpi-gads"></div>
+    <div class="card chart" style="margin-top:14px" id="c-gspend"></div>
+    <h2 class="h2">By campaign</h2>
+    <p class="sub" id="gads-sub">Google Ads campaigns for the selected month.</p>
+    <div class="card tscroll"><table class="tbl" id="t-gads"></table></div>
   </section>
 
   <section id="social" data-anchor="sec:social" hidden>
@@ -491,7 +526,7 @@ body.pinmode [data-anchor]{cursor:crosshair}
       </div></div>
     </div>
     <h2 class="h2">Top performing posts</h2>
-    <p class="sub">Highest-reach organic posts from the latest snapshot.</p>
+    <p class="sub" id="posts-sub">Highest-reach organic posts.</p>
     <div class="posthead"><span class="pill-ig">Instagram</span><span class="small">by reach · @cobaltconstructions</span></div>
     <div class="postgrid" id="ig-posts"></div>
     <div class="posthead" style="margin-top:20px"><span class="pill-fb">Facebook</span><span class="small">by reach · Cobalt Constructions</span></div>
@@ -533,6 +568,10 @@ let CONTENT=[],OVERRIDES=[],FEEDBACK=[];
 // Month-on-month runs off its own long series, INDEPENDENT of the KPI window above.
 // Never derive it from DATES — a short window leaves no full month and the section goes blank.
 let MSERIES=[];
+// Full history, held once. MONTH is the selected reporting month ("YYYY-MM") and is
+// the single scope control for the whole dashboard.
+let RAW={seo:[],social:[],paid:[],rank:[],posts:[]};
+let MONTH=null, MONTHS_AVAILABLE=[], PAID_G=null, RANK_DATE=null, RANK_IS_CURRENT=false;
 let seoSessions=0,seoClicks=0,seoConv=0,socReach=0,socEng=0,totFoll=0,paidSpend=0,paidClicks=0,paidImpr=0,paidLeads=0,paidRange="";
 
 const sum=a=>a.reduce((s,v)=>s+(v==null?0:v),0);
@@ -540,26 +579,22 @@ const fmt=n=>{n=Math.round(n);return n>=1000?(n>=100000?Math.round(n/1000)+"k":(
 const money=n=>"$"+Number(n).toLocaleString("en-AU",{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-// Reporting window. Derived from today, never hardcoded — change WINDOW_DAYS only.
+// This dashboard reports whole CALENDAR MONTHS. The selected month is the only
+// scope control — there is no rolling window and no fixed day count anywhere.
 // Local date (not toISOString) so an AEST early-morning load doesn't slip back a UTC day.
-const WINDOW_DAYS=30;
 const localISO=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-const SINCE=localISO(new Date(Date.now()-(WINDOW_DAYS-1)*864e5));
-const WINDOW_LABEL="last "+WINDOW_DAYS+" days";
-// Month-on-month needs whole calendar months, so it gets its own longer reach:
-// back to the 1st, 13 months ago. Independent of WINDOW_DAYS by design.
-const MOM_SINCE=(()=>{const n=new Date();return localISO(new Date(n.getFullYear(),n.getMonth()-12,1));})();
+const HISTORY_SINCE=(()=>{const n=new Date();return localISO(new Date(n.getFullYear(),n.getMonth()-12,1));})();
 const MONTH_ABBR=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const daysInMonth=key=>{const[y,m]=key.split("-").map(Number);return new Date(y,m,0).getDate();};
 const monthShort=key=>MONTH_ABBR[Number(key.split("-")[1])-1];
 const monthLong=key=>monthShort(key)+" "+key.split("-")[0];
 
 async function loadData(){
-  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr,fb,momSeo,momSocial]=await Promise.all([
-    sb.from('cobalt_seo_daily').select('*').gte('period_date',SINCE).order('period_date'),
-    sb.from('cobalt_social_daily').select('*').gte('period_date',SINCE).order('period_date'),
-    sb.from('cobalt_paid_daily').select('*').gte('period_date',SINCE).order('period_date'),
-    sb.from('cobalt_rankings').select('*'),
+  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr,fb]=await Promise.all([
+    sb.from('cobalt_seo_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
+    sb.from('cobalt_social_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
+    sb.from('cobalt_paid_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
+    sb.from('cobalt_rankings').select('*').order('period_date'),
     sb.from('cobalt_social_posts').select('*'),
     sb.from('cobalt_refresh').select('*'),
     sb.from('cobalt_insights').select('*').order('created_at'),
@@ -568,15 +603,25 @@ async function loadData(){
     sb.from('cobalt_manual_metrics').select('*'),
     sb.from('cobalt_content_plan').select('*').order('plan_date'),
     sb.from('cobalt_metric_overrides').select('*'),
-    sb.from('cobalt_feedback').select('*').order('created_at',{ascending:false}),
-    sb.from('cobalt_seo_daily').select('period_date,sessions,clicks,impressions,avg_position').gte('period_date',MOM_SINCE).order('period_date'),
-    sb.from('cobalt_social_daily').select('period_date,platform,reach,engagement,followers').gte('period_date',MOM_SINCE).order('period_date')
+    sb.from('cobalt_feedback').select('*').order('created_at',{ascending:false})
   ]);
-  MSERIES=buildMonths(momSeo.data||[],momSocial.data||[]);
   INSIGHTS=ins.data||[]; AUTHORS=auth.data||[];
   MANUAL_DEFS=mdef.data||[]; MANUAL=mval.data||[];
   CONTENT=cplan.data||[]; OVERRIDES=ovr.data||[]; FEEDBACK=fb.data||[];
-  const S=seo.data||[];
+  REFRESH=refresh.data||[];
+  // Everything is kept in full so switching month is instant and needs no refetch.
+  RAW={seo:seo.data||[],social:social.data||[],paid:paid.data||[],rank:rank.data||[],posts:posts.data||[]};
+  MSERIES=buildMonths(RAW.seo,RAW.social);
+  MONTHS_AVAILABLE=MSERIES.map(m=>m.key);
+  if(!MONTH||!MONTHS_AVAILABLE.includes(MONTH))MONTH=MONTHS_AVAILABLE[MONTHS_AVAILABLE.length-1]||localISO(new Date()).slice(0,7);
+  applyMonth();
+}
+
+// Rebuild every view array for the selected calendar month. Called on load and on
+// each month change — all the render functions read these and stay month-agnostic.
+function applyMonth(){
+  const inMonth=r=>r.period_date.slice(0,7)===MONTH;
+  const S=RAW.seo.filter(inMonth);
   N=S.length; DATES=S.map(r=>r.period_date.slice(5));
   const idx={}; S.forEach((r,i)=>idx[r.period_date]=i);
   const F=()=>new Array(N).fill(null);
@@ -584,35 +629,61 @@ async function loadData(){
   S.forEach((r,i)=>{SESSIONS[i]=r.sessions;USERS[i]=r.users;CONV[i]=r.conversions;CLICKS[i]=r.clicks;IMPR[i]=r.impressions;POS[i]=r.avg_position;});
   IG_REACH=F();IG_ENG=F();FB_REACH=F();FB_IMPR=F();FB_ENG=F();FB_FOLL=F();LI_IMPR=F();LI_ENG=F();
   let igf=0,lif=0;
-  (social.data||[]).forEach(r=>{const i=idx[r.period_date];if(i==null)return;
+  RAW.social.filter(inMonth).forEach(r=>{const i=idx[r.period_date];if(i==null)return;
     if(r.platform==='instagram'){IG_REACH[i]=r.reach;IG_ENG[i]=r.engagement;if(r.followers)igf=r.followers;}
     else if(r.platform==='facebook'){FB_REACH[i]=r.reach;FB_IMPR[i]=r.impressions;FB_ENG[i]=r.engagement;FB_FOLL[i]=r.followers;}
     else if(r.platform==='linkedin'){LI_IMPR[i]=r.impressions;LI_ENG[i]=r.engagement;if(r.followers)lif=r.followers;}
   });
   applyOverrides();
   const lastNon=a=>{for(let i=a.length-1;i>=0;i--)if(a[i]!=null)return a[i];return 0;};
-  FOLL={ig:igf,fb:lastNon(FB_FOLL),li:lif};
-  const days=[...new Set((paid.data||[]).map(r=>r.period_date))].sort();
-  const camp=n=>{const rows=(paid.data||[]).filter(r=>(r.campaign_name||'').includes(n));
-    // Sum every campaign matching this funnel stage on the day — more than one can run at once.
-    const pick=(d,f)=>rows.filter(r=>r.period_date===d).reduce((s,x)=>s+(Number(x[f])||0),0);
-    return {sp:days.map(d=>pick(d,'spend')),cl:days.map(d=>pick(d,'clicks')),im:days.map(d=>pick(d,'impressions')),ld:days.map(d=>pick(d,'leads'))};};
-  PAID={days:days.map(d=>d.slice(5)),TOFU:camp('TOFU'),MOFU:camp('MOFU'),BOFU:camp('BOFU')};
-  const dmy=d=>d.slice(8,10)+"/"+d.slice(5,7);
-  paidRange=days.length?(days.length===1?dmy(days[0]):dmy(days[0])+"–"+dmy(days[days.length-1])):"—";
-  RANK=(rank.data||[]).slice().sort((a,b)=>((a.position==null?999:a.position)-(b.position==null?999:b.position))).map(r=>[r.keyword,r.position,r.search_volume,(r.url||'—').replace(/^https?:\/\//,'')]);
+  // Follower counts are a running total, not a monthly figure: if the selected month
+  // carries no reading, fall back to the most recent one on or before it.
+  const follBefore=plat=>{let v=0;RAW.social.forEach(r=>{if(r.platform===plat&&r.followers!=null&&r.period_date.slice(0,7)<=MONTH)v=r.followers;});return v;};
+  FOLL={ig:igf||follBefore('instagram'),fb:lastNon(FB_FOLL)||follBefore('facebook'),li:lif||follBefore('linkedin')};
+  PAID=buildPaid('meta'); PAID_G=buildPaid('google');
+  paidRange=PAID.range;
+  // Rankings are month-end snapshots. Use this month's if it exists, else the most
+  // recent one before it, clearly labelled so nobody reads a stale rank as current.
+  const snaps=[...new Set(RAW.rank.map(r=>r.period_date))].sort();
+  RANK_DATE=snaps.filter(d=>d.slice(0,7)===MONTH).pop()||snaps.filter(d=>d.slice(0,7)<MONTH).pop()||null;
+  RANK_IS_CURRENT=!!RANK_DATE&&RANK_DATE.slice(0,7)===MONTH;
+  RANK=RAW.rank.filter(r=>r.period_date===RANK_DATE)
+    .sort((a,b)=>((a.position==null?999:a.position)-(b.position==null?999:b.position)))
+    .map(r=>[r.keyword,r.position,r.search_volume,(r.url||'—').replace(/^https?:\/\//,''),r.prev_position]);
+  // Posts are dated by publication, so a month shows the posts actually published in it.
   const mp=p=>({img:p.image_path,type:p.media_type,reach:p.reach,eng:p.engagement,url:p.permalink,cap:p.caption});
-  IG_POSTS=(posts.data||[]).filter(p=>p.platform==='instagram').sort((a,b)=>b.reach-a.reach).map(mp);
-  FB_POSTS=(posts.data||[]).filter(p=>p.platform==='facebook').sort((a,b)=>b.reach-a.reach).map(mp);
-  REFRESH=refresh.data||[];
-  // aggregates
+  const monthPosts=plat=>RAW.posts.filter(p=>p.platform===plat&&p.period_date.slice(0,7)===MONTH)
+    .sort((a,b)=>b.reach-a.reach).map(mp);
+  IG_POSTS=monthPosts('instagram'); FB_POSTS=monthPosts('facebook');
+  // aggregates for the selected month
   seoSessions=sum(SESSIONS);seoClicks=sum(CLICKS);seoConv=sum(CONV);
   socReach=sum(IG_REACH)+sum(FB_REACH);socEng=sum(IG_ENG)+sum(FB_ENG)+sum(LI_ENG);
   totFoll=FOLL.ig+FOLL.fb+FOLL.li;
-  paidSpend=sum(PAID.TOFU.sp)+sum(PAID.MOFU.sp)+sum(PAID.BOFU.sp);
-  paidClicks=sum(PAID.TOFU.cl)+sum(PAID.MOFU.cl)+sum(PAID.BOFU.cl);
-  paidImpr=sum(PAID.TOFU.im)+sum(PAID.MOFU.im)+sum(PAID.BOFU.im);
-  paidLeads=sum(PAID.TOFU.ld)+sum(PAID.MOFU.ld)+sum(PAID.BOFU.ld);
+  paidSpend=PAID.spend;paidClicks=PAID.clicks;paidImpr=PAID.impr;paidLeads=PAID.leads;
+}
+
+// Roll one platform's campaigns up for the selected month, split by funnel stage where
+// the campaign name carries one. Sums every campaign matching a stage on the day —
+// more than one can run at once, and .find() would silently drop the rest.
+function buildPaid(platform){
+  const rows=RAW.paid.filter(r=>r.platform===platform&&r.period_date.slice(0,7)===MONTH);
+  const days=[...new Set(rows.map(r=>r.period_date))].sort();
+  const stage=n=>{const sel=rows.filter(r=>(r.campaign_name||'').includes(n));
+    const pick=(d,f)=>sel.filter(r=>r.period_date===d).reduce((s,x)=>s+(Number(x[f])||0),0);
+    return {sp:days.map(d=>pick(d,'spend')),cl:days.map(d=>pick(d,'clicks')),im:days.map(d=>pick(d,'impressions')),ld:days.map(d=>pick(d,'leads'))};};
+  const tot=f=>rows.reduce((s,x)=>s+(Number(x[f])||0),0);
+  const dmy=d=>d.slice(8,10)+"/"+d.slice(5,7);
+  // Campaign-level rollup, so nothing is lost when a name carries no funnel stage.
+  const byCampaign={};
+  rows.forEach(r=>{const k=r.campaign_name||'(unnamed)';const b=byCampaign[k]=byCampaign[k]||{name:k,sp:0,cl:0,im:0,ld:0,daily:{}};
+    b.sp+=Number(r.spend)||0;b.cl+=Number(r.clicks)||0;b.im+=Number(r.impressions)||0;b.ld+=Number(r.leads)||0;
+    b.daily[r.period_date]=(b.daily[r.period_date]||0)+(Number(r.spend)||0);});
+  Object.values(byCampaign).forEach(b=>{b.series=days.map(d=>b.daily[d]||0);});
+  return {days:days.map(d=>d.slice(5)),dayCount:days.length,
+    TOFU:stage('TOFU'),MOFU:stage('MOFU'),BOFU:stage('BOFU'),
+    campaigns:Object.values(byCampaign).sort((a,b)=>b.sp-a.sp),
+    spend:tot('spend'),clicks:tot('clicks'),impr:tot('impressions'),leads:tot('leads'),
+    range:days.length?(days.length===1?dmy(days[0]):dmy(days[0])+"–"+dmy(days[days.length-1])):"—"};
 }
 
 /* KPIs */
@@ -676,65 +747,118 @@ function renderSocialCallout(){
     +' against <b>'+fmt(a.reach)+'</b> in '+monthLong(a.key)+' — a <b>'+Math.abs(pc)+'%</b> '+(up?'increase':pc<0?'decrease':'change')
     +'. Engagement moved from <b>'+fmt(a.eng)+'</b> to <b>'+fmt(b.eng)+'</b> over the same two months.';
 }
+// Every rate is guarded: a month with no spend or no impressions must print "—",
+// never NaN or a divide-by-zero.
+const rate=(n,d,f)=>d?f(n/d):"—";
+// Google Ads. Conversions are stored in the shared `leads` column, so the same honest
+// rule applies as for Meta: state what ran, and say plainly when nothing did.
+function renderGoogleAds(ML){
+  const g=PAID_G||{dayCount:0,spend:0,clicks:0,impr:0,leads:0,campaigns:[],range:"—"};
+  const box=document.getElementById("gads-callout"),
+        head=document.getElementById("gads-callout-head"),
+        body=document.getElementById("gads-callout-body"),
+        kpis=document.getElementById("kpi-gads"),
+        sub=document.getElementById("gads-sub");
+  if(!kpis)return;
+  if(!g.dayCount){
+    if(box)box.className="callout warn";
+    if(head)head.innerHTML='No Google Ads activity in '+ML+' <span class="sig warn">No data</span>';
+    if(body)body.innerHTML='Google Ads campaigns did not run in this month. The account went live on <b>07/08/2026</b> — select August to see its performance.';
+    kpis.innerHTML="";
+    if(sub)sub.textContent="";
+    document.getElementById("t-gads").innerHTML="";
+    return;
+  }
+  if(box)box.className="callout "+(g.leads?"good":"bad");
+  head.innerHTML=g.leads
+    ? fmt(g.leads)+' conversion'+(g.leads===1?'':'s')+' from '+money(g.spend)+' <span class="sig good">Working</span>'
+    : 'No conversions recorded across '+money(g.spend)+' spend <span class="sig bad">Action</span>';
+  body.innerHTML=g.leads
+    ? 'Across <b>'+g.dayCount+' day'+(g.dayCount===1?'':'s')+'</b> ('+g.range+'), Google Ads produced <b>'+g.leads+'</b> conversion'+(g.leads===1?'':'s')+' at <b>'+money(g.spend/g.leads)+'</b> each from <b>'+g.clicks+'</b> clicks.'
+    : '<b>'+g.dayCount+' day'+(g.dayCount===1?'':'s')+'</b> of data ('+g.range+') with <b>'+g.clicks+'</b> clicks and no conversion recorded. Confirm conversion tracking is firing in Google Ads before scaling budget.';
+  kpis.innerHTML=
+    kpi("Spend",money(g.spend),g.range+" · AUD")+
+    kpi("Impressions",fmt(g.impr),"Google")+
+    kpi("Clicks",fmt(g.clicks),"ad clicks")+
+    kpi("Avg CPC",rate(g.spend,g.clicks,money),"cost per click")+
+    kpi("Conversions",fmt(g.leads),g.leads?'<span class="chip up">'+money(g.spend/g.leads)+'</span> per conversion':'<span class="chip dn">tracking check</span>');
+  if(sub)sub.textContent="Google Ads campaigns in "+ML+".";
+  document.getElementById("t-gads").innerHTML=
+    `<thead><tr><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>CPC</th><th>Conv.</th><th>Cost/conv.</th></tr></thead><tbody>`+
+    g.campaigns.map(c=>`<tr><td class="k">${esc(c.name)}</td><td class="tnum">${fmt(c.im)}</td><td class="tnum">${c.cl}</td><td class="tnum">${money(c.sp)}</td><td class="tnum">${rate(c.sp,c.cl,money)}</td><td class="tnum">${c.ld}</td><td class="tnum">${rate(c.sp,c.ld,money)}</td></tr>`).join("")+
+    `<tr class="tot"><td>Total</td><td class="tnum">${fmt(g.impr)}</td><td class="tnum">${g.clicks}</td><td class="tnum">${money(g.spend)}</td><td class="tnum">${rate(g.spend,g.clicks,money)}</td><td class="tnum">${g.leads}</td><td class="tnum">${rate(g.spend,g.leads,money)}</td></tr></tbody>`;
+}
 function renderKPIs(){
+  const ML=MONTH?monthLong(MONTH):"—";
+  const totalSpend=paidSpend+(PAID_G?PAID_G.spend:0);
+  const totalLeads=paidLeads+(PAID_G?PAID_G.leads:0);
   document.getElementById("kpi-overview").innerHTML=
-    kpi("Website sessions",fmt(seoSessions),WINDOW_LABEL+" · GA4")+
+    kpi("Website sessions",fmt(seoSessions),ML+" · GA4")+
     kpi("SEO clicks",fmt(seoClicks),"Google organic")+
-    kpi("Ad spend",money(paidSpend),'<span class="chip warnc">'+PAID.days.length+' days</span> '+paidRange)+
-    kpi("Ad leads",fmt(paidLeads),paidLeads?'<span class="chip up">'+money(paidSpend/paidLeads)+' CPL</span> cost per lead':'<span class="chip dn">0 CPL</span> tracking check')+
-    kpi("Social reach",fmt(socReach),"IG + FB · "+WINDOW_DAYS+" days")+
+    kpi("Ad spend",money(totalSpend),"Meta + Google · "+ML)+
+    kpi("Ad leads",fmt(totalLeads),totalLeads?'<span class="chip up">'+money(totalSpend/totalLeads)+' CPL</span> cost per lead':(totalSpend?'<span class="chip dn">no leads</span> tracking check':"no spend this month"))+
+    kpi("Social reach",fmt(socReach),"IG + FB · "+ML)+
     kpi("Total followers",fmt(totFoll),"IG + FB + LinkedIn");
   const avgPos=POS.filter(v=>v!=null);
   document.getElementById("kpi-seo").innerHTML=
-    kpi("Clicks",fmt(seoClicks),WINDOW_DAYS+" days")+
-    kpi("Impressions",fmt(sum(IMPR)),WINDOW_DAYS+" days")+
-    kpi("Avg CTR",(seoClicks/sum(IMPR)*100).toFixed(2)+"%","clicks ÷ impressions")+
-    kpi("Avg position","~"+(avgPos.reduce((s,v)=>s+v,0)/avgPos.length).toFixed(1),posTrendChip())+
+    kpi("Clicks",fmt(seoClicks),ML)+
+    kpi("Impressions",fmt(sum(IMPR)),ML)+
+    kpi("Avg CTR",rate(seoClicks,sum(IMPR),v=>(v*100).toFixed(2)+"%"),"clicks ÷ impressions")+
+    kpi("Avg position",avgPos.length?"~"+(avgPos.reduce((s,v)=>s+v,0)/avgPos.length).toFixed(1):"—",posTrendChip())+
     kpi("Conversions",fmt(seoConv),"GA4 key events");
   document.getElementById("kpi-paid").innerHTML=
-    kpi("Spend",money(paidSpend),paidRange+" · AUD")+
+    kpi("Spend",money(paidSpend),(PAID.dayCount?PAID.range+" · ":"")+"AUD")+
     kpi("Impressions",fmt(paidImpr),"Meta")+
     kpi("Clicks",fmt(paidClicks),"link clicks")+
-    kpi("Avg CPC",money(paidSpend/paidClicks),"cost per click")+
-    kpi("Leads",fmt(paidLeads),paidLeads?'<span class="chip up">'+money(paidSpend/paidLeads)+'</span> cost per lead':'<span class="chip dn">investigate</span>');
+    kpi("Avg CPC",rate(paidSpend,paidClicks,money),"cost per click")+
+    kpi("Leads",fmt(paidLeads),paidLeads?'<span class="chip up">'+money(paidSpend/paidLeads)+'</span> cost per lead':(paidSpend?'<span class="chip dn">investigate</span>':"—"));
+  renderGoogleAds(ML);
   document.getElementById("kpi-social").innerHTML=
-    kpi("Total reach",fmt(socReach),"IG + FB · "+WINDOW_DAYS+" days")+
+    kpi("Total reach",fmt(socReach),"IG + FB · "+ML)+
     kpi("Engagements",fmt(socEng),"reactions, comments…")+
     kpi("Instagram",fmt(FOLL.ig),'<span class="swatch" style="background:var(--ig)"></span> followers')+
     kpi("Facebook",fmt(FOLL.fb),'<span class="swatch" style="background:var(--fb)"></span> page likes')+
     kpi("LinkedIn",fmt(FOLL.li),'<span class="swatch" style="background:var(--li)"></span> followers');
-  document.getElementById("sv-reach").textContent=fmt(socReach);
-  document.getElementById("co-spend").textContent=money(paidSpend);
-  document.getElementById("co-clicks").textContent=paidClicks;
+  const svr=document.getElementById("sv-reach");if(svr)svr.textContent=fmt(socReach);
+  // NB: no #co-spend/#co-clicks lookups here. Those spans live inside #co-body, which
+  // the commentary below replaces wholesale — after the first render they don't exist,
+  // and reading them threw, killing every render that followed (month switches included).
   // Headline commentary follows the data — leads recorded or not.
   // The card's colour follows it too: a "Working" message must not sit in a red card.
   const coBox=document.getElementById("co-callout");
-  if(coBox)coBox.className="callout "+(paidLeads>0?"good":"bad");
-  const st=paidRange?" over "+paidRange:"";
-  if(paidLeads>0){
+  const ranMeta=PAID.dayCount>0;
+  if(coBox)coBox.className="callout "+(!ranMeta?"warn":paidLeads>0?"good":"bad");
+  const st=ranMeta?" over "+paidRange:"";
+  if(!ranMeta){
+    document.getElementById("co-head").innerHTML='No Meta ad activity in '+ML+' <span class="sig warn">No data</span>';
+    document.getElementById("co-body").innerHTML='No Meta campaigns ran in this month. Meta lead campaigns started on <b>09/07/2026</b>.';
+  }else if(paidLeads>0){
     document.getElementById("co-head").innerHTML='Meta ads: leads coming through <span class="sig good">Working</span>';
-    document.getElementById("co-body").innerHTML='The lead campaigns have spent <b>'+money(paidSpend)+'</b>'+st+' for <b>'+paidClicks+'</b> clicks and <b>'+paidLeads+' recorded lead'+(paidLeads===1?'':'s')+'</b>, at <b>'+money(paidSpend/paidLeads)+'</b> per lead. Lead tracking is firing correctly.';
+    document.getElementById("co-body").innerHTML='The lead campaigns spent <b>'+money(paidSpend)+'</b>'+st+' for <b>'+paidClicks+'</b> clicks and <b>'+paidLeads+' recorded lead'+(paidLeads===1?'':'s')+'</b>, at <b>'+money(paidSpend/paidLeads)+'</b> per lead. Lead tracking is firing correctly.';
   }else{
-    document.getElementById("co-head").innerHTML='Meta ads: spend, no leads yet <span class="sig bad">Action</span>';
-    document.getElementById("co-body").innerHTML='The lead campaigns have spent <b>'+money(paidSpend)+'</b>'+st+' for <b>'+paidClicks+'</b> clicks but <b>0 recorded leads</b>. Either the lead event is not firing back to Meta or clicks are not converting yet — worth checking the form/pixel before spend climbs.';
+    document.getElementById("co-head").innerHTML='Meta ads: spend, no leads <span class="sig bad">Action</span>';
+    document.getElementById("co-body").innerHTML='The lead campaigns spent <b>'+money(paidSpend)+'</b>'+st+' for <b>'+paidClicks+'</b> clicks but <b>0 recorded leads</b>. Either the lead event is not firing back to Meta or clicks are not converting yet — worth checking the form/pixel before spend climbs.';
   }
   // Paid-tab callout — same rule: it states what the data says, never a fixed verdict.
   const pc=document.getElementById("paid-callout");
   if(pc){
-    const days=PAID.days.length;
-    pc.className="callout "+(paidLeads>0?"good":"bad");
-    document.getElementById("paid-callout-bar").className="bar";
-    document.getElementById("paid-callout-head").innerHTML=paidLeads>0
-      ? fmt(paidLeads)+' lead'+(paidLeads===1?'':'s')+' from '+money(paidSpend)+' <span class="sig good">Working</span>'
-      : 'No leads recorded across '+money(paidSpend)+' spend <span class="sig bad">Action</span>';
-    document.getElementById("paid-callout-body").innerHTML=paidLeads>0
-      ? 'Across <b>'+days+' day'+(days===1?'':'s')+'</b> of data ('+paidRange+'), the Meta lead campaigns have produced <b>'+paidLeads+' lead'+(paidLeads===1?'':'s')+'</b> at <b>'+money(paidSpend/paidLeads)+'</b> each from <b>'+paidClicks+'</b> link clicks.'
-      : '<b>'+days+' day'+(days===1?'':'s')+'</b> of data ('+paidRange+') with <b>'+paidClicks+'</b> clicks and no lead attributed on any campaign. Confirm the lead form and Meta pixel are tracking before scaling budget.';
+    const days=PAID.dayCount;
+    pc.className="callout "+(!ranMeta?"warn":paidLeads>0?"good":"bad");
+    document.getElementById("paid-callout-head").innerHTML=!ranMeta
+      ? 'No Meta ad activity in '+ML+' <span class="sig warn">No data</span>'
+      : paidLeads>0
+        ? fmt(paidLeads)+' lead'+(paidLeads===1?'':'s')+' from '+money(paidSpend)+' <span class="sig good">Working</span>'
+        : 'No leads recorded across '+money(paidSpend)+' spend <span class="sig bad">Action</span>';
+    document.getElementById("paid-callout-body").innerHTML=!ranMeta
+      ? 'Meta campaigns did not run in this month. They started on <b>09/07/2026</b> — select July or a later month to see performance.'
+      : paidLeads>0
+        ? 'Across <b>'+days+' day'+(days===1?'':'s')+'</b> ('+paidRange+'), the Meta lead campaigns produced <b>'+paidLeads+' lead'+(paidLeads===1?'':'s')+'</b> at <b>'+money(paidSpend/paidLeads)+'</b> each from <b>'+paidClicks+'</b> link clicks.'
+        : '<b>'+days+' day'+(days===1?'':'s')+'</b> of data ('+paidRange+') with <b>'+paidClicks+'</b> clicks and no lead attributed on any campaign. Confirm the lead form and Meta pixel are tracking before scaling budget.';
   }
   renderSeoCallout();
   renderSocialCallout();
   const psub=document.getElementById("paid-sub");
-  if(psub) psub.textContent="Meta lead campaigns, grouped by funnel stage."+(paidLeads?"":" CPL is blank because no leads have been recorded yet.");
+  if(psub) psub.textContent=!ranMeta?"":("Meta lead campaigns in "+ML+", grouped by funnel stage."+(paidLeads?"":" CPL is blank because no leads were recorded."));
 }
 
 /* month-on-month */
@@ -1022,14 +1146,34 @@ async function deleteFeedback(id){
   const {data}=await sb.from("cobalt_feedback").select("*").order("created_at",{ascending:false});FEEDBACK=data||[];renderFeedback();
 }
 
-// Keep the static window labels in step with WINDOW_DAYS — never let them drift from the data.
+// Every period label on the page names the SELECTED MONTH. Nothing is hardcoded, so a
+// label can never drift away from the data sitting under it.
 function renderWindowLabels(){
   const set=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
-  set("hdr-window",WINDOW_LABEL);
-  set("snap-window",WINDOW_LABEL);
-  set("sv-reach-window",WINDOW_DAYS+" days");
+  const m=MSERIES.find(x=>x.key===MONTH), label=MONTH?monthLong(MONTH):"—";
+  const partial=m&&!m.full;
+  set("hdr-window",label+(partial?" (to date)":""));
+  set("snap-window",label);
+  set("sv-reach-window",label);
+  const note=document.getElementById("month-note");
+  if(note)note.textContent=!m?"":m.full?`${monthLong(MONTH)} is a complete month.`
+    :`${monthLong(MONTH)} is still in progress — ${N} day${N===1?"":"s"} of data so far.`;
 }
-function renderAll(){renderWindowLabels();renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderFeedback();renderBeacons();updateAddButton();}
+
+// Month chips. Newest last, current selection pressed; partial months carry a dot so
+// nobody compares a half month against a whole one without noticing.
+function renderMonthChips(){
+  const box=document.getElementById("monthchips");if(!box)return;
+  box.innerHTML=MSERIES.map(m=>
+    `<button class="mchip" data-month="${m.key}" aria-pressed="${m.key===MONTH}">${m.label} ${m.key.split("-")[0]}${m.full?"":' <span class="part">•</span>'}</button>`
+  ).join("");
+  box.querySelectorAll(".mchip").forEach(b=>b.onclick=()=>selectMonth(b.dataset.month));
+}
+function selectMonth(key){
+  if(key===MONTH)return;
+  MONTH=key; applyMonth(); renderAll(); window.scrollTo({top:0});
+}
+function renderAll(){renderMonthChips();renderWindowLabels();renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderFeedback();renderBeacons();updateAddButton();}
 
 /* pin-anywhere: click any element (post, card, page area) while in pin mode */
 document.getElementById("app").addEventListener("click",e=>{
@@ -1075,8 +1219,9 @@ document.addEventListener("keydown",e=>{if(!WT.active)return;if(e.key==="Escape"
 /* ===== first-time coach tour (per tab) ===== */
 const TOUR={
  overview:[
-  {sel:"nav.tabs",title:"Your tabs",text:"Move between Overview, SEO, Paid Ads, Social and Updates up here."},
-  {sel:"#kpi-overview",title:"Headline numbers",text:"Top-line results across every channel for the "+WINDOW_LABEL+"."},
+  {sel:"nav.tabs",title:"Your tabs",text:"Move between Overview, SEO, Meta Ads, Google Ads, Social and Updates up here."},
+  {sel:"#monthchips",title:"Pick a month",text:"Every tab reports the month you select here. A dot means the month is still in progress."},
+  {sel:"#kpi-overview",title:"Headline numbers",text:"Top-line results across every channel for the selected month."},
   {sel:"#mom",title:"Month on month",text:"Monthly totals and the change vs last month — the growth trend at a glance."},
   {sel:"#c-sessions",title:"Daily traffic",text:"Website sessions day by day. Hover any chart for the exact figure."}
  ],
@@ -1086,9 +1231,14 @@ const TOUR={
   {sel:"#t-rank",title:"Keyword rankings",text:"Every tracked keyword and where it currently ranks."}
  ],
  paid:[
-  {sel:"#kpi-paid",title:"Paid snapshot",text:"Spend, clicks, cost-per-click and leads."},
-  {sel:"#c-spend",title:"Daily spend",text:"Ad spend each day, stacked by campaign."},
+  {sel:"#kpi-paid",title:"Meta snapshot",text:"Spend, clicks, cost-per-click and leads from Facebook & Instagram ads."},
+  {sel:"#c-spend",title:"Daily spend",text:"Meta ad spend each day, stacked by funnel stage."},
   {sel:"#t-paid",title:"By campaign",text:"The per-campaign breakdown of spend and results."}
+ ],
+ google:[
+  {sel:"#kpi-gads",title:"Google snapshot",text:"Spend, clicks, cost-per-click and conversions from Google Search and Performance Max."},
+  {sel:"#c-gspend",title:"Daily spend",text:"Google ad spend each day, stacked by campaign."},
+  {sel:"#t-gads",title:"By campaign",text:"The per-campaign breakdown of spend and results."}
  ],
  social:[
   {sel:"#kpi-social",title:"Social snapshot",text:"Reach, engagement and followers across Instagram, Facebook & LinkedIn."},
@@ -1208,15 +1358,28 @@ function stackBar(mount,{title,sub,labels,stacks,vfmt}){
 function renderCharts(){
   lineChart(document.getElementById("c-sessions"),{title:"Daily sessions",sub:"All channels · GA4",area:true,legend:false,series:[{name:"Sessions",color:"var(--cobalt)",data:SESSIONS}]});
   lineChart(document.getElementById("c-ov-social"),{title:"Social reach",sub:"Instagram vs Facebook · daily",legend:true,series:[{name:"Instagram",color:"var(--ig)",data:IG_REACH},{name:"Facebook",color:"var(--fb)",data:FB_REACH}]});
-  document.getElementById("c-ov-channels").innerHTML=`<div class="cardhead"><div><h3>Channels at a glance</h3><p class="ch3sub">Last ${WINDOW_DAYS} days</p></div></div>
+  const gp=PAID_G||{spend:0,leads:0};
+  document.getElementById("c-ov-channels").innerHTML=`<div class="cardhead"><div><h3>Channels at a glance</h3><p class="ch3sub">${MONTH?monthLong(MONTH):"—"}</p></div></div>
    <table class="tbl"><tbody>
     <tr><td class="k"><span class="swatch" style="background:var(--cobalt)"></span> Organic search</td><td class="tnum">${fmt(seoClicks)} clicks</td><td class="tnum">${fmt(seoSessions)} sessions</td></tr>
-    <tr><td class="k"><span class="swatch" style="background:var(--f2)"></span> Paid ads</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${fmt(paidLeads)} lead${paidLeads===1?"":"s"}</td></tr>
+    <tr><td class="k"><span class="swatch" style="background:var(--f2)"></span> Meta ads</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${fmt(paidLeads)} lead${paidLeads===1?"":"s"}</td></tr>
+    <tr><td class="k"><span class="swatch" style="background:var(--f1)"></span> Google ads</td><td class="tnum">${money(gp.spend)}</td><td class="tnum">${fmt(gp.leads)} conv.</td></tr>
     <tr><td class="k"><span class="swatch" style="background:var(--ig)"></span> Social organic</td><td class="tnum">${fmt(socReach)} reach</td><td class="tnum">${fmt(totFoll)} followers</td></tr>
    </tbody></table>`;
   lineChart(document.getElementById("c-clicks"),{title:"Clicks & impressions",sub:"Google organic · daily",legend:true,series:[{name:"Clicks",color:"var(--cobalt)",data:CLICKS},{name:"Impressions ÷10",color:"var(--r2r)",data:IMPR.map(v=>v==null?null:v/10),tip:v=>fmt(Math.round(v*10))}]});
   lineChart(document.getElementById("c-position"),{title:"Average Google position",sub:"Lower is better · axis inverted",legend:false,invert:true,yfmt:v=>v.toFixed(0),series:[{name:"Avg position",color:"var(--warn)",data:POS,tip:v=>v.toFixed(1)}]});
-  stackBar(document.getElementById("c-spend"),{title:"Daily ad spend by campaign",sub:"Meta lead campaigns · AUD",labels:PAID.days,stacks:[{name:"TOFU",color:"var(--f1)",data:PAID.TOFU.sp},{name:"MOFU",color:"var(--f2)",data:PAID.MOFU.sp},{name:"BOFU",color:"var(--f3)",data:PAID.BOFU.sp}]});
+  // A month with no campaigns gets an explanation, not an empty chart frame.
+  const noRun=(el,msg)=>{if(el)el.innerHTML=`<div class="nodata">${msg}</div>`;};
+  if(PAID.dayCount)
+    stackBar(document.getElementById("c-spend"),{title:"Daily ad spend by campaign",sub:"Meta lead campaigns · AUD",labels:PAID.days,stacks:[{name:"TOFU",color:"var(--f1)",data:PAID.TOFU.sp},{name:"MOFU",color:"var(--f2)",data:PAID.MOFU.sp},{name:"BOFU",color:"var(--f3)",data:PAID.BOFU.sp}]});
+  else noRun(document.getElementById("c-spend"),`<b>No Meta ad spend in ${MONTH?monthLong(MONTH):"this month"}.</b><br/>Meta lead campaigns started on 09/07/2026.`);
+  const g=PAID_G;
+  if(g&&g.dayCount)
+    stackBar(document.getElementById("c-gspend"),{title:"Daily ad spend by campaign",sub:"Google Ads · AUD",labels:g.days,
+      // "R2R | Search | Aug 2026" -> "Search": the agency prefix and the month are both
+      // already on the page, and a legend has no room to repeat them.
+      stacks:g.campaigns.map((c,i)=>({name:c.name.replace(/^R2R\s*\|\s*/,"").replace(/\s*\|\s*[A-Za-z]{3,}\s+\d{4}\s*$/,""),color:["var(--cobalt)","var(--f2)","var(--f3)","var(--r2r)"][i%4],data:c.series}))});
+  else noRun(document.getElementById("c-gspend"),`<b>No Google Ads spend in ${MONTH?monthLong(MONTH):"this month"}.</b><br/>The Google Ads account went live on 07/08/2026.`);
   lineChart(document.getElementById("c-reach"),{title:"Reach & impressions by platform",sub:"Daily · IG/FB reach, LinkedIn impressions",legend:true,series:[{name:"Instagram",color:"var(--ig)",data:IG_REACH},{name:"Facebook",color:"var(--fb)",data:FB_REACH},{name:"LinkedIn",color:"var(--li)",data:LI_IMPR}]});
   lineChart(document.getElementById("c-eng"),{title:"Engagement",sub:"Interactions per day",legend:true,series:[{name:"Instagram",color:"var(--ig)",data:IG_ENG},{name:"Facebook",color:"var(--fb)",data:FB_ENG},{name:"LinkedIn",color:"var(--li)",data:LI_ENG}]});
   lineChart(document.getElementById("c-fbfoll"),{title:"Facebook page followers",sub:"Steady organic growth",legend:false,area:true,yfmt:v=>v.toFixed(0),series:[{name:"Followers",color:"var(--fb)",data:FB_FOLL}]});
@@ -1226,13 +1389,20 @@ const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
 const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9A5 5 0 0 1 12 6a5 5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9Z"/></svg>';
 const CURSOR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l7 17 2.5-7.5L21 11 4 4Z"/></svg>';
 function posts(){
-  document.getElementById("ig-posts").innerHTML=IG_POSTS.map(p=>`
+  const psub=document.getElementById("posts-sub");
+  if(psub)psub.textContent=(IG_POSTS.length+FB_POSTS.length)
+    ? `Organic posts published in ${monthLong(MONTH)}, ranked by reach.`
+    : `No posts were published in ${monthLong(MONTH)}.`;
+  const none=p=>`<div class="nodata">No ${p} posts published in ${monthLong(MONTH)}.</div>`;
+  if(!IG_POSTS.length)document.getElementById("ig-posts").innerHTML=none("Instagram");
+  if(!FB_POSTS.length)document.getElementById("fb-posts").innerHTML=none("Facebook");
+  if(IG_POSTS.length)document.getElementById("ig-posts").innerHTML=IG_POSTS.map(p=>`
     <a class="post" data-anchor="post:${p.url}" href="${p.url}" target="_blank" rel="noopener">
       <div class="cover"><span class="typebadge">${p.type}</span><img src="${p.img}" alt="" loading="lazy"/></div>
       <div class="pbody"><div class="pcap">${esc(p.cap)}</div>
         <div class="pmetrics"><span class="m">${EYE}${fmt(p.reach)}</span><span class="m">${HEART}${p.eng}<span class="mlab"> eng</span></span></div>
       </div></a>`).join("");
-  document.getElementById("fb-posts").innerHTML=FB_POSTS.map(p=>`
+  if(FB_POSTS.length)document.getElementById("fb-posts").innerHTML=FB_POSTS.map(p=>`
     <a class="post" data-anchor="post:${p.url}" href="${p.url}" target="_blank" rel="noopener">
       <div class="cover"><span class="typebadge">${p.type}</span><img src="${p.img}" alt="" loading="lazy"/></div>
       <div class="pbody"><div class="pcap">${esc(p.cap)}</div>
@@ -1241,14 +1411,28 @@ function posts(){
 }
 
 function tables(){
-  document.getElementById("t-rank").innerHTML=`<thead><tr><th>Keyword</th><th>Position</th><th>Volume/mo</th><th>Landing page</th></tr></thead><tbody>`+
-    RANK.map(([k,p,v,u])=>{const cls=p==null?"out":(p<=10?"win":"mid"),lbl=p==null?"—":"#"+p;
-      return `<tr><td class="k">${esc(k)}</td><td><span class="rankpill ${cls}">${lbl}</span></td><td class="tnum">${v}</td><td class="url">${esc(u)}</td></tr>`;}).join("")+`</tbody>`;
+  // Rankings are a month-end snapshot. Say which date is on screen — a position from a
+  // previous month must never read as if it were this month's.
+  const rsub=document.getElementById("rank-sub");
+  if(rsub)rsub.innerHTML=!RANK_DATE
+    ? "No ranking snapshot recorded yet."
+    : `Tracked in SE Ranking. Positions as at <b>${RANK_DATE.slice(8,10)}/${RANK_DATE.slice(5,7)}/${RANK_DATE.slice(0,4)}</b>`
+      +(RANK_IS_CURRENT?"":` — the last snapshot before ${monthLong(MONTH)}, carried forward because none was taken in that month`)
+      +`. "—" means the site isn't ranking in the top 100 for that term.`;
+  document.getElementById("t-rank").innerHTML=`<thead><tr><th>Keyword</th><th>Position</th><th>Change</th><th>Volume/mo</th><th>Landing page</th></tr></thead><tbody>`+
+    RANK.map(([k,p,v,u,prev])=>{const cls=p==null?"out":(p<=10?"win":"mid"),lbl=p==null?"—":"#"+p;
+      let mv='<span class="chip flat">–</span>';
+      if(p!=null&&prev!=null){const d=prev-p;mv=d>0?`<span class="chip up">▲ ${d}</span>`:d<0?`<span class="chip dn">▼ ${Math.abs(d)}</span>`:'<span class="chip flat">–</span>';}
+      else if(p!=null&&prev==null)mv='<span class="chip up">new</span>';
+      else if(p==null&&prev!=null)mv='<span class="chip dn">dropped</span>';
+      return `<tr><td class="k">${esc(k)}</td><td><span class="rankpill ${cls}">${lbl}</span></td><td>${mv}</td><td class="tnum">${v}</td><td class="url">${esc(u)}</td></tr>`;}).join("")+`</tbody>`;
+  const tp=document.getElementById("t-paid");
+  if(!PAID.dayCount){tp.innerHTML="";return;}
   const rows=[["TOFU",PAID.TOFU,"var(--f1)"],["MOFU",PAID.MOFU,"var(--f2)"],["BOFU",PAID.BOFU,"var(--f3)"]];
-  document.getElementById("t-paid").innerHTML=`<thead><tr><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>CPC</th><th>Leads</th><th>CPL</th></tr></thead><tbody>`+
+  tp.innerHTML=`<thead><tr><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>CPC</th><th>Leads</th><th>CPL</th></tr></thead><tbody>`+
     rows.map(([n,c,col])=>{const sp=sum(c.sp),cl=sum(c.cl),im=sum(c.im),ld=sum(c.ld);
-      return `<tr><td class="k"><span class="swatch" style="background:${col}"></span> ${n}</td><td class="tnum">${fmt(im)}</td><td class="tnum">${cl}</td><td class="tnum">${money(sp)}</td><td class="tnum">${cl?money(sp/cl):"—"}</td><td class="tnum">${ld}</td><td class="tnum">${ld?money(sp/ld):"—"}</td></tr>`;}).join("")+
-    `<tr class="tot"><td>Total</td><td class="tnum">${fmt(paidImpr)}</td><td class="tnum">${paidClicks}</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${paidClicks?money(paidSpend/paidClicks):"—"}</td><td class="tnum">${paidLeads}</td><td class="tnum">${paidLeads?money(paidSpend/paidLeads):"—"}</td></tr></tbody>`;
+      return `<tr><td class="k"><span class="swatch" style="background:${col}"></span> ${n}</td><td class="tnum">${fmt(im)}</td><td class="tnum">${cl}</td><td class="tnum">${money(sp)}</td><td class="tnum">${rate(sp,cl,money)}</td><td class="tnum">${ld}</td><td class="tnum">${rate(sp,ld,money)}</td></tr>`;}).join("")+
+    `<tr class="tot"><td>Total</td><td class="tnum">${fmt(paidImpr)}</td><td class="tnum">${paidClicks}</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${rate(paidSpend,paidClicks,money)}</td><td class="tnum">${paidLeads}</td><td class="tnum">${rate(paidSpend,paidLeads,money)}</td></tr></tbody>`;
 }
 
 /* ---------- Sini's Insights ---------- */
@@ -1256,7 +1440,7 @@ const AV_FALLBACK="assets/sini.jpg";
 const authorAvatar=e=>{const a=AUTHORS.find(x=>x.email===e);return a?.avatar_path||AV_FALLBACK;};
 const authorRole=e=>{const a=AUTHORS.find(x=>x.email===e);return a?.role_title||"";};
 const currentTab=()=>document.querySelector('.tab[aria-selected=true]')?.dataset.tab||'overview';
-const chartTitleOf=id=>({"c-sessions":"Website traffic","c-ov-social":"Social reach","c-clicks":"SEO clicks","c-position":"Google position","c-spend":"Ad spend","c-reach":"Social reach","c-eng":"Engagement","c-fbfoll":"FB followers"}[id]||id);
+const chartTitleOf=id=>({"c-sessions":"Website traffic","c-ov-social":"Social reach","c-clicks":"SEO clicks","c-position":"Google position","c-spend":"Meta ad spend","c-gspend":"Google ad spend","c-reach":"Social reach","c-eng":"Engagement","c-fbfoll":"FB followers"}[id]||id);
 const fmtDay=d=>{if(!d)return"";const[y,m,day]=d.split("-");return `${day}/${m}`;};
 const inspop=document.getElementById("inspop");
 function closePop(){inspop.classList.remove("show");inspop.innerHTML="";}
@@ -1266,7 +1450,9 @@ function posPop(x,y){const w=300,pw=inspop.offsetWidth||w,ph=inspop.offsetHeight
   inspop.style.left=L+"px";inspop.style.top=T+"px";}
 
 async function openInsightPopover(o,x,y){
-  const mine=o.author_email===ME.email;
+  // Authors can remove their own; an admin can remove anyone's, otherwise a departed
+  // teammate's pins would be stuck on the client's dashboard forever.
+  const mine=o.author_email===ME.email||ME.isAdmin;
   inspop.innerHTML=`<button class="ins-x" aria-label="Close">&times;</button>
     <div class="ins-head"><img class="ins-av" src="${authorAvatar(o.author_email)}" alt=""/>
       <div><div class="ins-who">${esc(o.author_name)}</div><div class="ins-role">${esc(authorRole(o.author_email))}</div></div>
@@ -1354,7 +1540,9 @@ async function deleteInsight(o){
   await sb.from("cobalt_insights").delete().eq("id",o.id);
   if(o.audio_path)await sb.storage.from("cobalt-insights").remove([o.audio_path]);
   const {data}=await sb.from("cobalt_insights").select("*").order("created_at");INSIGHTS=data||[];
-  renderCharts();renderInsightPanels();
+  // renderBeacons() is the point: without it the pin stays on screen after the row is
+  // gone, and the delete looks like it silently failed.
+  renderCharts();renderInsightPanels();renderBeacons();
 }
 function whereLabel(o){
   if(o.anchor_kind==="element"){const t=o.target_id||"";return t.startsWith("post:")?"On a post":t.startsWith("sec:")?"On this page":"Pinned";}
@@ -1384,12 +1572,12 @@ function renderBeacons(){
 
 // Each tab's insights belong to the channel owner: R2R (Jose) runs SEO + Paid,
 // Savvas (Sini) runs Social. Overview shows the whole team.
-const TAB_OWNER={overview:null,seo:"r2r",paid:"r2r",social:"savvas"};
+const TAB_OWNER={overview:null,seo:"r2r",paid:"r2r",google:"r2r",social:"savvas"};
 const TEAM_INFO={r2r:{name:"Ready to Rank",av:"assets/r2r.png"},savvas:{name:"Savvas Studio",av:"assets/savvas-icon.png"}};
 const canAuthorTab=tab=>tab!=="updates"&&ME.isAuthor&&(ME.isAdmin||!TAB_OWNER[tab]||TAB_OWNER[tab]===ME.team);
 function updateAddButton(){const ok=canAuthorTab(currentTab());document.getElementById("addins").style.display=ok?"inline-flex":"none";if(!ok&&PINMODE)setPinMode(false);}
 function renderInsightPanels(){
-  for(const tab of ["overview","seo","paid","social"]){
+  for(const tab of ["overview","seo","paid","google","social"]){
     const sec=secs[tab];if(!sec)continue;
     let panel=sec.querySelector(".inspanel");
     if(!panel){panel=document.createElement("div");panel.className="inspanel";sec.appendChild(panel);}
@@ -1415,7 +1603,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(PINMODE)setPinMo
 
 /* tabs */
 const tabs=[...document.querySelectorAll(".tab")];
-const secs={overview:document.getElementById("overview"),seo:document.getElementById("seo"),paid:document.getElementById("paid"),social:document.getElementById("social"),updates:document.getElementById("updates")};
+const secs={overview:document.getElementById("overview"),seo:document.getElementById("seo"),paid:document.getElementById("paid"),google:document.getElementById("google"),social:document.getElementById("social"),updates:document.getElementById("updates")};
 function show(name){
   tabs.forEach(t=>t.setAttribute("aria-selected",t.dataset.tab===name));
   Object.entries(secs).forEach(([k,s])=>s.hidden=k!==name);
