@@ -571,7 +571,7 @@ let MSERIES=[];
 // Full history, held once. MONTH is the selected reporting month ("YYYY-MM") and is
 // the single scope control for the whole dashboard.
 let RAW={seo:[],social:[],paid:[],rank:[],posts:[]};
-let MONTH=null, MONTHS_AVAILABLE=[], PAID_G=null, RANK_DATE=null, RANK_IS_CURRENT=false;
+let MONTH=null, MONTHS_AVAILABLE=[], PAID_G=null, RANK_DATE=null, RANK_IS_CURRENT=false, FOLL_ASAT=null;
 let seoSessions=0,seoClicks=0,seoConv=0,socReach=0,socEng=0,totFoll=0,paidSpend=0,paidClicks=0,paidImpr=0,paidLeads=0,paidRange="";
 
 const sum=a=>a.reduce((s,v)=>s+(v==null?0:v),0);
@@ -635,11 +635,14 @@ function applyMonth(){
     else if(r.platform==='linkedin'){LI_IMPR[i]=r.impressions;LI_ENG[i]=r.engagement;if(r.followers)lif=r.followers;}
   });
   applyOverrides();
-  const lastNon=a=>{for(let i=a.length-1;i>=0;i--)if(a[i]!=null)return a[i];return 0;};
-  // Follower counts are a running total, not a monthly figure: if the selected month
-  // carries no reading, fall back to the most recent one on or before it.
-  const follBefore=plat=>{let v=0;RAW.social.forEach(r=>{if(r.platform===plat&&r.followers!=null&&r.period_date.slice(0,7)<=MONTH)v=r.followers;});return v;};
-  FOLL={ig:igf||follBefore('instagram'),fb:lastNon(FB_FOLL)||follBefore('facebook'),li:lif||follBefore('linkedin')};
+  // Follower counts are a LIVE TOTAL, not a monthly metric. Instagram in particular is
+  // only ever reported for the current day, so scoping it to the selected month made
+  // past months read 0 and August look like a 4,794 gain that never happened. Always
+  // use the latest known reading for every platform, and label it "current" on screen.
+  const latestFoll=plat=>{let v=0,d=null;RAW.social.forEach(r=>{if(r.platform===plat&&r.followers!=null&&(!d||r.period_date>d)){v=r.followers;d=r.period_date;}});return {v,d};};
+  const fIG=latestFoll('instagram'),fFB=latestFoll('facebook'),fLI=latestFoll('linkedin');
+  FOLL={ig:fIG.v,fb:fFB.v,li:fLI.v};
+  FOLL_ASAT=[fIG.d,fFB.d,fLI.d].filter(Boolean).sort().pop()||null;
   PAID=buildPaid('meta'); PAID_G=buildPaid('google');
   paidRange=PAID.range;
   // Rankings are month-end snapshots. Use this month's if it exists, else the most
@@ -651,7 +654,11 @@ function applyMonth(){
     .sort((a,b)=>((a.position==null?999:a.position)-(b.position==null?999:b.position)))
     .map(r=>[r.keyword,r.position,r.search_volume,(r.url||'—').replace(/^https?:\/\//,''),r.prev_position]);
   // Posts are dated by publication, so a month shows the posts actually published in it.
-  const mp=p=>({img:p.image_path,type:p.media_type,reach:p.reach,eng:p.engagement,url:p.permalink,cap:p.caption});
+  // Facebook returns no caption text through the connector. Rather than print a blank
+  // line — or invent copy — fall back to the post date and let the card link out.
+  const capFallback=p=>{const d=p.period_date;return "Posted "+d.slice(8,10)+"/"+d.slice(5,7)+" · view on "+(p.platform==='facebook'?"Facebook":"Instagram");};
+  const mp=p=>({img:p.image_path,type:p.media_type,reach:p.reach,eng:p.engagement,url:p.permalink,
+    cap:(p.caption&&p.caption.trim())?p.caption:capFallback(p),plain:!(p.caption&&p.caption.trim())});
   const monthPosts=plat=>RAW.posts.filter(p=>p.platform===plat&&p.period_date.slice(0,7)===MONTH)
     .sort((a,b)=>b.reach-a.reach).map(mp);
   IG_POSTS=monthPosts('instagram'); FB_POSTS=monthPosts('facebook');
@@ -798,7 +805,7 @@ function renderKPIs(){
     kpi("Ad spend",money(totalSpend),"Meta + Google · "+ML)+
     kpi("Ad leads",fmt(totalLeads),totalLeads?'<span class="chip up">'+money(totalSpend/totalLeads)+' CPL</span> cost per lead':(totalSpend?'<span class="chip dn">no leads</span> tracking check':"no spend this month"))+
     kpi("Social reach",fmt(socReach),"IG + FB · "+ML)+
-    kpi("Total followers",fmt(totFoll),"IG + FB + LinkedIn");
+    kpi("Total followers",fmt(totFoll),"IG + FB + LinkedIn · current"+(FOLL_ASAT?" ("+FOLL_ASAT.slice(8,10)+"/"+FOLL_ASAT.slice(5,7)+")":""));
   const avgPos=POS.filter(v=>v!=null);
   document.getElementById("kpi-seo").innerHTML=
     kpi("Clicks",fmt(seoClicks),ML)+
@@ -816,9 +823,9 @@ function renderKPIs(){
   document.getElementById("kpi-social").innerHTML=
     kpi("Total reach",fmt(socReach),"IG + FB · "+ML)+
     kpi("Engagements",fmt(socEng),"reactions, comments…")+
-    kpi("Instagram",fmt(FOLL.ig),'<span class="swatch" style="background:var(--ig)"></span> followers')+
-    kpi("Facebook",fmt(FOLL.fb),'<span class="swatch" style="background:var(--fb)"></span> page likes')+
-    kpi("LinkedIn",fmt(FOLL.li),'<span class="swatch" style="background:var(--li)"></span> followers');
+    kpi("Instagram",fmt(FOLL.ig),'<span class="swatch" style="background:var(--ig)"></span> followers · current')+
+    kpi("Facebook",fmt(FOLL.fb),'<span class="swatch" style="background:var(--fb)"></span> page likes · current')+
+    kpi("LinkedIn",fmt(FOLL.li),'<span class="swatch" style="background:var(--li)"></span> followers · current');
   const svr=document.getElementById("sv-reach");if(svr)svr.textContent=fmt(socReach);
   // NB: no #co-spend/#co-clicks lookups here. Those spans live inside #co-body, which
   // the commentary below replaces wholesale — after the first render they don't exist,
