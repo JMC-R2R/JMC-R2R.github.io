@@ -382,7 +382,7 @@ body.pinmode [data-anchor]{cursor:crosshair}
     <span class="hspace"></span>
     <div class="hmeta">
       <span><span class="dot"></span><b>Live</b> · <span id="freshdate">—</span></span>
-      <span>SEO · Paid · Social &nbsp;|&nbsp; last 90 days</span>
+      <span>SEO · Paid · Social &nbsp;|&nbsp; <span id="hdr-window">last 30 days</span></span>
     </div>
     <button class="addins" id="addins">✎ Add insight</button>
     <button class="tour-help" id="tourbtn">? Tour</button>
@@ -414,20 +414,20 @@ body.pinmode [data-anchor]{cursor:crosshair}
 
 <main class="wrap">
   <section id="overview" data-anchor="sec:overview">
-    <div class="eyebrow">Snapshot · last 90 days</div>
+    <div class="eyebrow">Snapshot · <span id="snap-window">last 30 days</span></div>
     <div class="kpis" id="kpi-overview"></div>
     <div class="callouts">
-      <div class="callout bad"><div class="bar"></div><div>
+      <div class="callout bad" id="co-callout"><div class="bar"></div><div>
         <h4 id="co-head">Meta ads <span class="sig bad" id="co-sig">Action</span></h4>
         <p id="co-body">Since launch on 09/07, the lead campaigns have spent <b id="co-spend">—</b> for <b id="co-clicks">—</b> clicks.</p>
       </div></div>
-      <div class="callout warn"><div class="bar"></div><div>
-        <h4>Organic Google position is slipping <span class="sig warn">Watch</span></h4>
-        <p>Average position has drifted from ~22 in April to ~35 in July, and most tracked keywords sit outside the top 100. Only <b>"Home builders Yarra Valley"</b> ranks strongly.</p>
+      <div class="callout warn" id="seo-callout"><div class="bar"></div><div>
+        <h4 id="seo-callout-head">Organic Google position <span class="sig warn">Watch</span></h4>
+        <p id="seo-callout-body">—</p>
       </div></div>
     </div>
     <h2 class="h2">Month on month</h2>
-    <p class="sub">Monthly totals across the core metrics, with last month's change. May and June are full months; April (from the 12th) and July (to date) are partial, marked *.</p>
+    <p class="sub" id="mom-sub">Monthly totals across the core metrics, with last month's change.</p>
     <div class="momgrid" id="mom"></div>
 
     <h2 class="h2">Website traffic</h2>
@@ -455,9 +455,9 @@ body.pinmode [data-anchor]{cursor:crosshair}
   <section id="paid" data-anchor="sec:paid" hidden>
     <div class="eyebrow">Paid ads · Meta (Google campaigns paused)</div>
     <div class="callouts" style="margin-top:0;margin-bottom:16px;grid-template-columns:1fr">
-      <div class="callout bad"><div class="bar"></div><div>
-        <h4>0 leads recorded across all spend <span class="sig bad">Action</span></h4>
-        <p>3 days of data (09–11/07) is early, but no lead has been attributed on any campaign. Confirm the lead form and Meta pixel are tracking before scaling budget.</p>
+      <div class="callout bad" id="paid-callout"><div class="bar" id="paid-callout-bar"></div><div>
+        <h4 id="paid-callout-head">Meta lead campaigns</h4>
+        <p id="paid-callout-body">—</p>
       </div></div>
     </div>
     <div class="kpis" id="kpi-paid"></div>
@@ -474,7 +474,7 @@ body.pinmode [data-anchor]{cursor:crosshair}
         <div class="sv-top"><span class="sv-by">Social managed by</span><img class="sv-word" src="assets/savvas.webp" alt="Savvas Studio"/></div>
         <p class="sv-tag">Creative Problem Solvers — video, social &amp; brand. <a href="https://www.savvasstudio.com/" target="_blank" rel="noopener">savvasstudio.com&nbsp;↗</a></p>
       </div>
-      <div class="sv-stat"><span class="sv-stat-v tnum" id="sv-reach">—</span><span class="sv-stat-l">reach · 90 days</span></div>
+      <div class="sv-stat"><span class="sv-stat-v tnum" id="sv-reach">—</span><span class="sv-stat-l">reach · <span id="sv-reach-window">30 days</span></span></div>
     </div>
     <div class="eyebrow">Organic social · Instagram · Facebook · LinkedIn</div>
     <div class="kpis" id="kpi-social"></div>
@@ -485,13 +485,13 @@ body.pinmode [data-anchor]{cursor:crosshair}
       <div class="card chart" id="c-fbfoll"></div>
     </div>
     <div class="callouts" style="grid-template-columns:1fr">
-      <div class="callout good"><div class="bar"></div><div>
-        <h4>Paid is lifting organic reach <span class="sig good">Signal</span></h4>
-        <p>Instagram reach jumped from a ~60–150/day baseline to <b>500–830/day</b> around the 08–09/07 ad launch, and Facebook engagement spiked the same week. The ad audience is finding the organic profiles too.</p>
+      <div class="callout good" id="social-callout"><div class="bar"></div><div>
+        <h4 id="social-callout-head">Organic social reach</h4>
+        <p id="social-callout-body">—</p>
       </div></div>
     </div>
     <h2 class="h2">Top performing posts</h2>
-    <p class="sub">Highest-reach organic posts in the last 90 days — the Warrandyte build series is carrying both channels.</p>
+    <p class="sub">Highest-reach organic posts from the latest snapshot.</p>
     <div class="posthead"><span class="pill-ig">Instagram</span><span class="small">by reach · @cobaltconstructions</span></div>
     <div class="postgrid" id="ig-posts"></div>
     <div class="posthead" style="margin-top:20px"><span class="pill-fb">Facebook</span><span class="small">by reach · Cobalt Constructions</span></div>
@@ -530,6 +530,9 @@ let RANK=[],FOLL={ig:0,fb:0,li:0},IG_POSTS=[],FB_POSTS=[],REFRESH=[];
 let INSIGHTS=[],AUTHORS=[],ME={email:null,isAuthor:false,name:null,avatar:null,role:null},PINMODE=false;
 let MANUAL_DEFS=[],MANUAL=[],MSEL=null;
 let CONTENT=[],OVERRIDES=[],FEEDBACK=[];
+// Month-on-month runs off its own long series, INDEPENDENT of the KPI window above.
+// Never derive it from DATES — a short window leaves no full month and the section goes blank.
+let MSERIES=[];
 let seoSessions=0,seoClicks=0,seoConv=0,socReach=0,socEng=0,totFoll=0,paidSpend=0,paidClicks=0,paidImpr=0,paidLeads=0,paidRange="";
 
 const sum=a=>a.reduce((s,v)=>s+(v==null?0:v),0);
@@ -537,11 +540,25 @@ const fmt=n=>{n=Math.round(n);return n>=1000?(n>=100000?Math.round(n/1000)+"k":(
 const money=n=>"$"+Number(n).toLocaleString("en-AU",{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+// Reporting window. Derived from today, never hardcoded — change WINDOW_DAYS only.
+// Local date (not toISOString) so an AEST early-morning load doesn't slip back a UTC day.
+const WINDOW_DAYS=30;
+const localISO=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const SINCE=localISO(new Date(Date.now()-(WINDOW_DAYS-1)*864e5));
+const WINDOW_LABEL="last "+WINDOW_DAYS+" days";
+// Month-on-month needs whole calendar months, so it gets its own longer reach:
+// back to the 1st, 13 months ago. Independent of WINDOW_DAYS by design.
+const MOM_SINCE=(()=>{const n=new Date();return localISO(new Date(n.getFullYear(),n.getMonth()-12,1));})();
+const MONTH_ABBR=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const daysInMonth=key=>{const[y,m]=key.split("-").map(Number);return new Date(y,m,0).getDate();};
+const monthShort=key=>MONTH_ABBR[Number(key.split("-")[1])-1];
+const monthLong=key=>monthShort(key)+" "+key.split("-")[0];
+
 async function loadData(){
-  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr,fb]=await Promise.all([
-    sb.from('cobalt_seo_daily').select('*').order('period_date'),
-    sb.from('cobalt_social_daily').select('*').order('period_date'),
-    sb.from('cobalt_paid_daily').select('*').order('period_date'),
+  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr,fb,momSeo,momSocial]=await Promise.all([
+    sb.from('cobalt_seo_daily').select('*').gte('period_date',SINCE).order('period_date'),
+    sb.from('cobalt_social_daily').select('*').gte('period_date',SINCE).order('period_date'),
+    sb.from('cobalt_paid_daily').select('*').gte('period_date',SINCE).order('period_date'),
     sb.from('cobalt_rankings').select('*'),
     sb.from('cobalt_social_posts').select('*'),
     sb.from('cobalt_refresh').select('*'),
@@ -551,8 +568,11 @@ async function loadData(){
     sb.from('cobalt_manual_metrics').select('*'),
     sb.from('cobalt_content_plan').select('*').order('plan_date'),
     sb.from('cobalt_metric_overrides').select('*'),
-    sb.from('cobalt_feedback').select('*').order('created_at',{ascending:false})
+    sb.from('cobalt_feedback').select('*').order('created_at',{ascending:false}),
+    sb.from('cobalt_seo_daily').select('period_date,sessions,clicks,impressions,avg_position').gte('period_date',MOM_SINCE).order('period_date'),
+    sb.from('cobalt_social_daily').select('period_date,platform,reach,engagement,followers').gte('period_date',MOM_SINCE).order('period_date')
   ]);
+  MSERIES=buildMonths(momSeo.data||[],momSocial.data||[]);
   INSIGHTS=ins.data||[]; AUTHORS=auth.data||[];
   MANUAL_DEFS=mdef.data||[]; MANUAL=mval.data||[];
   CONTENT=cplan.data||[]; OVERRIDES=ovr.data||[]; FEEDBACK=fb.data||[];
@@ -597,20 +617,79 @@ async function loadData(){
 
 /* KPIs */
 const kpi=(lab,val,foot)=>`<div class="kpi"><div class="lab">${lab}</div><div class="val tnum">${val}</div><div class="foot">${foot||""}</div></div>`;
+// Direction of travel on average Google position, read off the last two FULL months.
+// A LOWER number is better, so a rise in the number is a slip. Never assert a direction
+// the data doesn't currently show.
+function posTrendChip(){
+  const a=prevFull(), b=lastFull();
+  if(!a||!b||a.avgPos==null||b.avgPos==null)return "";
+  const d=b.avgPos-a.avgPos;
+  if(Math.abs(d)<1)return '<span class="chip flat">steady vs '+a.label+'</span>';
+  return d>0
+    ? '<span class="chip dn">slipping vs '+a.label+'</span>'
+    : '<span class="chip up">improving vs '+a.label+'</span>';
+}
+// Overview SEO commentary. Every number and every named keyword comes from the data —
+// nothing here is a fixed sentence that can quietly go out of date.
+function renderSeoCallout(){
+  const head=document.getElementById("seo-callout-head"), body=document.getElementById("seo-callout-body");
+  if(!head||!body)return;
+  const withPos=fullMonths().filter(x=>x.avgPos!=null);
+  const first=withPos[0], last=withPos[withPos.length-1];
+  const ranked=RANK.filter(r=>r[1]!=null&&r[1]<=100).sort((a,b)=>a[1]-b[1]);
+  const best=ranked[0];
+  if(!first||!last||first===last){
+    head.innerHTML='Organic Google position <span class="sig warn">Watch</span>';
+    body.innerHTML=last&&last.avgPos!=null
+      ? 'Average position is <b>~'+last.avgPos.toFixed(1)+'</b> in '+monthLong(last.key)+'. Not enough complete months yet to show a trend.'
+      : 'Not enough complete months of data yet to show a position trend.';
+  }else{
+    const d=last.avgPos-first.avgPos, dir=Math.abs(d)<1?"held steady":(d>0?"drifted":"improved");
+    const cls=Math.abs(d)<1?"warn":(d>0?"bad":"good"), word=Math.abs(d)<1?"Steady":(d>0?"Watch":"Improving");
+    head.innerHTML='Organic Google position has '+dir+' <span class="sig '+cls+'">'+word+'</span>';
+    body.innerHTML='Average position has '+dir+' from <b>~'+first.avgPos.toFixed(1)+'</b> in '+monthLong(first.key)
+      +' to <b>~'+last.avgPos.toFixed(1)+'</b> in '+monthLong(last.key)+'. '
+      +(RANK.length
+         ? '<b>'+ranked.length+'</b> of <b>'+RANK.length+'</b> tracked keywords sit inside the top 100'
+           +(best?', the strongest being <b>"'+esc(best[0])+'"</b> at <b>#'+best[1]+'</b>.':'.')
+         : 'No tracked keyword data loaded.');
+  }
+}
+// Social commentary, month on month. The previous version asserted that paid was lifting
+// organic reach off a July baseline that no longer sits in the reporting window — state
+// the movement the data supports, not a causal claim it doesn't.
+function renderSocialCallout(){
+  const head=document.getElementById("social-callout-head"), body=document.getElementById("social-callout-body");
+  if(!head||!body)return;
+  const a=prevFull(), b=lastFull(), box=document.getElementById("social-callout");
+  if(!a||!b||!a.reach){
+    head.innerHTML='Organic social reach';
+    body.innerHTML=b?'Reach across Instagram and Facebook was <b>'+fmt(b.reach)+'</b> in '+monthLong(b.key)+'. No earlier complete month to compare against yet.':'Not enough complete months of data yet.';
+    if(box)box.className="callout warn";
+    return;
+  }
+  const pc=Math.round((b.reach-a.reach)/a.reach*100);
+  const up=pc>0;
+  if(box)box.className="callout "+(up?"good":pc<0?"warn":"good");
+  head.innerHTML='Organic social reach '+(up?'is up':pc<0?'is down':'held flat')+' month on month <span class="sig '+(up?'good':pc<0?'warn':'good')+'">'+(up?'Signal':pc<0?'Watch':'Steady')+'</span>';
+  body.innerHTML='Instagram and Facebook reached <b>'+fmt(b.reach)+'</b> accounts in '+monthLong(b.key)
+    +' against <b>'+fmt(a.reach)+'</b> in '+monthLong(a.key)+' — a <b>'+Math.abs(pc)+'%</b> '+(up?'increase':pc<0?'decrease':'change')
+    +'. Engagement moved from <b>'+fmt(a.eng)+'</b> to <b>'+fmt(b.eng)+'</b> over the same two months.';
+}
 function renderKPIs(){
   document.getElementById("kpi-overview").innerHTML=
-    kpi("Website sessions",fmt(seoSessions),"last 90 days · GA4")+
+    kpi("Website sessions",fmt(seoSessions),WINDOW_LABEL+" · GA4")+
     kpi("SEO clicks",fmt(seoClicks),"Google organic")+
     kpi("Ad spend",money(paidSpend),'<span class="chip warnc">'+PAID.days.length+' days</span> '+paidRange)+
     kpi("Ad leads",fmt(paidLeads),paidLeads?'<span class="chip up">'+money(paidSpend/paidLeads)+' CPL</span> cost per lead':'<span class="chip dn">0 CPL</span> tracking check')+
-    kpi("Social reach",fmt(socReach),"IG + FB · 90 days")+
+    kpi("Social reach",fmt(socReach),"IG + FB · "+WINDOW_DAYS+" days")+
     kpi("Total followers",fmt(totFoll),"IG + FB + LinkedIn");
   const avgPos=POS.filter(v=>v!=null);
   document.getElementById("kpi-seo").innerHTML=
-    kpi("Clicks",fmt(seoClicks),"90 days")+
-    kpi("Impressions",fmt(sum(IMPR)),"90 days")+
+    kpi("Clicks",fmt(seoClicks),WINDOW_DAYS+" days")+
+    kpi("Impressions",fmt(sum(IMPR)),WINDOW_DAYS+" days")+
     kpi("Avg CTR",(seoClicks/sum(IMPR)*100).toFixed(2)+"%","clicks ÷ impressions")+
-    kpi("Avg position","~"+(avgPos.reduce((s,v)=>s+v,0)/avgPos.length).toFixed(1),'<span class="chip dn">slipping</span>')+
+    kpi("Avg position","~"+(avgPos.reduce((s,v)=>s+v,0)/avgPos.length).toFixed(1),posTrendChip())+
     kpi("Conversions",fmt(seoConv),"GA4 key events");
   document.getElementById("kpi-paid").innerHTML=
     kpi("Spend",money(paidSpend),paidRange+" · AUD")+
@@ -619,7 +698,7 @@ function renderKPIs(){
     kpi("Avg CPC",money(paidSpend/paidClicks),"cost per click")+
     kpi("Leads",fmt(paidLeads),paidLeads?'<span class="chip up">'+money(paidSpend/paidLeads)+'</span> cost per lead':'<span class="chip dn">investigate</span>');
   document.getElementById("kpi-social").innerHTML=
-    kpi("Total reach",fmt(socReach),"IG + FB · 90 days")+
+    kpi("Total reach",fmt(socReach),"IG + FB · "+WINDOW_DAYS+" days")+
     kpi("Engagements",fmt(socEng),"reactions, comments…")+
     kpi("Instagram",fmt(FOLL.ig),'<span class="swatch" style="background:var(--ig)"></span> followers')+
     kpi("Facebook",fmt(FOLL.fb),'<span class="swatch" style="background:var(--fb)"></span> page likes')+
@@ -628,6 +707,9 @@ function renderKPIs(){
   document.getElementById("co-spend").textContent=money(paidSpend);
   document.getElementById("co-clicks").textContent=paidClicks;
   // Headline commentary follows the data — leads recorded or not.
+  // The card's colour follows it too: a "Working" message must not sit in a red card.
+  const coBox=document.getElementById("co-callout");
+  if(coBox)coBox.className="callout "+(paidLeads>0?"good":"bad");
   const st=paidRange?" over "+paidRange:"";
   if(paidLeads>0){
     document.getElementById("co-head").innerHTML='Meta ads: leads coming through <span class="sig good">Working</span>';
@@ -636,43 +718,95 @@ function renderKPIs(){
     document.getElementById("co-head").innerHTML='Meta ads: spend, no leads yet <span class="sig bad">Action</span>';
     document.getElementById("co-body").innerHTML='The lead campaigns have spent <b>'+money(paidSpend)+'</b>'+st+' for <b>'+paidClicks+'</b> clicks but <b>0 recorded leads</b>. Either the lead event is not firing back to Meta or clicks are not converting yet — worth checking the form/pixel before spend climbs.';
   }
+  // Paid-tab callout — same rule: it states what the data says, never a fixed verdict.
+  const pc=document.getElementById("paid-callout");
+  if(pc){
+    const days=PAID.days.length;
+    pc.className="callout "+(paidLeads>0?"good":"bad");
+    document.getElementById("paid-callout-bar").className="bar";
+    document.getElementById("paid-callout-head").innerHTML=paidLeads>0
+      ? fmt(paidLeads)+' lead'+(paidLeads===1?'':'s')+' from '+money(paidSpend)+' <span class="sig good">Working</span>'
+      : 'No leads recorded across '+money(paidSpend)+' spend <span class="sig bad">Action</span>';
+    document.getElementById("paid-callout-body").innerHTML=paidLeads>0
+      ? 'Across <b>'+days+' day'+(days===1?'':'s')+'</b> of data ('+paidRange+'), the Meta lead campaigns have produced <b>'+paidLeads+' lead'+(paidLeads===1?'':'s')+'</b> at <b>'+money(paidSpend/paidLeads)+'</b> each from <b>'+paidClicks+'</b> link clicks.'
+      : '<b>'+days+' day'+(days===1?'':'s')+'</b> of data ('+paidRange+') with <b>'+paidClicks+'</b> clicks and no lead attributed on any campaign. Confirm the lead form and Meta pixel are tracking before scaling budget.';
+  }
+  renderSeoCallout();
+  renderSocialCallout();
   const psub=document.getElementById("paid-sub");
   if(psub) psub.textContent="Meta lead campaigns, grouped by funnel stage."+(paidLeads?"":" CPL is blank because no leads have been recorded yet.");
 }
 
 /* month-on-month */
+// Roll the long series up into calendar months. A month counts as "full" only when every
+// day of it is present — that is what makes it safe to compare. Partial months are kept
+// (so the trend bars still show this month) but marked and excluded from the comparison.
+function buildMonths(seoRows,socialRows){
+  const m={};
+  const bucket=key=>(m[key]=m[key]||{key,label:monthShort(key),days:new Set(),
+    sessions:0,clicks:0,impr:0,posSum:0,posN:0,reach:0,eng:0,fbFoll:null});
+  seoRows.forEach(r=>{
+    const key=r.period_date.slice(0,7), b=bucket(key);
+    b.days.add(Number(r.period_date.slice(8,10)));
+    b.sessions+=Number(r.sessions)||0;
+    b.clicks+=Number(r.clicks)||0;
+    b.impr+=Number(r.impressions)||0;
+    if(r.avg_position!=null){b.posSum+=Number(r.avg_position);b.posN++;}
+  });
+  socialRows.forEach(r=>{
+    const b=bucket(r.period_date.slice(0,7));
+    if(r.platform==='instagram'||r.platform==='facebook')b.reach+=Number(r.reach)||0;
+    b.eng+=Number(r.engagement)||0;
+    if(r.platform==='facebook'&&r.followers!=null)b.fbFoll=Number(r.followers);
+  });
+  return Object.values(m).sort((a,b)=>a.key<b.key?-1:1).map(b=>({
+    key:b.key,label:b.label,
+    full:b.days.size===daysInMonth(b.key)&&b.days.has(1)&&b.days.has(daysInMonth(b.key)),
+    sessions:b.sessions,clicks:b.clicks,impr:b.impr,reach:b.reach,eng:b.eng,fbFoll:b.fbFoll,
+    avgPos:b.posN?b.posSum/b.posN:null
+  }));
+}
+const fullMonths=()=>MSERIES.filter(x=>x.full);
+const lastFull=()=>fullMonths()[fullMonths().length-1]||null;
+const prevFull=()=>fullMonths()[fullMonths().length-2]||null;
 const MON={"04":"Apr","05":"May","06":"Jun","07":"Jul","08":"Aug","09":"Sep","10":"Oct","11":"Nov","12":"Dec"};
 function renderMoM(){
   const tbl=document.getElementById("mom");if(!tbl)return;
-  const present=["04","05","06","07","08","09","10","11","12","01","02","03"].filter(mk=>DATES.some(d=>d.slice(0,2)===mk));
-  const partial=mk=>{const ds=DATES.filter(d=>d.slice(0,2)===mk);if(!ds.length)return false;const days=ds.map(d=>+d.slice(3));const dim=new Date(2026,+mk,0).getDate();return Math.min(...days)>1||Math.max(...days)<dim;};
-  const sumM=(arr,mk)=>{let s=0,any=false;DATES.forEach((d,i)=>{if(d.slice(0,2)===mk&&arr[i]!=null){s+=arr[i];any=true;}});return any?s:null;};
-  const endM=(arr,mk)=>{let v=null;DATES.forEach((d,i)=>{if(d.slice(0,2)===mk&&arr[i]!=null)v=arr[i];});return v;};
-  const combReach=DATES.map((_,i)=>(IG_REACH[i]||0)+(FB_REACH[i]||0));
-  const combEng=DATES.map((_,i)=>(IG_ENG[i]||0)+(FB_ENG[i]||0)+(LI_ENG[i]||0));
+  const shown=MSERIES.slice(-6);
+  const cur=lastFull(), prev=prevFull();
   const rows=[
-    {label:"Website sessions",fn:mk=>sumM(SESSIONS,mk)},
-    {label:"SEO clicks",fn:mk=>sumM(CLICKS,mk)},
-    {label:"SEO impressions",fn:mk=>sumM(IMPR,mk)},
-    {label:"Social reach",fn:mk=>sumM(combReach,mk)},
-    {label:"Social engagement",fn:mk=>sumM(combEng,mk)},
-    {label:"Facebook followers",fn:mk=>endM(FB_FOLL,mk)}
+    {label:"Website sessions",get:x=>x.sessions},
+    {label:"SEO clicks",get:x=>x.clicks},
+    {label:"SEO impressions",get:x=>x.impr},
+    {label:"Social reach",get:x=>x.reach},
+    {label:"Social engagement",get:x=>x.eng},
+    {label:"Facebook followers",get:x=>x.fbFoll}
   ];
-  const fullMonths=present.filter(mk=>!partial(mk));
-  const cur=fullMonths[fullMonths.length-1], prev=fullMonths[fullMonths.length-2];
+  const cap=document.getElementById("mom-sub");
+  if(cap){
+    const partials=shown.filter(x=>!x.full).map(x=>x.label);
+    const note=partials.length?` ${partials.join(" and ")} ${partials.length>1?"are":"is"} still incomplete, marked * and left out of the comparison.`:"";
+    cap.textContent=!cur
+      ? "Monthly totals across the core metrics. No complete calendar month yet, so no comparison is shown."
+      : prev
+        ? `Monthly totals across the core metrics. The headline figure is ${monthLong(cur.key)}, compared with ${monthLong(prev.key)}.`+note
+        : `Monthly totals across the core metrics. The headline figure is ${monthLong(cur.key)}; there is no earlier complete month to compare against yet.`+note;
+  }
   tbl.innerHTML=rows.map(r=>{
-    const vals=present.map(mk=>({mk,v:r.fn(mk),p:partial(mk)}));
-    const big=cur?r.fn(cur):(vals.filter(x=>x.v!=null).slice(-1)[0]||{}).v;
+    const vals=shown.map(x=>({...x,v:r.get(x)}));
+    const big=cur?r.get(cur):(vals.filter(x=>x.v!=null).slice(-1)[0]||{}).v;
     let chip="";
-    if(cur&&prev){const a=r.fn(prev),b=r.fn(cur);if(a&&b!=null){const pc=Math.round((b-a)/a*100),cls=pc>0?"up":pc<0?"dn":"flat";chip=`<span class="chip ${cls}">${pc>0?"▲":pc<0?"▼":"–"} ${Math.abs(pc)}%</span>`;}}
-    const mx=Math.max(...vals.map(x=>x.v||0),1), bw=100/vals.length;
+    if(cur&&prev){const a=r.get(prev),b=r.get(cur);
+      if(a&&b!=null){const pc=Math.round((b-a)/a*100),cls=pc>0?"up":pc<0?"dn":"flat";
+        chip=`<span class="chip ${cls}">${pc>0?"▲":pc<0?"▼":"–"} ${Math.abs(pc)}%</span>`;}}
+    const mx=Math.max(...vals.map(x=>x.v||0),1), bw=100/(vals.length||1);
     const bars=vals.map((x,i)=>{const h=x.v!=null?(x.v/mx)*34:0,y=36-h,X=i*bw+bw*0.18,w=bw*0.64;
-      return `<rect x="${X.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="var(--cobalt)" opacity="${x.p?0.32:1}"><title>${MON[x.mk]}${x.p?" (partial)":""}: ${x.v==null?"—":fmt(x.v)}</title></rect>`;}).join("");
-    const xlabels=vals.map(x=>`<span>${MON[x.mk]}${x.p?"*":""}</span>`).join("");
+      return `<rect x="${X.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="var(--cobalt)" opacity="${x.full?1:0.32}"><title>${x.label}${x.full?"":" (partial)"}: ${x.v==null?"—":fmt(x.v)}</title></rect>`;}).join("");
+    const xlabels=vals.map(x=>`<span>${x.label}${x.full?"":"*"}</span>`).join("");
     return `<div class="momcard">
       <div class="mlab">${r.label}</div>
       <div class="mval">${big==null?"—":fmt(big)} ${chip}</div>
-      <div class="mcap">${cur?MON[cur]+" total · vs "+(prev?MON[prev]:"—"):"latest"}</div>
+      <div class="mcap">${cur?cur.label+" total · vs "+(prev?prev.label:"—"):"latest"}</div>
       <svg class="mspark" viewBox="0 0 100 36" preserveAspectRatio="none">${bars}</svg>
       <div class="mspark-x">${xlabels}</div>
     </div>`;
@@ -888,7 +1022,14 @@ async function deleteFeedback(id){
   const {data}=await sb.from("cobalt_feedback").select("*").order("created_at",{ascending:false});FEEDBACK=data||[];renderFeedback();
 }
 
-function renderAll(){renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderFeedback();renderBeacons();updateAddButton();}
+// Keep the static window labels in step with WINDOW_DAYS — never let them drift from the data.
+function renderWindowLabels(){
+  const set=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
+  set("hdr-window",WINDOW_LABEL);
+  set("snap-window",WINDOW_LABEL);
+  set("sv-reach-window",WINDOW_DAYS+" days");
+}
+function renderAll(){renderWindowLabels();renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderFeedback();renderBeacons();updateAddButton();}
 
 /* pin-anywhere: click any element (post, card, page area) while in pin mode */
 document.getElementById("app").addEventListener("click",e=>{
@@ -935,7 +1076,7 @@ document.addEventListener("keydown",e=>{if(!WT.active)return;if(e.key==="Escape"
 const TOUR={
  overview:[
   {sel:"nav.tabs",title:"Your tabs",text:"Move between Overview, SEO, Paid Ads, Social and Updates up here."},
-  {sel:"#kpi-overview",title:"Headline numbers",text:"Top-line results across every channel for the last 90 days."},
+  {sel:"#kpi-overview",title:"Headline numbers",text:"Top-line results across every channel for the "+WINDOW_LABEL+"."},
   {sel:"#mom",title:"Month on month",text:"Monthly totals and the change vs last month — the growth trend at a glance."},
   {sel:"#c-sessions",title:"Daily traffic",text:"Website sessions day by day. Hover any chart for the exact figure."}
  ],
@@ -1067,10 +1208,10 @@ function stackBar(mount,{title,sub,labels,stacks,vfmt}){
 function renderCharts(){
   lineChart(document.getElementById("c-sessions"),{title:"Daily sessions",sub:"All channels · GA4",area:true,legend:false,series:[{name:"Sessions",color:"var(--cobalt)",data:SESSIONS}]});
   lineChart(document.getElementById("c-ov-social"),{title:"Social reach",sub:"Instagram vs Facebook · daily",legend:true,series:[{name:"Instagram",color:"var(--ig)",data:IG_REACH},{name:"Facebook",color:"var(--fb)",data:FB_REACH}]});
-  document.getElementById("c-ov-channels").innerHTML=`<div class="cardhead"><div><h3>Channels at a glance</h3><p class="ch3sub">Last 90 days</p></div></div>
+  document.getElementById("c-ov-channels").innerHTML=`<div class="cardhead"><div><h3>Channels at a glance</h3><p class="ch3sub">Last ${WINDOW_DAYS} days</p></div></div>
    <table class="tbl"><tbody>
     <tr><td class="k"><span class="swatch" style="background:var(--cobalt)"></span> Organic search</td><td class="tnum">${fmt(seoClicks)} clicks</td><td class="tnum">${fmt(seoSessions)} sessions</td></tr>
-    <tr><td class="k"><span class="swatch" style="background:var(--f2)"></span> Paid ads</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">0 leads</td></tr>
+    <tr><td class="k"><span class="swatch" style="background:var(--f2)"></span> Paid ads</td><td class="tnum">${money(paidSpend)}</td><td class="tnum">${fmt(paidLeads)} lead${paidLeads===1?"":"s"}</td></tr>
     <tr><td class="k"><span class="swatch" style="background:var(--ig)"></span> Social organic</td><td class="tnum">${fmt(socReach)} reach</td><td class="tnum">${fmt(totFoll)} followers</td></tr>
    </tbody></table>`;
   lineChart(document.getElementById("c-clicks"),{title:"Clicks & impressions",sub:"Google organic · daily",legend:true,series:[{name:"Clicks",color:"var(--cobalt)",data:CLICKS},{name:"Impressions ÷10",color:"var(--r2r)",data:IMPR.map(v=>v==null?null:v/10),tip:v=>fmt(Math.round(v*10))}]});
