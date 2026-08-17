@@ -309,7 +309,7 @@
   .head-right .edit{color:var(--ink);background:var(--blue);border-color:var(--blue)}
 </style>
 </head>
-<body data-theme="roi">
+<body data-theme="search">
 <div id="neonFrame"></div>
 
 <!-- ===== Access gate — hidden by default; shown by showGate() only when the gate is on and no valid session exists ===== -->
@@ -329,7 +329,7 @@
 <header>
   <div class="head-left">
     <div class="wordmark">Manor on High</div>
-    <h1><span id="viewLabel">Marketing ROI</span></h1>
+    <h1><span id="viewLabel">Search &amp; Local</span></h1>
     <div class="sub" id="subline">Wedding &amp; events venue · Epping, VIC</div>
     <div class="cobrand">
       <span class="role role-social"><span class="role-lbl">Social by</span><img class="savvas-logo" src="https://cdn.prod.website-files.com/67afd385cf839b0956c26535/67fd04f4b993a3a0bcee54ce_SAVVAS_Wordmark_Whitenoise.webp" alt="Savvas Studio"></span>
@@ -349,13 +349,13 @@
 <div class="banner" id="banner"></div>
 
 <div class="tabs">
-  <button class="tab active" id="tabRoi" onclick="showView('roi')">Marketing ROI</button>
+  <button class="tab active" id="tabSearch" onclick="showView('search')">Search &amp; Local</button>
+  <button class="tab" id="tabRoi" onclick="showView('roi')">Marketing ROI</button>
   <button class="tab" id="tabSocial" onclick="showView('social')">Social</button>
-  <button class="tab" id="tabSearch" onclick="showView('search')">Search &amp; Local</button>
 </div>
 
 <!-- ===== ROI VIEW ===== -->
-<div class="view active" id="viewRoi">
+<div class="view" id="viewRoi">
 
 <div class="r2r-banner">
   <img class="r2r-mark" src="rtr-logo.png" alt="Ready to Rank">
@@ -376,7 +376,7 @@
   </div>
   <div class="card hero accent">
     <div class="lbl">Return on investment</div>
-    <div class="big" id="roi">—<span class="roi-unit"> back per $1</span></div>
+    <div class="big" id="roiValue">—<span class="roi-unit"> back per $1</span></div>
     <div class="pct" id="roiPct"></div>
     <div class="delta" id="roiDelta"></div>
   </div>
@@ -486,7 +486,7 @@
 </div><!-- /viewSocial -->
 
 <!-- ===== SEARCH & LOCAL VIEW ===== -->
-<div class="view" id="viewSearch">
+<div class="view active" id="viewSearch">
   <div class="r2r-banner">
     <img class="r2r-mark" src="rtr-logo.png" alt="Ready to Rank">
     <div class="sb-body">
@@ -756,9 +756,15 @@ async function boot(){
 function startApp(){
   hideGate();
   const so=$('signoutBtn'); if(so) so.hidden = !GATE_ENABLED;
-  if(location.hash === '#social') showView('social');
-  else if(location.hash === '#search') showView('search');
-  loadData();
+  // Search & Local is the landing view — it's the benchmark Mario opens the dashboard for.
+  // An explicit hash still wins, so existing #roi / #social links keep working.
+  if(location.hash === '#roi') showView('roi');
+  else if(location.hash === '#social') showView('social');
+  else showView('search');
+  // The ROI figure element is id="roi", so a #roi url makes the browser anchor-jump
+  // to it mid-page. Land at the top of the dashboard regardless of which tab opened.
+  window.scrollTo(0, 0);
+  loadData();   // ROI still loads in the background so its tab is instant
 }
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -883,7 +889,7 @@ function render(data, isSample){
   if(prev) deltaEl($('investDelta'), invest, inv(prev), {invert:true});
 
   const roi = invest? last.bookedVal/invest : 0;
-  $('roi').innerHTML = '$'+roi.toFixed(2)+'<span class="roi-unit"> back per $1</span>';
+  $('roiValue').innerHTML = '$'+roi.toFixed(2)+'<span class="roi-unit"> back per $1</span>';
   $('roiPct').textContent = last.bookedVal ? (roi>=1?'+':'')+Math.round((roi-1)*100)+'% net return' : 'awaiting bookings';
   if(prev){ const pInv=inv(prev); deltaEl($('roiDelta'), roi, pInv?prev.bookedVal/pInv:0); }
 
