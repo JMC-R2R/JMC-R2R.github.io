@@ -117,6 +117,8 @@
   .chip .dots{display:inline-flex;gap:3px;margin-left:7px;vertical-align:1px}
   .chip .dots i{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.28}
   .chip .dots i.on{opacity:.9}
+  .chip.earlier{border-style:dashed;color:var(--dim,#6A6A75)}
+  .chip.earlier:hover{color:var(--white)}
   /* When the selected month has no data for this view, hide the view's sections and
      show a plain explanation instead — an empty chart reads as "zero", which is a lie. */
   .view.monthless > *:not(.monthnotice):not(.r2r-banner):not(.savvas-banner){display:none}
@@ -868,6 +870,12 @@ SUPA.months = SUPA.url + "/rest/v1/manor_month_index";
    so the whole dashboard is month-on-month and past months stay reviewable. */
 let PERIOD = null;
 let MONTH_INDEX = [];
+/* May 2026 is the first month where every channel was being tracked — ROI, social,
+   Search Console and Google Business Profile. Jan–Apr hold ROI only, so leading with
+   them would send most clicks to a "not tracked" state. They stay reachable behind
+   the "earlier" chip rather than being thrown away. */
+const FIRST_FULL_MONTH = '2026-05-01';
+let SHOW_EARLIER = false;
 
 const monthMeta = p => MONTH_INDEX.find(m => m.period_date === p) || null;
 const monthLabel = p => (monthMeta(p) || {}).period_label || (p ? monLabel(p) : '');
@@ -886,7 +894,12 @@ function renderChips(){
   if(!MONTH_INDEX.length){ el.innerHTML = ''; return; }
   // The header's "Reporting period" is the selected month, on every tab.
   const ph = $('period'); if(ph && PERIOD) ph.textContent = monthLabel(PERIOD);
-  el.innerHTML = '<span class="mlbl">Month</span>' + MONTH_INDEX.map(m => {
+  // A month picked from a link that predates full tracking expands the list itself,
+  // otherwise its own chip wouldn't be visible.
+  if(PERIOD && PERIOD < FIRST_FULL_MONTH) SHOW_EARLIER = true;
+  const earlier = MONTH_INDEX.filter(m => m.period_date < FIRST_FULL_MONTH);
+  const shown = SHOW_EARLIER ? MONTH_INDEX : MONTH_INDEX.filter(m => m.period_date >= FIRST_FULL_MONTH);
+  el.innerHTML = '<span class="mlbl">Month</span>' + shown.map(m => {
     const on = m.period_date === PERIOD;
     // Four dots show at a glance which views hold data for that month.
     const dots = [m.has_search, m.has_roi, m.has_social, m.has_gbp]
@@ -898,8 +911,15 @@ function renderChips(){
     return `<button class="chip${on ? ' active' : ''}${m.is_current ? ' live' : ''}" `
          + `onclick="setPeriod('${m.period_date}')" aria-pressed="${on}" title="${title}">`
          + `${m.period_label}<span class="dots">${dots}</span></button>`;
-  }).join('');
+  }).join('')
+  + (!SHOW_EARLIER && earlier.length
+      ? `<button class="chip earlier" onclick="showEarlier()" `
+      + `title="${earlier.length} earlier month${earlier.length===1?'':'s'} — marketing ROI only, before social and Search Console tracking began">`
+      + `+ ${earlier.length} earlier</button>`
+      : '');
 }
+
+function showEarlier(){ SHOW_EARLIER = true; renderChips(); }
 
 /* The url carries both tab and month — #search/2026-07-01 — so a specific month
    of a specific view can be linked to directly. */
