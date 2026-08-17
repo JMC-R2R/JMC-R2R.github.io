@@ -1155,9 +1155,14 @@ function renderWindowLabels(){
   set("hdr-window",label+(partial?" (to date)":""));
   set("snap-window",label);
   set("sv-reach-window",label);
+  // A past month can be incomplete without being "in progress" — April only starts on
+  // the 12th because that is when tracking began. Say which of the two it is.
   const note=document.getElementById("month-note");
-  if(note)note.textContent=!m?"":m.full?`${monthLong(MONTH)} is a complete month.`
-    :`${monthLong(MONTH)} is still in progress — ${N} day${N===1?"":"s"} of data so far.`;
+  const thisMonth=localISO(new Date()).slice(0,7);
+  if(note)note.textContent=!m?""
+    :m.full?`${monthLong(MONTH)} is a complete month.`
+    :MONTH>=thisMonth?`${monthLong(MONTH)} is still in progress — ${N} day${N===1?"":"s"} of data so far.`
+    :`${monthLong(MONTH)} is a partial month — only ${N} day${N===1?"":"s"} of data were recorded.`;
 }
 
 // Month chips. Newest last, current selection pressed; partial months carry a dot so
