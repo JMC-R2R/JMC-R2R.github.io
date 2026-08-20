@@ -46,10 +46,10 @@
   section{margin-top:26px}
 
   /* ---- login ---- */
-  #login{max-width:390px; margin:12vh auto; background:var(--panel); border:1px solid var(--line);
+  #login,#setpw{max-width:390px; margin:12vh auto; background:var(--panel); border:1px solid var(--line);
          border-radius:var(--r); padding:28px}
-  #login h1{font-size:22px; font-weight:900; margin-bottom:5px}
-  #login p{font-size:13px; color:var(--muted); margin-bottom:18px}
+  #login h1,#setpw h1{font-size:22px; font-weight:900; margin-bottom:5px}
+  #login p,#setpw p{font-size:13px; color:var(--muted); margin-bottom:18px}
   .fld{display:flex; flex-direction:column; gap:5px; margin-bottom:12px}
   .fld label{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--faint);
              font-family:'Space Mono',monospace}
@@ -126,6 +126,19 @@
   <div class="fld"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password"></div>
   <button class="btn" id="signin" style="width:100%">Sign in</button>
   <div class="err" id="loginErr"></div>
+  <p style="margin-top:14px;margin-bottom:0;font-size:12.5px">
+    <a href="#" id="forgot" style="color:var(--muted)">Forgot your password?</a></p>
+</div>
+
+
+<!-- ============ SET / RESET PASSWORD ============ -->
+<div id="setpw" class="hide">
+  <h1>Choose a password</h1>
+  <p>Ready to Rank &mdash; set the password you'll use from now on.</p>
+  <div class="fld"><label for="np1">New password</label><input id="np1" type="password" autocomplete="new-password"></div>
+  <div class="fld"><label for="np2">Type it again</label><input id="np2" type="password" autocomplete="new-password"></div>
+  <button class="btn" id="savepw" style="width:100%">Save password</button>
+  <div class="err" id="pwErr"></div>
 </div>
 
 <!-- ============ APP ============ -->
@@ -436,7 +449,54 @@ $('saveNote').onclick = async () => {
   setTimeout(() => $('noteOk').classList.add('hide'), 2500);
 };
 
-boot();
+
+/* ---------- setting a password ----------
+   An invite or recovery email normally round-trips through Supabase's redirect,
+   which is locked to the project Site URL — a different app entirely. So this
+   page also accepts the token directly as ?token_hash=…&type=recovery and
+   verifies it here, which sidesteps the redirect allow-list completely. */
+async function consumeTokenFromUrl(){
+  const q = new URLSearchParams(location.search);
+  const th = q.get('token_hash');
+  const ty = q.get('type');
+  if (!th || !ty) return false;
+  const { error } = await sb.auth.verifyOtp({ token_hash: th, type: ty });
+  history.replaceState({}, '', location.pathname);   // don't leave the token in the bar
+  if (error) { $('loginErr').textContent = error.message + " — ask Jose for a fresh link."; return false; }
+  showSetPassword();
+  return true;
+}
+
+function showSetPassword(){
+  $('login').classList.add('hide');
+  $('app').classList.add('hide');
+  $('setpw').classList.remove('hide');
+}
+
+$('savepw').onclick = async () => {
+  const a = $('np1').value, b = $('np2').value;
+  $('pwErr').textContent = "";
+  if (a.length < 8){ $('pwErr').textContent = "Use at least 8 characters."; return; }
+  if (a !== b){ $('pwErr').textContent = "Those two don't match."; return; }
+  $('savepw').disabled = true;
+  const { error } = await sb.auth.updateUser({ password: a });
+  $('savepw').disabled = false;
+  if (error){ $('pwErr').textContent = error.message; return; }
+  $('setpw').classList.add('hide');
+  boot();
+};
+$('np2').addEventListener('keydown', e => { if (e.key === 'Enter') $('savepw').click(); });
+
+$('forgot').onclick = async (e) => {
+  e.preventDefault();
+  const em = $('email').value.trim();
+  if (!em){ $('loginErr').textContent = "Type your email above first."; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname });
+  $('loginErr').textContent = error ? error.message
+    : "Sent. Check your email — if the link lands on the wrong site, tell Jose.";
+};
+
+(async () => { if (!await consumeTokenFromUrl()) boot(); })();
 </script>
 </body>
 </html>
