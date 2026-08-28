@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Access Register</title>
+<style>
+@font-face{font-family:"Archivo";src:url("../operations/assets/Archivo-var.ttf") format("truetype");font-weight:100 900;font-style:normal;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("../operations/assets/SpaceMono-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("../operations/assets/SpaceMono-Bold.ttf") format("truetype");font-weight:700;font-style:normal;font-display:swap;}
+:root{
+  --bg:#0F0F12; --surface:#17171C; --card:#1B1B21; --raise:#212129;
+  --line:#2A2A32; --line-soft:#22222A;
+  --white:#fff; --text:#D8D8E0; --muted:#9B9BA6; --faint:#6E6E7A;
+  --accent:#17B4F0; --green:#2BD9A6; --amber:#F5B02E; --red:#E04B4B;
+  --mono:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Archivo",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;
+  -webkit-font-smoothing:antialiased;padding:0 0 90px;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+h1{font-size:clamp(26px,4vw,42px);font-weight:900;letter-spacing:-.025em;line-height:1.03;color:var(--white);}
+h1 em{font-style:normal;color:var(--accent);}
+h2{font-size:clamp(17px,2vw,22px);font-weight:800;letter-spacing:-.015em;color:var(--white);}
+.eyebrow{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--accent);}
+.lede{font-size:clamp(13.5px,1.5vw,16px);color:var(--muted);max-width:66ch;}
+
+/* ---------- login ---------- */
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.gate .box{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);
+  border-radius:10px;padding:30px 28px;}
+.gate h1{font-size:26px;margin-bottom:6px;}
+.gate p{font-size:12.8px;color:var(--muted);margin-bottom:22px;}
+label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint);margin:0 0 6px;}
+input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;
+  padding:11px 12px;color:var(--white);font-family:var(--sans);font-size:14px;margin-bottom:15px;}
+input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+button{font-family:var(--sans);cursor:pointer;}
+.btn{width:100%;background:var(--accent);color:#04222E;border:none;border-radius:6px;
+  padding:12px;font-size:14px;font-weight:800;letter-spacing:.01em;}
+.btn:hover{filter:brightness(1.08);} .btn:disabled{opacity:.5;cursor:not-allowed;}
+.err{font-size:12.5px;color:#FF9C9C;background:rgba(224,75,75,.1);border:1px solid rgba(224,75,75,.4);
+  border-radius:6px;padding:9px 11px;margin-bottom:14px;}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(23,180,240,.07),rgba(23,180,240,0));}
+.mast .wrap{padding:38px 24px 26px;}
+.crumb{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.crumb b{color:var(--accent);font-weight:700;}
+.crumb a{color:var(--muted);text-decoration:none;border:1px solid var(--line);
+  background:var(--card);border-radius:5px;padding:5px 10px;}
+.crumb a:hover{color:#fff;border-color:var(--accent);}
+.who{margin-left:auto;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10.5px;}
+.who .ro{color:var(--amber);border:1px solid rgba(245,176,46,.4);background:rgba(245,176,46,.1);
+  padding:4px 8px;border-radius:4px;letter-spacing:.08em;}
+.who button{background:none;border:1px solid var(--line);color:var(--muted);border-radius:5px;
+  padding:5px 10px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;}
+.who button:hover{color:#fff;border-color:var(--accent);}
+
+/* ---------- client cards ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;margin-top:26px;}
+.cc{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:8px;padding:17px 18px;display:flex;flex-direction:column;gap:11px;
+  text-align:left;color:inherit;font:inherit;width:100%;}
+.cc:hover{border-color:var(--accent);border-left-color:var(--accent);background:var(--raise);}
+.cc.red{border-left-color:var(--red);} .cc.amber{border-left-color:var(--amber);}
+.cc.green{border-left-color:var(--green);}
+.cc-h{display:flex;align-items:baseline;gap:9px;}
+.cc-h .nm{font-size:15.5px;font-weight:800;color:var(--white);line-height:1.2;}
+.cc-h .pk{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--faint);
+  white-space:nowrap;text-transform:uppercase;letter-spacing:.06em;}
+.cc .mo{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);}
+.headline{font-size:13px;color:var(--text);line-height:1.4;}
+.headline b{color:var(--white);}
+.headline .ok{color:var(--green);} .headline .warn{color:var(--amber);} .headline .bad{color:#FF9C9C;}
+.bars{display:flex;flex-direction:column;gap:7px;}
+.bar-row{display:grid;grid-template-columns:64px 1fr 46px;gap:9px;align-items:center;}
+.bar-row .lb{font-size:11px;color:var(--muted);text-transform:capitalize;}
+.track{height:6px;background:#101014;border-radius:4px;overflow:hidden;display:flex;}
+.fill-v{background:var(--green);} .fill-r{background:var(--amber);} .fill-p{background:#33333D;}
+.bar-row .ct{font-family:var(--mono);font-size:10px;color:var(--faint);text-align:right;}
+.cc .open{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);padding-top:8px;border-top:1px solid var(--line-soft);}
+
+/* ---------- modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(6,6,9,.78);backdrop-filter:blur(3px);
+  display:flex;align-items:flex-start;justify-content:center;padding:34px 18px;z-index:50;overflow-y:auto;}
+.modal{width:100%;max-width:860px;background:var(--card);border:1px solid var(--line);
+  border-radius:11px;overflow:hidden;}
+.modal-h{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding:19px 22px;
+  border-bottom:1px solid var(--line-soft);background:var(--surface);position:sticky;top:0;z-index:2;}
+.modal-h .nm{font-size:18px;font-weight:900;color:var(--white);}
+.modal-h .meta{font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.06em;}
+.modal-h .x{margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted);
+  border-radius:6px;width:30px;height:30px;font-size:16px;line-height:1;}
+.modal-h .x:hover{color:#fff;border-color:var(--accent);}
+.modal-b{padding:8px 22px 22px;}
+.cat{margin-top:20px;}
+.cat h4{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:10px;
+  display:flex;align-items:baseline;gap:9px;}
+.cat h4 span{color:var(--muted);letter-spacing:.06em;}
+.row{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding:9px 0;
+  border-bottom:1px solid var(--line-soft);}
+.row:last-child{border-bottom:none;}
+.row .it{font-size:13px;flex:1 1 200px;min-width:0;}
+.row .it b{color:var(--white);font-weight:700;}
+.row .it .sub{display:block;font-family:var(--mono);font-size:9.5px;color:var(--faint);
+  letter-spacing:.05em;margin-top:2px;}
+.blk{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:var(--amber);
+  border:1px solid rgba(245,176,46,.4);border-radius:3px;padding:2px 5px;margin-left:6px;
+  vertical-align:middle;}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;flex:none;}
+.seg button{background:var(--bg);border:none;color:var(--faint);font-family:var(--mono);
+  font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:7px 9px;
+  border-right:1px solid var(--line);white-space:nowrap;}
+.seg button:last-child{border-right:none;}
+.seg button:hover:not(:disabled){color:#fff;background:var(--raise);}
+.seg button:disabled{cursor:not-allowed;}
+.seg button.on{background:rgba(43,217,166,.16);color:var(--green);font-weight:700;}
+.seg button.on[data-s="requested"]{background:rgba(245,176,46,.16);color:var(--amber);}
+.seg button.on[data-s="received"]{background:rgba(23,180,240,.16);color:var(--accent);}
+.seg button.on[data-s="pending"]{background:#2A2A32;color:var(--text);}
+.seg button.on[data-s="not_applicable"]{background:#26262E;color:var(--faint);}
+.row.saving{opacity:.5;}
+.note{margin-top:18px;font-size:12.3px;color:var(--muted);line-height:1.5;
+  background:var(--surface);border-left:2px solid var(--accent);padding:12px 15px;border-radius:0 5px 5px 0;}
+.note b{color:var(--white);}
+.empty{font-size:13px;color:var(--amber);background:rgba(245,176,46,.07);
+  border:1px solid rgba(245,176,46,.3);border-radius:7px;padding:15px 17px;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:80;
+  background:var(--raise);border:1px solid var(--line);border-radius:7px;padding:11px 17px;
+  font-size:13px;color:var(--text);box-shadow:0 8px 30px rgba(0,0,0,.5);}
+.toast.bad{border-color:rgba(224,75,75,.55);color:#FF9C9C;}
+.foot{margin-top:48px;padding-top:17px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;color:var(--faint);text-transform:uppercase;}
+.hide{display:none!important;}
+@media (max-width:620px){.row .seg{width:100%;}.seg button{flex:1;}}
+</style>
+</head>
+<body>
+
+<!-- login -->
+<div id="gate" class="gate">
+  <div class="box">
+    <h1>Access <em>Register</em></h1>
+    <p>Ready to Rank internal. Sign in with your team account.</p>
+    <div id="gateErr" class="err hide"></div>
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="pw">Password</label>
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <button class="btn" id="loginBtn" type="submit">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<!-- app -->
+<div id="app" class="hide">
+  <div class="mast">
+    <div class="wrap">
+      <div class="crumb">
+        <a href="/operations/">&larr;&nbsp; Operations</a>
+        <a href="/operations/clients/">Client standing</a>
+        <span>/ <b>Access register</b></span>
+        <span class="who">
+          <span id="whoami"></span>
+          <span id="roBadge" class="ro hide">Read only</span>
+          <button id="signout" type="button">Sign out</button>
+        </span>
+      </div>
+      <h1>Access <em>Register</em></h1>
+      <p class="lede">What each client still owes us, and what we have already checked. Tick a row
+        as you get it &mdash; the client standing page reads the same rows, so the lights follow
+        along on the next scoring run.</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div id="cards" class="grid"></div>
+    <div id="noneMsg" class="hide" style="margin-top:26px;"></div>
+
+    <div class="note" style="margin-top:30px;">
+      <b>What the four states mean.</b> <b>Not asked</b> &mdash; nobody has requested it yet.
+      <b>Asked</b> &mdash; requested, not arrived. <b>Received</b> &mdash; they sent something, but
+      nobody has logged in with it, so it is not proven. <b>Verified</b> &mdash; someone signed in and
+      it works. <b>N/A</b> &mdash; genuinely does not apply to this client, which counts as complete.
+      <br><br><b>Received is not done.</b> Credentials that nobody has tested are the most common way
+      a register reads finished while the work is still blocked.
+    </div>
+
+    <div class="foot">
+      <span>Ready to Rank &middot; Operations &middot; Access register</span>
+      <span id="stamp">Internal</span>
+    </div>
+  </div>
+</div>
+
+<div id="scrim" class="scrim hide"></div>
+<div id="toast" class="toast hide"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = "https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY = "sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+const $ = id => document.getElementById(id);
+
+// The ladder, in order. `pending` reads as "not asked" because that is what it means
+// to the person looking at it - "pending" sounds like someone is already dealing with it.
+const STATES = [
+  { key:"pending",        label:"Not asked" },
+  { key:"requested",      label:"Asked" },
+  { key:"received",       label:"Received" },
+  { key:"verified",       label:"Verified" },
+  { key:"not_applicable", label:"N/A" },
+];
+const DONE = new Set(["verified","not_applicable"]);
+
+let ME = null;          // { id, name }
+let CAN_WRITE = false;
+let CLIENTS = [];       // lifecycle rows that have register items
+let ITEMS = {};         // slug -> [items]
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+  ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+const auDate = d => {
+  if (!d) return "";
+  const [y,m,dd] = d.split("-");
+  return `${dd}/${m}`;
+};
+
+function toast(msg, bad) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "toast" + (bad ? " bad" : "");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.add("hide"), bad ? 6000 : 2600);
+}
+
+// ---------------------------------------------------------------- auth
+
+$("loginForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  $("loginBtn").disabled = true;
+  $("gateErr").classList.add("hide");
+  const { error } = await sb.auth.signInWithPassword({
+    email: $("email").value.trim(),
+    password: $("pw").value,
+  });
+  $("loginBtn").disabled = false;
+  if (error) {
+    $("gateErr").textContent = error.message;
+    $("gateErr").classList.remove("hide");
+    return;
+  }
+  boot();
+});
+
+$("signout").addEventListener("click", async () => {
+  await sb.auth.signOut();
+  location.reload();
+});
+
+// ---------------------------------------------------------------- load
+
+async function boot() {
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) { $("gate").classList.remove("hide"); $("app").classList.add("hide"); return; }
+
+  // Who am I, and may I write? Both come from the database, never from the page.
+  const [{ data:person }, { data:writer }] = await Promise.all([
+    sb.from("tt_people").select("id,name").eq("id", session.user.id).maybeSingle(),
+    sb.from("so_register_writers").select("person_id,active").eq("person_id", session.user.id).maybeSingle(),
+  ]);
+
+  if (!person) {
+    $("gateErr").textContent =
+      "That account is not on the internal team list, so it cannot see the register.";
+    $("gateErr").classList.remove("hide");
+    await sb.auth.signOut();
+    return;
+  }
+
+  ME = person;
+  CAN_WRITE = !!(writer && writer.active);
+
+  $("gate").classList.add("hide");
+  $("app").classList.remove("hide");
+  $("whoami").textContent = ME.name;
+  $("roBadge").classList.toggle("hide", CAN_WRITE);
+
+  await loadData();
+}
+
+async function loadData() {
+  const [{ data:items, error:e1 }, { data:clients, error:e2 }] = await Promise.all([
+    sb.from("so_access_items").select("*").order("category").order("sort"),
+    sb.from("so_client_lifecycle")
+      .select("client_slug,client_name,status,services,tier_name,start_date,access_deadline"),
+  ]);
+  if (e1 || e2) { toast((e1||e2).message, true); return; }
+
+  ITEMS = {};
+  for (const it of items) (ITEMS[it.client_slug] ||= []).push(it);
+
+  // Only clients that actually have a register. A client with none is a different
+  // problem - it is called out below rather than rendered as an empty card.
+  const withRows = new Set(Object.keys(ITEMS));
+  CLIENTS = clients
+    .filter(c => withRows.has(c.client_slug))
+    .sort((a,b) => summarise(a.client_slug).pctDone - summarise(b.client_slug).pctDone);
+
+  const onboardingNoRows = clients
+    .filter(c => c.status === "onboarding" && !withRows.has(c.client_slug))
+    .map(c => c.client_name);
+
+  renderCards();
+
+  $("noneMsg").innerHTML = onboardingNoRows.length
+    ? `<div class="empty"><b>No register exists yet for ${onboardingNoRows.length} client(s) in
+       onboarding:</b> ${esc(onboardingNoRows.join(", "))}. Month one cannot be measured for them
+       until one is created.</div>`
+    : "";
+  $("noneMsg").classList.toggle("hide", !onboardingNoRows.length);
+  $("stamp").textContent = "Live from the registry · Internal";
+}
+
+// ---------------------------------------------------------------- render
+
+function summarise(slug) {
+  const rows = ITEMS[slug] || [];
+  const done = rows.filter(r => DONE.has(r.status)).length;
+  const blockersOpen = rows.filter(r => r.blocker && !DONE.has(r.status)).length;
+  const received = rows.filter(r => r.status === "received").length;
+  const byCat = {};
+  for (const r of rows) {
+    (byCat[r.category] ||= { total:0, done:0, part:0 });
+    byCat[r.category].total++;
+    if (DONE.has(r.status)) byCat[r.category].done++;
+    else if (r.status === "requested" || r.status === "received") byCat[r.category].part++;
+  }
+  return {
+    rows, done, total: rows.length, blockersOpen, received, byCat,
+    pctDone: rows.length ? done / rows.length : 0,
+  };
+}
+
+function deadlineBits(c) {
+  if (!c.access_deadline) return { cls:"", text:"No deadline set" };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dl = new Date(c.access_deadline + "T00:00:00");
+  const days = Math.round((dl - today) / 86400000);
+  if (days < 0)  return { cls:"bad",  text:`Deadline passed ${auDate(c.access_deadline)}, ${Math.abs(days)} days ago` };
+  if (days === 0) return { cls:"bad",  text:`Deadline is today, ${auDate(c.access_deadline)}` };
+  if (days <= 5) return { cls:"warn", text:`${days} days to deadline, ${auDate(c.access_deadline)}` };
+  return { cls:"", text:`${days} days to deadline, ${auDate(c.access_deadline)}` };
+}
+
+function renderCards() {
+  $("cards").innerHTML = CLIENTS.map(c => {
+    const s = summarise(c.client_slug);
+    const dl = deadlineBits(c);
+    const light = s.blockersOpen === 0 ? "green"
+                : (dl.cls === "bad" ? "red" : "amber");
+
+    const bars = Object.entries(s.byCat).sort().map(([cat,v]) => {
+      const dp = Math.round(100*v.done/v.total), pp = Math.round(100*v.part/v.total);
+      return `<div class="bar-row"><span class="lb">${esc(cat)}</span>
+        <span class="track"><span class="fill-v" style="width:${dp}%"></span>
+        <span class="fill-r" style="width:${pp}%"></span>
+        <span class="fill-p" style="width:${100-dp-pp}%"></span></span>
+        <span class="ct">${v.done}/${v.total}</span></div>`;
+    }).join("");
+
+    const bits = [];
+    bits.push(s.blockersOpen
+      ? `<b class="bad">${s.blockersOpen} blocker${s.blockersOpen>1?"s":""} open</b>`
+      : `<b class="ok">No blockers open</b>`);
+    if (s.received) bits.push(`<span class="warn">${s.received} received but never logged in with</span>`);
+
+    return `<button class="cc ${light}" data-slug="${esc(c.client_slug)}" type="button">
+      <div class="cc-h"><span class="nm">${esc(c.client_name)}</span>
+        <span class="pk">${esc(c.tier_name || (c.services||[])[0] || "")}</span></div>
+      <span class="mo">${s.done} of ${s.total} complete &middot; <span class="${dl.cls}">${esc(dl.text)}</span></span>
+      <span class="headline">${bits.join(" &middot; ")}</span>
+      <div class="bars">${bars}</div>
+      <span class="open">Open the full register &rarr;</span>
+    </button>`;
+  }).join("");
+
+  for (const b of $("cards").querySelectorAll(".cc")) {
+    b.addEventListener("click", () => openModal(b.dataset.slug));
+  }
+}
+
+// ---------------------------------------------------------------- modal
+
+let OPEN_SLUG = null;
+
+function openModal(slug) {
+  OPEN_SLUG = slug;
+  const c = CLIENTS.find(x => x.client_slug === slug);
+  const s = summarise(slug);
+  const dl = deadlineBits(c);
+
+  const cats = {};
+  for (const r of s.rows) (cats[r.category] ||= []).push(r);
+
+  const body = Object.entries(cats).sort().map(([cat, rows]) => {
+    const d = rows.filter(r => DONE.has(r.status)).length;
+    return `<div class="cat"><h4>${esc(cat)} <span>${d} of ${rows.length}</span></h4>
+      ${rows.map(r => rowHtml(r)).join("")}</div>`;
+  }).join("");
+
+  $("scrim").innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="${esc(c.client_name)} access register">
+    <div class="modal-h">
+      <span class="nm">${esc(c.client_name)}</span>
+      <span class="meta">${s.done} OF ${s.total} &middot; ${s.blockersOpen} BLOCKERS OPEN &middot; ${esc(dl.text.toUpperCase())}</span>
+      <button class="x" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-b">${body}
+      ${CAN_WRITE ? "" : `<div class="note"><b>You have read-only access.</b>
+        Ticking rows is limited to Jose, Jhen and Janice. Ask one of them to update a row.</div>`}
+    </div>
+  </div>`;
+  $("scrim").classList.remove("hide");
+  document.body.style.overflow = "hidden";
+
+  $("scrim").querySelector(".x").addEventListener("click", closeModal);
+  wireRows();
+}
+
+function rowHtml(r) {
+  const segs = STATES.map(st =>
+    `<button data-s="${st.key}" class="${r.status===st.key?"on":""}"
+      ${CAN_WRITE?"":"disabled"} type="button">${st.label}</button>`).join("");
+
+  const sub = [];
+  if (r.status === "verified" && r.verified_on)
+    sub.push(`verified ${auDate(r.verified_on)}${r.verified_by ? " by "+esc(r.verified_by) : ""}`);
+  else if (r.status === "received" && r.received_on)
+    sub.push(`received ${auDate(r.received_on)}, nobody has logged in yet`);
+  else if (r.status === "requested" && r.requested_on)
+    sub.push(`asked ${auDate(r.requested_on)}`);
+  if (r.owner) sub.push(esc(r.owner));
+
+  return `<div class="row" data-id="${esc(r.id)}">
+    <span class="it"><b>${esc(r.item)}</b>${r.blocker?'<span class="blk">Blocks work</span>':""}
+      ${sub.length?`<span class="sub">${sub.join(" &middot; ")}</span>`:""}</span>
+    <span class="seg">${segs}</span>
+  </div>`;
+}
+
+function wireRows() {
+  if (!CAN_WRITE) return;
+  for (const row of $("scrim").querySelectorAll(".row")) {
+    for (const btn of row.querySelectorAll(".seg button")) {
+      btn.addEventListener("click", () => setStatus(row, btn.dataset.s));
+    }
+  }
+}
+
+function closeModal() {
+  $("scrim").classList.add("hide");
+  $("scrim").innerHTML = "";
+  document.body.style.overflow = "";
+  OPEN_SLUG = null;
+}
+
+$("scrim").addEventListener("click", ev => { if (ev.target === $("scrim")) closeModal(); });
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && OPEN_SLUG) closeModal(); });
+
+// ---------------------------------------------------------------- write
+
+async function setStatus(rowEl, next) {
+  const id = rowEl.dataset.id;
+  const rows = ITEMS[OPEN_SLUG];
+  const item = rows.find(r => String(r.id) === String(id));
+  if (!item || item.status === next) return;
+
+  const before = { ...item };
+  const today = new Date().toISOString().slice(0,10);
+
+  const patch = { status: next };
+  // Stamp the ladder as it is climbed, and clear stamps on the way back down so a
+  // row never claims it was verified on a day it was not.
+  if (next === "requested") { patch.requested_on = item.requested_on || today;
+                              patch.received_on = null; patch.verified_on = null; patch.verified_by = null; }
+  if (next === "received")  { patch.received_on = today; patch.verified_on = null; patch.verified_by = null; }
+  if (next === "verified")  { patch.verified_on = today; patch.verified_by = ME.name;
+                              patch.received_on = item.received_on || today; }
+  if (next === "pending")   { patch.requested_on = null; patch.received_on = null;
+                              patch.verified_on = null; patch.verified_by = null; }
+  if (next === "not_applicable") { patch.verified_on = today; patch.verified_by = ME.name; }
+
+  Object.assign(item, patch);
+  rowEl.classList.add("saving");
+  rowEl.outerHTML = rowHtml(item);
+  const fresh = $("scrim").querySelector(`.row[data-id="${CSS.escape(String(id))}"]`);
+  for (const btn of fresh.querySelectorAll(".seg button"))
+    btn.addEventListener("click", () => setStatus(fresh, btn.dataset.s));
+
+  const { error } = await sb.from("so_access_items").update(patch).eq("id", id);
+
+  if (error) {
+    Object.assign(item, before);          // roll back, the database said no
+    const el = $("scrim").querySelector(`.row[data-id="${CSS.escape(String(id))}"]`);
+    if (el) { el.outerHTML = rowHtml(item); wireRows(); }
+    toast("Not saved: " + error.message, true);
+    return;
+  }
+
+  const el = $("scrim").querySelector(`.row[data-id="${CSS.escape(String(id))}"]`);
+  if (el) el.classList.remove("saving");
+  renderCards();
+  refreshModalHeader();
+  toast(`${item.item} → ${STATES.find(s=>s.key===next).label}`);
+}
+
+function refreshModalHeader() {
+  const c = CLIENTS.find(x => x.client_slug === OPEN_SLUG);
+  if (!c) return;
+  const s = summarise(OPEN_SLUG), dl = deadlineBits(c);
+  const m = $("scrim").querySelector(".modal-h .meta");
+  if (m) m.textContent = `${s.done} OF ${s.total} · ${s.blockersOpen} BLOCKERS OPEN · ${dl.text.toUpperCase()}`;
+  for (const h of $("scrim").querySelectorAll(".cat h4")) {
+    const cat = h.childNodes[0].textContent.trim();
+    const rows = s.rows.filter(r => r.category === cat);
+    const span = h.querySelector("span");
+    if (span) span.textContent = `${rows.filter(r=>DONE.has(r.status)).length} of ${rows.length}`;
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
