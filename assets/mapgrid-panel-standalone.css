@@ -1,0 +1,116 @@
+/* mapgrid-panel.css — styling for the standalone page.
+   When embedded in the marketing dashboard these class names already exist in
+   dashboard.css, so only the .mg-* rules below are additive. R2R tokens:
+   Archivo + Space Mono on a near-black canvas, client colour as --accent. */
+
+:root {
+  --bg: #0F0F12;
+  --card: #1B1B21;
+  --line: #2A2A32;
+  --ink: #FFFFFF;
+  --muted: #B4B4BE;
+  --accent: #17B4F0;
+  --up: #2ED47A;
+  --down: #FF6B5B;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono { font-family: 'Space Mono', ui-monospace, monospace; }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 72px; }
+
+/* header */
+.top {
+  border-bottom: 1px solid var(--line);
+  padding: 22px 0;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.top-l { display: flex; align-items: center; gap: 18px; }
+.top-l img { height: 34px; display: block; }
+.top-div { width: 1px; height: 30px; background: var(--line); }
+.top-chip { background: #fff; border-radius: 7px; padding: 7px 11px; display: flex; }
+.top-chip img { height: 26px; }
+.top-r { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted);
+  letter-spacing: 1.6px; text-transform: uppercase; text-align: right; }
+
+h1 { font-size: 34px; font-weight: 900; letter-spacing: -1px; line-height: 1.1; margin-bottom: 8px; }
+.lede { color: var(--muted); font-size: 15px; max-width: 720px; margin-bottom: 30px; }
+
+.section-h {
+  font-size: 11px; letter-spacing: 2.4px; text-transform: uppercase;
+  color: var(--accent); margin: 30px 0 12px;
+}
+
+/* keyword selector */
+.mg-kw { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+.mg-kwbtn {
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  background: var(--card); color: var(--muted);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 8px 16px; cursor: pointer; transition: .14s;
+}
+.mg-kwbtn:hover { color: var(--ink); border-color: #3d3d47; }
+.mg-kwbtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.mg-head { margin-bottom: 16px; }
+.mg-sub { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+
+/* map + side-by-side stats */
+.mg-split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 860px) { .mg-split { grid-template-columns: 1fr; } }
+
+.mg-mapwrap {
+  border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  background: var(--card); line-height: 0;
+}
+.mg-mapwrap img { width: 100%; height: auto; display: block; }
+
+/* KPI cards */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.kpi-label { font-size: 9.5px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); }
+.kpi-val { font-size: 28px; font-weight: 900; letter-spacing: -1px; line-height: 1.15; margin-top: 4px; }
+.kpi-val.up { color: var(--up); } .kpi-val.down { color: var(--down); }
+.kpi-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+/* distribution */
+.mg-drow { display: grid; grid-template-columns: 12px 74px 1fr auto;
+  align-items: center; gap: 10px; font-size: 12.5px; margin-bottom: 9px; }
+.mg-dot { width: 11px; height: 11px; border-radius: 50%; }
+.mg-dlabel { color: var(--muted); }
+.mg-dbar { background: #24242c; border-radius: 999px; height: 7px; overflow: hidden; }
+.mg-dbar i { display: block; height: 100%; border-radius: 999px; }
+.mg-dnum { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+
+.mg-note {
+  background: var(--card); border: 1px solid var(--line);
+  border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0;
+  padding: 14px 16px; font-size: 13px; color: var(--muted); margin: 24px 0;
+}
+.mg-note b { color: var(--ink); font-weight: 700; }
+
+.mg-chart { background: var(--card); border: 1px solid var(--line);
+  border-radius: 12px; padding: 12px; color: var(--muted); }
+.mg-trend { width: 100%; height: auto; display: block; }
+
+.mg-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.mg-table td { padding: 10px 4px; border-bottom: 1px solid var(--line); }
+.mg-table tr:last-child td { border-bottom: 0; }
+
+.foot { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 20px;
+  color: var(--muted); font-size: 11.5px; display: flex; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; }
