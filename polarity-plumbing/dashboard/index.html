@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Polarity Plumbing — Marketing Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/dashboard.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  // Everything client-specific lives here — dashboard.js is identical for every client.
+  window.DASHBOARD_CONFIG = {
+  "slug": "polarity-plumbing",
+  "name": "Polarity Plumbing",
+  "accent": "#17B4F0",
+  "logo": null,
+  "modules": {
+    "seo": {
+      "enabled": true
+    },
+    "paid_ads": {
+      "enabled": false
+    },
+    "social": {
+      "enabled": false
+    },
+    "leads_crm": {
+      "enabled": false
+    },
+    "gbp": {
+      "enabled": true
+    },
+    "geo": {
+      "enabled": true
+    },
+    "map_grid": {
+      "enabled": true
+    }
+  },
+  "supabaseUrl": "https://tjgrtrazyepvbcmmdhet.supabase.co",
+  "supabaseAnonKey": "sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8"
+};
+</script>
+</head>
+<body>
+<!-- dashboard.js renders the entire page (login gate, tabs, charts) into <body> -->
+<script type="module" src="../../assets/dashboard.js"></script>
+</body>
+</html>
