@@ -1,604 +1,566 @@
-// Marketing Dashboard — shared client-side engine.
-// One bundle for every client. Per-client differences come ONLY from
-// window.DASHBOARD_CONFIG, injected inline by provision_client.py into each client's
-// thin HTML shell. Never fork this file per client — fix it here and every client
-// inherits the fix, which is the whole point of the shared-table design.
-//
-// v1 scope: Overview + per-module KPI/trend/insights tabs, month archive picker,
-// Feedback tab, admin-only refresh button. Deliberately NOT built: Cobalt's
-// pin-anywhere chart beacons (kept to a simpler per-tab insights list instead) and
-// a supplier "workspace" (manual metrics / content plan) — add per-client only where
-// a partner actually co-owns a channel.
+/* Marketing Dashboard — shared engine, built to the Cobalt Constructions frame.
+   Identical for every client; everything client-specific arrives in
+   window.DASHBOARD_CONFIG from the per-client shell.
 
+   Pipeline (Cobalt's, deliberately):
+     checkSession() -> boot() -> loadData() -> applyMonth() -> renderAll()
+
+   MONTH ("YYYY-MM") is the ONLY scope control. No rolling windows, no day counts.
+   Every render function reads the arrays applyMonth() rebuilds, so each one is
+   month-agnostic and nothing renders itself out of band.
+
+   Security: Supabase Auth + RLS scoped to `authenticated`. Never StatiCrypt over a
+   page holding a publishable key — the key is fine, the RLS policy is the protection.
+*/
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CFG = window.DASHBOARD_CONFIG;
-if (!CFG) throw new Error('DASHBOARD_CONFIG missing — shell was not built correctly');
+const sb  = createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+const $   = (s, r = document) => r.querySelector(s);
+const $$  = (s, r = document) => [...r.querySelectorAll(s)];
 
-const supabase = createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+/* ---------------------------------------------------------------- modules */
+const ORDER  = ['overview','seo','map_grid','gbp','geo','paid_ads','social','leads_crm'];
+const LABEL  = { overview:'Overview', seo:'SEO', map_grid:'Map Pack Grid', gbp:'Google Business Profile',
+                 geo:'AI Visibility', paid_ads:'Paid Ads', social:'Social', leads_crm:'Leads & CRM' };
+/* Plain-English package names for the upsell modal — never a module key. */
+const SOLD_AS = { seo:'SEO reporting', map_grid:'Map pack grid tracking', gbp:'Google Business Profile reporting',
+                  geo:'AI visibility tracking', paid_ads:'Paid advertising management',
+                  social:'Organic social management', leads_crm:'Leads and CRM reporting' };
 
-const MODULE_ORDER = ['overview', 'seo', 'map_grid', 'paid_ads', 'social', 'leads_crm', 'gbp', 'geo'];
-const MODULE_LABEL = {
-  overview: 'Overview', seo: 'SEO', map_grid: 'Map Pack Grid', paid_ads: 'Paid Ads',
-  social: 'Social', leads_crm: 'Leads & CRM', gbp: 'Google Business Profile',
-  geo: 'AI Visibility',
-};
+const state = { role:null, tab:'overview', month:null, months:[] };
+let RAW = {}, V = {};
 
-const state = {
-  user: null,
-  clientRow: null,
-  role: null,        // 'admin' | 'editor' | 'viewer'
-  moduleScope: null, // string[] or ['all']
-  activeTab: 'overview',
-  period: 'current',       // 'current' | an mbr_archive.period_key
-  archivePeriods: [],
-  charts: {},
-};
+/* ---------------------------------------------------------------- helpers */
+const num = n => (n == null || Number.isNaN(n)) ? null : n;
+const fmt = (n, d = 0) => n == null ? '—' : Number(n).toLocaleString('en-AU',
+  { minimumFractionDigits:d, maximumFractionDigits:d });
+const money = n => n == null ? '—' : '$' + fmt(n, 0);
+const pct1  = n => n == null ? '—' : fmt(n, 1) + '%';
+/* Local date parts, never toISOString() — an early-morning AEST load slips a UTC day. */
+const ymd   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const monthOf = s => String(s).slice(0, 7);
+const monthName = m => new Date(m + '-01T00:00:00').toLocaleDateString('en-AU',
+  { month:'long', year:'numeric' });
+const sum = (a, k) => a.reduce((t, r) => t + (Number(r[k]) || 0), 0);
+const avg = (a, k) => { const v = a.map(r => Number(r[k])).filter(n => !Number.isNaN(n) && n !== 0);
+  return v.length ? v.reduce((x, y) => x + y, 0) / v.length : null; };
 
-const $ = (sel, el = document) => el.querySelector(sel);
-const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
-const fmt = (n) => { const v = Math.round(Number(n) || 0); return v.toLocaleString('en-AU'); };
-const pct = (cur, prev) => {
-  if (!prev) return cur ? 'new' : '—';
-  const p = ((cur - prev) / prev) * 100;
-  return `${p >= 0 ? '+' : '−'}${Math.abs(p).toFixed(0)}%`;
-};
-const monthBounds = (offset = 0) => {
-  const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + offset);
-  const from = d.toISOString().slice(0, 10);
-  const end = new Date(d); end.setUTCMonth(end.getUTCMonth() + 1); end.setUTCDate(0);
-  const to = end.toISOString().slice(0, 10);
-  return { from, to, label: d.toLocaleString('en-AU', { month: 'long', year: 'numeric', timeZone: 'UTC' }) };
-};
+function delta(cur, prev){
+  if (cur == null || prev == null || prev === 0) return { cls:'flat', txt:'—' };
+  const p = ((cur - prev) / Math.abs(prev)) * 100;
+  return { cls: p > 0.5 ? 'up' : p < -0.5 ? 'dn' : 'flat',
+           txt: (p > 0 ? '+' : '') + fmt(p, 1) + '%' };
+}
+const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 
-// ---------------------------------------------------------------------------
-// Auth gate
-// ---------------------------------------------------------------------------
+/* ---------------------------------------------------------------- charts */
+/* Hand-rolled SVG, no library. Must render while the section is visible — SVG needs a
+   real measured width — so charts re-run on tab change and on a debounced resize. */
+function lineChart(mount, { series, yfmt = fmt, invert = false, area = true }){
+  const W = Math.max(mount.clientWidth || 600, 260), H = 190, P = { t:12, r:12, b:24, l:42 };
+  const all = series.flatMap(s => s.data).filter(v => v != null);
+  if (!all.length) { mount.innerHTML = '<div class="empty">No data for this month yet.</div>'; return; }
+  let lo = Math.min(...all), hi = Math.max(...all);
+  if (lo === hi) { lo -= 1; hi += 1; }
+  const pad = (hi - lo) * 0.12; lo -= pad; hi += pad;
+  const n = Math.max(...series.map(s => s.data.length));
+  const X = i => P.l + (i / Math.max(n - 1, 1)) * (W - P.l - P.r);
+  const Y = v => { const t = (v - lo) / (hi - lo); return P.t + (invert ? t : 1 - t) * (H - P.t - P.b); };
+  let g = '';
+  for (let i = 0; i <= 4; i++){
+    const y = P.t + (i / 4) * (H - P.t - P.b), val = invert ? lo + (i/4)*(hi-lo) : hi - (i/4)*(hi-lo);
+    g += `<line x1="${P.l}" y1="${y}" x2="${W-P.r}" y2="${y}" stroke="var(--bd)" stroke-width="1"/>
+          <text x="${P.l-8}" y="${y+3.5}" text-anchor="end" font-family="Space Mono" font-size="9" fill="var(--ink3)">${yfmt(val)}</text>`;
+  }
+  let paths = '';
+  series.forEach(s => {
+    const pts = s.data.map((v, i) => v == null ? null : `${X(i)},${Y(v)}`).filter(Boolean);
+    if (!pts.length) return;
+    if (area) paths += `<path d="M${pts.join(' L')} L${X(s.data.length-1)},${H-P.b} L${X(0)},${H-P.b} Z" fill="${s.color}" opacity=".10"/>`;
+    paths += `<path d="M${pts.join(' L')}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  });
+  mount.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${g}${paths}</svg>`;
+}
 
-async function boot() {
+function sparkline(vals, colour){
+  const W = 200, H = 40, v = vals.filter(x => x != null);
+  if (v.length < 2) return '<svg viewBox="0 0 200 40"></svg>';
+  const lo = Math.min(...v), hi = Math.max(...v), r = (hi - lo) || 1;
+  const pts = vals.map((x, i) => x == null ? null :
+    `${(i/(vals.length-1))*W},${H - ((x-lo)/r)*(H-6) - 3}`).filter(Boolean);
+  return `<svg viewBox="0 0 ${W} ${H}"><path d="M${pts.join(' L')}" fill="none" stroke="${colour}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+/* ---------------------------------------------------------------- data */
+async function loadData(){
+  const id = RAW.client.id;
+  const since = new Date(); since.setMonth(since.getMonth() - 13);
+  const from = ymd(since);
+  const q = (t, dateCol) => { let b = sb.from(t).select('*').eq('client_id', id);
+    if (dateCol) b = b.gte(dateCol, from); return b; };
+
+  const [seo, gbp, rev, geo, paid, social, leads, ranks, scans, refresh] = await Promise.all([
+    q('md_seo_daily','date'), q('md_gbp_daily','date'), q('md_gbp_reviews'), q('md_geo_visibility'),
+    q('md_paid_daily','date'), q('md_social_daily','date'), q('md_leads_daily','date'),
+    q('md_rankings'), q('md_mapgrid_scans'), q('md_refresh_log'),
+  ]);
+  RAW.seo = seo.data || []; RAW.gbp = gbp.data || []; RAW.reviews = rev.data || [];
+  RAW.geo = geo.data || []; RAW.paid = paid.data || []; RAW.social = social.data || [];
+  RAW.leads = leads.data || []; RAW.rankings = ranks.data || [];
+  RAW.scans = scans.data || []; RAW.refresh = refresh.data || [];
+
+  if (RAW.scans.length){
+    const ids = RAW.scans.map(s => s.id);
+    const { data } = await sb.from('md_mapgrid_points').select('*').in('scan_id', ids);
+    RAW.points = data || [];
+  } else RAW.points = [];
+
+  /* Month list comes from every dated source, so a client with only one live module
+     still gets chips. Never derive it from a single table. */
+  const set = new Set();
+  [['seo','date'],['gbp','date'],['paid','date'],['social','date'],['leads','date'],
+   ['rankings','checked_at'],['scans','checked_at'],['geo','checked_at']]
+    .forEach(([k, c]) => (RAW[k] || []).forEach(r => r[c] && set.add(monthOf(r[c]))));
+  state.months = [...set].sort();
+  if (!state.months.length) state.months = [monthOf(ymd(new Date()))];
+  state.month = state.months[state.months.length - 1];
+}
+
+/* applyMonth() — the heart of it. Rebuild every view array for the selected month.
+   Order matters: filter -> arrays -> aggregates. */
+function applyMonth(){
+  const m = state.month, inM = (r, c) => r[c] && monthOf(r[c]) === m;
+  const prevM = state.months[state.months.indexOf(m) - 1] || null;
+  const inP = (r, c) => prevM && r[c] && monthOf(r[c]) === prevM;
+
+  V = {};
+  V.seo    = RAW.seo.filter(r => inM(r,'date'));
+  V.seoPrev= RAW.seo.filter(r => inP(r,'date'));
+  V.gbp    = RAW.gbp.filter(r => inM(r,'date'));
+  V.gbpPrev= RAW.gbp.filter(r => inP(r,'date'));
+  V.paid   = RAW.paid.filter(r => inM(r,'date'));
+  V.social = RAW.social.filter(r => inM(r,'date'));
+  V.leads  = RAW.leads.filter(r => inM(r,'date'));
+  V.geo    = RAW.geo.filter(r => inM(r,'checked_at'));
+
+  /* Rankings and scans are snapshots: take the latest ON OR BEFORE the selected month,
+     so a month with no scan shows the standing position rather than going blank. */
+  const upto = (arr, c) => arr.filter(r => r[c] && monthOf(r[c]) <= m)
+    .sort((a,b) => String(a[c]).localeCompare(String(b[c])));
+  const rk = upto(RAW.rankings,'checked_at');
+  V.rankAsOf = rk.length ? monthOf(rk[rk.length-1].checked_at) : null;
+  V.rankings = V.rankAsOf ? rk.filter(r => monthOf(r.checked_at) === V.rankAsOf) : [];
+  const sc = upto(RAW.scans,'checked_at');
+  V.scanAsOf = sc.length ? monthOf(sc[sc.length-1].checked_at) : null;
+  V.scans = V.scanAsOf ? sc.filter(r => monthOf(r.checked_at) === V.scanAsOf) : [];
+  /* Reviews are a running total, not a series — latest reading on or before the month. */
+  const rv = upto(RAW.reviews,'as_of');
+  V.reviews = rv.length ? rv[rv.length-1] : null;
+
+  const days = [...new Set(V.seo.map(r => r.date))].sort();
+  V.dates = days;
+  V.clicks      = days.map(d => sum(V.seo.filter(r => r.date === d), 'clicks'));
+  V.impressions = days.map(d => sum(V.seo.filter(r => r.date === d), 'impressions'));
+  V.sessions    = days.map(d => sum(V.seo.filter(r => r.date === d), 'sessions'));
+  V.position    = days.map(d => avg(V.seo.filter(r => r.date === d), 'avg_position'));
+
+  V.agg = {
+    clicks: sum(V.seo,'clicks'), impressions: sum(V.seo,'impressions'),
+    sessions: sum(V.seo,'sessions'), conversions: sum(V.seo,'conversions'),
+    position: avg(V.seo,'avg_position'),
+    calls: sum(V.gbp,'calls'), directions: sum(V.gbp,'direction_requests'),
+    gbpClicks: sum(V.gbp,'website_clicks'),
+    spend: sum(V.paid,'spend'), leads: sum(V.leads,'count'),
+  };
+  V.aggPrev = {
+    clicks: sum(V.seoPrev,'clicks'), impressions: sum(V.seoPrev,'impressions'),
+    sessions: sum(V.seoPrev,'sessions'), position: avg(V.seoPrev,'avg_position'),
+    calls: sum(V.gbpPrev,'calls'), directions: sum(V.gbpPrev,'direction_requests'),
+  };
+  V.prevMonth = prevM;
+}
+
+/* ---------------------------------------------------------------- render */
+const enabled = m => m === 'overview' || !!CFG.modules[m]?.enabled;
+const visible = () => ORDER.filter(m => m === 'overview' || CFG.modules[m]);
+
+function kpi(label, value, foot){
+  return `<div class="kpi"><span class="mlbl">${label}</span>
+    <div class="v tnum">${value}</div>${foot ? `<div class="fn">${foot}</div>` : ''}</div>`;
+}
+function chipFor(cur, prev){
+  const d = delta(cur, prev);
+  return `<span class="chip ${d.cls}">${d.txt}</span>`;
+}
+/* Callouts are derived from live values. Never hardcode one, and never leave a sentence
+   sitting beside a number it no longer describes. */
+function callout(sev, title, body){
+  return `<div class="callout ${sev}"><h4>${title}<span class="sig ${sev}">${
+    sev === 'bad' ? 'Action' : sev === 'warn' ? 'Watch' : 'Good'}</span></h4><p>${body}</p></div>`;
+}
+function emptyState(title, body){
+  return `<div class="empty"><b>${title}</b>${body}</div>`;
+}
+
+function renderMonthChips(){
+  const bar = $('#monthchips');
+  bar.innerHTML = state.months.map(m => {
+    const label = new Date(m + '-01T00:00:00').toLocaleDateString('en-AU', { month:'short', year:'2-digit' });
+    return `<button class="mchip" data-m="${m}" aria-pressed="${m === state.month}">${label}</button>`;
+  }).join('');
+}
+
+function renderTabs(){
+  const bar = $('#tabs');
+  bar.innerHTML = visible().map(m => {
+    const lock = !enabled(m);
+    return `<button class="tab${lock ? ' locked' : ''}" data-tab="${m}" role="tab"
+      aria-selected="${state.tab === m}">${LABEL[m]}</button>`;
+  }).join('');
+}
+
+/* A module the client has not bought stays VISIBLE and explains itself when clicked.
+   Jose 06/09/2026 — deliberately different from Cobalt, which deletes unsold sections.
+   The point is the upsell. Keyed off `enabled:false` ONLY: an enabled module with no
+   data yet gets an empty state instead, so a client never reads "not in your package"
+   about something they are paying for. */
+function showLock(mod){
+  const box = el(`<div class="lockwrap" role="dialog" aria-modal="true">
+    <div class="lockbox">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 10V7a6 6 0 1112 0v3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2h1zm2 0h8V7a4 4 0 10-8 0v3z"/></svg></div>
+      <span class="mlbl">Not in your current plan</span>
+      <h3>${LABEL[mod]}</h3>
+      <p>${SOLD_AS[mod] || LABEL[mod]} isn't part of your current package, so there's no
+         data to show here. If you'd like it added, have a word with your account manager.</p>
+      <button class="btn primary" data-close>Got it</button>
+    </div></div>`);
+  box.addEventListener('click', e => { if (e.target === box || e.target.hasAttribute('data-close')) box.remove(); });
+  document.addEventListener('keydown', function esc(e){
+    if (e.key === 'Escape'){ box.remove(); document.removeEventListener('keydown', esc); } });
+  document.body.appendChild(box);
+}
+
+function renderAll(){
+  renderMonthChips(); renderTabs();
+  const host = $('#panel');
+  host.innerHTML = ({
+    overview: viewOverview, seo: viewSeo, map_grid: viewMapGrid, gbp: viewGbp,
+    geo: viewGeo, paid_ads: viewPaid, social: viewSocial, leads_crm: viewLeads,
+  }[state.tab] || (() => emptyState('Unknown tab', 'Nothing to render.')))();
+  $('#monthlabel').textContent = monthName(state.month);
+  drawCharts();
+  $('#stamp').textContent = RAW.refresh?.length
+    ? 'Data as at ' + new Date(RAW.refresh.map(r => r.finished_at).filter(Boolean).sort().pop() || Date.now())
+        .toLocaleDateString('en-AU')
+    : 'No refresh recorded yet';
+}
+
+/* Charts render after innerHTML so their mounts have a measured width. */
+function drawCharts(){
+  $$('[data-chart]').forEach(m => {
+    const spec = JSON.parse(m.dataset.chart);
+    lineChart(m, { series: spec.series, invert: !!spec.invert,
+      yfmt: spec.yfmt === 'pos' ? (v => fmt(v,1)) : fmt });
+  });
+}
+
+/* ---------------------------------------------------------------- views */
+function head(eyebrow, h2, sub){
+  return `<p class="eyebrow">${eyebrow}</p><h2 class="h2">${h2}</h2><p class="sub">${sub}</p>`;
+}
+
+function viewOverview(){
+  const a = V.agg, p = V.aggPrev, on = m => enabled(m);
+  let out = head('Overview', `${monthName(state.month)}`,
+    `Everything ${CFG.name} is being measured on this month. Change the month above to rescope the whole dashboard.`);
+
+  const cards = [];
+  if (on('seo')) cards.push(
+    kpi('Clicks', fmt(a.clicks), `${chipFor(a.clicks, p.clicks)} vs ${V.prevMonth ? monthName(V.prevMonth) : 'no prior month'}`),
+    kpi('Impressions', fmt(a.impressions), chipFor(a.impressions, p.impressions)),
+    kpi('Avg position', a.position ? fmt(a.position,1) : '—', 'Lower is better'));
+  if (on('gbp')) cards.push(
+    kpi('Calls from profile', fmt(a.calls), chipFor(a.calls, p.calls)),
+    kpi('Direction requests', fmt(a.directions), chipFor(a.directions, p.directions)));
+  if (on('map_grid') && V.scans.length){
+    const best = V.scans.reduce((b, s) => (s.avg_rank != null && (b == null || s.avg_rank < b.avg_rank)) ? s : b, null);
+    cards.push(kpi('Map pack, best term', best?.avg_rank != null ? fmt(best.avg_rank,1) : 'Not ranking',
+      best ? best.keyword : ''));
+  }
+  if (on('paid_ads')) cards.push(kpi('Ad spend', money(a.spend)));
+  if (on('leads_crm')) cards.push(kpi('Leads', fmt(a.leads)));
+  out += cards.length ? `<div class="kpis">${cards.join('')}</div>`
+                      : emptyState('Nothing to report yet', 'No data has landed for this month.');
+
+  /* Derived commentary — every sentence switches on a live value. */
+  const notes = [];
+  if (on('seo') && !V.seo.length)
+    notes.push(callout('warn','Search data starts at launch',
+      `There is no Search Console or Analytics data for ${monthName(state.month)} because the website is not live yet. This fills in from the first day the site is published.`));
+  if (on('gbp') && !V.gbp.length)
+    notes.push(callout('warn','Google Business Profile not connected',
+      'We do not have access to the profile yet, so calls and direction requests cannot be reported. Granting access is the single thing that unblocks this tab.'));
+  if (on('map_grid') && V.scans.length){
+    const found = sum(V.scans,'found_points'), total = sum(V.scans,'total_points');
+    notes.push(found === 0
+      ? callout('bad','Not yet visible in the map pack',
+          `Across ${fmt(total)} measured points and ${V.scans.length} keyword${V.scans.length>1?'s':''}, the profile does not appear in the top results anywhere. That is the honest starting line and the number this work moves first.`)
+      : callout(found/total > .35 ? 'good' : 'warn','Map pack visibility',
+          `Ranking at ${fmt(found)} of ${fmt(total)} measured points across ${V.scans.length} keyword${V.scans.length>1?'s':''}.`));
+  }
+  if (on('gbp') && V.reviews && V.reviews.review_count === 0)
+    notes.push(callout('warn','No Google reviews yet',
+      'Reviews are the strongest signal for map pack position and the fastest thing to move. Every completed job is an opportunity to ask.'));
+  out += notes.join('');
+
+  /* Month on month, off the long series and independent of the selected month. */
+  if (on('seo') || on('gbp')){
+    const mom = [];
+    const series = (rows, dateCol, key, agg) => state.months.slice(-6).map(m => {
+      const r = rows.filter(x => x[dateCol] && monthOf(x[dateCol]) === m);
+      return r.length ? (agg === 'avg' ? avg(r, key) : sum(r, key)) : null; });
+    if (on('seo')) mom.push(momCard('Clicks', a.clicks, p.clicks, series(RAW.seo,'date','clicks')));
+    if (on('seo')) mom.push(momCard('Sessions', a.sessions, p.sessions, series(RAW.seo,'date','sessions')));
+    if (on('gbp')) mom.push(momCard('Calls', a.calls, p.calls, series(RAW.gbp,'date','calls')));
+    if (mom.filter(Boolean).length)
+      out += `<p class="eyebrow" style="margin-top:26px">Month on month</p><div class="momgrid">${mom.join('')}</div>`;
+  }
+  return out;
+}
+
+function momCard(label, cur, prev, vals){
+  return `<div class="momcard"><span class="mlbl">${label}</span>
+    <div class="v tnum">${fmt(cur)} ${chipFor(cur, prev)}</div>
+    <div class="cap">vs ${V.prevMonth ? monthName(V.prevMonth) : 'no prior month'}</div>
+    ${sparkline(vals, 'var(--accent)')}</div>`;
+}
+
+function viewSeo(){
+  let out = head('SEO', 'Search performance',
+    'Clicks, impressions and average position from Google Search Console, with the keywords we track.');
+  if (!V.seo.length && !V.rankings.length)
+    return out + emptyState('Nothing to report for this month',
+      `${CFG.name}'s website is not live yet, so there is no search data. Tracking starts the day it publishes.`);
+  const a = V.agg, p = V.aggPrev;
+  out += `<div class="kpis">
+    ${kpi('Clicks', fmt(a.clicks), chipFor(a.clicks, p.clicks))}
+    ${kpi('Impressions', fmt(a.impressions), chipFor(a.impressions, p.impressions))}
+    ${kpi('Sessions', fmt(a.sessions), chipFor(a.sessions, p.sessions))}
+    ${kpi('Avg position', a.position ? fmt(a.position,1) : '—', 'Lower is better')}</div>`;
+  if (V.dates.length) out += `<div class="card"><div class="cardhead">
+      <div><h3>Clicks and impressions</h3><p class="sub">Daily, ${monthName(state.month)}</p></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Clicks</span>
+        <span><i style="background:var(--ink3)"></i>Impressions</span></div></div>
+    <div data-chart='${JSON.stringify({series:[
+      {data:V.clicks, color:'var(--accent)'},{data:V.impressions, color:'var(--ink3)'}]})}'></div></div>`;
+  if (V.rankings.length){
+    const rows = V.rankings.slice().sort((x,y) => (x.position ?? 999) - (y.position ?? 999)).slice(0, 25);
+    out += `<div class="card"><div class="cardhead"><div><h3>Tracked keywords</h3>
+      <p class="sub">Positions as at ${monthName(V.rankAsOf)}</p></div></div>
+      <div class="tscroll"><table class="tbl"><thead><tr><th>Keyword</th><th>Position</th><th>Previous</th></tr></thead><tbody>
+      ${rows.map(r => { const pos = r.position, cls = pos == null ? 'out' : pos <= 3 ? 'win' : pos <= 10 ? 'mid' : 'out';
+        return `<tr><td>${r.keyword}</td><td><span class="rankpill ${cls}">${pos ?? '—'}</span></td>
+          <td class="tnum">${r.prev_position ?? '—'}</td></tr>`; }).join('')}
+      </tbody></table></div></div>`;
+  }
+  return out;
+}
+
+function viewMapGrid(){
+  let out = head('Map Pack Grid', 'Where the profile ranks across the service area',
+    'A grid of measurement points around the business. One ranking number hides the truth; the grid shows how far the profile’s pull actually reaches.');
+  if (!V.scans.length)
+    return out + emptyState('No scan yet',
+      'The first grid scan runs once the Google Business Profile is verified and we have access.');
+
+  const scans = V.scans.slice().sort((a,b) => (a.avg_rank ?? 999) - (b.avg_rank ?? 999));
+  const total = sum(scans,'total_points'), found = sum(scans,'found_points');
+  out += `<div class="kpis">
+    ${kpi('Keywords scanned', fmt(scans.length))}
+    ${kpi('Points ranking', `${fmt(found)} / ${fmt(total)}`, found === 0 ? 'Not yet in the pack' : '')}
+    ${kpi('Best average', scans[0]?.avg_rank != null ? fmt(scans[0].avg_rank,1) : '—', scans[0]?.keyword || '')}
+    ${kpi('Grid', scans[0] ? `${scans[0].grid_size}×${scans[0].grid_size}` : '—',
+        scans[0] ? `${scans[0].spacing_km} km spacing · ${scans[0].centre_label || ''}` : '')}</div>`;
+
+  out += `<div class="card"><div class="cardhead"><div><h3>By keyword</h3>
+    <p class="sub">Scanned ${V.scanAsOf ? monthName(V.scanAsOf) : ''}</p></div></div>
+    <div class="tscroll"><table class="tbl"><thead><tr>
+      <th>Keyword</th><th>Avg position</th><th>Points ranking</th><th>Share of voice</th></tr></thead><tbody>
+    ${scans.map(s => `<tr><td>${s.keyword}</td>
+      <td>${s.avg_rank != null ? `<span class="rankpill ${s.avg_rank<=3?'win':s.avg_rank<=10?'mid':'out'}">${fmt(s.avg_rank,1)}</span>` : '<span class="rankpill out">Not ranking</span>'}</td>
+      <td class="tnum">${fmt(s.found_points)} / ${fmt(s.total_points)}</td>
+      <td class="tnum">${s.solv != null ? pct1(s.solv) : '—'}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+
+  /* The grid itself, drawn from md_mapgrid_points — one cell per measured point. */
+  const first = scans[0];
+  const pts = (RAW.points || []).filter(p => p.scan_id === first.id);
+  if (pts.length){
+    const n = first.grid_size;
+    const cell = r => r == null ? 'var(--s3)' : r <= 3 ? 'var(--good)' : r <= 10 ? 'var(--warn)' : 'var(--bad)';
+    out += `<div class="card"><div class="cardhead"><div><h3>Grid — “${first.keyword}”</h3>
+      <p class="sub">Each square is a real search from that point on the map</p></div>
+      <div class="legend"><span><i style="background:var(--good)"></i>Top 3</span>
+        <span><i style="background:var(--warn)"></i>4–10</span>
+        <span><i style="background:var(--bad)"></i>11+</span>
+        <span><i style="background:var(--s3)"></i>Not found</span></div></div>
+      <div style="display:grid;grid-template-columns:repeat(${n},1fr);gap:5px;max-width:${n*46}px">
+      ${Array.from({length:n*n}, (_, i) => { const p = pts.find(x => x.idx === i) || {};
+        return `<div title="${p.rank != null ? 'Position ' + p.rank : 'Not in the top results here'}"
+          style="aspect-ratio:1;border-radius:6px;background:${cell(p.rank)};opacity:${p.rank==null?.45:1};
+          display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:#06212e;font-weight:700">${p.rank ?? ''}</div>`;
+      }).join('')}</div></div>`;
+  }
+  return out;
+}
+
+function viewGbp(){
+  let out = head('Google Business Profile', 'Calls, directions and reviews',
+    'What the profile actually produces — and the review position against the businesses holding the map pack.');
+  if (!V.gbp.length && !V.reviews)
+    return out + emptyState('No profile data yet',
+      'We do not have access to the Google Business Profile. Once access is granted this fills in from the first day.');
+  const a = V.agg, p = V.aggPrev;
+  out += `<div class="kpis">
+    ${kpi('Calls', fmt(a.calls), chipFor(a.calls, p.calls))}
+    ${kpi('Direction requests', fmt(a.directions), chipFor(a.directions, p.directions))}
+    ${kpi('Website clicks', fmt(a.gbpClicks))}
+    ${kpi('Reviews', V.reviews ? fmt(V.reviews.review_count) : '—',
+        V.reviews?.avg_rating ? fmt(V.reviews.avg_rating,1) + ' average' : '')}</div>`;
+  if (V.gbp.length){
+    const days = [...new Set(V.gbp.map(r => r.date))].sort();
+    out += `<div class="card"><div class="cardhead"><div><h3>Calls and direction requests</h3>
+      <p class="sub">Daily, ${monthName(state.month)}</p></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Calls</span>
+        <span><i style="background:var(--ink3)"></i>Directions</span></div></div>
+      <div data-chart='${JSON.stringify({series:[
+        {data:days.map(d => sum(V.gbp.filter(r=>r.date===d),'calls')), color:'var(--accent)'},
+        {data:days.map(d => sum(V.gbp.filter(r=>r.date===d),'direction_requests')), color:'var(--ink3)'}]})}'></div></div>`;
+  }
+  return out;
+}
+
+function viewGeo(){
+  let out = head('AI Visibility', 'Being named in AI answers',
+    'Whether the business gets recommended when someone asks an AI assistant, rather than typing a search.');
+  if (!V.geo.length)
+    return out + emptyState('Baseline not captured yet',
+      'AI visibility tracking starts alongside the first month of content.');
+  const named = V.geo.filter(r => r.result && /found|named|cited|yes/i.test(r.result)).length;
+  out += `<div class="kpis">
+    ${kpi('Prompts checked', fmt(V.geo.length))}
+    ${kpi('Named in answer', fmt(named), V.geo.length ? pct1(named / V.geo.length * 100) + ' of prompts' : '')}</div>
+    <div class="card"><div class="cardhead"><div><h3>Prompts</h3></div></div>
+    <div class="tscroll"><table class="tbl"><thead><tr><th>Prompt</th><th>Engine</th><th>Result</th></tr></thead><tbody>
+    ${V.geo.map(r => `<tr><td>${r.prompt || '—'}</td><td>${r.engine || '—'}</td><td>${r.result || '—'}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+  return out;
+}
+
+function viewPaid(){
+  let out = head('Paid Ads', 'Advertising performance', 'Spend, clicks and leads by platform.');
+  if (!V.paid.length) return out + emptyState('No ad data for this month', 'Nothing has been spent in this period.');
+  out += `<div class="kpis">
+    ${kpi('Spend', money(V.agg.spend))}
+    ${kpi('Clicks', fmt(sum(V.paid,'clicks')))}
+    ${kpi('Leads', fmt(sum(V.paid,'leads')))}
+    ${kpi('Cost per lead', sum(V.paid,'leads') ? money(V.agg.spend / sum(V.paid,'leads')) : '—')}</div>`;
+  return out;
+}
+
+function viewSocial(){
+  let out = head('Social', 'Organic social', 'Reach, engagement and follower growth by platform.');
+  if (!V.social.length) return out + emptyState('No social data for this month', 'Nothing recorded in this period.');
+  const plats = [...new Set(V.social.map(r => r.platform))];
+  out += `<div class="kpis">${plats.map(p => { const rows = V.social.filter(r => r.platform === p);
+    const latest = rows.slice().sort((a,b) => String(a.date).localeCompare(String(b.date))).pop();
+    return kpi(p, fmt(latest?.followers), 'followers, current'); }).join('')}</div>`;
+  return out;
+}
+
+function viewLeads(){
+  let out = head('Leads & CRM', 'Enquiries', 'Where enquiries came from this month.');
+  if (!V.leads.length) return out + emptyState('No leads recorded', 'Nothing has come through in this period.');
+  const bySrc = {}; V.leads.forEach(r => bySrc[r.source || 'Unknown'] = (bySrc[r.source||'Unknown']||0) + Number(r.count||0));
+  out += `<div class="kpis">${Object.entries(bySrc).map(([s,n]) => kpi(s, fmt(n))).join('')}</div>`;
+  return out;
+}
+
+/* ---------------------------------------------------------------- shell + boot */
+function renderShell(){
+  document.documentElement.style.setProperty('--accent', CFG.accent || '#17B4F0');
   document.title = `${CFG.name} — Marketing Dashboard`;
-  document.documentElement.style.setProperty('--accent', CFG.accent || '#1E9E6A');
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) return afterLogin(session);
-  renderGate();
+  document.body.innerHTML = `
+  <header class="top"><div class="wrap topin">
+    ${CFG.logo ? `<img class="logo" src="../../assets/${CFG.logo}" alt="${CFG.name}">` : ''}
+    <span class="name">${CFG.name}</span>
+    <span class="spacer"></span>
+    <span class="stamp" id="stamp"></span>
+    <button class="btn" id="signout">Sign out</button>
+  </div></header>
+  <div class="team"><div class="wrap teamin">
+    <span class="mlbl">Delivered by</span><span style="font-weight:700;font-size:13px">Ready to Rank</span>
+    <span class="spacer"></span><span class="mlbl" id="monthlabel"></span>
+  </div></div>
+  <nav class="tabs"><div class="wrap tabsin" id="tabs" role="tablist"></div></nav>
+  <div class="monthbar"><div class="wrap monthin" id="monthchips"></div></div>
+  <main><div class="wrap" id="panel"></div></main>
+  <footer class="foot"><div class="wrap footin">
+    <span>${CFG.name} · prepared by Ready to Rank</span>
+    <span>Sources: SE Ranking · Google Search Console · GA4 · Google Business Profile</span>
+  </div></footer>`;
+
+  $('#tabs').addEventListener('click', e => {
+    const b = e.target.closest('.tab'); if (!b) return;
+    const m = b.dataset.tab;
+    if (!enabled(m)) return showLock(m);      /* locked = upsell, not an error */
+    state.tab = m; history.replaceState(null, '', '#' + m); renderAll();
+  });
+  $('#monthchips').addEventListener('click', e => {
+    const b = e.target.closest('.mchip'); if (!b) return;
+    state.month = b.dataset.m; applyMonth(); renderAll();
+  });
+  $('#signout').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+
+  let t; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(drawCharts, 180); });
 }
 
-function renderGate(err) {
-  document.body.innerHTML = `
-    <div class="gate"><div class="gate-card">
-      <img src="../assets/r2r-logo.png" alt="Ready to Rank">
-      <h1>${CFG.name} — sign in</h1>
-      <form id="login-form">
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Password" required>
-        <button type="submit">Sign in</button>
-      </form>
-      ${err ? `<div class="gate-err">${err}</div>` : ''}
-    </div></div>`;
-  $('#login-form').addEventListener('submit', async (e) => {
+function renderGate(msg){
+  document.documentElement.style.setProperty('--accent', CFG.accent || '#17B4F0');
+  document.body.innerHTML = `<div class="gate"><form class="gate-card" id="gf">
+    <h1>${CFG.name}</h1><p>Marketing dashboard — sign in to continue.</p>
+    <input type="email" id="email" placeholder="Email" autocomplete="username" required>
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+    <button type="submit">Sign in</button>
+    <div class="gate-err">${msg || ''}</div></form></div>`;
+  $('#gf').addEventListener('submit', async e => {
     e.preventDefault();
-    const email = $('#email').value.trim(), password = $('#password').value;
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return renderGate(error.message);
-    afterLogin(data.session);
+    const { error } = await sb.auth.signInWithPassword({
+      email: $('#email').value.trim(), password: $('#password').value });
+    if (error) return $('.gate-err').textContent = error.message;
+    start();
   });
 }
 
-async function afterLogin(session) {
-  state.user = session.user;
-  const { data: clientRow, error: cErr } = await supabase
-    .from('md_clients').select('*').eq('slug', CFG.slug).single();
-  if (cErr || !clientRow) return renderGate('Could not load this client.');
-  state.clientRow = clientRow;
+async function start(){
+  const { data: client } = await sb.from('md_clients').select('*').eq('slug', CFG.slug).single();
+  if (!client) return renderGate('This account cannot see this dashboard.');
+  RAW.client = client;
+  const { data: access } = await sb.from('md_client_access').select('role, modules')
+    .eq('client_id', client.id).maybeSingle();
+  state.role = access?.role || 'viewer';
 
-  const { data: access, error: aErr } = await supabase
-    .from('md_client_access').select('role, modules')
-    .eq('client_id', clientRow.id).eq('user_id', state.user.id).maybeSingle();
-  if (aErr || !access) return renderGate('You do not have access to this dashboard.');
-  state.role = access.role;
-  state.moduleScope = access.modules || ['all'];
-
-  const { data: archive } = await supabase
-    .from('md_mbr_archive').select('period_key').eq('client_id', clientRow.id)
-    .order('period_key', { ascending: false });
-  state.archivePeriods = (archive || []).map(r => r.period_key);
-
+  await loadData();
+  applyMonth();
   renderShell();
+  const h = (location.hash || '').replace('#','');
+  if (h && visible().includes(h) && enabled(h)) state.tab = h;
+  renderAll();
 }
 
-function canSee(moduleKey) {
-  if (state.role === 'admin') return true;
-  return state.moduleScope.includes('all') || state.moduleScope.includes(moduleKey);
-}
-
-// ---------------------------------------------------------------------------
-// Shell + tabs
-// ---------------------------------------------------------------------------
-
-function renderShell() {
-  const enabledModules = MODULE_ORDER.filter(m =>
-    m === 'overview' || (CFG.modules[m]?.enabled && canSee(m)));
-
-  document.body.innerHTML = `
-    <div class="tabbar"><div class="wrap" style="display:flex;align-items:center">
-      <div id="tabs" class="tabs"></div>
-      <div class="periodbar">
-        <select id="period-select"></select>
-        ${state.role === 'admin' ? '<button id="refresh-btn" class="admin-refresh">Refresh data</button>' : ''}
-      </div>
-    </div></div>
-    <div class="cover"><div class="wrap">
-      <div class="logo-wrap"><img class="logo" src="../assets/${CFG.logo}" alt="${CFG.name}"></div>
-      <h1>${CFG.name} <span>Performance</span></h1>
-      <p class="sub">Live marketing dashboard — ${state.role === 'admin' ? 'admin view' : 'client view'}.</p>
-    </div></div>
-    <div class="wrap"><div id="tabpanel"></div>
-      <footer><div>Prepared by <b>Ready to Rank</b> · readytorank.com.au</div>
-        <div>${CFG.name} · Generated ${new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Melbourne' })}</div></footer>
-    </div>`;
-
-  document.documentElement.style.setProperty('--accent', CFG.accent || '#1E9E6A');
-
-  const tabsEl = $('#tabs');
-  tabsEl.innerHTML = enabledModules.map(m =>
-    `<div class="tab${m === state.activeTab ? ' active' : ''}" data-tab="${m}">${MODULE_LABEL[m]}</div>`
-  ).join('') + `<div class="tab" data-tab="feedback">Feedback</div>`;
-  tabsEl.addEventListener('click', (e) => {
-    const t = e.target.closest('.tab'); if (!t) return;
-    state.activeTab = t.dataset.tab;
-    // keep the tab deep-linkable so a Slack message can point straight at the SEO tab
-    history.replaceState(null, '', '#' + state.activeTab);
-    $$('.tab', tabsEl).forEach(x => x.classList.toggle('active', x === t));
-    renderTab();
-  });
-
-  const periodSel = $('#period-select');
-  periodSel.innerHTML = `<option value="current">Current</option>` +
-    state.archivePeriods.map(p => `<option value="${p}">${p}</option>`).join('');
-  periodSel.addEventListener('change', () => { state.period = periodSel.value; renderTab(); });
-
-  const refreshBtn = $('#refresh-btn');
-  if (refreshBtn) refreshBtn.addEventListener('click', onAdminRefresh);
-
-  const hashTab = (location.hash || '').replace('#', '');
-  if (hashTab && (enabledModules.includes(hashTab) || hashTab === 'feedback')) {
-    state.activeTab = hashTab;
-    $$('.tab', tabsEl).forEach(x => x.classList.toggle('active', x.dataset.tab === hashTab));
-  }
-  if (state.activeTab !== 'feedback' && !enabledModules.includes(state.activeTab)) state.activeTab = 'overview';
-  renderTab();
-}
-
-async function onAdminRefresh() {
-  const btn = $('#refresh-btn');
-  btn.disabled = true; btn.textContent = 'Refreshing…';
-  const { error } = await supabase.functions.invoke('dashboard-refresh', {
-    body: { client_id: state.clientRow.id },
-  });
-  btn.disabled = false;
-  btn.textContent = error ? 'Refresh failed — retry' : 'Refreshed ✓';
-  setTimeout(() => { if (btn) btn.textContent = 'Refresh data'; }, 4000);
-  if (!error) renderTab();
-}
-
-async function renderTab() {
-  const panel = $('#tabpanel');
-  panel.innerHTML = `<div class="empty-tab">Loading…</div>`;
-  try {
-    if (state.activeTab === 'overview') return panel.replaceChildren(await renderOverview());
-    if (state.activeTab === 'feedback') return panel.replaceChildren(await renderFeedback());
-    if (state.period !== 'current') return panel.replaceChildren(await renderArchivedModule(state.activeTab));
-    const renderer = { seo: renderSeo, map_grid: renderMapGrid, paid_ads: renderPaid,
-      social: renderSocial, leads_crm: renderLeads, gbp: renderGbp, geo: renderGeo }[state.activeTab];
-    panel.replaceChildren(renderer ? await renderer() : emptyEl('Unknown tab.'));
-  } catch (e) {
-    console.error(e);
-    panel.replaceChildren(emptyEl('Could not load this tab — check the console.'));
-  }
-}
-
-function emptyEl(msg) { const d = document.createElement('div'); d.className = 'empty-tab'; d.textContent = msg; return d; }
-function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
-
-function kpiCard(label, cur, prev) {
-  const up = cur >= (prev || 0);
-  return `<div class="kpi"><div class="kpi-label">${label}</div>
-    <div class="kpi-val">${fmt(cur)}</div>
-    <div class="kpi-delta ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${pct(cur, prev)} <span style="color:var(--mut);font-weight:600">vs last month</span></div>
-  </div>`;
-}
-
-function lineChart(canvas, labels, series) {
-  return new Chart(canvas, {
-    type: 'line',
-    data: { labels, datasets: series.map((s, i) => ({
-      label: s.label, data: s.data, borderColor: i === 0 ? CFG.accent : 'var(--blue)'.replace('var(--blue)', '#17B4F0'),
-      backgroundColor: 'transparent', tension: .35, pointRadius: 0, borderWidth: 2,
-    })) },
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#cfe0d8' } } },
-      scales: { x: { grid: { display: false } }, y: { grid: { color: '#22332B' }, beginAtZero: true } } },
-  });
-}
-
-async function insightsPanel(moduleKey) {
-  const { data: rows } = await supabase.from('md_insights').select('*')
-    .eq('client_id', state.clientRow.id).eq('module', moduleKey)
-    .order('created_at', { ascending: false }).limit(10);
-  const list = (rows || []).map(r => `<div class="insight-item">
-      <div class="meta">${new Date(r.created_at).toLocaleDateString('en-AU')}</div>${r.body || ''}</div>`).join('')
-    || `<div class="insight-item" style="color:var(--mut)">No insights pinned yet.</div>`;
-  const canWrite = state.role === 'admin' || state.role === 'editor';
-  return `<div class="section-h mono">Insights</div><div class="insights">${list}</div>
-    ${canWrite ? `<div class="insight-form"><textarea id="insight-body" placeholder="Add a note for whoever looks at this next…"></textarea>
-      <button id="insight-submit">Post</button></div>` : ''}`;
-}
-function wireInsightsForm(moduleKey, panel) {
-  const btn = $('#insight-submit', panel); if (!btn) return;
-  btn.addEventListener('click', async () => {
-    const body = $('#insight-body', panel).value.trim(); if (!body) return;
-    await supabase.from('md_insights').insert({ client_id: state.clientRow.id, module: moduleKey, author_id: state.user.id, body });
-    renderTab();
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Overview
-// ---------------------------------------------------------------------------
-
-async function renderOverview() {
-  const cur = monthBounds(0), prev = monthBounds(-1);
-  const tiles = [];
-  const mods = MODULE_ORDER.filter(m => m !== 'overview' && CFG.modules[m]?.enabled && canSee(m));
-  for (const m of mods) {
-    if (m === 'seo') { const r = await overviewRankings(); if (r) tiles.push(r); }
-    const headline = { seo: overviewSeo, paid_ads: overviewPaid, social: overviewSocial,
-      leads_crm: overviewLeads, gbp: overviewGbp, geo: overviewGeo }[m];
-    if (headline) tiles.push(await headline(cur, prev));
-  }
-  const wrap = el(`<div>
-    <div class="section-h mono">This month vs last — ${cur.label}</div>
-    <div class="kpis">${tiles.join('')}</div>
-  </div>`);
-  return wrap;
-}
-// Every overview tile must distinguish "we measured zero" from "nothing is connected".
-// A tile that shows 0 for an unconnected source is a lie the client can't detect.
-async function hasRows(table) {
-  const { count } = await supabase.from(table).select('*', { count: 'exact', head: true })
-    .eq('client_id', state.clientRow.id);
-  return (count || 0) > 0;
-}
-function pendingTile(label) {
-  return `<div class="kpi" style="--c:var(--mut)"><div class="kpi-label">${label}</div>
-    <div class="kpi-val" style="font-size:19px;color:var(--mut)">Not connected</div>
-    <div class="kpi-sub">no data source linked yet</div></div>`;
-}
-async function overviewSeo(cur, prev) {
-  if (!(await hasRows('md_seo_daily'))) return pendingTile('Organic sessions');
-  const c = await sumSeo(cur), p = await sumSeo(prev);
-  return kpiCard('Organic sessions', c.sessions, p.sessions);
-}
-async function overviewPaid(cur, prev) {
-  if (!(await hasRows('md_paid_daily'))) return pendingTile('Ad leads');
-  const c = await sumPaid(cur), p = await sumPaid(prev);
-  return kpiCard('Ad leads', c.leads, p.leads);
-}
-async function overviewSocial(cur, prev) {
-  if (!(await hasRows('md_social_daily'))) return pendingTile('Social reach');
-  const c = await sumSocial(cur), p = await sumSocial(prev);
-  return kpiCard('Social reach', c.reach, p.reach);
-}
-async function overviewLeads(cur, prev) {
-  if (!(await hasRows('md_leads_daily'))) return pendingTile('Total leads');
-  const c = await sumLeads(cur), p = await sumLeads(prev);
-  return kpiCard('Total leads', c.count, p.count);
-}
-async function overviewGbp(cur, prev) {
-  if (!(await hasRows('md_gbp_daily'))) return pendingTile('GBP calls');
-  const c = await sumGbp(cur), p = await sumGbp(prev);
-  return kpiCard('GBP calls', c.calls, p.calls);
-}
-async function overviewGeo() {
-  const { data } = await supabase.from('md_geo_visibility').select('result')
-    .eq('client_id', state.clientRow.id).order('checked_at', { ascending: false }).limit(25);
-  if (!data || !data.length) return pendingTile('AI visibility');
-  const yes = data.filter(r => r.result === 'yes').length;
-  return `<div class="kpi"><div class="kpi-label">AI visibility (latest check)</div>
-    <div class="kpi-val">${yes}/${data.length}</div>
-    <div class="kpi-sub">checks returning a clear brand mention</div></div>`;
-}
-// SEO is the one module that can be half-live: rankings present, traffic not. Surface
-// the rankings headline on the overview even when GSC/GA4 aren't connected.
-async function overviewRankings() {
-  const { data: latest } = await supabase.from('md_rankings').select('checked_at')
-    .eq('client_id', state.clientRow.id).order('checked_at', { ascending: false }).limit(1);
-  if (!latest || !latest.length) return '';
-  const { data } = await supabase.from('md_rankings').select('position')
-    .eq('client_id', state.clientRow.id).eq('checked_at', latest[0].checked_at);
-  const ranked = (data || []).filter(r => r.position != null);
-  const top10 = ranked.filter(r => r.position <= 10).length;
-  return `<div class="kpi"><div class="kpi-label">Keywords in top 10</div>
-    <div class="kpi-val">${top10}</div>
-    <div class="kpi-sub">of ${ranked.length} ranking · ${(data || []).length} tracked · ${latest[0].checked_at}</div></div>`;
-}
-
-// ---------------------------------------------------------------------------
-// Per-module fetch + render
-// ---------------------------------------------------------------------------
-
-async function sumSeo(range) {
-  const { data } = await supabase.from('md_seo_daily').select('sessions,clicks,impressions')
-    .eq('client_id', state.clientRow.id).gte('date', range.from).lte('date', range.to);
-  return (data || []).reduce((a, r) => ({ sessions: a.sessions + (r.sessions || 0),
-    clicks: a.clicks + (r.clicks || 0), impressions: a.impressions + (r.impressions || 0) }),
-    { sessions: 0, clicks: 0, impressions: 0 });
-}
-async function renderSeo() {
-  const cur = monthBounds(0), prev = monthBounds(-1);
-  const c = await sumSeo(cur), p = await sumSeo(prev);
-  const { data: daily } = await supabase.from('md_seo_daily').select('date,sessions,clicks')
-    .eq('client_id', state.clientRow.id).gte('date', cur.from).lte('date', cur.to).order('date');
-
-  // A source that isn't connected must NOT render as "0" — a fabricated zero reads as
-  // real bad news and nobody thinks to question it. This is the exact failure mode that
-  // had Cobalt reporting 0 leads against live spend for two weeks. No rows = say so.
-  const hasSeoTraffic = (daily || []).length > 0;
-  const kpis = hasSeoTraffic
-    ? `${kpiCard('Organic sessions', c.sessions, p.sessions)}
-       ${kpiCard('Clicks (GSC)', c.clicks, p.clicks)}
-       ${kpiCard('Impressions (GSC)', c.impressions, p.impressions)}`
-    : notConnectedCard('Organic traffic', 'Search Console / GA4 are not yet connected for this client — no traffic data is being collected. This is a missing connection, not a result of zero.');
-
-  // Rankings: take the LATEST check date only, then sort by position. Ordering by
-  // checked_at and slicing would silently return an arbitrary subset of one day's rows.
-  const { data: latest } = await supabase.from('md_rankings').select('checked_at')
-    .eq('client_id', state.clientRow.id).order('checked_at', { ascending: false }).limit(1);
-  let rankings = [];
-  if (latest && latest.length) {
-    const { data } = await supabase.from('md_rankings').select('*')
-      .eq('client_id', state.clientRow.id).eq('checked_at', latest[0].checked_at)
-      .order('position', { ascending: true, nullsFirst: false });
-    rankings = data || [];
-  }
-  const ranked = rankings.filter(r => r.position != null);
-  const top10 = ranked.filter(r => r.position <= 10).length;
-
-  const wrap = el(`<div>
-    <div class="section-h mono">SEO — ${cur.label}</div>
-    <div class="kpis">${kpis}</div>
-    ${hasSeoTraffic ? `<div class="section-h mono">Sessions trend</div>
-      <div class="chart-card"><div class="chart-box"><canvas id="seo-trend"></canvas></div></div>` : ''}
-    <div class="section-h mono">Rankings${latest && latest.length ? ` — checked ${latest[0].checked_at}` : ''}</div>
-    <div class="kpis" style="margin-bottom:14px">
-      <div class="kpi"><div class="kpi-label">Keywords tracked</div><div class="kpi-val">${rankings.length}</div></div>
-      <div class="kpi"><div class="kpi-label">Ranking in top 100</div><div class="kpi-val">${ranked.length}</div></div>
-      <div class="kpi"><div class="kpi-label">In top 10</div><div class="kpi-val">${top10}</div></div>
-    </div>
-    <div class="card">${rankingsTable(rankings)}</div>
-    ${await insightsPanel('seo')}
-  </div>`);
-  queueMicrotask(() => {
-    if (hasSeoTraffic) {
-      lineChart($('#seo-trend', wrap), (daily || []).map(r => r.date.slice(5)),
-        [{ label: 'Sessions', data: (daily || []).map(r => r.sessions) }]);
-    }
-    wireInsightsForm('seo', wrap);
-  });
-  return wrap;
-}
-
-function notConnectedCard(label, why) {
-  return `<div class="kpi" style="grid-column:1/-1;--c:var(--coral)">
-    <div class="kpi-label">${label}</div>
-    <div class="kpi-val" style="font-size:20px;color:var(--mut)">Not connected</div>
-    <div class="kpi-sub">${why}</div></div>`;
-}
-
-function rankingsTable(rows) {
-  if (!rows || !rows.length) return `<p class="note">No ranking checks recorded yet.</p>`;
-  return rows.map(r => {
-    const moved = r.position != null && r.prev_position != null ? r.prev_position - r.position : null;
-    const chip = moved === null ? ''
-      : moved > 0 ? `<span style="color:var(--green);font-weight:800">▲ ${moved}</span>`
-      : moved < 0 ? `<span style="color:var(--coral);font-weight:800">▼ ${Math.abs(moved)}</span>`
-      : `<span style="color:var(--mut)">—</span>`;
-    // position null = not in the top 100. Never render this as 0 or as a rank.
-    const pos = r.position == null
-      ? `<span style="color:var(--mut)">not in top 100</span>`
-      : `<b>#${r.position}</b>`;
-    return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;
-      border-bottom:1px dashed var(--line);padding:9px 0;font-size:13.5px">
-      <span>${r.keyword}</span><span style="display:flex;gap:10px;align-items:baseline">${pos}${chip}</span></div>`;
-  }).join('');
-}
-
-async function sumPaid(range) {
-  const { data } = await supabase.from('md_paid_daily').select('spend,leads,clicks')
-    .eq('client_id', state.clientRow.id).gte('date', range.from).lte('date', range.to);
-  return (data || []).reduce((a, r) => ({ spend: a.spend + Number(r.spend || 0),
-    leads: a.leads + (r.leads || 0), clicks: a.clicks + (r.clicks || 0) }), { spend: 0, leads: 0, clicks: 0 });
-}
-async function renderPaid() {
-  const cur = monthBounds(0), prev = monthBounds(-1);
-  const c = await sumPaid(cur), p = await sumPaid(prev);
-  const { data: daily } = await supabase.from('md_paid_daily').select('date,spend,leads')
-    .eq('client_id', state.clientRow.id).gte('date', cur.from).lte('date', cur.to).order('date');
-  const byDate = {};
-  (daily || []).forEach(r => { byDate[r.date] = byDate[r.date] || { spend: 0, leads: 0 };
-    byDate[r.date].spend += Number(r.spend || 0); byDate[r.date].leads += r.leads || 0; });
-  const dates = Object.keys(byDate).sort();
-  const wrap = el(`<div>
-    <div class="section-h mono">Paid Ads — ${cur.label}</div>
-    <div class="kpis">
-      ${kpiCard('Spend', c.spend, p.spend)}
-      ${kpiCard('Leads', c.leads, p.leads)}
-      ${kpiCard('Cost per lead', c.leads ? c.spend / c.leads : 0, p.leads ? p.spend / p.leads : 0)}
-    </div>
-    <div class="section-h mono">Spend vs leads</div>
-    <div class="chart-card"><div class="chart-box"><canvas id="paid-trend"></canvas></div></div>
-    ${await insightsPanel('paid_ads')}
-  </div>`);
-  queueMicrotask(() => {
-    lineChart($('#paid-trend', wrap), dates.map(d => d.slice(5)),
-      [{ label: 'Spend', data: dates.map(d => byDate[d].spend) }, { label: 'Leads', data: dates.map(d => byDate[d].leads) }]);
-    wireInsightsForm('paid_ads', wrap);
-  });
-  return wrap;
-}
-
-async function sumSocial(range) {
-  const { data } = await supabase.from('md_social_daily').select('reach,engagement')
-    .eq('client_id', state.clientRow.id).gte('date', range.from).lte('date', range.to);
-  return (data || []).reduce((a, r) => ({ reach: a.reach + (r.reach || 0), engagement: a.engagement + (r.engagement || 0) }),
-    { reach: 0, engagement: 0 });
-}
-async function renderSocial() {
-  const cur = monthBounds(0), prev = monthBounds(-1);
-  const c = await sumSocial(cur), p = await sumSocial(prev);
-  const { data: posts } = await supabase.from('md_social_posts').select('*')
-    .eq('client_id', state.clientRow.id).order('reach', { ascending: false }).limit(6);
-  const postsHtml = (posts || []).map(p => `<div class="card">
-    <div class="note">${p.platform} · ${p.post_date}</div>
-    <div style="font-weight:700;font-size:13.5px;margin:6px 0">${(p.caption || '').slice(0, 90)}</div>
-    <div class="note">Reach ${fmt(p.reach)} · ${fmt(p.likes)} likes · ${fmt(p.comments)} comments</div></div>`).join('');
-  const wrap = el(`<div>
-    <div class="section-h mono">Social — ${cur.label}</div>
-    <div class="kpis">${kpiCard('Reach', c.reach, p.reach)}${kpiCard('Engagement', c.engagement, p.engagement)}</div>
-    <div class="section-h mono">Top posts</div>
-    <div class="grid2" style="grid-template-columns:repeat(3,1fr)">${postsHtml || '<p class="note">No posts recorded yet.</p>'}</div>
-    ${await insightsPanel('social')}
-  </div>`);
-  queueMicrotask(() => wireInsightsForm('social', wrap));
-  return wrap;
-}
-
-async function sumLeads(range) {
-  const { data } = await supabase.from('md_leads_daily').select('count')
-    .eq('client_id', state.clientRow.id).gte('date', range.from).lte('date', range.to);
-  return { count: (data || []).reduce((a, r) => a + (r.count || 0), 0) };
-}
-async function renderLeads() {
-  const cur = monthBounds(0), prev = monthBounds(-1);
-  const c = await sumLeads(cur), p = await sumLeads(prev);
-  const { data: bySource } = await supabase.from('md_leads_daily').select('source,count')
-    .eq('client_id', state.clientRow.id).gte('date', cur.from).lte('date', cur.to);
-  const bySrc = {}; (bySource || []).forEach(r => { bySrc[r.source] = (bySrc[r.source] || 0) + r.count; });
-  const rows = Object.entries(bySrc).map(([s, n]) => `<div class="row" style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:8px 0"><span>${s}</span><span>${fmt(n)}</span></div>`).join('');
-  const wrap = el(`<div>
-    <div class="section-h mono">Leads & CRM — ${cur.label}</div>
-    <div class="kpis">${kpiCard('Total leads', c.count, p.count)}</div>
-    <div class="section-h mono">By source</div><div class="card">${rows || '<p class="note">No leads recorded yet.</p>'}</div>
-    ${await insightsPanel('leads_crm')}
-  </div>`);
-  queueMicrotask(() => wireInsightsForm('leads_crm', wrap));
-  return wrap;
-}
-
-async function sumGbp(range) {
-  const { data } = await supabase.from('md_gbp_daily').select('calls,direction_requests,website_clicks')
-    .eq('client_id', state.clientRow.id).gte('date', range.from).lte('date', range.to);
-  return (data || []).reduce((a, r) => ({ calls: a.calls + (r.calls || 0),
-    direction_requests: a.direction_requests + (r.direction_requests || 0),
-    website_clicks: a.website_clicks + (r.website_clicks || 0) }), { calls: 0, direction_requests: 0, website_clicks: 0 });
-}
-async function renderGbp() {
-  const cur = monthBounds(0), prev = monthBounds(-1);
-  const c = await sumGbp(cur), p = await sumGbp(prev);
-  const { data: rev } = await supabase.from('md_gbp_reviews').select('*')
-    .eq('client_id', state.clientRow.id).order('as_of', { ascending: false }).limit(1);
-  const r = (rev || [])[0];
-  const wrap = el(`<div>
-    <div class="section-h mono">Google Business Profile — ${cur.label}</div>
-    <div class="kpis">
-      ${kpiCard('Calls', c.calls, p.calls)}
-      ${kpiCard('Direction requests', c.direction_requests, p.direction_requests)}
-      ${kpiCard('Website clicks', c.website_clicks, p.website_clicks)}
-      ${r ? `<div class="kpi"><div class="kpi-label">Reviews</div><div class="kpi-val">${r.review_count}</div><div class="kpi-sub">avg rating ${r.avg_rating ?? '—'}</div></div>` : ''}
-    </div>
-    ${await insightsPanel('gbp')}
-  </div>`);
-  queueMicrotask(() => wireInsightsForm('gbp', wrap));
-  return wrap;
-}
-
-// Map Pack Grid. The panel itself lives in mapgrid-panel.js and is shared with the
-// standalone gated page the map-grid skill publishes — same renderer, two hosts, so
-// a fix here reaches both. Imported lazily: clients without the module never fetch it.
-async function renderMapGrid() {
-  const { renderMapGridPanel, supabaseProvider } = await import('./mapgrid-panel.js');
-  const panel = await renderMapGridPanel(supabaseProvider(supabase, state.clientRow.id));
-  const wrap = el(`<div><div class="section-h mono">Map Pack Grid</div></div>`);
-  wrap.append(panel);
-  const ins = el(`<div></div>`);
-  ins.innerHTML = await insightsPanel('map_grid');
-  wrap.append(ins);
-  queueMicrotask(() => wireInsightsForm('map_grid', wrap));
-  return wrap;
-}
-
-async function renderGeo() {
-  const { data } = await supabase.from('md_geo_visibility').select('*')
-    .eq('client_id', state.clientRow.id).order('checked_at', { ascending: false }).limit(50);
-  const engines = ['chatgpt', 'perplexity', 'gemini', 'claude', 'grok'];
-  const latestByEngine = {};
-  (data || []).forEach(r => { if (!latestByEngine[r.engine]) latestByEngine[r.engine] = []; latestByEngine[r.engine].push(r); });
-  const grid = engines.map(en => {
-    const rows = latestByEngine[en] || [];
-    const yes = rows.filter(r => r.result === 'yes').length;
-    return `<div class="kpi"><div class="kpi-label">${en}</div><div class="kpi-val">${yes}/${rows.length || 0}</div></div>`;
-  }).join('');
-  const wrap = el(`<div>
-    <div class="section-h mono">AI Visibility (GEO)</div>
-    <div class="kpis">${grid}</div>
-    ${await insightsPanel('geo')}
-  </div>`);
-  queueMicrotask(() => wireInsightsForm('geo', wrap));
-  return wrap;
-}
-
-// ---------------------------------------------------------------------------
-// Archived (frozen) months
-// ---------------------------------------------------------------------------
-
-async function renderArchivedModule(moduleKey) {
-  const { data } = await supabase.from('md_mbr_archive').select('snapshot,pdf_path')
-    .eq('client_id', state.clientRow.id).eq('period_key', state.period).maybeSingle();
-  if (!data) return emptyEl('No archived snapshot for this period.');
-  const snap = data.snapshot?.[moduleKey];
-  if (!snap) return emptyEl('This module was not tracked in that period.');
-  return el(`<div>
-    <div class="section-h mono">${MODULE_LABEL[moduleKey]} — ${state.period} (archived)</div>
-    <pre style="white-space:pre-wrap;font-size:12.5px;color:#cfe0d8;background:var(--card);
-      border:1px solid var(--line);border-radius:12px;padding:16px">${JSON.stringify(snap, null, 2)}</pre>
-    ${data.pdf_path ? `<p style="margin-top:12px"><a href="${data.pdf_path}" style="color:var(--blue)">Download the ${state.period} PDF</a></p>` : ''}
-  </div>`);
-}
-
-// ---------------------------------------------------------------------------
-// Feedback tab
-// ---------------------------------------------------------------------------
-
-async function renderFeedback() {
-  const { data: rows } = await supabase.from('md_feedback').select('*')
-    .eq('client_id', state.clientRow.id).order('created_at', { ascending: false }).limit(30);
-  const list = (rows || []).map(r => `<div class="feedback-item">
-    <div class="meta">${new Date(r.created_at).toLocaleString('en-AU')}</div>${r.body || ''}</div>`).join('')
-    || `<div class="feedback-item" style="color:var(--mut)">Nothing posted yet.</div>`;
-  const wrap = el(`<div>
-    <div class="section-h mono">Feedback & Updates</div>
-    <p class="note" style="margin-bottom:14px">Anyone with access to this dashboard can leave a note here between check-ins.</p>
-    <div class="insight-form"><textarea id="fb-body" placeholder="Leave a note…"></textarea><button id="fb-submit">Post</button></div>
-    <div class="feedback-list" style="margin-top:18px">${list}</div>
-  </div>`);
-  queueMicrotask(() => {
-    $('#fb-submit', wrap).addEventListener('click', async () => {
-      const body = $('#fb-body', wrap).value.trim(); if (!body) return;
-      await supabase.from('md_feedback').insert({ client_id: state.clientRow.id, author_id: state.user.id, body });
-      renderTab();
-    });
-  });
-  return wrap;
-}
-
-boot();
+(async function main(){
+  const { data } = await sb.auth.getSession();
+  if (data?.session) { try { await start(); } catch (e) { console.error(e); renderGate('Could not load this dashboard — check the console.'); } }
+  else renderGate();
+})();
