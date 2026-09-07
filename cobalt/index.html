@@ -28,6 +28,7 @@ body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
 .mono{font-family:var(--mono)}
 .tnum{font-variant-numeric:tabular-nums}
+.tbl td.tnum{text-align:right}
 a{color:inherit}
 
 /* ---- login gate ---- */
@@ -202,6 +203,7 @@ section[hidden]{display:none}
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{text-align:right;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:700;padding:9px 10px;border-bottom:1px solid var(--bd)}
 .tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl th.lft{text-align:left}
 .tbl td{padding:10px;border-bottom:1px solid var(--bd);color:var(--ink2)}
 .tbl td.k{color:var(--ink);font-weight:600}
 .tbl tr:last-child td{border-bottom:none}
@@ -424,6 +426,7 @@ body.pinmode [data-anchor]{cursor:crosshair}
 <nav class="tabs"><div class="tabrow" role="tablist">
   <button class="tab" role="tab" aria-selected="true" data-tab="overview">Overview</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="seo">SEO</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="aisearch">AI Search</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="paid">Meta Ads</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="google">Google Ads</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="social">Social</button>
@@ -473,6 +476,30 @@ body.pinmode [data-anchor]{cursor:crosshair}
     <h2 class="h2">Keyword rankings</h2>
     <p class="sub" id="rank-sub">Tracked in SE Ranking.</p>
     <div class="card tscroll"><table class="tbl" id="t-rank"></table></div>
+  </section>
+
+  <section id="aisearch" data-anchor="sec:aisearch" hidden>
+    <div class="eyebrow">AI search · Google AI Overview, Perplexity, ChatGPT, Gemini</div>
+    <div class="callouts" style="margin-top:0;margin-bottom:16px;grid-template-columns:1fr">
+      <div class="callout" id="ai-callout"><div class="bar"></div><div>
+        <h4 id="ai-callout-head">AI search visibility</h4>
+        <p id="ai-callout-body">&mdash;</p>
+      </div></div>
+    </div>
+    <div class="kpis" id="kpi-ai"></div>
+    <h2 class="h2">Where Cobalt is cited</h2>
+    <p class="sub" id="ai-engine-sub">&mdash;</p>
+    <div class="card tscroll"><table class="tbl" id="t-ai-engines"></table></div>
+    <h2 class="h2">Pages earning the citations</h2>
+    <p class="sub" id="ai-pages-sub">&mdash;</p>
+    <div class="card tscroll"><table class="tbl" id="t-ai-pages"></table></div>
+    <h2 class="h2">Questions Cobalt is cited on</h2>
+    <p class="sub" id="ai-prompts-sub">&mdash;</p>
+    <div class="card tscroll"><table class="tbl" id="t-ai-prompts"></table></div>
+    <h2 class="h2">Who else the answer cites</h2>
+    <p class="sub" id="ai-domains-sub">&mdash;</p>
+    <div class="card tscroll"><table class="tbl" id="t-ai-domains"></table></div>
+    <div class="inspanel" id="ins-aisearch"></div>
   </section>
 
   <section id="paid" data-anchor="sec:paid" hidden>
@@ -578,6 +605,7 @@ let IG_REACH=[],IG_ENG=[],FB_REACH=[],FB_IMPR=[],FB_ENG=[],FB_FOLL=[],LI_IMPR=[]
 let PAID={days:[],TOFU:{sp:[],cl:[],im:[],ld:[]},MOFU:{sp:[],cl:[],im:[],ld:[]},BOFU:{sp:[],cl:[],im:[],ld:[]}};
 let RANK=[],FOLL={ig:0,fb:0,li:0},IG_POSTS=[],FB_POSTS=[],REFRESH=[];
 let IG_TOTAL=0,FB_TOTAL=0;const TOP_POSTS=6;
+let AI_OVERVIEW=[],AI_PROMPTS=[],AI_CITATIONS=[],AI_MONTH=null,AI_PREV=null;
 let INSIGHTS=[],AUTHORS=[],ME={email:null,isAuthor:false,name:null,avatar:null,role:null},PINMODE=false;
 let MANUAL_DEFS=[],MANUAL=[],MSEL=null;
 let CONTENT=[],OVERRIDES=[],FEEDBACK=[];
@@ -606,7 +634,7 @@ const monthShort=key=>MONTH_ABBR[Number(key.split("-")[1])-1];
 const monthLong=key=>monthShort(key)+" "+key.split("-")[0];
 
 async function loadData(){
-  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr,fb,gkw,gst]=await Promise.all([
+  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr,fb,gkw,gst,aiov,aipr,aici]=await Promise.all([
     sb.from('cobalt_seo_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
     sb.from('cobalt_social_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
     sb.from('cobalt_paid_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
@@ -621,8 +649,16 @@ async function loadData(){
     sb.from('cobalt_metric_overrides').select('*'),
     sb.from('cobalt_feedback').select('*').order('created_at',{ascending:false}),
     sb.from('cobalt_google_keywords').select('*'),
-    sb.from('cobalt_google_search_terms').select('*')
+    sb.from('cobalt_google_search_terms').select('*'),
+    sb.from('cobalt_ai_overview').select('*').order('period_month'),
+    sb.from('cobalt_ai_prompts').select('*'),
+    sb.from('cobalt_ai_citations').select('*')
   ]);
+  AI_OVERVIEW=aiov.data||[]; AI_PROMPTS=aipr.data||[]; AI_CITATIONS=aici.data||[];
+  // AI search is a point-in-time snapshot, not a daily series, so it is scoped to
+  // its own latest snapshot rather than the month picker at the top of the page.
+  const aiMonths=[...new Set(AI_OVERVIEW.map(r=>String(r.period_month).slice(0,10)))].sort();
+  AI_MONTH=aiMonths[aiMonths.length-1]||null; AI_PREV=aiMonths[aiMonths.length-2]||null;
   INSIGHTS=ins.data||[]; AUTHORS=auth.data||[];
   MANUAL_DEFS=mdef.data||[]; MANUAL=mval.data||[];
   CONTENT=cplan.data||[]; OVERRIDES=ovr.data||[]; FEEDBACK=fb.data||[];
@@ -873,6 +909,121 @@ function renderGoogleKeywords(ML){
   if(ssub)ssub.textContent=`The real queries that triggered an ad, highest cost first. ${sts.length} shown for ${ML}, accounting for ${money(stSpend)} of attributed spend.`;
   stb.innerHTML=`<thead><tr><th>Search term</th><th>Ad group</th><th>Impr.</th><th>Clicks</th><th>Spend</th></tr></thead><tbody>`+
     sts.map(r=>`<tr><td class="k">${esc(r.search_term)}</td><td>${esc(r.ad_group)}</td><td class="tnum">${fmt(r.impressions||0)}</td><td class="tnum">${r.clicks||0}</td><td class="tnum">${money(Number(r.spend)||0)}</td></tr>`).join("")+
+    `</tbody>`;
+}
+/* ===== AI search visibility (SE Ranking) =====
+   Where Cobalt gets named or linked inside an AI-generated answer. This is a monthly
+   SNAPSHOT, not a daily series: SE Ranking exposes only a current reading with no
+   history, so month-on-month accrues from the first snapshot taken rather than being
+   backfilled. Everything below is scoped to AI_MONTH, never the page's month picker. */
+const ENGINE_LABEL={"ai-overview":"Google AI Overview","ai-mode":"Google AI Mode",
+  chatgpt:"ChatGPT",perplexity:"Perplexity",gemini:"Gemini",all:"All engines"};
+const engLabel=e=>ENGINE_LABEL[e]||e;
+// SE Ranking returns 0.00 for an engine with no meaningful placement. Zero is not a
+// rank, so show it as "no reading" rather than letting it read as first position.
+const posText=v=>(v==null||Number(v)===0)?"—":Math.round(Number(v)*100)/100;
+const dmy=iso=>iso?String(iso).slice(8,10)+"/"+String(iso).slice(5,7)+"/"+String(iso).slice(0,4):"—";
+// Google appends a #:~:text= fragment to point at the quoted sentence. Same page.
+const bareUrl=u=>String(u||"").split("#")[0];
+const prettyUrl=u=>bareUrl(u).replace(/^https?:\/\/(www\.)?/,"").replace(/\/$/,"");
+
+// A delta only means something once there are two snapshots to compare.
+function aiDelta(cur,prev,lowerIsBetter){
+  if(prev==null||cur==null)return "";
+  const d=cur-prev; if(!d)return '<span class="chip flat">no change</span>';
+  const good=lowerIsBetter?d<0:d>0;
+  return `<span class="chip ${good?"up":"dn"}">${d>0?"+":""}${Math.round(d*100)/100}</span>`;
+}
+
+function renderAiSearch(){
+  const box=document.getElementById("kpi-ai"); if(!box)return;
+  const at=r=>String(r.period_month).slice(0,10)===AI_MONTH;
+  const ov=AI_OVERVIEW.filter(at), prev=AI_PREV?AI_OVERVIEW.filter(r=>String(r.period_month).slice(0,10)===AI_PREV):[];
+  const prompts=AI_PROMPTS.filter(at), cits=AI_CITATIONS.filter(at);
+  const head=document.getElementById("ai-callout-head"), body=document.getElementById("ai-callout-body"),
+        call=document.getElementById("ai-callout");
+
+  if(!ov.length){
+    if(call)call.className="callout warn";
+    if(head)head.innerHTML='No AI search snapshot yet <span class="sig warn">No data</span>';
+    if(body)body.textContent="Nothing has been captured from SE Ranking for this account yet.";
+    box.innerHTML="";
+    ["ai-engine-sub","ai-pages-sub","ai-prompts-sub","ai-domains-sub"].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent="";});
+    ["t-ai-engines","t-ai-pages","t-ai-prompts","t-ai-domains"].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML="";});
+    return;
+  }
+
+  const all=ov.find(r=>r.engine==="all")||{}, allPrev=prev.find(r=>r.engine==="all")||{};
+  const snapDate=dmy(AI_MONTH);
+
+  if(call)call.className="callout "+(prompts.length?"good":"warn");
+  if(head)head.innerHTML=prompts.length
+    ? `Cited in <b>${prompts.length}</b> AI answer${prompts.length===1?"":"s"} <span class="sig good">Visible</span>`
+    : 'Not cited in any AI answer yet <span class="sig warn">Action</span>';
+  if(body)body.innerHTML=prompts.length
+    ? `Cobalt's website is cited in <b>${prompts.length}</b> AI answers across <b>${new Set(prompts.map(p=>p.engine)).size}</b> engine${new Set(prompts.map(p=>p.engine)).size===1?"":"s"}, drawn from <b>${cits.length}</b> sources in total. Snapshot taken <b>${snapDate}</b>.`
+    : `No AI engine is currently citing the site. Snapshot taken <b>${snapDate}</b>.`;
+
+  box.innerHTML=
+    kpi("Answers citing Cobalt",fmt(prompts.length),"across all AI engines")+
+    kpi("Pages cited",fmt(new Set(cits.filter(c=>c.is_cobalt).map(c=>bareUrl(c.url))).size),"pages AI engines quote")+
+    kpi("Brand presence",all.brand_presence==null?"—":fmt(all.brand_presence),"times the brand is named "+aiDelta(all.brand_presence,allPrev.brand_presence,false))+
+    kpi("Link presence",all.link_presence==null?"—":fmt(all.link_presence),"times the site is linked "+aiDelta(all.link_presence,allPrev.link_presence,false))+
+    kpi("Average position",posText(all.average_position),"within the answer's sources "+aiDelta(all.average_position,allPrev.average_position,true));
+
+  // Engines — each carries its own data date; Perplexity's reading is a year older
+  // than AI Overview's, so never let them read as one contemporaneous snapshot.
+  const esub=document.getElementById("ai-engine-sub");
+  if(esub)esub.innerHTML=AI_PREV
+    ? `Snapshot ${snapDate}, compared with ${dmy(AI_PREV)}.`
+    : `Snapshot <b>${snapDate}</b> — the first taken, so there is nothing to compare against yet. Month-on-month movement appears here from the next snapshot.`;
+  const eng=ov.filter(r=>r.engine!=="all").sort((a,b)=>(b.prompt_count||0)-(a.prompt_count||0));
+  document.getElementById("t-ai-engines").innerHTML=
+    `<thead><tr><th>Engine</th><th>Answers citing Cobalt</th><th>Brand presence</th><th>Link presence</th><th>Avg position</th><th>Data as at</th></tr></thead><tbody>`+
+    eng.map(r=>{const pv=prev.find(x=>x.engine===r.engine)||{};
+      return `<tr><td class="k">${esc(engLabel(r.engine))}</td>
+      <td class="tnum">${fmt(r.prompt_count||0)}</td>
+      <td class="tnum">${r.brand_presence==null?"—":fmt(r.brand_presence)} ${aiDelta(r.brand_presence,pv.brand_presence,false)}</td>
+      <td class="tnum">${r.link_presence==null?"—":fmt(r.link_presence)} ${aiDelta(r.link_presence,pv.link_presence,false)}</td>
+      <td class="tnum">${posText(r.average_position)}</td>
+      <td class="tnum">${r.data_date?dmy(r.data_date):"—"}</td></tr>`;}).join("")+`</tbody>`;
+
+  // Which Cobalt pages actually earn the citations — the content that is working.
+  const byPage={};
+  cits.filter(c=>c.is_cobalt).forEach(c=>{const u=bareUrl(c.url);(byPage[u]=byPage[u]||{url:u,n:0,prompts:new Set()});byPage[u].n++;byPage[u].prompts.add(c.prompt);});
+  const pages=Object.values(byPage).sort((a,b)=>b.n-a.n);
+  const psub=document.getElementById("ai-pages-sub");
+  if(psub)psub.textContent=pages.length
+    ? `${pages.length} pages on cobaltconstructions.com.au are being cited. These are the pages AI engines treat as the source worth quoting.`
+    : "No pages are being cited yet.";
+  document.getElementById("t-ai-pages").innerHTML=
+    `<thead><tr><th>Page</th><th>Answers citing it</th></tr></thead><tbody>`+
+    pages.map(r=>`<tr><td class="k"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(prettyUrl(r.url))}</a></td><td class="tnum">${r.n}</td></tr>`).join("")+
+    `</tbody>`;
+
+  // The questions themselves, most-searched first.
+  const qsub=document.getElementById("ai-prompts-sub");
+  if(qsub)qsub.textContent=`${prompts.length} questions where an AI answer cites Cobalt, ordered by monthly search volume. "Sources" is how many sites the answer drew on in total.`;
+  const ps=prompts.slice().sort((a,b)=>(b.volume||0)-(a.volume||0)||a.prompt.localeCompare(b.prompt));
+  document.getElementById("t-ai-prompts").innerHTML=
+    `<thead><tr><th>Question</th><th>Engine</th><th>Searches/mo</th><th>Sources</th><th>Page cited</th></tr></thead><tbody>`+
+    ps.map(r=>{const u=(r.cobalt_urls||[])[0];
+      return `<tr><td class="k">${esc(r.prompt)}</td>
+      <td>${esc(engLabel(r.engine))}</td>
+      <td class="tnum">${r.volume?fmt(r.volume):"—"}</td>
+      <td class="tnum">${fmt(r.citation_count||0)}</td>
+      <td>${u?`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(prettyUrl(u).replace("cobaltconstructions.com.au",""))||"home"}</a>`:"—"}</td></tr>`;}).join("")+
+    `</tbody>`;
+
+  // Everyone else in the same answers — the sites competing for the same citation.
+  const byDom={};
+  cits.filter(c=>!c.is_cobalt).forEach(c=>{(byDom[c.domain]=byDom[c.domain]||{d:c.domain,n:0});byDom[c.domain].n++;});
+  const doms=Object.values(byDom).sort((a,b)=>b.n-a.n).slice(0,20);
+  const dsub=document.getElementById("ai-domains-sub");
+  if(dsub)dsub.textContent=`${new Set(cits.filter(c=>!c.is_cobalt).map(c=>c.domain)).size} other sites appear in the same answers. The builders on this list are competing for the same citation.`;
+  document.getElementById("t-ai-domains").innerHTML=
+    `<thead><tr><th>Site</th><th>Times cited</th></tr></thead><tbody>`+
+    doms.map(r=>`<tr><td class="k">${esc(r.d)}</td><td class="tnum">${r.n}</td></tr>`).join("")+
     `</tbody>`;
 }
 function renderKPIs(){
@@ -1265,7 +1416,21 @@ function selectMonth(key){
   if(key===MONTH)return;
   MONTH=key; applyMonth(); renderAll(); window.scrollTo({top:0});
 }
-function renderAll(){renderMonthChips();renderWindowLabels();renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderFeedback();renderBeacons();updateAddButton();}
+// Headings were blanket right-aligned while only .tnum cells are, so every text
+// column after the first had its heading floating over the far edge of the column.
+// Match each heading to the alignment of the cells it actually sits above, rather
+// than tagging each header by hand in a dozen table templates.
+function alignHeads(){
+  document.querySelectorAll("table.tbl").forEach(t=>{
+    const head=t.tHead&&t.tHead.rows[0], body=t.tBodies[0]&&t.tBodies[0].rows[0];
+    if(!head||!body)return;
+    [...head.cells].forEach((th,i)=>{
+      const cell=body.cells[i];
+      th.classList.toggle("lft",!!cell&&!cell.classList.contains("tnum"));
+    });
+  });
+}
+function renderAll(){renderMonthChips();renderWindowLabels();renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderFeedback();renderAiSearch();renderBeacons();updateAddButton();alignHeads();}
 
 /* pin-anywhere: click any element (post, card, page area) while in pin mode */
 document.getElementById("app").addEventListener("click",e=>{
@@ -1311,7 +1476,7 @@ document.addEventListener("keydown",e=>{if(!WT.active)return;if(e.key==="Escape"
 /* ===== first-time coach tour (per tab) ===== */
 const TOUR={
  overview:[
-  {sel:"nav.tabs",title:"Your tabs",text:"Move between Overview, SEO, Meta Ads, Google Ads, Social and Updates up here."},
+  {sel:"nav.tabs",title:"Your tabs",text:"Move between Overview, SEO, AI Search, Meta Ads, Google Ads, Social and Updates up here."},
   {sel:"#monthchips",title:"Pick a month",text:"Every tab reports the month you select here. A dot means the month is still in progress."},
   {sel:"#kpi-overview",title:"Headline numbers",text:"Top-line results across every channel for the selected month."},
   {sel:"#mom",title:"Month on month",text:"Monthly totals and the change vs last month — the growth trend at a glance."},
@@ -1321,6 +1486,12 @@ const TOUR={
   {sel:"#kpi-seo",title:"SEO snapshot",text:"Clicks, impressions, CTR and your average Google position."},
   {sel:"#c-position",title:"Ranking trend",text:"Average Google position over time — remember, lower is better."},
   {sel:"#t-rank",title:"Keyword rankings",text:"Every tracked keyword and where it currently ranks."}
+ ],
+ aisearch:[
+  {sel:"#kpi-ai",title:"AI search visibility",text:"How often AI answers — Google's AI Overview, Perplexity and the rest — name or link Cobalt."},
+  {sel:"#t-ai-pages",title:"Pages doing the work",text:"The pages AI engines quote. These are the articles earning the citations."},
+  {sel:"#t-ai-prompts",title:"Questions you appear on",text:"The real questions where an AI answer cites Cobalt, and which page it links."},
+  {sel:"#t-ai-domains",title:"Who you appear beside",text:"The other sites cited in the same answers — the ones competing for that citation."}
  ],
  paid:[
   {sel:"#kpi-paid",title:"Meta snapshot",text:"Spend, clicks, cost-per-click and leads from Facebook & Instagram ads."},
@@ -1681,12 +1852,12 @@ function renderBeacons(){
 
 // Each tab's insights belong to the channel owner: R2R (Jose) runs SEO + Paid,
 // Savvas (Sini) runs Social. Overview shows the whole team.
-const TAB_OWNER={overview:null,seo:"r2r",paid:"r2r",google:"r2r",social:"savvas"};
+const TAB_OWNER={overview:null,seo:"r2r",aisearch:"r2r",paid:"r2r",google:"r2r",social:"savvas"};
 const TEAM_INFO={r2r:{name:"Ready to Rank",av:"assets/r2r.png"},savvas:{name:"Savvas Studio",av:"assets/savvas-icon.png"}};
 const canAuthorTab=tab=>tab!=="updates"&&ME.isAuthor&&(ME.isAdmin||!TAB_OWNER[tab]||TAB_OWNER[tab]===ME.team);
 function updateAddButton(){const ok=canAuthorTab(currentTab());document.getElementById("addins").style.display=ok?"inline-flex":"none";if(!ok&&PINMODE)setPinMode(false);}
 function renderInsightPanels(){
-  for(const tab of ["overview","seo","paid","google","social"]){
+  for(const tab of ["overview","seo","aisearch","paid","google","social"]){
     const sec=secs[tab];if(!sec)continue;
     let panel=sec.querySelector(".inspanel");
     if(!panel){panel=document.createElement("div");panel.className="inspanel";sec.appendChild(panel);}
@@ -1712,7 +1883,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(PINMODE)setPinMo
 
 /* tabs */
 const tabs=[...document.querySelectorAll(".tab")];
-const secs={overview:document.getElementById("overview"),seo:document.getElementById("seo"),paid:document.getElementById("paid"),google:document.getElementById("google"),social:document.getElementById("social"),updates:document.getElementById("updates")};
+const secs={overview:document.getElementById("overview"),seo:document.getElementById("seo"),aisearch:document.getElementById("aisearch"),paid:document.getElementById("paid"),google:document.getElementById("google"),social:document.getElementById("social"),updates:document.getElementById("updates")};
 function show(name){
   tabs.forEach(t=>t.setAttribute("aria-selected",t.dataset.tab===name));
   Object.entries(secs).forEach(([k,s])=>s.hidden=k!==name);
