@@ -179,7 +179,6 @@
   .splitbar span{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;color:#12100f}
 
   /* ===== Social v2: legend note, Sini's Insights, benchmarks ===== */
-  .legend-note{margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:11px}
   .insights{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
   .insight{position:relative;background:linear-gradient(180deg,rgba(208,83,30,.12),rgba(208,83,30,.03));border:1px solid rgba(208,83,30,.35);border-radius:12px;padding:13px 15px}
   .insight::after{content:"";position:absolute;left:22px;bottom:-8px;width:14px;height:14px;background:inherit;border-right:1px solid rgba(208,83,30,.35);border-bottom:1px solid rgba(208,83,30,.35);transform:rotate(45deg)}
@@ -329,6 +328,102 @@
   .msg{font-family:var(--mono);font-size:12px;margin-top:12px;min-height:16px}
   .msg.err{color:var(--bad)} .msg.ok{color:var(--good)}
   .head-right .edit{color:var(--ink);background:var(--blue);border-color:var(--blue)}
+  /* ===== Insights v3 — pin-anywhere commentary, ported from the Cobalt build =====
+     Replaces the Social-only "Sini's Insights" cards. Works on all three views:
+     an author enters the edit code once, clicks ✎ Add insight, then clicks a point
+     on any chart (date-anchored) or anywhere on the page (free-placed). ===== */
+  :root{ --ins:#D0531E; --ins-soft:rgba(208,83,30,.12); --savvas:#E4572E; }
+
+  /* header trigger */
+  .addins{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ins);background:var(--ins-soft);border:1px solid rgba(208,83,30,.4);border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .addins.on{background:var(--ins);color:#fff;border-color:var(--ins)}
+  body.pinmode{cursor:crosshair}
+  body.pinmode svg,body.pinmode [data-anchor]{cursor:crosshair}
+  .pinhint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;background:var(--ins);color:#fff;font-size:12.5px;font-weight:600;padding:9px 16px;border-radius:24px;box-shadow:0 6px 24px rgba(0,0,0,.45);display:none}
+  body.pinmode .pinhint{display:block}
+
+  /* beacon: avatar sits off the point, an arm points back to a pulsing ring on it */
+  #beacon-layer{position:absolute;top:0;left:0;width:0;height:0;z-index:6;pointer-events:none}
+  .beacon{position:absolute;z-index:6;pointer-events:none}
+  .beacon-ring{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:var(--ins);pointer-events:auto;cursor:pointer;animation:bpulse 1.7s ease-out infinite}
+  @keyframes bpulse{0%{box-shadow:0 0 0 0 rgba(208,83,30,.5)}70%{box-shadow:0 0 0 18px rgba(208,83,30,0)}100%{box-shadow:0 0 0 0 rgba(208,83,30,0)}}
+  .beacon-arm{position:absolute;left:-52px;top:-1px;width:52px;height:2px;background:var(--ins);transform-origin:100% 50%;opacity:.9}
+  .beacon-arm::after{content:"";position:absolute;right:-5px;top:-4px;border:5px solid transparent;border-left-color:var(--ins)}
+  .beacon-av{position:absolute;left:-57px;top:-57px;width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid var(--ins);background:var(--panel-2);box-shadow:0 4px 14px rgba(0,0,0,.55);pointer-events:auto;cursor:pointer;transition:transform .12s;display:flex;align-items:center;justify-content:center}
+  .beacon-av:hover{transform:scale(1.08)}
+  .beacon-av img{width:100%;height:100%;object-fit:cover;display:block}
+  .beacon.b-ul .beacon-arm{transform:rotate(45deg)}   .beacon.b-ul .beacon-av{left:-57px;top:-57px}
+  .beacon.b-ur .beacon-arm{transform:rotate(135deg)}  .beacon.b-ur .beacon-av{left:17px;top:-57px}
+  .beacon.b-dl .beacon-arm{transform:rotate(-45deg)}  .beacon.b-dl .beacon-av{left:-57px;top:17px}
+  .beacon.b-dr .beacon-arm{transform:rotate(-135deg)} .beacon.b-dr .beacon-av{left:17px;top:17px}
+  .beacon.pulse .beacon-av{box-shadow:0 0 0 4px rgba(208,83,30,.55),0 4px 14px rgba(0,0,0,.55)}
+
+  /* initials disc — Manor has no headshot assets, so avatar_path is optional */
+  .av-init{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--manor-gold);color:#1b1618;font-family:var(--sans);font-weight:800;font-size:13px;letter-spacing:.02em}
+  .ins-av .av-init{font-size:12px}
+
+  /* popover + composer */
+  .inspop{position:fixed;z-index:70;width:320px;max-width:calc(100vw - 24px);background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.6);padding:15px;display:none}
+  .inspop.show{display:block}
+  .ins-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .ins-av{width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid var(--ins);flex:none;background:var(--panel-2)}
+  .ins-av img{width:100%;height:100%;object-fit:cover;display:block}
+  .ins-who{font-size:13px;font-weight:700;line-height:1.2;color:var(--white)}
+  .ins-role{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
+  .ins-meta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;text-align:right}
+  .ins-body{font-size:13px;color:var(--white);line-height:1.5;white-space:pre-wrap}
+  .ins-audio{width:100%;margin-top:10px;height:34px}
+  .ins-x{position:absolute;top:10px;right:12px;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;background:none;border:none}
+  .ins-del{font-family:var(--mono);font-size:10px;color:var(--bad);background:none;border:none;cursor:pointer;margin-top:8px;padding:0}
+  .compose textarea{width:100%;min-height:70px;resize:vertical;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;color:var(--white);font-family:var(--sans);font-size:13px;padding:10px;outline:none}
+  .compose textarea:focus{border-color:var(--ins)}
+  .compose select,.compose input{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;color:var(--white);font-family:var(--sans);font-size:12.5px;padding:8px 10px;outline:none;margin-bottom:8px}
+  .compose select:focus,.compose input:focus{border-color:var(--ins)}
+  .clab{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+  .crow{display:flex;align-items:center;gap:8px;margin-top:10px}
+  .rec{font-family:var(--mono);font-size:11px;font-weight:700;border:1px solid var(--line);background:var(--panel-2);color:var(--muted);border-radius:20px;padding:7px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .rec.recording{color:#fff;background:var(--bad);border-color:var(--bad);animation:recpulse 1.2s infinite}
+  @keyframes recpulse{50%{opacity:.6}}
+  .rec .dotr{width:8px;height:8px;border-radius:50%;background:currentColor}
+  .csave{margin-left:auto;font-family:var(--sans);font-size:12px;font-weight:700;background:var(--ins);color:#fff;border:none;border-radius:20px;padding:8px 16px;cursor:pointer}
+  .csave:disabled{opacity:.5;cursor:default}
+  .ccancel{font-family:var(--mono);font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer}
+  .ccancel:disabled{opacity:.3;cursor:default}
+  .rectime{font-family:var(--mono);font-size:11px;color:var(--bad)}
+  .cmsg{font-family:var(--mono);font-size:11px;margin-top:8px;min-height:14px}
+  .cmsg.err{color:var(--bad)} .cmsg.ok{color:var(--good)}
+
+  /* per-view insights panel */
+  .inspanel{margin-top:26px;border:1px solid rgba(208,83,30,.28);border-left:3px solid var(--ins);border-radius:12px;background:linear-gradient(100deg,var(--ins-soft),transparent 70%);padding:16px 18px}
+  .inspanel h3{margin:0 0 3px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px;color:var(--white)}
+  .inspanel .ip-sub{font-size:12px;color:var(--muted);margin:0 0 14px}
+  .ip-empty{font-size:12.5px;color:var(--muted);font-style:italic}
+  .ip-item{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .ip-item:first-of-type{border-top:none}
+  .ip-item .ins-av{width:40px;height:40px}
+  .ip-main{flex:1;min-width:0}
+  .ip-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .ip-name{font-size:13px;font-weight:700;color:var(--white)}
+  .ip-where{font-family:var(--mono);font-size:10px;color:var(--ins);background:var(--ins-soft);padding:1px 7px;border-radius:20px;cursor:pointer}
+  .ip-when{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto}
+  .ip-body{font-size:13px;color:var(--white);line-height:1.5;margin-top:4px;white-space:pre-wrap}
+
+  /* walkthrough — plays a view's insights as a guided report */
+  .wt-btn{font-family:var(--sans);font-size:11px;font-weight:800;color:#fff;background:var(--ins);border:none;border-radius:20px;padding:6px 13px;cursor:pointer;margin-left:auto;display:inline-flex;align-items:center;gap:6px}
+  .wt-btn:hover{filter:brightness(1.08)}
+  .wt{position:fixed;left:0;right:0;bottom:0;z-index:80;display:none;justify-content:center;padding:0 16px 20px;pointer-events:none}
+  .wt.on{display:flex}
+  .wt-card{pointer-events:auto;width:100%;max-width:470px;background:var(--panel);border:1px solid var(--ins);border-radius:16px;box-shadow:0 14px 50px rgba(0,0,0,.65);padding:18px 20px;position:relative;animation:wtup .25s ease}
+  @keyframes wtup{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+  .wt-x{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:19px;line-height:1;cursor:pointer}
+  .wt-count{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ins);margin-bottom:10px}
+  .wt-body{font-size:14px;line-height:1.55;color:var(--white);margin-top:10px;white-space:pre-wrap}
+  .wt-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px}
+  .wt-progress{height:5px;background:var(--line);border-radius:20px;overflow:hidden;margin:2px 0 4px}
+  .wt-progress i{display:block;height:100%;background:var(--ins);border-radius:20px;transition:width .35s ease}
+  .wt-frac{font-family:var(--mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  @media(max-width:600px){.beacon-av{width:32px;height:32px}.inspop{width:calc(100vw - 24px)}}
+
 </style>
 </head>
 <body data-theme="search">
@@ -364,11 +459,18 @@
     <div id="updated">Last updated —</div>
     <button onclick="loadData()">↻ Refresh</button>
     <button class="edit" onclick="openUpdate()">✎ Update data</button>
+    <button class="addins" id="addins" style="display:none" type="button">✎ Add insight</button>
     <button class="signout" id="signoutBtn" onclick="signOut()" hidden>Sign out</button>
   </div>
 </header>
 
 <div class="banner" id="banner"></div>
+
+<!-- Insights floating layers: pin hint, popover/composer, walkthrough, beacon layer -->
+<div class="pinhint">Click a point on any chart to pin your insight — or press Esc to cancel</div>
+<div class="inspop" id="inspop"></div>
+<div class="wt" id="walkthrough"></div>
+<div id="beacon-layer"></div>
 
 <div class="tabs">
   <button class="tab active" id="tabSearch" onclick="showView('search')">Search &amp; Local</button>
@@ -379,7 +481,7 @@
 <div class="months" id="months"></div>
 
 <!-- ===== ROI VIEW ===== -->
-<div class="view" id="viewRoi">
+<div class="view" id="viewRoi" data-anchor="sec:roi">
 
 <div class="monthnotice" id="roiEmpty" hidden></div>
 
@@ -451,7 +553,7 @@
 </div><!-- /viewRoi -->
 
 <!-- ===== SOCIAL VIEW ===== -->
-<div class="view" id="viewSocial">
+<div class="view" id="viewSocial" data-anchor="sec:social">
   <div class="monthnotice" id="sEmpty" hidden></div>
   <div class="savvas-banner">
     <img class="savvas-mascot" src="https://cdn.prod.website-files.com/67afd385cf839b0956c26535/68313a1298a186b5fcc266c2_Savvas%20Icon%20Logomarks-05.png" alt="Savvas Studio">
@@ -495,13 +597,9 @@
     <div class="legend">
       <span><i style="background:var(--blue)"></i>Views</span>
       <span><i style="background:var(--good)"></i>Reach</span>
-      <span class="legend-note">◆ = Sini's insight — tap to read</span>
     </div>
     <div id="sDailyChart"></div>
   </div>
-
-  <div class="seclabel">Sini's Insights</div>
-  <div class="insights" id="sInsights"></div>
 
   <div class="seclabel">Competitive benchmarks</div>
   <div class="bench" id="sBench"></div>
@@ -513,7 +611,7 @@
 </div><!-- /viewSocial -->
 
 <!-- ===== SEARCH & LOCAL VIEW ===== -->
-<div class="view active" id="viewSearch">
+<div class="view active" id="viewSearch" data-anchor="sec:search">
   <div class="monthnotice" id="qEmpty" hidden></div>
   <div class="r2r-banner">
     <img class="r2r-mark" src="rtr-logo.png" alt="Ready to Rank">
@@ -643,15 +741,7 @@
 <div class="modal-bg" id="socialModalBg">
   <div class="modal">
     <h2>Update social</h2>
-    <div class="msub">Add an insight pinned to a spike, a competitor benchmark, or this month's DMs. Enter the edit code once, then save each section.</div>
-
-    <div class="subhead">Sini's insight</div>
-    <div class="frow">
-      <div class="field"><label>Date (the spike)</label><input type="date" id="a_date"></div>
-      <div class="field"><label>Short label</label><input type="text" id="a_label" placeholder="e.g. Lion-dance reel"></div>
-    </div>
-    <div class="field full"><label>Insight</label><textarea id="a_note" rows="2" placeholder="Why this spike happened…"></textarea></div>
-    <div class="modal-actions inline"><button class="btn primary" id="aBtn" onclick="saveInsight()">Add insight</button></div>
+    <div class="msub">Add a competitor benchmark or this month's DMs. Enter the edit code once, then save each section. Insights are pinned straight onto the charts now — use <b>✎ Add insight</b> in the header.</div>
 
     <div class="subhead">Competitor benchmark</div>
     <div class="frow">
@@ -797,6 +887,7 @@ async function startApp(){
   // to it mid-page. Land at the top of the dashboard regardless of which tab opened.
   window.scrollTo(0, 0);
   loadData();   // ROI still loads in the background so its tab is instant
+  loadInsights();
 }
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1095,6 +1186,7 @@ function drawChart(data){
     `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Leads and booked value over time">
       ${grid}${axL}${axR}${bars}${lineSvg}${xlabels}
     </svg>`;
+  regPinMap($('chart'),'chart',rows.map(r=>r.periodDate?String(r.periodDate):null),rows.map(r=>String(r.month)),rows.map((_,i)=>xCenter(i)),W);
 }
 
 /* ---------- load from Supabase ---------- */
@@ -1182,7 +1274,6 @@ function openSocialForm(){
   $('s_code').value = localStorage.getItem('manorEditCode') || '';
   const now=new Date(); const mk=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   if(!$('d_month').value) $('d_month').value=mk;
-  if(!$('a_date').value) $('a_date').value=now.toISOString().slice(0,10);
   $('socialModalBg').classList.add('show');
 }
 function closeSocialForm(){ $('socialModalBg').classList.remove('show'); }
@@ -1192,15 +1283,6 @@ async function rpcCall(fn, args){
   const res=await fetch(SUPA.rpc+fn, { method:'POST', headers:{'Content-Type':'application/json', apikey:SUPA.key, Authorization:'Bearer '+SUPA.key}, body:JSON.stringify(args) });
   if(!res.ok){ let e='HTTP '+res.status; try{ const j=await res.json(); e=j.message||j.hint||j.details||e; }catch{} throw new Error(/unauthor/i.test(e)?'Wrong edit code':e); }
   return res.json().catch(()=>null);
-}
-async function saveInsight(){
-  const code=$('s_code').value.trim(); if(!code) return socMsg('Enter the edit code.',false);
-  const date=$('a_date').value, note=$('a_note').value.trim();
-  if(!date||!note) return socMsg('Pick a date and write the insight.',false);
-  const b=$('aBtn'); b.disabled=true; b.textContent='Saving…';
-  try{ await rpcCall('manor_add_annotation',{edit_code:code,p_date:date,p_platform:'all',p_label:$('a_label').value.trim()||null,p_note:note});
-    localStorage.setItem('manorEditCode',code); socMsg('Insight added ✓',true); $('a_note').value=''; $('a_label').value=''; await loadSocial();
-  }catch(e){ socMsg(String(e.message||e),false); } finally{ b.disabled=false; b.textContent='Add insight'; }
 }
 async function saveBenchmark(){
   const code=$('s_code').value.trim(); if(!code) return socMsg('Enter the edit code.',false);
@@ -1341,17 +1423,16 @@ function renderSocial(groups, posts, isSample, extra){
 
   $('sSummary').innerHTML = socialSummary(groups);
 
-  drawDailyChart((extra.daily||[]).filter(r=>r.platform==='instagram'), extra.anns||[]);
-  renderInsights(extra.anns||[]);
+  drawDailyChart((extra.daily||[]).filter(r=>r.platform==='instagram'));
   renderBench(extra.bench||[], last);
 
   renderPosts(posts.filter(p=>p.platform!=='facebook'), isSample, 'sPostsIg');
   renderPosts(posts.filter(p=>p.platform==='facebook'), isSample, 'sPostsFb');
 }
 
-/* Daily Instagram Reach & Views area chart with Sini's-Insight markers.
-   rows = daily IG rows (metric_date, reach, views); anns = annotations. */
-function drawDailyChart(rows, anns){
+/* Daily Instagram Reach & Views area chart. Insight markers are no longer drawn
+   into the SVG — beacons are overlaid from the shared insights layer instead. */
+function drawDailyChart(rows){
   const el=$('sDailyChart'); if(!el) return;
   rows=(rows||[]).slice().filter(r=>r.metric_date).sort((a,b)=> a.metric_date<b.metric_date?-1:1);
   if(!rows.length){ el.innerHTML='<div class="muted" style="font-family:var(--mono);font-size:12px;padding:10px 2px">No daily data yet.</div>'; return; }
@@ -1368,29 +1449,13 @@ function drawDailyChart(rows, anns){
   const area=k=> `M${X(0).toFixed(1)} ${(padT+plotH).toFixed(1)} `+rows.map((r,i)=>'L'+X(i).toFixed(1)+' '+Y(+r[k]||0).toFixed(1)).join(' ')+` L${X(n-1).toFixed(1)} ${(padT+plotH).toFixed(1)} Z`;
   let xl='',lastM='';
   rows.forEach((r,i)=>{ const m=String(r.metric_date).slice(0,7); if(m!==lastM){ lastM=m; xl+=`<text x="${X(i).toFixed(1)}" y="${H-padB+18}" fill="#8C8C99" font-size="10" font-family="Space Mono, monospace" text-anchor="middle">${MONTHS[+m.slice(5,7)-1]}</text>`; } });
-  // annotation markers (numbered ◆), matching renderInsights order
-  const list=(anns||[]).slice().sort((a,b)=> a.ann_date<b.ann_date?-1:1);
-  let annSvg='';
-  list.forEach((a,idx)=>{ let ci=-1; for(let i=0;i<n;i++){ if(rows[i].metric_date<=String(a.ann_date)) ci=i; } if(ci<0) ci=0; const xx=X(ci).toFixed(1);
-    annSvg+=`<line x1="${xx}" y1="${padT}" x2="${xx}" y2="${padT+plotH}" stroke="${accent}" stroke-dasharray="3 3" opacity="0.5"/><path d="M${xx} ${padT-14} l7 7 l-7 7 l-7 -7 z" fill="${accent}"/><text x="${xx}" y="${padT-6}" fill="#fff" font-size="9" font-family="Space Mono, monospace" text-anchor="middle" font-weight="700">${idx+1}</text>`; });
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Instagram daily reach and views over time">${grid}${yl}`
     +`<path d="${area('views')}" fill="${accent}" opacity="0.13"/><path d="${area('reach')}" fill="${green}" opacity="0.10"/>`
     +`<path d="${line('views')}" fill="none" stroke="${accent}" stroke-width="2"/><path d="${line('reach')}" fill="none" stroke="${green}" stroke-width="2"/>`
-    +`${annSvg}${xl}</svg>`;
+    +`${xl}</svg>`;
+  regPinMap(el,'sDailyChart',rows.map(r=>String(r.metric_date)),rows.map(r=>String(r.metric_date)),rows.map((_,i)=>X(i)),W);
 }
 
-/* Sini's Insights — speech-bubble cards, numbered to match the chart markers. */
-function renderInsights(anns){
-  const el=$('sInsights'); if(!el) return;
-  const list=(anns||[]).slice().sort((a,b)=> a.ann_date<b.ann_date?-1:1);
-  if(!list.length){ el.innerHTML='<div class="muted" style="font-family:var(--mono);font-size:12px">No insights yet — Sini can add them via <b>✎ Update data</b>.</div>'; return; }
-  el.innerHTML=list.map((a,i)=>{
-    const d=new Date(String(a.ann_date)+'T00:00:00'); const dl=isNaN(d.getTime())?esc(a.ann_date):`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-    const who=esc(a.author||'Sini'); const av=who.charAt(0).toUpperCase();
-    const lbl=a.label?`<span class="ilabel">${esc(a.label)}.</span> `:'';
-    return `<div class="insight"><div class="inum">${i+1}</div><div class="ihead"><span class="iav">${av}</span><span class="iwho">${who}</span><span class="idate">${dl}</span></div><div class="inote">${lbl}${esc(a.note||'')}</div></div>`;
-  }).join('');
-}
 
 /* Competitive benchmarks — Manor vs manually-entered competitors (by followers). */
 function renderBench(bench, last){
@@ -1790,6 +1855,7 @@ function gbpChart(rows){
   const anyPartial = data.some(r=>r.is_partial);
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Google Business Profile views by month">${grid}${bars}${labels}</svg>`
     + (anyPartial? '<div class="note">* month still in progress — Google Business Profile also reports a few days behind, so the current month is always understated.</div>' : '');
+  regPinMap(el,'gChart',data.map(r=>String(r.period_date)),data.map(r=>monLabel(r.period_date)),data.map((_,i)=>xc(i)),W);
 }
 
 /* ---------- view tabs ---------- */
@@ -1809,6 +1875,9 @@ function showView(v){
   if(PERIOD) $('period').textContent = monthLabel(PERIOD);
   if(v==='social') loadSocial();
   if(v==='search' && !SEARCH_LOADED) loadSearch();
+  // Panels live inside each view, and beacons are page-positioned, so both are
+  // repainted on every switch rather than only on load.
+  if(typeof renderInsightPanels==='function'){ renderInsightPanels(); updateAddButton(); queueBeacons(); }
 }
 /* ---------- gate form + boot ---------- */
 document.getElementById('gateForm').addEventListener('submit', async (e)=>{
@@ -1825,6 +1894,442 @@ document.getElementById('gateForm').addEventListener('submit', async (e)=>{
   }finally{
     btn.disabled=false; btn.textContent='View dashboard';
   }
+});
+
+/* ============================================================================
+   INSIGHTS — pin-anywhere commentary (ported from the Cobalt Constructions build)
+
+   Cobalt gets author identity from a Supabase Auth login. Manor's dashboard is an
+   open link, so the edit code is the trust boundary instead: an author enters it
+   once, picks their name from the allowlist, and the write goes through the
+   edit-code-gated RPCs manor_add_insight / manor_delete_insight. The author list
+   is server-side, so the code cannot be used to post under an invented byline.
+
+   Voice notes cannot be uploaded straight to a private bucket without a JWT, so
+   the manor-insight-audio Edge Function checks the code and hands back a
+   short-lived signed URL; the audio bytes go browser -> Storage directly.
+   ============================================================================ */
+
+SUPA.ins     = SUPA.url + "/rest/v1/manor_insights";
+SUPA.insAuth = SUPA.url + "/rest/v1/manor_insight_authors";
+SUPA.insFn   = SUPA.url + "/functions/v1/manor-insight-audio";
+
+let INSIGHTS = [], AUTHORS = [], PINMODE = false;
+const PINMAPS = {};   // chart_id -> {el, dates, labels, xs, viewW}
+
+/* Social is delivered by Savvas, SEO and paid by R2R — same split as Cobalt.
+   A view with an owner shows that team's name on the panel; null = whole team. */
+const VIEW_OWNER = { search:'r2r', roi:'r2r', social:'savvas' };
+const TEAM_INFO  = {
+  r2r:    { name:'Ready to Rank', av:'rtr-logo.png' },
+  savvas: { name:'Savvas Studio',  av:'https://cdn.prod.website-files.com/67afd385cf839b0956c26535/68313a1298a186b5fcc266c2_Savvas%20Icon%20Logomarks-05.png' }
+};
+const CHART_TITLE = { 'chart':'Leads & booked value', 'sDailyChart':'Instagram reach & views', 'gChart':'Google Business Profile views' };
+
+const insCode    = () => localStorage.getItem('manorEditCode') || '';
+const insAuthor  = () => localStorage.getItem('manorInsightAuthor') || '';
+const authorOf   = e => AUTHORS.find(a => (a.email||'').toLowerCase() === String(e||'').toLowerCase());
+const initialsOf = n => String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const avatarHTML = e => { const a = authorOf(e);
+  return a && a.avatar_path ? `<img src="${esc(a.avatar_path)}" alt="">`
+                            : `<span class="av-init">${esc(initialsOf(a ? a.name : e))}</span>`; };
+const roleOf = e => (authorOf(e)||{}).role_title || '';
+const currentView = () => document.body.dataset.theme || 'search';
+const canAuthorView = v => { const a = authorOf(insAuthor()); if(!a) return true;
+  return a.is_admin || !VIEW_OWNER[v] || VIEW_OWNER[v] === a.team; };
+
+/* Registered by each chart's draw function so a click can be mapped back to a
+   date. viewW is the SVG viewBox width; xs are x positions in viewBox units. */
+function regPinMap(el, chartId, dates, labels, xs, viewW){
+  if(!el) return;
+  PINMAPS[chartId] = { el, dates, labels, xs, viewW };
+  el.dataset.chartId = chartId;
+  queueBeacons();
+  if(!el._pinBound){
+    el._pinBound = true;
+    el.addEventListener('click', ev => {
+      if(!PINMODE) return;
+      ev.stopPropagation(); ev.preventDefault();
+      const m = PINMAPS[chartId]; if(!m || !m.xs.length) return;
+      const r = el.getBoundingClientRect();
+      const vx = (ev.clientX - r.left) / r.width * m.viewW;
+      let best = 0, bd = Infinity;
+      m.xs.forEach((x,i) => { const d = Math.abs(x - vx); if(d < bd){ bd = d; best = i; } });
+      openComposer({ kind:'chart', chart_id:chartId, date:m.dates[best] || null,
+                     label:m.labels[best] || null, tab:currentView() }, ev.clientX, ev.clientY);
+    });
+  }
+}
+
+/* Charts redraw on month change and resize; coalesce the beacon repaint so it
+   runs once after the last chart has registered rather than three times. */
+function queueBeacons(){ clearTimeout(window._insQ); window._insQ = setTimeout(renderBeacons, 60); }
+
+async function loadInsights(){
+  try{
+    const [ins, auth] = await Promise.all([
+      getJSON(SUPA.ins + '?select=*&order=created_at.asc'),
+      getJSON(SUPA.insAuth + '?select=*')
+    ]);
+    INSIGHTS = ins || []; AUTHORS = auth || [];
+  }catch(e){ INSIGHTS = INSIGHTS || []; AUTHORS = AUTHORS || []; }
+  renderInsightPanels(); renderBeacons(); updateAddButton();
+}
+
+/* ---------- popover ---------- */
+const inspop = () => $('inspop');
+function closePop(){ const p = inspop(); if(p){ p.classList.remove('show'); p.innerHTML=''; } }
+function posPop(x, y){
+  const p = inspop(), pw = p.offsetWidth || 320, ph = p.offsetHeight || 170;
+  p.style.left = Math.min(Math.max(x - pw/2, 10), innerWidth - pw - 10) + 'px';
+  let t = y + 16; if(t + ph > innerHeight - 10) t = Math.max(10, y - ph - 16);
+  p.style.top = t + 'px';
+}
+function whereLabel(o){
+  if(o.anchor_kind === 'element'){
+    const t = o.target_id || '';
+    return t.startsWith('post:') ? 'On a post' : 'On this page';
+  }
+  const title = CHART_TITLE[o.chart_id] || o.chart_id || 'Chart';
+  const when = o.anchor_label || (o.anchor_date ? fmtPinDate(o.anchor_date) : '');
+  return when ? `${title} · ${when}` : title;
+}
+function fmtPinDate(d){
+  const dt = new Date(String(d) + 'T00:00:00');
+  return isNaN(dt) ? String(d) : `${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+async function signPlay(path){
+  try{
+    const r = await fetch(SUPA.insFn, { method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ action:'sign-play', path }) });
+    const j = await r.json(); return j.signedUrl || null;
+  }catch(e){ return null; }
+}
+async function openInsightPopover(o, x, y){
+  const p = inspop();
+  p.innerHTML =
+    `<button class="ins-x" aria-label="Close">&times;</button>
+     <div class="ins-head"><span class="ins-av">${avatarHTML(o.author_email)}</span>
+       <div><div class="ins-who">${esc(o.author_name)}</div><div class="ins-role">${esc(roleOf(o.author_email))}</div></div>
+       <div class="ins-meta">${esc(whereLabel(o))}</div></div>
+     ${o.body ? `<div class="ins-body">${esc(o.body)}</div>` : ''}
+     <div id="pop-audio"></div>
+     <button class="ins-del">Delete</button>
+     <div class="cmsg" id="pop-msg"></div>`;
+  p.classList.add('show'); posPop(x, y);
+  p.querySelector('.ins-x').onclick = closePop;
+  p.querySelector('.ins-del').onclick = () => deleteInsight(o);
+  if(o.audio_path){
+    const u = await signPlay(o.audio_path);
+    const el = $('pop-audio');
+    if(u && el) el.innerHTML = `<audio class="ins-audio" controls src="${u}"></audio>`;
+  }
+}
+
+/* ---------- composer ---------- */
+let rec = null, chunks = [], recBlob = null, recMime = '', recTimer = null;
+function openComposer(anchor, x, y){
+  recBlob = null; chunks = [];
+  const where = anchor.kind === 'chart'
+    ? `${CHART_TITLE[anchor.chart_id] || anchor.chart_id}${anchor.date ? ' · ' + fmtPinDate(anchor.date) : (anchor.label ? ' · ' + anchor.label : '')}`
+    : 'On this page';
+  // First visit has no stored author, but the <select> still defaults to its first
+  // option — so resolve the same fallback here or the avatar shows "?" beside a name.
+  const sorted = AUTHORS.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const me = (authorOf(insAuthor()) || sorted[0] || {}).email || '';
+  const opts = sorted
+    .map(a => `<option value="${esc(a.email)}"${a.email===me?' selected':''}>${esc(a.name)} — ${esc(a.role_title||'')}</option>`).join('');
+  const p = inspop();
+  p.innerHTML =
+    `<button class="ins-x" aria-label="Close">&times;</button>
+     <div class="ins-head"><span class="ins-av" id="c-av">${avatarHTML(me)}</span>
+       <div><div class="ins-who">New insight</div><div class="ins-role">${esc(where)}</div></div></div>
+     <div class="compose">
+       <label class="clab" for="c-who">Who's writing</label>
+       <select id="c-who">${opts || '<option value="">No authors set up</option>'}</select>
+       <label class="clab" for="c-code">Edit code</label>
+       <input id="c-code" type="password" placeholder="Edit code" value="${esc(insCode())}" autocomplete="off">
+       <textarea id="c-text" placeholder="What happened here? Explain the spike, dip or campaign moment…"></textarea>
+       <div class="crow">
+         <button class="rec" id="c-rec"><span class="dotr"></span><span id="c-reclbl">Record</span></button>
+         <span class="rectime" id="c-time"></span>
+         <button class="ccancel" id="c-cancel">Cancel</button>
+         <button class="csave" id="c-save">Pin insight</button>
+       </div>
+       <div id="c-preview"></div>
+       <div class="cmsg" id="c-msg"></div>
+     </div>`;
+  p.classList.add('show'); posPop(x, y);
+  p.querySelector('.ins-x').onclick = () => { stopRec(true); closePop(); };
+  $('c-cancel').onclick = () => { stopRec(true); closePop(); };
+  $('c-rec').onclick = toggleRec;
+  $('c-who').onchange = e => { localStorage.setItem('manorInsightAuthor', e.target.value); $('c-av').innerHTML = avatarHTML(e.target.value); };
+  $('c-save').onclick = () => saveInsightPin(anchor);
+}
+async function toggleRec(){
+  const btn = $('c-rec'), lbl = $('c-reclbl');
+  if(rec && rec.state === 'recording'){ stopRec(false); return; }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    recMime = ['audio/webm','audio/mp4','audio/ogg'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+    rec = new MediaRecorder(stream, recMime ? { mimeType:recMime } : undefined);
+    chunks = [];
+    rec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      recBlob = new Blob(chunks, { type: recMime || 'audio/webm' });
+      stream.getTracks().forEach(t => t.stop());
+      const el = $('c-preview');
+      if(el) el.innerHTML = `<audio class="ins-audio" controls src="${URL.createObjectURL(recBlob)}"></audio>`;
+    };
+    rec.start(); btn.classList.add('recording'); lbl.textContent = 'Stop';
+    let s = 0; const t = $('c-time');
+    recTimer = setInterval(() => { s++; if(t) t.textContent = `${String(s/60|0).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }, 1000);
+  }catch(err){ const t = $('c-time'); if(t) t.textContent = 'Mic access denied'; }
+}
+function stopRec(discard){
+  if(recTimer){ clearInterval(recTimer); recTimer = null; }
+  if(rec && rec.state === 'recording'){
+    if(discard) rec.onstop = () => rec.stream && rec.stream.getTracks().forEach(t => t.stop());
+    rec.stop();
+  }
+  const btn = $('c-rec'), lbl = $('c-reclbl');
+  if(btn){ btn.classList.remove('recording'); if(lbl) lbl.textContent = 'Record'; }
+  if(discard) recBlob = null;
+}
+function cmsg(t, ok){ const m = $('c-msg'); if(m){ m.className = 'cmsg ' + (ok ? 'ok' : 'err'); m.textContent = t; } }
+
+async function saveInsightPin(anchor){
+  const save = $('c-save');
+  stopRec(false); await new Promise(r => setTimeout(r, 180));   // let onstop finalise the blob
+  const code = $('c-code').value.trim();
+  const who  = $('c-who').value;
+  const body = $('c-text').value.trim();
+  if(!code) return cmsg('Enter the edit code.', false);
+  if(!who)  return cmsg('Pick who is writing.', false);
+  if(!body && !recBlob) return cmsg('Add a note or a recording.', false);
+
+  save.disabled = true; save.textContent = 'Saving…'; cmsg('', true);
+  let audio_path = null;
+  try{
+    if(recBlob){
+      const ct = (recMime || 'audio/webm').split(';')[0];
+      const r  = await fetch(SUPA.insFn, { method:'POST', headers:{'Content-Type':'application/json'},
+                 body: JSON.stringify({ action:'sign-upload', editCode:code, contentType:ct }) });
+      const j  = await r.json();
+      if(!r.ok || !j.signedUrl) throw new Error(j.error || 'Could not start the upload');
+      const up = await fetch(j.signedUrl, { method:'PUT', headers:{'Content-Type':ct}, body:recBlob });
+      if(!up.ok) throw new Error('Upload failed');
+      audio_path = j.path;
+    }
+    const args = { edit_code:code, p_tab:anchor.tab, p_body:body || null,
+                   p_audio_path:audio_path, p_author_email:who };
+    if(anchor.kind === 'chart'){
+      Object.assign(args, { p_anchor_kind:'chart', p_chart_id:anchor.chart_id,
+                            p_anchor_date:anchor.date || null, p_anchor_label:anchor.label || null });
+    }else{
+      Object.assign(args, { p_anchor_kind:'element', p_target_id:anchor.target_id,
+                            p_x_frac:anchor.x, p_y_frac:anchor.y });
+    }
+    await rpcCall('manor_add_insight', args);
+    localStorage.setItem('manorEditCode', code);
+    localStorage.setItem('manorInsightAuthor', who);
+    setPinMode(false); closePop();
+    await loadInsights();
+  }catch(e){
+    save.disabled = false; save.textContent = 'Pin insight';
+    cmsg(String(e.message || e), false);
+  }
+}
+
+async function deleteInsight(o){
+  let code = insCode();
+  if(!code) code = (prompt('Enter the edit code to delete this insight:') || '').trim();
+  if(!code) return;
+  const m = $('pop-msg'); if(m){ m.className = 'cmsg'; m.textContent = 'Deleting…'; }
+  try{
+    const path = await rpcCall('manor_delete_insight', { edit_code:code, p_id:o.id });
+    localStorage.setItem('manorEditCode', code);
+    if(path) await fetch(SUPA.insFn, { method:'POST', headers:{'Content-Type':'application/json'},
+                     body: JSON.stringify({ action:'delete', editCode:code, path }) }).catch(()=>{});
+    closePop();
+    await loadInsights();
+  }catch(e){ if(m){ m.className = 'cmsg err'; m.textContent = String(e.message || e); } }
+}
+
+/* ---------- beacons ----------
+   Every beacon lives in #beacon-layer in PAGE coordinates, chart-anchored and
+   element-anchored alike, so nothing depends on a chart container being
+   positioned and a re-render never orphans a marker. */
+function beaconEl(o){
+  const b = document.createElement('div');
+  b.className = 'beacon'; b.dataset.insId = o.id;
+  b.innerHTML = `<div class="beacon-arm"></div><div class="beacon-av">${avatarHTML(o.author_email)}</div><span class="beacon-ring"></span>`;
+  const open = ev => { ev.stopPropagation(); ev.preventDefault(); openInsightPopover(o, ev.clientX, ev.clientY); };
+  b.querySelector('.beacon-av').addEventListener('click', open);
+  b.querySelector('.beacon-ring').addEventListener('click', open);
+  return b;
+}
+function placeBeacon(layer, o, pageX, pageY){
+  const b = beaconEl(o);
+  b.style.left = pageX + 'px';
+  b.style.top  = pageY + 'px';
+  const vy = pageY - window.scrollY, vx = pageX - window.scrollX;
+  b.classList.add(`b-${vy > 120 ? 'u' : 'd'}${vx > 120 ? 'l' : 'r'}`);
+  layer.appendChild(b);
+}
+function renderBeacons(){
+  const layer = $('beacon-layer'); if(!layer) return;
+  layer.innerHTML = '';
+  const view = currentView();
+  INSIGHTS.filter(o => o.tab === view).forEach(o => {
+    if(o.anchor_kind === 'chart'){
+      const m = PINMAPS[o.chart_id]; if(!m || !m.el) return;
+      const r = m.el.getBoundingClientRect(); if(!r.width || !r.height) return;
+      let i = o.anchor_date ? m.dates.indexOf(o.anchor_date) : -1;
+      if(i < 0 && o.anchor_label) i = m.labels.indexOf(o.anchor_label);
+      if(i < 0) return;
+      placeBeacon(layer, o, r.left + window.scrollX + (m.xs[i] / m.viewW) * r.width,
+                            r.top  + window.scrollY + r.height * 0.16);
+    }else{
+      const t = [...document.querySelectorAll('[data-anchor]')].find(el => el.dataset.anchor === o.target_id);
+      if(!t) return;
+      const r = t.getBoundingClientRect(); if(!r.width || !r.height) return;
+      const xf = o.x_frac == null ? 0.5 : +o.x_frac, yf = o.y_frac == null ? 0.2 : +o.y_frac;
+      placeBeacon(layer, o, r.left + window.scrollX + xf * r.width,
+                            r.top  + window.scrollY + yf * r.height);
+    }
+  });
+}
+
+/* ---------- per-view panel ---------- */
+function renderInsightPanels(){
+  [['roi','viewRoi'],['social','viewSocial'],['search','viewSearch']].forEach(([view, id]) => {
+    const sec = $(id); if(!sec) return;
+    let panel = sec.querySelector('.inspanel');
+    if(!panel){ panel = document.createElement('div'); panel.className = 'inspanel'; sec.appendChild(panel); }
+    const owner = VIEW_OWNER[view], ti = owner ? TEAM_INFO[owner] : null;
+    const title = ti ? `${ti.name} — insights` : 'Team insights';
+    const sub   = ti ? `Notes from ${ti.name} on what's moving the numbers`
+                     : "Notes from the whole team on what's moving the numbers";
+    const items = INSIGHTS.filter(o => o.tab === view);
+    panel.innerHTML =
+      `<h3>${ti ? `<img class="ins-av" style="width:20px;height:20px;border-width:1px" src="${ti.av}" alt="">` : ''}${esc(title)}`
+      + `${items.length ? `<button class="wt-btn" type="button">▶ Walkthrough</button>` : ''}</h3>`
+      + `<p class="ip-sub">${esc(sub)} — click <b>✎ Add insight</b>, then a point on any chart or anywhere on the page.</p>`
+      + (items.length
+          ? items.map(o =>
+              `<div class="ip-item"><span class="ins-av">${avatarHTML(o.author_email)}</span>
+                 <div class="ip-main">
+                   <div class="ip-top"><span class="ip-name">${esc(o.author_name)}</span>
+                     <span class="ip-where" data-goto="${esc(o.id)}">${esc(whereLabel(o))}</span>
+                     <span class="ip-when">${new Date(o.created_at).toLocaleDateString('en-AU')}</span></div>
+                   ${o.body ? `<div class="ip-body">${esc(o.body)}</div>` : ''}
+                   <div class="ip-audio" data-audio="${esc(o.audio_path || '')}"></div>
+                 </div></div>`).join('')
+          : `<div class="ip-empty">No insights yet.</div>`);
+    panel.querySelectorAll('.ip-audio[data-audio]').forEach(async el => {
+      const p = el.getAttribute('data-audio'); if(!p) return;
+      const u = await signPlay(p);
+      if(u) el.innerHTML = `<audio class="ins-audio" controls src="${u}"></audio>`;
+    });
+    panel.querySelectorAll('.ip-where[data-goto]').forEach(el => el.addEventListener('click', () => {
+      const b = document.querySelector(`.beacon[data-ins-id="${el.dataset.goto}"]`);
+      if(b){ b.scrollIntoView({ behavior:'smooth', block:'center' });
+             document.querySelectorAll('.beacon.pulse').forEach(x => x.classList.remove('pulse'));
+             b.classList.add('pulse'); }
+    }));
+    const wt = panel.querySelector('.wt-btn');
+    if(wt) wt.addEventListener('click', () => startWalkthrough(view));
+  });
+}
+
+/* ---------- pin mode ---------- */
+function setPinMode(on){
+  PINMODE = on;
+  document.body.classList.toggle('pinmode', on);
+  const b = $('addins'); if(b) b.classList.toggle('on', on);
+}
+document.getElementById('addins').addEventListener('click', () => setPinMode(!PINMODE));
+function updateAddButton(){
+  const b = $('addins'); if(!b) return;
+  const ok = AUTHORS.length > 0 && canAuthorView(currentView());
+  b.style.display = ok ? 'inline-flex' : 'none';
+  if(!ok && PINMODE) setPinMode(false);
+}
+/* A click anywhere in an active view, while pinning, becomes a free-placed pin.
+   Chart clicks are handled by regPinMap and stop propagation before this runs. */
+document.addEventListener('click', ev => {
+  const p = inspop();
+  if(!PINMODE){
+    if(p && p.classList.contains('show') && !p.contains(ev.target) && !ev.target.closest('.beacon')) closePop();
+    return;
+  }
+  if(p && p.contains(ev.target)) return;
+  const t = ev.target.closest('[data-anchor]'); if(!t) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const r = t.getBoundingClientRect();
+  openComposer({ kind:'element', target_id:t.dataset.anchor, tab:currentView(),
+                 x:(ev.clientX - r.left) / r.width, y:(ev.clientY - r.top) / r.height },
+               ev.clientX, ev.clientY);
+}, true);
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Escape') return;
+  if(WT.active) return wtClose();
+  if(PINMODE) setPinMode(false);
+  closePop();
+});
+window.addEventListener('resize', () => { clearTimeout(window._insRz); window._insRz = setTimeout(renderBeacons, 180); });
+
+/* ---------- walkthrough ---------- */
+let WT = { active:false, list:[], i:0 };
+function startWalkthrough(view){
+  const list = INSIGHTS.filter(o => o.tab === view).slice()
+    .sort((a,b) => String(a.anchor_date || a.created_at).localeCompare(String(b.anchor_date || b.created_at)));
+  if(!list.length) return;
+  WT = { active:true, list, i:0 };
+  $('walkthrough').classList.add('on');
+  wtStep(0);
+}
+async function wtStep(i){
+  if(i < 0 || i >= WT.list.length) return;
+  WT.i = i;
+  const o = WT.list[i], last = i === WT.list.length - 1;
+  if(currentView() !== o.tab) showView(o.tab);
+  renderBeacons();
+  setTimeout(() => {
+    document.querySelectorAll('.beacon.pulse').forEach(p => p.classList.remove('pulse'));
+    const b = document.querySelector(`.beacon[data-ins-id="${o.id}"]`);
+    if(b){ b.scrollIntoView({ behavior:'smooth', block:'center' }); b.classList.add('pulse'); }
+  }, 120);
+  $('walkthrough').innerHTML =
+    `<div class="wt-card"><button class="wt-x" id="wt-x" aria-label="Close">&times;</button>
+       <div class="wt-count">${esc(String(o.author_name || '').split(' ')[0])}'s insight</div>
+       <div class="wt-progress"><i style="width:${Math.round((i+1)/WT.list.length*100)}%"></i></div>
+       <div class="ins-head"><span class="ins-av">${avatarHTML(o.author_email)}</span>
+         <div><div class="ins-who">${esc(o.author_name)}</div><div class="ins-role">${esc(whereLabel(o))}</div></div></div>
+       ${o.body ? `<div class="wt-body">${esc(o.body)}</div>` : ''}
+       <div id="wt-audio"></div>
+       <div class="wt-nav"><button class="ccancel" id="wt-prev"${i===0?' disabled':''}>← Prev</button>
+         <span class="wt-frac">${i+1} / ${WT.list.length}</span>
+         <button class="csave" id="wt-next">${last ? 'Finish ✓' : 'Next →'}</button></div></div>`;
+  $('wt-x').onclick = wtClose;
+  $('wt-prev').onclick = () => wtStep(WT.i - 1);
+  $('wt-next').onclick = () => last ? wtClose() : wtStep(WT.i + 1);
+  if(o.audio_path){
+    const u = await signPlay(o.audio_path);
+    const el = $('wt-audio');
+    if(u && el) el.innerHTML = `<audio class="ins-audio" controls autoplay src="${u}"></audio>`;
+  }
+}
+function wtClose(){
+  WT.active = false;
+  const wt = $('walkthrough'); wt.classList.remove('on'); wt.innerHTML = '';
+  document.querySelectorAll('.beacon.pulse').forEach(p => p.classList.remove('pulse'));
+}
+document.addEventListener('keydown', e => {
+  if(!WT.active) return;
+  if(e.key === 'ArrowRight') wtStep(Math.min(WT.i + 1, WT.list.length - 1));
+  else if(e.key === 'ArrowLeft') wtStep(Math.max(WT.i - 1, 0));
 });
 
 boot();
