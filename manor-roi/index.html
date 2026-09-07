@@ -224,9 +224,13 @@
   .posts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
   .post{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--white);display:flex;flex-direction:column}
   .post:hover{border-color:var(--blue)}
-  .post .thumb{aspect-ratio:1/1;background:var(--panel-2);background-size:cover;background-position:center;position:relative}
+  .post .thumb{aspect-ratio:1/1;background:var(--panel-2);position:relative;overflow:hidden}
+  .post .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
   .post .badge{position:absolute;top:8px;left:8px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;background:rgba(15,15,18,.78);color:var(--white);padding:3px 7px;border-radius:5px}
-  .post .ph{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:30px}
+  /* Sits UNDER the cover image, so a cover that fails to load reveals it rather
+     than leaving an empty rectangle. */
+  .post .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-size:30px}
+  .post .ph small{font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;opacity:.75}
   .post .body{padding:12px}
   .post .cap{font-size:12.5px;line-height:1.45;color:var(--white);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:36px}
   .post .stats{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px;display:flex;gap:14px}
@@ -969,6 +973,13 @@ const FIRST_FULL_MONTH = '2026-05-01';
 let SHOW_EARLIER = false;
 
 const monthMeta = p => MONTH_INDEX.find(m => m.period_date === p) || null;
+/* The dashboard opens on the last COMPLETE month, not the current one. A month in
+   progress is always understated — partial ad spend, GBP reporting days behind, no
+   Search Console data yet — so landing on it shows every figure at its worst and
+   invites a conversation about a number that isn't final. MONTH_INDEX is ordered
+   newest first, so the first non-current row is the month just closed. An explicit
+   #view/period link (e.g. #roi/2026-09-01) still wins; this is only the default. */
+const lastFullMonth = () => MONTH_INDEX.find(m => !m.is_current) || MONTH_INDEX[0];
 const monthLabel = p => (monthMeta(p) || {}).period_label || (p ? monLabel(p) : '');
 
 async function loadMonths(){
@@ -976,7 +987,7 @@ async function loadMonths(){
     MONTH_INDEX = await getJSON(SUPA.months + '?select=*&order=period_date.desc&limit=18');
   }catch(e){ MONTH_INDEX = []; }
   if(!MONTH_INDEX.length) return;
-  if(!PERIOD || !monthMeta(PERIOD)) PERIOD = MONTH_INDEX[0].period_date;
+  if(!PERIOD || !monthMeta(PERIOD)) PERIOD = lastFullMonth().period_date;
   renderChips();
 }
 
@@ -1326,9 +1337,13 @@ function renderPosts(posts, isSample, elId){
       : (isSample || /^https?:\/\//i.test(raw)) ? raw
       : PUBLIC_IMG + String(raw).split('/').map(encodeURIComponent).join('/');
     const tag = `<span class="badge">${icon(p.media_type)} ${ptype(p.media_type)}</span>`;
+    // The cover is an <img>, not a CSS background, so a missing file fires onerror and
+    // uncovers the placeholder. A background-image failure is silent — which is how a
+    // whole month of covers rendered as blank rectangles with nothing to explain them.
+    const ph = `<div class="ph">${icon(p.media_type)}<small>No cover</small></div>`;
     const thumb = img
-      ? `<div class="thumb" style="background-image:url('${img}')">${tag}</div>`
-      : `<div class="thumb">${tag}<div class="ph">${icon(p.media_type)}</div></div>`;
+      ? `<div class="thumb">${ph}<img src="${img}" alt="" loading="lazy" onerror="this.remove()">${tag}</div>`
+      : `<div class="thumb">${ph}${tag}</div>`;
     const cap = esc((p.caption||'').slice(0,90));
     return `<a class="post" href="${safeUrl(p.permalink)}" target="_blank" rel="noopener">
       ${thumb}
@@ -1366,8 +1381,14 @@ async function loadSocial(){
     SOCIAL_DATA = extra;
     if(groups.length){
       SOCIAL_LOADED = groups;
+      // Top posts follow the SELECTED month like every other panel. They used to be
+      // filtered on the newest month regardless of the chip, so picking August showed
+      // September's posts under a heading that said "this month" — the wrong data
+      // under a confident label. If the chosen month genuinely has no posts,
+      // renderPosts says so rather than quietly substituting another month's.
       const latest = groups[groups.length-1].periodDate;
-      const posts = allPosts.filter(p=>p.period_date===latest).sort((a,b)=>(+b.engagement||0)-(+a.engagement||0));
+      const wanted = PERIOD || latest;
+      const posts = allPosts.filter(p=>p.period_date===wanted).sort((a,b)=>(+b.engagement||0)-(+a.engagement||0));
       renderSocial(groups, posts, false, extra); return;
     }
     renderSocial(groupSocial(SOCIAL_SAMPLE.map(fromSocial)), SOCIAL_POSTS_SAMPLE, true, extra);
