@@ -237,6 +237,9 @@ svg{display:block;width:100%;overflow:visible}
 .post:focus-visible{outline:2px solid var(--r2r);outline-offset:2px}
 .post .cover{position:relative;aspect-ratio:4/5;overflow:hidden;background:#0c0c0f}
 .post .cover img{width:100%;height:100%;object-fit:cover;display:block}
+.nocover{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center;padding:12px;background:repeating-linear-gradient(45deg,#111116,#111116 8px,#0d0d11 8px,#0d0d11 16px)}
+.nocover span{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+.nocover small{font-size:10px;color:var(--ink3);opacity:.62}
 .typebadge{position:absolute;top:9px;left:9px;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);padding:3px 8px;border-radius:6px}
 .pcorner{position:absolute;top:9px;right:9px;width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px}
 .pc-ig{background:rgba(214,63,119,.85)} .pc-fb{background:rgba(58,120,230,.85)}
@@ -574,6 +577,7 @@ let N=0,DATES=[],SESSIONS=[],USERS=[],CONV=[],CLICKS=[],IMPR=[],POS=[];
 let IG_REACH=[],IG_ENG=[],FB_REACH=[],FB_IMPR=[],FB_ENG=[],FB_FOLL=[],LI_IMPR=[],LI_ENG=[];
 let PAID={days:[],TOFU:{sp:[],cl:[],im:[],ld:[]},MOFU:{sp:[],cl:[],im:[],ld:[]},BOFU:{sp:[],cl:[],im:[],ld:[]}};
 let RANK=[],FOLL={ig:0,fb:0,li:0},IG_POSTS=[],FB_POSTS=[],REFRESH=[];
+let IG_TOTAL=0,FB_TOTAL=0;const TOP_POSTS=6;
 let INSIGHTS=[],AUTHORS=[],ME={email:null,isAuthor:false,name:null,avatar:null,role:null},PINMODE=false;
 let MANUAL_DEFS=[],MANUAL=[],MSEL=null;
 let CONTENT=[],OVERRIDES=[],FEEDBACK=[];
@@ -628,7 +632,7 @@ async function loadData(){
        gkw:gkw.data||[],gst:gst.data||[]};
   MSERIES=buildMonths(RAW.seo,RAW.social);
   MONTHS_AVAILABLE=MSERIES.map(m=>m.key);
-  if(!MONTH||!MONTHS_AVAILABLE.includes(MONTH))MONTH=MONTHS_AVAILABLE[MONTHS_AVAILABLE.length-1]||localISO(new Date()).slice(0,7);
+  if(!MONTH||!MONTHS_AVAILABLE.includes(MONTH))MONTH=(lastFull()||{}).key||MONTHS_AVAILABLE[MONTHS_AVAILABLE.length-1]||localISO(new Date()).slice(0,7);
   applyMonth();
 }
 
@@ -669,14 +673,19 @@ function applyMonth(){
     .sort((a,b)=>((a.position==null?999:a.position)-(b.position==null?999:b.position)))
     .map(r=>[r.keyword,r.position,r.search_volume,(r.url||'—').replace(/^https?:\/\//,''),r.prev_position]);
   // Posts are dated by publication, so a month shows the posts actually published in it.
-  // Facebook returns no caption text through the connector. Rather than print a blank
-  // line — or invent copy — fall back to the post date and let the card link out.
+  // Both connectors do return caption text, but a post can still be published without
+  // one. Rather than print a blank line — or invent copy — fall back to the post date
+  // and let the card link out.
   const capFallback=p=>{const d=p.period_date;return "Posted "+d.slice(8,10)+"/"+d.slice(5,7)+" · view on "+(p.platform==='facebook'?"Facebook":"Instagram");};
-  const mp=p=>({img:p.image_path,type:p.media_type,reach:p.reach,eng:p.engagement,url:p.permalink,
+  const mp=p=>({img:p.image_path||null,type:p.media_type,reach:p.reach,eng:p.engagement,url:p.permalink,
     cap:(p.caption&&p.caption.trim())?p.caption:capFallback(p),plain:!(p.caption&&p.caption.trim())});
   const monthPosts=plat=>RAW.posts.filter(p=>p.platform===plat&&p.period_date.slice(0,7)===MONTH)
     .sort((a,b)=>b.reach-a.reach).map(mp);
   IG_POSTS=monthPosts('instagram'); FB_POSTS=monthPosts('facebook');
+  IG_TOTAL=IG_POSTS.length; FB_TOTAL=FB_POSTS.length;
+  // Show a genuine top list rather than the whole month's feed — the heading promises
+  // "top performing", and 20+ cards buries the ones that actually did the work.
+  IG_POSTS=IG_POSTS.slice(0,TOP_POSTS); FB_POSTS=FB_POSTS.slice(0,TOP_POSTS);
   // aggregates for the selected month
   seoSessions=sum(SESSIONS);seoClicks=sum(CLICKS);seoConv=sum(CONV);
   socReach=sum(IG_REACH)+sum(FB_REACH);socEng=sum(IG_ENG)+sum(FB_ENG)+sum(LI_ENG);
@@ -1024,7 +1033,7 @@ function manualMonths(){
   const n=new Date();set.add(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-01`);
   return [...set].sort().reverse();
 }
-const canEditManual=()=>ME.isAuthor&&(ME.isAdmin||TAB_OWNER.social===ME.email);
+const canEditManual=()=>ME.isAuthor&&(ME.isAdmin||TAB_OWNER.social===ME.team);
 function groupDefs(){const g={};MANUAL_DEFS.forEach(d=>{(g[d.grp]=g[d.grp]||[]).push(d);});return g;}
 function renderManual(){
   const box=document.getElementById("manual-social");if(!box)return;
@@ -1132,7 +1141,7 @@ async function deleteCorrection(id){
 /* ===== content plan ===== */
 const CP_PLATFORMS=["instagram","facebook","linkedin","tiktok","youtube","other"];
 const CP_STATUS=["Idea","Planned","Scheduled","Published"];
-const canEditContent=()=>ME.isAuthor&&(ME.isAdmin||TAB_OWNER.social===ME.email);
+const canEditContent=()=>ME.isAuthor&&(ME.isAdmin||TAB_OWNER.social===ME.team);
 function renderContent(){
   const box=document.getElementById("content-plan");if(!box)return;
   const items=CONTENT.slice().sort((a,b)=>(a.plan_date||"9999").localeCompare(b.plan_date||"9999"));
@@ -1471,23 +1480,40 @@ function renderCharts(){
 const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9A5 5 0 0 1 12 6a5 5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9Z"/></svg>';
 const CURSOR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l7 17 2.5-7.5L21 11 4 4Z"/></svg>';
+// The connectors return raw API enums (CAROUSEL_ALBUM, video_inline). Nobody outside
+// the platform teams reads those, so name the format the way the client would.
+const TYPE_LABEL={reels:"Reel",video_inline:"Reel",video:"Video",image:"Photo",photo:"Photo",
+  carousel_album:"Carousel",album:"Carousel",story:"Story",link:"Link",status:"Text"};
+const typeLabel=t=>TYPE_LABEL[String(t||"").toLowerCase()]||String(t||"post").replace(/_/g," ");
+// A post whose thumbnail was never captured used to render <img src="null">, which
+// 404s and leaves a black rectangle reading as a broken card. Show what the post is
+// instead. postImgFail covers the other case: a path that exists but fails to load.
+const noCover=(label,note)=>`<div class="nocover"><span>${esc(label)}</span>${note?`<small>${esc(note)}</small>`:""}</div>`;
+function postImgFail(img){img.outerHTML=noCover("image unavailable","");}
+function coverImg(p){
+  if(!p.img)return noCover(typeLabel(p.type),"thumbnail not captured");
+  return `<img src="${p.img}" alt="" loading="lazy" onerror="postImgFail(this)"/>`;
+}
 function posts(){
   const psub=document.getElementById("posts-sub");
-  if(psub)psub.textContent=(IG_POSTS.length+FB_POSTS.length)
-    ? `Organic posts published in ${monthLong(MONTH)}, ranked by reach.`
-    : `No posts were published in ${monthLong(MONTH)}.`;
+  const shown=IG_POSTS.length+FB_POSTS.length, total=IG_TOTAL+FB_TOTAL;
+  if(psub)psub.textContent=!total
+    ? `No posts were published in ${monthLong(MONTH)}.`
+    : shown<total
+      ? `The ${shown} highest-reach of ${total} organic posts published in ${monthLong(MONTH)} — ${IG_TOTAL} on Instagram, ${FB_TOTAL} on Facebook.`
+      : `All ${total} organic posts published in ${monthLong(MONTH)}, ranked by reach.`;
   const none=p=>`<div class="nodata">No ${p} posts published in ${monthLong(MONTH)}.</div>`;
   if(!IG_POSTS.length)document.getElementById("ig-posts").innerHTML=none("Instagram");
   if(!FB_POSTS.length)document.getElementById("fb-posts").innerHTML=none("Facebook");
   if(IG_POSTS.length)document.getElementById("ig-posts").innerHTML=IG_POSTS.map(p=>`
     <a class="post" data-anchor="post:${p.url}" href="${p.url}" target="_blank" rel="noopener">
-      <div class="cover"><span class="typebadge">${p.type}</span><img src="${p.img}" alt="" loading="lazy"/></div>
+      <div class="cover"><span class="typebadge">${typeLabel(p.type)}</span>${coverImg(p)}</div>
       <div class="pbody"><div class="pcap">${esc(p.cap)}</div>
         <div class="pmetrics"><span class="m">${EYE}${fmt(p.reach)}</span><span class="m">${HEART}${p.eng}<span class="mlab"> eng</span></span></div>
       </div></a>`).join("");
   if(FB_POSTS.length)document.getElementById("fb-posts").innerHTML=FB_POSTS.map(p=>`
     <a class="post" data-anchor="post:${p.url}" href="${p.url}" target="_blank" rel="noopener">
-      <div class="cover"><span class="typebadge">${p.type}</span><img src="${p.img}" alt="" loading="lazy"/></div>
+      <div class="cover"><span class="typebadge">${typeLabel(p.type)}</span>${coverImg(p)}</div>
       <div class="pbody"><div class="pcap">${esc(p.cap)}</div>
         <div class="pmetrics"><span class="m">${EYE}${fmt(p.reach)}</span><span class="m">${CURSOR}${p.eng}<span class="mlab"> clicks</span></span></div>
       </div></a>`).join("");
