@@ -496,6 +496,9 @@ body.pinmode [data-anchor]{cursor:crosshair}
     <h2 class="h2">Questions Cobalt is cited on</h2>
     <p class="sub" id="ai-prompts-sub">&mdash;</p>
     <div class="card tscroll"><table class="tbl" id="t-ai-prompts"></table></div>
+    <h2 class="h2">Questions Cobalt is missing from</h2>
+    <p class="sub" id="ai-gaps-sub">&mdash;</p>
+    <div class="card tscroll"><table class="tbl" id="t-ai-gaps"></table></div>
     <h2 class="h2">Who else the answer cites</h2>
     <p class="sub" id="ai-domains-sub">&mdash;</p>
     <div class="card tscroll"><table class="tbl" id="t-ai-domains"></table></div>
@@ -917,7 +920,11 @@ function renderGoogleKeywords(ML){
    history, so month-on-month accrues from the first snapshot taken rather than being
    backfilled. Everything below is scoped to AI_MONTH, never the page's month picker. */
 const ENGINE_LABEL={"ai-overview":"Google AI Overview","ai-mode":"Google AI Mode",
-  chatgpt:"ChatGPT",perplexity:"Perplexity",gemini:"Gemini",all:"All engines"};
+  chatgpt:"ChatGPT",perplexity:"Perplexity",gemini:"Gemini",claude:"Claude",all:"All engines"};
+// The two sources are not one scale. SE Ranking only ever returns answers Cobalt
+// already appears in, so it has no misses to report; DataForSEO asks a fixed set of
+// questions and the misses are the useful half. Say which is which on screen.
+const SOURCE_LABEL={se_ranking:"Found in the wild",dataforseo:"Asked directly"};
 const engLabel=e=>ENGINE_LABEL[e]||e;
 // SE Ranking returns 0.00 for an engine with no meaningful placement. Zero is not a
 // rank, so show it as "no reading" rather than letting it read as first position.
@@ -940,6 +947,8 @@ function renderAiSearch(){
   const at=r=>String(r.period_month).slice(0,10)===AI_MONTH;
   const ov=AI_OVERVIEW.filter(at), prev=AI_PREV?AI_OVERVIEW.filter(r=>String(r.period_month).slice(0,10)===AI_PREV):[];
   const prompts=AI_PROMPTS.filter(at), cits=AI_CITATIONS.filter(at);
+  const isWin=p=>((p.cobalt_urls||[]).length>0)||p.brand_named===true;
+  const wins=prompts.filter(isWin), misses=prompts.filter(p=>p.source==="dataforseo"&&!isWin(p));
   const head=document.getElementById("ai-callout-head"), body=document.getElementById("ai-callout-body"),
         call=document.getElementById("ai-callout");
 
@@ -956,16 +965,16 @@ function renderAiSearch(){
   const all=ov.find(r=>r.engine==="all")||{}, allPrev=prev.find(r=>r.engine==="all")||{};
   const snapDate=dmy(AI_MONTH);
 
-  if(call)call.className="callout "+(prompts.length?"good":"warn");
-  if(head)head.innerHTML=prompts.length
-    ? `Cited in <b>${prompts.length}</b> AI answer${prompts.length===1?"":"s"} <span class="sig good">Visible</span>`
+  if(call)call.className="callout "+(wins.length?"good":"warn");
+  if(head)head.innerHTML=wins.length
+    ? `Named or cited in <b>${wins.length}</b> AI answer${wins.length===1?"":"s"} <span class="sig good">Visible</span>`
     : 'Not cited in any AI answer yet <span class="sig warn">Action</span>';
-  if(body)body.innerHTML=prompts.length
-    ? `Cobalt's website is cited in <b>${prompts.length}</b> AI answers across <b>${new Set(prompts.map(p=>p.engine)).size}</b> engine${new Set(prompts.map(p=>p.engine)).size===1?"":"s"}, drawn from <b>${cits.length}</b> sources in total. Snapshot taken <b>${snapDate}</b>.`
+  if(body)body.innerHTML=wins.length
+    ? `Cobalt is named or cited in <b>${wins.length}</b> AI answers across <b>${new Set(wins.map(p=>p.engine)).size}</b> engine${new Set(wins.map(p=>p.engine)).size===1?"":"s"}, drawn from <b>${cits.length}</b> sources in total.${misses.length?` <b>${misses.length}</b> of the questions we ask directly return no mention at all.`:""} Snapshot taken <b>${snapDate}</b>.`
     : `No AI engine is currently citing the site. Snapshot taken <b>${snapDate}</b>.`;
 
   box.innerHTML=
-    kpi("Answers citing Cobalt",fmt(prompts.length),"across all AI engines")+
+    kpi("Answers naming Cobalt",fmt(wins.length),"named or cited, all engines")+
     kpi("Pages cited",fmt(new Set(cits.filter(c=>c.is_cobalt).map(c=>bareUrl(c.url))).size),"pages AI engines quote")+
     kpi("Brand presence",all.brand_presence==null?"—":fmt(all.brand_presence),"times the brand is named "+aiDelta(all.brand_presence,allPrev.brand_presence,false))+
     kpi("Link presence",all.link_presence==null?"—":fmt(all.link_presence),"times the site is linked "+aiDelta(all.link_presence,allPrev.link_presence,false))+
@@ -979,9 +988,10 @@ function renderAiSearch(){
     : `Snapshot <b>${snapDate}</b> — the first taken, so there is nothing to compare against yet. Month-on-month movement appears here from the next snapshot.`;
   const eng=ov.filter(r=>r.engine!=="all").sort((a,b)=>(b.prompt_count||0)-(a.prompt_count||0));
   document.getElementById("t-ai-engines").innerHTML=
-    `<thead><tr><th>Engine</th><th>Answers citing Cobalt</th><th>Brand presence</th><th>Link presence</th><th>Avg position</th><th>Data as at</th></tr></thead><tbody>`+
+    `<thead><tr><th>Engine</th><th>How measured</th><th>Prompts</th><th>Named</th><th>Cited</th><th>Avg position</th><th>Data as at</th></tr></thead><tbody>`+
     eng.map(r=>{const pv=prev.find(x=>x.engine===r.engine)||{};
       return `<tr><td class="k">${esc(engLabel(r.engine))}</td>
+      <td>${esc(SOURCE_LABEL[r.source]||r.source||"—")}</td>
       <td class="tnum">${fmt(r.prompt_count||0)}</td>
       <td class="tnum">${r.brand_presence==null?"—":fmt(r.brand_presence)} ${aiDelta(r.brand_presence,pv.brand_presence,false)}</td>
       <td class="tnum">${r.link_presence==null?"—":fmt(r.link_presence)} ${aiDelta(r.link_presence,pv.link_presence,false)}</td>
@@ -1003,8 +1013,8 @@ function renderAiSearch(){
 
   // The questions themselves, most-searched first.
   const qsub=document.getElementById("ai-prompts-sub");
-  if(qsub)qsub.textContent=`${prompts.length} questions where an AI answer cites Cobalt, ordered by monthly search volume. "Sources" is how many sites the answer drew on in total.`;
-  const ps=prompts.slice().sort((a,b)=>(b.volume||0)-(a.volume||0)||a.prompt.localeCompare(b.prompt));
+  if(qsub)qsub.textContent=`${wins.length} questions where an AI answer names or cites Cobalt, ordered by monthly search volume. "Sources" is how many sites the answer drew on in total.`;
+  const ps=wins.slice().sort((a,b)=>(b.volume||0)-(a.volume||0)||a.prompt.localeCompare(b.prompt));
   document.getElementById("t-ai-prompts").innerHTML=
     `<thead><tr><th>Question</th><th>Engine</th><th>Searches/mo</th><th>Sources</th><th>Page cited</th></tr></thead><tbody>`+
     ps.map(r=>{const u=(r.cobalt_urls||[])[0];
@@ -1014,6 +1024,29 @@ function renderAiSearch(){
       <td class="tnum">${fmt(r.citation_count||0)}</td>
       <td>${u?`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(prettyUrl(u).replace("cobaltconstructions.com.au",""))||"home"}</a>`:"—"}</td></tr>`;}).join("")+
     `</tbody>`;
+
+  // The misses are the brief. Only the questions we ask directly can produce a miss —
+  // SE Ranking never reports an absence, so a blank here is not evidence of one.
+  const gsub=document.getElementById("ai-gaps-sub");
+  const gtab=document.getElementById("t-ai-gaps");
+  if(!misses.length){
+    if(gsub)gsub.textContent=prompts.some(p=>p.source==="dataforseo")
+      ? "Cobalt is named in every question we ask directly. Nothing missing this month."
+      : "Nothing to show yet — this needs the question set we put to the models directly.";
+    if(gtab)gtab.innerHTML="";
+  }else{
+    if(gsub)gsub.textContent=`${misses.length} of the questions we put to the models return no mention of Cobalt. These are the answers to go and earn — each one is a page or a proof point that does not exist yet.`;
+    const ms=misses.slice().sort((a,b)=>(a.intent||"").localeCompare(b.intent||"")||a.prompt.localeCompare(b.prompt));
+    gtab.innerHTML=`<thead><tr><th>Question</th><th>Engine</th><th>Type</th><th>Sources the answer used</th><th>Who it named instead</th></tr></thead><tbody>`+
+      ms.map(r=>{
+        const named=cits.filter(c=>c.engine===r.engine&&c.prompt===r.prompt&&!c.is_cobalt)
+          .map(c=>c.domain).filter((d,i,a)=>a.indexOf(d)===i).slice(0,3).join(", ");
+        return `<tr><td class="k">${esc(r.prompt)}</td>
+        <td>${esc(engLabel(r.engine))}</td>
+        <td>${esc(r.intent==="discovery"?"Who to hire":"Research")}</td>
+        <td class="tnum">${fmt(r.citation_count||0)}</td>
+        <td>${esc(named||"—")}</td></tr>`;}).join("")+`</tbody>`;
+  }
 
   // Everyone else in the same answers — the sites competing for the same citation.
   const byDom={};
