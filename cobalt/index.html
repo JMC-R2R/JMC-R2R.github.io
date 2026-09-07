@@ -107,6 +107,7 @@ section[hidden]{display:none}
 .momcard .mcap{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:-2px}
 .momcard .mspark{width:100%;height:40px;display:block;margin-top:2px}
 .momcard .mspark-x{display:flex;justify-content:space-around;font-family:var(--mono);font-size:9px;color:var(--ink3);margin-top:1px}
+.momcard .mspark-x b{color:var(--ink2);font-weight:700}
 /* Savvas manual metrics */
 .mmwrap{border:1px solid rgba(228,87,46,.28);border-left:3px solid var(--savvas);border-radius:12px;background:linear-gradient(100deg,var(--savvas-soft),transparent 70%);padding:16px 18px}
 .mmhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
@@ -469,6 +470,9 @@ body.pinmode [data-anchor]{cursor:crosshair}
   <section id="seo" data-anchor="sec:seo" hidden>
     <div class="eyebrow">Organic search · Google</div>
     <div class="kpis" id="kpi-seo"></div>
+    <h2 class="h2">Month on month</h2>
+    <p class="sub" id="mom-seo-sub">&mdash;</p>
+    <div class="momgrid" id="mom-seo"></div>
     <div class="grid g2" style="margin-top:14px">
       <div class="card chart" id="c-clicks"></div>
       <div class="card chart" id="c-position"></div>
@@ -487,6 +491,9 @@ body.pinmode [data-anchor]{cursor:crosshair}
       </div></div>
     </div>
     <div class="kpis" id="kpi-ai"></div>
+    <h2 class="h2">Month on month</h2>
+    <p class="sub" id="mom-ai-sub">&mdash;</p>
+    <div class="momgrid" id="mom-ai"></div>
     <h2 class="h2">Where Cobalt is cited</h2>
     <p class="sub" id="ai-engine-sub">&mdash;</p>
     <div class="card tscroll"><table class="tbl" id="t-ai-engines"></table></div>
@@ -514,6 +521,9 @@ body.pinmode [data-anchor]{cursor:crosshair}
       </div></div>
     </div>
     <div class="kpis" id="kpi-paid"></div>
+    <h2 class="h2">Month on month</h2>
+    <p class="sub" id="mom-paid-sub">&mdash;</p>
+    <div class="momgrid" id="mom-paid"></div>
     <div class="card chart" style="margin-top:14px" id="c-spend"></div>
     <h2 class="h2">By campaign</h2>
     <p class="sub" id="paid-sub">Meta lead campaigns, grouped by funnel stage.</p>
@@ -529,6 +539,9 @@ body.pinmode [data-anchor]{cursor:crosshair}
       </div></div>
     </div>
     <div class="kpis" id="kpi-gads"></div>
+    <h2 class="h2">Month on month</h2>
+    <p class="sub" id="mom-gads-sub">&mdash;</p>
+    <div class="momgrid" id="mom-gads"></div>
     <div class="card chart" style="margin-top:14px" id="c-gspend"></div>
     <h2 class="h2">By campaign</h2>
     <p class="sub" id="gads-sub">Google Ads campaigns for the selected month.</p>
@@ -558,6 +571,9 @@ body.pinmode [data-anchor]{cursor:crosshair}
     </div>
     <div class="eyebrow">Organic social · Instagram · Facebook · LinkedIn</div>
     <div class="kpis" id="kpi-social"></div>
+    <h2 class="h2">Month on month</h2>
+    <p class="sub" id="mom-social-sub">&mdash;</p>
+    <div class="momgrid" id="mom-social"></div>
     <div class="inspanel" id="ins-social" style="margin-top:16px"></div>
     <div class="card chart" style="margin-top:14px" id="c-reach"></div>
     <div class="grid g2" style="margin-top:14px">
@@ -1208,6 +1224,222 @@ function renderMoM(){
   }).join("");
 }
 
+/* ===== per-service month on month =====
+   The Overview band above is anchored on the last COMPLETE month. These per-service bands
+   follow the month chips instead, so each tab compares the month you selected with the one
+   before it — the same scope as the KPIs, charts and tables around them. When the selected
+   month is still running, both sides are cut to the same elapsed days, so a half month is
+   never read against a whole one. Every figure is derived; nothing here is a fixed number. */
+const prevMonthKey=key=>{let[y,m]=key.split("-").map(Number);m--;if(m<1){m=12;y--;}return y+"-"+String(m).padStart(2,"0");};
+const thisMonthKey=()=>localISO(new Date()).slice(0,7);
+const pctText=v=>v==null?"—":Number(v).toFixed(2)+"%";
+const posOne=v=>v==null?"—":Number(v).toFixed(1);
+
+// Fold daily rows into calendar-month buckets. `cap` (0 = no cap) keeps only days 1..cap
+// of every month — that is what makes an in-progress month comparable with a whole one.
+function momBucket(rows,cap,fold){
+  const out={};
+  rows.forEach(r=>{
+    const day=Number(r.period_date.slice(8,10));
+    if(cap&&day>cap)return;
+    const key=r.period_date.slice(0,7);
+    const b=out[key]||(out[key]={key,days:new Set()});
+    b.days.add(day);
+    fold(b,r);
+  });
+  return out;
+}
+const madd=(b,f,v)=>{b[f]=(b[f]||0)+(Number(v)||0);};
+// Follower counts are a running LEVEL, not a monthly total — carry the latest reading
+// inside the (capped) month instead of summing the daily rows.
+const mlevel=(b,f,r,v)=>{if(v==null)return;const at=f+"@";if(!b[at]||r.period_date>b[at]){b[at]=r.period_date;b[f]=Number(v);}};
+
+const MOM_BANDS={
+  seo:{
+    mount:"mom-seo",sub:"mom-seo-sub",noun:"organic search",daily:true,
+    agg:cap=>momBucket(RAW.seo,cap,(b,r)=>{
+      madd(b,"clicks",r.clicks);madd(b,"impr",r.impressions);
+      madd(b,"sessions",r.sessions);madd(b,"conv",r.conversions);
+      if(r.avg_position!=null){madd(b,"posSum",r.avg_position);madd(b,"posN",1);}
+    }),
+    metrics:[
+      {label:"Organic clicks",get:b=>b.clicks||0},
+      {label:"Impressions",get:b=>b.impr||0},
+      {label:"Click-through rate",get:b=>b.impr?b.clicks/b.impr*100:null,f:pctText,word:"avg"},
+      {label:"Average position",get:b=>b.posN?b.posSum/b.posN:null,f:posOne,invert:true,word:"avg"},
+      {label:"Website sessions",get:b=>b.sessions||0},
+      {label:"Conversions",get:b=>b.conv||0}
+    ]
+  },
+  paid:{
+    mount:"mom-paid",sub:"mom-paid-sub",noun:"Meta ads",daily:true,
+    agg:cap=>momBucket(RAW.paid.filter(r=>r.platform==='meta'),cap,(b,r)=>{
+      madd(b,"spend",r.spend);madd(b,"impr",r.impressions);
+      madd(b,"clicks",r.clicks);madd(b,"leads",r.leads);
+    }),
+    metrics:[
+      {label:"Spend",get:b=>b.spend||0,f:money},
+      {label:"Impressions",get:b=>b.impr||0},
+      {label:"Clicks",get:b=>b.clicks||0},
+      {label:"Click-through rate",get:b=>b.impr?b.clicks/b.impr*100:null,f:pctText,word:"avg"},
+      {label:"Avg CPC",get:b=>b.clicks?b.spend/b.clicks:null,f:money,invert:true,word:"avg"},
+      {label:"Leads",get:b=>b.leads||0},
+      {label:"Cost per lead",get:b=>b.leads?b.spend/b.leads:null,f:money,invert:true,word:"avg"}
+    ]
+  },
+  gads:{
+    mount:"mom-gads",sub:"mom-gads-sub",noun:"Google Ads",daily:true,
+    agg:cap=>momBucket(RAW.paid.filter(r=>r.platform==='google'),cap,(b,r)=>{
+      madd(b,"spend",r.spend);madd(b,"impr",r.impressions);
+      madd(b,"clicks",r.clicks);madd(b,"leads",r.leads);
+    }),
+    metrics:[
+      {label:"Spend",get:b=>b.spend||0,f:money},
+      {label:"Impressions",get:b=>b.impr||0},
+      {label:"Clicks",get:b=>b.clicks||0},
+      {label:"Click-through rate",get:b=>b.impr?b.clicks/b.impr*100:null,f:pctText,word:"avg"},
+      {label:"Avg CPC",get:b=>b.clicks?b.spend/b.clicks:null,f:money,invert:true,word:"avg"},
+      {label:"Conversions",get:b=>b.leads||0},
+      {label:"Cost per conversion",get:b=>b.leads?b.spend/b.leads:null,f:money,invert:true,word:"avg"}
+    ]
+  },
+  social:{
+    mount:"mom-social",sub:"mom-social-sub",noun:"organic social",daily:true,
+    agg:cap=>momBucket(RAW.social,cap,(b,r)=>{
+      if(r.platform==='instagram'){madd(b,"igReach",r.reach);madd(b,"igEng",r.engagement);}
+      else if(r.platform==='facebook'){madd(b,"fbReach",r.reach);madd(b,"fbEng",r.engagement);mlevel(b,"fbFoll",r,r.followers);}
+      else if(r.platform==='linkedin'){madd(b,"liImpr",r.impressions);madd(b,"liEng",r.engagement);mlevel(b,"liFoll",r,r.followers);}
+    }),
+    // Instagram followers are deliberately absent: Windsor only ever reports them for the
+    // current day, so a monthly series of them would read 0 for every past month.
+    metrics:[
+      {label:"Total reach",get:b=>(b.igReach||0)+(b.fbReach||0)},
+      {label:"Total engagement",get:b=>(b.igEng||0)+(b.fbEng||0)+(b.liEng||0)},
+      {label:"Instagram reach",get:b=>b.igReach||0},
+      {label:"Facebook reach",get:b=>b.fbReach||0},
+      {label:"LinkedIn impressions",get:b=>b.liImpr||0},
+      {label:"Facebook followers",get:b=>b.fbFoll==null?null:b.fbFoll,word:"end"},
+      {label:"LinkedIn followers",get:b=>b.liFoll==null?null:b.liFoll,word:"end"}
+    ]
+  },
+  aisearch:{
+    mount:"mom-ai",sub:"mom-ai-sub",noun:"AI search",daily:false,
+    // AI search is a point-in-time snapshot on its own cadence, so this band follows the
+    // latest snapshot rather than the month picker — exactly like the KPIs on that tab.
+    anchor:()=>AI_MONTH?String(AI_MONTH).slice(0,7):null,
+    // Snapshots can skip a month, so step back to the previous one that exists rather
+    // than assuming last calendar month.
+    prevKey:(keys,cur)=>keys[keys.indexOf(cur)-1]||null,
+    caption:({prev,A})=>(prev&&A)?null:`Snapshot taken ${dmy(AI_MONTH)} — the first on record, so there is nothing to compare against yet. Month-on-month movement appears here from the next snapshot.`,
+    agg:()=>{
+      const out={}, at=key=>out[key]||(out[key]={key,days:null});
+      AI_OVERVIEW.forEach(r=>{
+        if(r.engine!=='all')return;
+        const b=at(String(r.period_month).slice(0,7));
+        b.brand=r.brand_presence;b.link=r.link_presence;
+        b.pos=r.average_position==null?null:Number(r.average_position);
+        b.traffic=r.ai_opportunity_traffic;
+      });
+      const won=p=>((p.cobalt_urls||[]).length>0)||p.brand_named===true;
+      AI_PROMPTS.forEach(p=>{if(won(p))madd(at(String(p.period_month).slice(0,7)),"wins",1);});
+      AI_CITATIONS.forEach(c=>{if(!c.is_cobalt)return;const b=at(String(c.period_month).slice(0,7));
+        (b.pages=b.pages||new Set()).add(bareUrl(c.url));});
+      return out;
+    },
+    metrics:[
+      {label:"Answers naming Cobalt",get:b=>b.wins||0,word:"snapshot"},
+      {label:"Pages cited",get:b=>b.pages?b.pages.size:0,word:"snapshot"},
+      {label:"Brand presence",get:b=>b.brand==null?null:b.brand,word:"snapshot"},
+      {label:"Link presence",get:b=>b.link==null?null:b.link,word:"snapshot"},
+      {label:"Average position",get:b=>b.pos==null?null:b.pos,f:posOne,invert:true,word:"snapshot"},
+      {label:"AI traffic opportunity",get:b=>b.traffic==null?null:b.traffic,word:"snapshot"}
+    ]
+  }
+};
+
+function renderMoMBand(name){
+  const S=MOM_BANDS[name], mount=document.getElementById(S.mount);
+  if(!mount)return;
+  const sub=document.getElementById(S.sub);
+  const blank=msg=>{mount.innerHTML=`<div class="nodata">${msg}</div>`;if(sub)sub.textContent="";};
+  const cur=S.anchor?S.anchor():MONTH;
+  // The sparkline always runs off uncapped monthly totals; only the comparison is capped.
+  const series=S.agg(0), keys=Object.keys(series).sort();
+  if(!cur||!keys.length)return blank(`No ${S.noun} history to compare yet.`);
+  if(!series[cur])return blank(`No ${S.noun} data for ${monthLong(cur)}.`);
+  const prev=S.prevKey?S.prevKey(keys,cur):prevMonthKey(cur);
+  const whole=k=>{const b=series[k];if(!b)return false;if(!b.days)return true;
+    const n=daysInMonth(k);return b.days.size===n&&b.days.has(1)&&b.days.has(n);};
+  const running=!!(S.daily&&cur===thisMonthKey()&&!whole(cur));
+  const cap=running?Math.max(...series[cur].days):0;
+  const cmp=cap?S.agg(cap):series;
+  const A=prev?cmp[prev]:null, B=cmp[cur];
+  // Days of data each side actually has inside the compared window. A previous month that
+  // barely overlaps — a campaign that started on the 7th, say — turns a percentage into
+  // noise (1 impression against 1,465 is not a 146,400% gain), so the chips are withheld
+  // and the caption says why instead.
+  const span=b=>b&&b.days?b.days.size:null;
+  const covA=span(A), covB=span(B);
+  const thin=!!(A&&covA!=null&&covB!=null&&covA*2<covB);
+
+  if(sub){
+    const covers=k=>{const b=series[k];if(!b||!b.days)return null;
+      const n=b.days.size,N=daysInMonth(k);return n<N?`${monthShort(k)} covers ${n} of its ${N} days`:null;};
+    const shownPartial=keys.slice(-6).some(k=>!whole(k));
+    let text=S.caption&&S.caption({cur,prev,A,B,running,cap});
+    if(!text){
+      text=!prev
+        ? `${monthLong(cur)} is the first ${S.noun} period on record, so there is nothing earlier to compare against yet.`
+        : !A
+          ? `${monthLong(cur)} on its own. There is no ${S.noun} data for ${monthLong(prev)} to compare against yet.`
+          : running
+            ? `${monthLong(cur)} is still in progress, so days 1–${cap} are compared with the same days in ${monthLong(prev)}.`
+            : `${monthLong(cur)} compared with ${monthLong(prev)}.`+
+              (()=>{const n=[covers(cur),covers(prev)].filter(Boolean);return n.length?` ${n.join("; ")}.`:"";})();
+      if(thin)text+=` ${monthLong(prev)} has only ${covA} day${covA===1?"":"s"} of data in that window, so no percentage change is shown.`;
+    }
+    if(shownPartial)text+=" Months marked * don't cover a whole calendar month.";
+    sub.textContent=text;
+  }
+
+  const shown=keys.slice(-6);
+  mount.innerHTML=S.metrics.map(m=>{
+    const f=m.f||fmt;
+    const bv=B?m.get(B):null, av=A?m.get(A):null;
+    let chip="";
+    if(!thin&&av!=null&&bv!=null&&Number(av)!==0){
+      const pc=Math.round((bv-av)/Math.abs(av)*100);
+      // On cost and position metrics a rise is the worse result, so the colour flips.
+      const cls=pc===0?"flat":((m.invert?pc<0:pc>0)?"up":"dn");
+      chip=`<span class="chip ${cls}">${pc>0?"▲":pc<0?"▼":"–"} ${Math.abs(pc)}%</span>`;
+    }
+    const vals=shown.map(k=>({key:k,label:monthShort(k),whole:whole(k),v:series[k]?m.get(series[k]):null}));
+    const mx=Math.max(...vals.map(x=>x.v==null?0:Math.abs(Number(x.v))),1), bw=100/(vals.length||1);
+    const bars=vals.map((x,i)=>{
+      // A genuine zero draws a hairline baseline; only a missing value draws nothing.
+      const h=x.v==null?0:Math.max(1,(Math.max(0,Number(x.v))/mx)*34), y=36-h, X=i*bw+bw*0.18, w=bw*0.64;
+      const op=x.key===cur?1:(x.whole?0.5:0.28);
+      return `<rect x="${X.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="var(--cobalt)" opacity="${op}"><title>${x.label}${x.whole?"":" (partial)"}: ${x.v==null?"—":f(x.v)}</title></rect>`;
+    }).join("");
+    const xlabels=vals.map(x=>`<span>${x.key===cur?"<b>"+x.label+"</b>":x.label}${x.whole?"":"*"}</span>`).join("");
+    const capline=(running?`days 1–${cap}`:`${monthShort(cur)} ${m.word||"total"}`)
+      +(prev?` · vs ${monthShort(prev)}`:"")+(m.invert?" · lower is better":"");
+    // One period on record is not a trend — a lone full-width bar reads as a bug, so the
+    // sparkline only appears once there are at least two months to draw.
+    const spark=vals.length>1
+      ? `<svg class="mspark" viewBox="0 0 100 36" preserveAspectRatio="none">${bars}</svg>
+      <div class="mspark-x">${xlabels}</div>`
+      : "";
+    return `<div class="momcard">
+      <div class="mlab">${m.label}</div>
+      <div class="mval">${bv==null?"—":f(bv)} ${chip}</div>
+      <div class="mcap">${capline}</div>
+      ${spark}
+    </div>`;
+  }).join("");
+}
+const renderServiceMoM=()=>Object.keys(MOM_BANDS).forEach(renderMoMBand);
+
 /* Savvas manual metrics — content & activity */
 const monLabel=iso=>{const[y,m]=iso.split("-");return (MON[m]||m)+" "+y;};
 const prevMonthISO=iso=>{let[y,m]=iso.split("-").map(Number);m--;if(m<1){m=12;y--;}return `${y}-${String(m).padStart(2,"0")}-01`;};
@@ -1463,7 +1695,7 @@ function alignHeads(){
     });
   });
 }
-function renderAll(){renderMonthChips();renderWindowLabels();renderKPIs();renderMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderFeedback();renderAiSearch();renderBeacons();updateAddButton();alignHeads();}
+function renderAll(){renderMonthChips();renderWindowLabels();renderKPIs();renderMoM();renderServiceMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderFeedback();renderAiSearch();renderBeacons();updateAddButton();alignHeads();}
 
 /* pin-anywhere: click any element (post, card, page area) while in pin mode */
 document.getElementById("app").addEventListener("click",e=>{
@@ -1517,6 +1749,7 @@ const TOUR={
  ],
  seo:[
   {sel:"#kpi-seo",title:"SEO snapshot",text:"Clicks, impressions, CTR and your average Google position."},
+  {sel:"#mom-seo",title:"Month on month",text:"The same SEO metrics for the month you picked, against the month before it."},
   {sel:"#c-position",title:"Ranking trend",text:"Average Google position over time — remember, lower is better."},
   {sel:"#t-rank",title:"Keyword rankings",text:"Every tracked keyword and where it currently ranks."}
  ],
@@ -1528,16 +1761,19 @@ const TOUR={
  ],
  paid:[
   {sel:"#kpi-paid",title:"Meta snapshot",text:"Spend, clicks, cost-per-click and leads from Facebook & Instagram ads."},
+  {sel:"#mom-paid",title:"Month on month",text:"Spend, leads and cost per lead against last month — on cost metrics, down is the good direction."},
   {sel:"#c-spend",title:"Daily spend",text:"Meta ad spend each day, stacked by funnel stage."},
   {sel:"#t-paid",title:"By campaign",text:"The per-campaign breakdown of spend and results."}
  ],
  google:[
   {sel:"#kpi-gads",title:"Google snapshot",text:"Spend, clicks, cost-per-click and conversions from Google Search and Performance Max."},
+  {sel:"#mom-gads",title:"Month on month",text:"Google Ads spend, conversions and cost per conversion against last month."},
   {sel:"#c-gspend",title:"Daily spend",text:"Google ad spend each day, stacked by campaign."},
   {sel:"#t-gads",title:"By campaign",text:"The per-campaign breakdown of spend and results."}
  ],
  social:[
   {sel:"#kpi-social",title:"Social snapshot",text:"Reach, engagement and followers across Instagram, Facebook & LinkedIn."},
+  {sel:"#mom-social",title:"Month on month",text:"Reach, engagement and follower movement per platform, against last month."},
   {sel:"#ins-social",title:"Insights & walkthrough",text:"Notes pinned to the data. Tap “Walkthrough” to play them as a guided report."},
   {sel:"#c-reach",title:"Your graphs",text:"Reach, engagement and follower growth over time."},
   {sel:"#ig-posts",title:"Top posts",text:"Best-performing posts — you can pin an insight straight onto one."},
