@@ -477,7 +477,7 @@
     <div class="kicker">Reporting period</div>
     <div class="period" id="period">—</div>
     <div id="updated">Last updated —</div>
-    <button onclick="loadData()">↻ Refresh</button>
+    <button onclick="refreshAll()">↻ Refresh</button>
     <button class="edit" onclick="openUpdate()">✎ Update data</button>
     <button class="addins" id="addins" style="display:none" type="button">✎ Add insight</button>
     <button class="signout" id="signoutBtn" onclick="signOut()" hidden>Sign out</button>
@@ -607,10 +607,11 @@
       <div class="delta" id="sDmsDelta"></div>
     </div>
     <div class="card hero">
-      <div class="lbl">Follower growth</div>
+      <div class="lbl">Followers</div>
       <div class="big" id="sFollowers">—</div>
       <div class="small" id="sFollowersSplit"></div>
       <div class="delta" id="sFollowersDelta"></div>
+      <div class="small" id="sFollowersNote" style="margin-top:6px"></div>
     </div>
   </div>
 
@@ -831,6 +832,55 @@ const SUPA = {
   get rest(){ return this.url + "/rest/v1/manor_roi_monthly"; },
   get fn(){ return this.url + "/functions/v1/manor-roi-save"; }
 };
+
+/* ============================================================
+   BUILD STAMP — bump on every deploy.
+   GitHub Pages serves this HTML with cache-control: max-age=600, so for ten
+   minutes after a deploy a browser keeps the old copy. Worse, "↻ Refresh" only
+   re-fetched data from Supabase — it never reloaded the page — so someone who
+   pressed it after a redesign saw the old layout for ever and reasonably
+   concluded nothing had shipped. Refresh now also asks whether a newer build
+   exists and offers to load it.
+   ============================================================ */
+const BUILD = '2026-09-08-0200';
+
+async function newerBuildAvailable(){
+  try{
+    const r = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
+    if(!r.ok) return null;
+    const m = (await r.text()).match(/const BUILD = '([^']+)'/);
+    return (m && m[1] !== BUILD) ? m[1] : null;
+  }catch(e){ return null; }
+}
+
+function showUpdateBanner(){
+  const b = $('banner'); if(!b) return;
+  b.className = 'banner show';
+  b.innerHTML = 'A newer version of this dashboard is available. '
+    + '<a href="#" id="reloadNow" style="color:inherit;font-weight:700;text-decoration:underline">Load it now</a>';
+  const a = $('reloadNow');
+  if(a) a.onclick = e => {
+    e.preventDefault();
+    // Cache-bust the document itself: a plain reload can still be answered from
+    // the browser cache inside the ten-minute window.
+    location.replace(location.pathname + '?v=' + Date.now() + location.hash);
+  };
+}
+
+/* The ↻ Refresh button: pull fresh data for whatever tab you are on, and flag a
+   new build if one has shipped since this page was loaded. */
+async function refreshAll(){
+  const v = document.body.dataset.theme;
+  if(v === 'social') loadSocial();
+  else if(v === 'search' || v === 'bench'){ SEARCH_LOADED = false; loadSearch(); }
+  else loadData();
+  loadInsights();
+  if(await newerBuildAvailable()) showUpdateBanner();
+}
+
+/* Also check once shortly after load, so a stale tab left open overnight says so
+   rather than quietly showing last week's dashboard. */
+setTimeout(async () => { if(await newerBuildAvailable()) showUpdateBanner(); }, 4000);
 
 /* ============================================================
    ACCESS GATE — Supabase Auth (shared director account)
@@ -1506,9 +1556,27 @@ function renderSocial(groups, posts, isSample, extra){
   $('sDmsNote').textContent = dms!=null ? 'this month' : 'add via ✎ Update data';
   if(dms!=null && dmsPrev!=null) deltaEl($('sDmsDelta'), dms, dmsPrev); else $('sDmsDelta').textContent='';
   // KPI: Follower growth
+  /* Followers is a STANDING TOTAL, so report the total and state the net change
+     in whole followers. A percentage is useless here — 11,468 vs 11,448 is
+     "+20 followers", not "+0.2%", and nobody grows an audience in percentages.
+     Instagram was not collected before Aug 2026 and reads 0 in those months, so
+     any comparison across that boundary would invent thousands of new followers;
+     say the comparison is unavailable rather than print a fiction. */
   $('sFollowers').textContent = nf(last.t.followers);
   $('sFollowersSplit').innerHTML = split(last.ig.followers, last.fb.followers);
-  if(prev && prev.ig.followers && last.ig.followers) deltaEl($('sFollowersDelta'), last.t.followers, prev.t.followers); else $('sFollowersDelta').textContent='';
+  const fdEl = $('sFollowersDelta'), fnEl = $('sFollowersNote');
+  const comparable = prev && prev.ig.followers && last.ig.followers;
+  if(comparable){
+    const d = (+last.t.followers||0) - (+prev.t.followers||0);
+    const dIg = (+last.ig.followers||0) - (+prev.ig.followers||0);
+    const dFb = (+last.fb.followers||0) - (+prev.fb.followers||0);
+    fdEl.className = 'delta ' + (d>0?'up':d<0?'down':'flat');
+    fdEl.textContent = `${d>0?'▲':d<0?'▼':'→'} ${d>0?'+':''}${nf(d)} vs prev month`;
+    if(fnEl) fnEl.textContent = `IG ${dIg>=0?'+':''}${nf(dIg)} · FB ${dFb>=0?'+':''}${nf(dFb)}`;
+  } else {
+    fdEl.className = 'delta'; fdEl.textContent = '';
+    if(fnEl) fnEl.textContent = prev ? 'No month-on-month change — Instagram followers were not recorded before Aug 2026.' : '';
+  }
 
   $('sSummary').innerHTML = socialSummary(groups);
 
