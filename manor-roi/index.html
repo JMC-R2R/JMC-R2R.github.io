@@ -41,7 +41,8 @@
     --blue:#D0531E;        /* primary accent → Savvas Studio terracotta (--corduroy) */
     --azure:#E2B934;       /* secondary → Manor gold (the Manor × Savvas blend) */
   }
-  body[data-theme="search"]{
+  body[data-theme="search"],
+  body[data-theme="bench"]{
     --ink:#1B1719; --panel:#241F21; --panel-2:#2C2629; --line:#3A3236;
     --blue:#17B4F0;        /* primary accent → R2R blue (R2R runs search) */
     --azure:#E2B934;       /* secondary → Manor gold */
@@ -103,7 +104,8 @@
   #neonFrame{position:fixed;inset:0;pointer-events:none;z-index:400;border:1.5px solid transparent;opacity:0;transition:opacity .35s ease}
   body[data-theme="roi"] #neonFrame{opacity:1;border-color:rgba(23,180,240,.5);box-shadow:inset 0 0 26px rgba(23,180,240,.22),inset 0 0 3px rgba(23,180,240,.55)}
   body[data-theme="social"] #neonFrame{opacity:1;border-color:rgba(208,83,30,.5);box-shadow:inset 0 0 26px rgba(208,83,30,.22),inset 0 0 3px rgba(208,83,30,.55)}
-  body[data-theme="search"] #neonFrame{opacity:1;border-color:rgba(23,180,240,.5);box-shadow:inset 0 0 26px rgba(23,180,240,.22),inset 0 0 3px rgba(23,180,240,.55)}
+  body[data-theme="search"] #neonFrame,
+  body[data-theme="bench"] #neonFrame{opacity:1;border-color:rgba(23,180,240,.5);box-shadow:inset 0 0 26px rgba(23,180,240,.22),inset 0 0 3px rgba(23,180,240,.55)}
 
   /* ===== Month chips ===== */
   .months{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:0 0 22px}
@@ -332,6 +334,20 @@
   .msg{font-family:var(--mono);font-size:12px;margin-top:12px;min-height:16px}
   .msg.err{color:var(--bad)} .msg.ok{color:var(--good)}
   .head-right .edit{color:var(--ink);background:var(--blue);border-color:var(--blue)}
+  /* ===== Inline section editing =====
+     A manually-entered figure gets a pencil on its own card. It used to be
+     reachable only through "✎ Update data" on the Social tab, so the one metric
+     the venue's own team owns (DMs) had never been filled in once. Edit the
+     number where you are reading it. */
+  .card{position:relative}
+  .cardedit{position:absolute;top:9px;right:9px;z-index:2;font-family:var(--mono);font-size:11px;line-height:1;
+    color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;
+    padding:5px 7px;cursor:pointer;opacity:0;transition:opacity .14s,color .14s,border-color .14s}
+  .card:hover .cardedit,.cardedit:focus{opacity:1}
+  .cardedit:hover{color:var(--blue);border-color:var(--blue)}
+  @media(hover:none){ .cardedit{opacity:.75} }
+  .editable-hint{font-family:var(--mono);font-size:10px;color:var(--muted);opacity:.8}
+
   /* ===== Insights v3 — pin-anywhere commentary, ported from the Cobalt build =====
      Replaces the Social-only "Sini's Insights" cards. Works on all three views:
      an author enters the edit code once, clicks ✎ Add insight, then clicks a point
@@ -479,6 +495,7 @@
 <div class="tabs">
   <button class="tab active" id="tabSearch" onclick="showView('search')">Search &amp; Local</button>
   <button class="tab" id="tabRoi" onclick="showView('roi')">Marketing ROI</button>
+  <button class="tab" id="tabBench" onclick="showView('bench')">Benchmarking</button>
   <button class="tab" id="tabSocial" onclick="showView('social')">Social</button>
 </div>
 
@@ -583,6 +600,7 @@
       <div class="delta" id="sClicksDelta"></div>
     </div>
     <div class="card hero">
+      <button class="cardedit" type="button" data-edit="dms" title="Edit this month's DM count">✎ Edit</button>
       <div class="lbl">DMs</div>
       <div class="big" id="sDms">—</div>
       <div class="small" id="sDmsNote"></div>
@@ -606,7 +624,10 @@
   </div>
 
   <div class="seclabel">Competitive benchmarks</div>
-  <div class="bench" id="sBench"></div>
+  <div class="card" style="padding:14px 16px">
+    <button class="cardedit" type="button" data-edit="bench" title="Add or update a competitor">✎ Edit</button>
+    <div class="bench" id="sBench"></div>
+  </div>
 
   <div class="seclabel">Top Instagram posts this month</div>
   <div class="posts" id="sPostsIg"></div>
@@ -616,17 +637,90 @@
 
 <!-- ===== SEARCH & LOCAL VIEW ===== -->
 <div class="view active" id="viewSearch" data-anchor="sec:search">
+  <div class="r2r-banner">
+    <img class="r2r-mark" src="rtr-logo.png" alt="Ready to Rank">
+    <div class="sb-body">
+      <div class="sb-title">Search &amp; local performance managed by Ready&nbsp;to&nbsp;Rank</div>
+      <div class="sb-sub">How Manor on High is found on Google Search and Maps. <a href="https://readytorank.com.au/" target="_blank" rel="noopener">readytorank.com.au&nbsp;↗</a></div>
+    </div>
+  </div>
+
+  <!-- NUMBERS FIRST. Search Console leads: it is the closest thing to "did people
+       find us on Google this month", and it renders for every month, unlike the
+       competitor benchmark which only exists from Jul 2026. -->
+  <div class="seclabel">Your search performance · Google Search Console</div>
+  <div class="grid g4">
+    <div class="card hero accent"><div class="lbl">Clicks</div><div class="big" id="sc1">—</div><div class="small">from Google Search</div><div class="delta" id="sc1Delta"></div></div>
+    <div class="card hero"><div class="lbl">Impressions</div><div class="big" id="sc2">—</div><div class="small">times you appeared</div><div class="delta" id="sc2Delta"></div></div>
+    <div class="card hero"><div class="lbl">Click-through rate</div><div class="big" id="sc5">—</div><div class="small">clicks ÷ impressions</div><div class="delta" id="sc5Delta"></div></div>
+    <div class="card hero"><div class="lbl">Sessions</div><div class="big" id="sc6">—</div><div class="small">GA4 · all channels</div><div class="delta" id="sc6Delta"></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><div class="lbl">Average position</div><div class="big" id="sc3" style="font-size:30px">—</div><div class="small">all queries incl. brand</div></div>
+    <div class="card"><div class="lbl">Enquiry events</div><div class="big" id="sc4" style="font-size:30px">—</div><div class="small">GA4 key events</div></div>
+  </div>
+  <div class="note" id="scNote"></div>
+
+  <div class="seclabel">Clicks &amp; impressions over time</div>
+  <div class="trend">
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>Clicks</span>
+      <span><i style="background:var(--manor-gold)"></i>Impressions</span>
+    </div>
+    <div id="scChart"></div>
+    <div class="note" id="scChartNote"></div>
+  </div>
+
+  <div class="seclabel">Google Business Profile · your local presence</div>
+  <div class="grid g4">
+    <div class="card hero accent">
+      <div class="lbl">Profile views</div><div class="big" id="gViews">—</div>
+      <div class="small">Google Search + Maps</div><div class="delta" id="gViewsDelta"></div>
+    </div>
+    <div class="card"><div class="lbl">Calls from profile</div><div class="big" id="gCalls2" style="font-size:30px">—</div><div class="small">tap-to-call</div><div class="delta" id="gCallsDelta"></div></div>
+    <div class="card"><div class="lbl">Website clicks</div><div class="big" id="gWeb" style="font-size:30px">—</div><div class="small">profile → site</div><div class="delta" id="gWebDelta"></div></div>
+    <div class="card"><div class="lbl">Direction requests</div><div class="big" id="gDir" style="font-size:30px">—</div><div class="small">planning a visit</div><div class="delta" id="gDirDelta"></div></div>
+  </div>
+
+  <div class="seclabel">Profile views over time</div>
+  <div class="trend">
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>Google Search</span>
+      <span><i style="background:var(--manor-gold)"></i>Google Maps</span>
+    </div>
+    <div id="gChart"></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <div class="lbl">Reviews</div>
+      <div class="big" id="gRating" style="font-size:30px">—</div>
+      <div class="small" id="gReviews">—</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Where people see you</div>
+      <div class="splitbar" id="gSplit"></div>
+      <div class="note" id="gSplitNote"></div>
+    </div>
+  </div>
+
+  <div class="seclabel">What people search to find you</div>
+  <div class="card">
+    <div class="terms" id="gTerms"></div>
+    <div class="note" id="gTermsNote"></div>
+  </div>
+</div><!-- /viewSearch -->
+
+<!-- ===== BENCHMARKING VIEW — how Manor stands against the other venues ===== -->
+<div class="view" id="viewBench" data-anchor="sec:bench">
   <div class="monthnotice" id="qEmpty" hidden></div>
   <div class="r2r-banner">
     <img class="r2r-mark" src="rtr-logo.png" alt="Ready to Rank">
     <div class="sb-body">
-      <div class="sb-title">Search &amp; local visibility managed by Ready&nbsp;to&nbsp;Rank</div>
+      <div class="sb-title">Competitive benchmarking by Ready&nbsp;to&nbsp;Rank</div>
       <div class="sb-sub">Where Manor on High stands against competing venues on Google. <a href="https://readytorank.com.au/" target="_blank" rel="noopener">readytorank.com.au&nbsp;↗</a></div>
     </div>
   </div>
-
-  <div class="seclabel">Summary</div>
-  <div class="card" id="qSummary" style="line-height:1.65;font-size:14.5px;color:var(--white)">—</div>
 
   <div class="seclabel">Where you stand · tracked wedding &amp; function keywords</div>
   <div class="card">
@@ -661,54 +755,9 @@
     <div class="note">Sorted by search volume. “Best rival” is the highest-ranking venue among the venues we track — not the whole search result, which also contains directories such as Easy Weddings and Tagvenue.</div>
   </div>
 
-  <div class="seclabel">Google Business Profile · your local presence</div>
-  <div class="grid g4">
-    <div class="card hero accent">
-      <div class="lbl">Profile views</div><div class="big" id="gViews">—</div>
-      <div class="small">Google Search + Maps</div><div class="delta" id="gViewsDelta"></div>
-    </div>
-    <div class="card"><div class="lbl">Calls from profile</div><div class="big" id="gCalls2" style="font-size:30px">—</div><div class="small">tap-to-call</div><div class="delta" id="gCallsDelta"></div></div>
-    <div class="card"><div class="lbl">Website clicks</div><div class="big" id="gWeb" style="font-size:30px">—</div><div class="small">profile → site</div><div class="delta" id="gWebDelta"></div></div>
-    <div class="card"><div class="lbl">Direction requests</div><div class="big" id="gDir" style="font-size:30px">—</div><div class="small">planning a visit</div><div class="delta" id="gDirDelta"></div></div>
-  </div>
-
-  <div class="grid g2" style="margin-top:14px">
-    <div class="card">
-      <div class="lbl">Reviews</div>
-      <div class="big" id="gRating" style="font-size:30px">—</div>
-      <div class="small" id="gReviews">—</div>
-    </div>
-    <div class="card">
-      <div class="lbl">Where people see you</div>
-      <div class="splitbar" id="gSplit"></div>
-      <div class="note" id="gSplitNote"></div>
-    </div>
-  </div>
-
-  <div class="seclabel">Profile views over time</div>
-  <div class="trend">
-    <div class="legend">
-      <span><i style="background:var(--blue)"></i>Google Search</span>
-      <span><i style="background:var(--manor-gold)"></i>Google Maps</span>
-    </div>
-    <div id="gChart"></div>
-  </div>
-
-  <div class="seclabel">What people search to find you</div>
-  <div class="card">
-    <div class="terms" id="gTerms"></div>
-    <div class="note" id="gTermsNote"></div>
-  </div>
-
-  <div class="seclabel">Your own search performance · Google Search Console</div>
-  <div class="grid g4">
-    <div class="card"><div class="lbl">Clicks</div><div class="big" id="sc1" style="font-size:30px">—</div><div class="small">last 30 days</div></div>
-    <div class="card"><div class="lbl">Impressions</div><div class="big" id="sc2" style="font-size:30px">—</div><div class="small">last 30 days</div></div>
-    <div class="card"><div class="lbl">Average position</div><div class="big" id="sc3" style="font-size:30px">—</div><div class="small">all queries incl. brand</div></div>
-    <div class="card"><div class="lbl">Enquiry events</div><div class="big" id="sc4" style="font-size:30px">—</div><div class="small">GA4 key events</div></div>
-  </div>
-  <div class="note" id="scNote"></div>
-</div><!-- /viewSearch -->
+  <div class="seclabel">What this means</div>
+  <div class="card" id="qSummary" style="line-height:1.65;font-size:14.5px;color:var(--white)">—</div>
+</div><!-- /viewBench -->
 
 <footer>
   <div class="chans">Channels: <span>SEO</span> · <span>Google Ads</span> · <span>Meta (migrating)</span> · <span>Email</span> · Website maintenance</div>
@@ -758,7 +807,7 @@
     <div class="subhead">DMs this month</div>
     <div class="frow">
       <div class="field"><label>Month</label><input type="month" id="d_month"></div>
-      <div class="field"><label>DM count</label><input type="number" id="d_dms" min="0" step="1"></div>
+      <div class="field"><label>DM count</label><input type="number" id="d_dms" min="0" step="1" placeholder="e.g. 24"></div>
     </div>
     <div class="modal-actions inline"><button class="btn primary" id="dBtn" onclick="saveDms()">Save DMs</button></div>
 
@@ -886,6 +935,7 @@ async function startApp(){
   // An explicit hash still wins, so existing #roi / #social links keep working.
   if(h.view === 'roi') showView('roi');
   else if(h.view === 'social') showView('social');
+  else if(h.view === 'bench') showView('bench');
   else showView('search');
   // The ROI figure element is id="roi", so a #roi url makes the browser anchor-jump
   // to it mid-page. Land at the top of the dashboard regardless of which tab opened.
@@ -1040,7 +1090,7 @@ function setPeriod(p){
   renderChips();
   syncHash();
   const v = document.body.dataset.theme;
-  if(v === 'search'){ SEARCH_LOADED = false; loadSearch(); }
+  if(v === 'search' || v === 'bench'){ SEARCH_LOADED = false; loadSearch(); }
   else if(v === 'social'){ loadSocial(); }
   else if(LOADED.length) render(LOADED, false);
 }
@@ -1280,13 +1330,31 @@ document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id
 
 /* ---------- social update modal (Sini): insights / benchmarks / DMs via edit-code RPCs ---------- */
 function openUpdate(){ (document.body.dataset.theme==='social') ? openSocialForm() : openForm(); }
-function openSocialForm(){
+function openSocialForm(focus){
   $('socialMsg').textContent=''; $('socialMsg').className='msg';
   $('s_code').value = localStorage.getItem('manorEditCode') || '';
-  const now=new Date(); const mk=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  if(!$('d_month').value) $('d_month').value=mk;
+  // Default the month to the month being VIEWED, not today — someone editing while
+  // looking at August means August, and silently writing it to September is the
+  // kind of error nobody catches until the numbers disagree.
+  const mk = (PERIOD ? String(PERIOD).slice(0,7)
+                     : new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0'));
+  $('d_month').value = mk;
   $('socialModalBg').classList.add('show');
+  if(focus){
+    const el = $(focus);
+    if(el) setTimeout(()=>{ el.focus(); el.scrollIntoView({block:'center',behavior:'smooth'}); }, 60);
+  }
 }
+
+/* Any card carrying data-edit opens the right editor, focused on the right field. */
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('.cardedit'); if(!b) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const what = b.dataset.edit;
+  if(what === 'dms')   return openSocialForm('d_dms');
+  if(what === 'bench') return openSocialForm('b_name');
+  openSocialForm();
+});
 function closeSocialForm(){ $('socialModalBg').classList.remove('show'); }
 function socMsg(t, ok){ const m=$('socialMsg'); m.className='msg '+(ok?'ok':'err'); m.textContent=t; }
 // Call a PostgREST RPC (edit-code gated, granted to anon) with the public key.
@@ -1582,7 +1650,19 @@ async function loadSearch(){
   }
 }
 
+/* Benchmarking and own-performance render INDEPENDENTLY. They used to be one
+   function, so the "no competitor benchmark for this month" early-return also
+   killed Google Business Profile and Search Console — a month with no rival data
+   showed nothing at all, including figures that existed. Now each half fails on
+   its own. */
 function renderSearch(D){
+  try{ renderCompetitors(D); }catch(e){ console.warn('competitor render failed', e); }
+  try{ renderOwn(D);   }catch(e){ console.warn('own-performance render failed', e); }
+}
+
+/* Named renderCompetitors, NOT renderBench — renderBench already exists for the
+   Social tab's follower benchmarks and a duplicate declaration silently wins. */
+function renderCompetitors(D){
   const nameOf = {}; const colourOf = {};
   D.comps.forEach(c=>{ nameOf[c.domain]=c.label; colourOf[c.domain]=c.colour; });
 
@@ -1592,13 +1672,13 @@ function renderSearch(D){
   if(PERIOD){
     const i = periods.indexOf(PERIOD);
     if(i < 0){
-      monthNotice('viewSearch','qEmpty', true, 'No competitor benchmark for ' + monthLabel(PERIOD),
-        'Competitor rank tracking for Manor on High starts in <b>July 2026</b>. Earlier months were never measured against the other venues, so there is nothing to compare — the Google Business Profile and Search Console figures for this month are on the Marketing ROI tab.');
+      monthNotice('viewBench','qEmpty', true, 'No competitor benchmark for ' + monthLabel(PERIOD),
+        'Competitor rank tracking for Manor on High starts in <b>July 2026</b>. Earlier months were never measured against the other venues, so there is nothing to compare. Your own Google Search Console and Business Profile figures for this month are on the <b>Search &amp; Local</b> tab.');
       return;
     }
     periods = periods.slice(0, i + 1);
   }
-  monthNotice('viewSearch','qEmpty', false);
+  monthNotice('viewBench','qEmpty', false);
   const P  = periods[periods.length-1];              // the month being viewed
   const PP = periods.length>1 ? periods[periods.length-2] : null;
   const cur  = D.vis.filter(r=>r.period_date===P ).sort((a,b)=> b.visibility-a.visibility);
@@ -1715,6 +1795,10 @@ function renderSearch(D){
       `The blue-link results for these terms are dominated by directories rather than venues, so the realistic near-term win is moving page-two rankings onto page one.`;
   }
 
+}
+
+function renderOwn(D){
+  const P = PERIOD || (D.gbp.length ? D.gbp[D.gbp.length-1].period_date : null);
   /* ---- Google Business Profile ---- */
   // Follow the selected month. A month still running is shown, but flagged — GBP
   // reports ~3 days behind, so its figures are always understated until it closes.
@@ -1759,28 +1843,109 @@ function renderSearch(D){
     ? `${monLabel(KP)} — the phrases people typed into Google before landing on the profile. Faded terms are branded (someone already looking for Manor on High); solid terms are people discovering you. <b>${num(nonBrand)}</b> discovery searches vs <b>${num(brand)}</b> branded across the terms shown.`
     : '';
 
-  /* ---- GSC / GA4 — the selected month only ---- */
+  /* ---- GSC / GA4 — the selected month, vs the one before it ---- */
   const mk = P.slice(0,7);
-  const seoMonth = (D.seo||[]).filter(r => String(r.period_date).slice(0,7) === mk)
-                              .sort((a,b)=> a.period_date<b.period_date?-1:1);
+  const monthOf = k => (D.seo||[]).filter(r => String(r.period_date).slice(0,7) === k)
+                                  .sort((a,b)=> a.period_date<b.period_date?-1:1);
+  const pmDate = new Date(P.slice(0,4), +P.slice(5,7)-1, 1); pmDate.setMonth(pmDate.getMonth()-1);
+  const pmk = pmDate.getFullYear()+'-'+String(pmDate.getMonth()+1).padStart(2,'0');
+
+  /* CTR is total clicks ÷ total impressions, NEVER the mean of the daily rates —
+     averaging weights a 3-impression day the same as a 3,000-impression one. */
+  const roll = rows => {
+    const gsc = rows.filter(r=>r.clicks!=null);
+    const clicks = gsc.reduce((a,r)=>a+(+r.clicks||0),0);
+    const imps   = gsc.reduce((a,r)=>a+(+r.impressions||0),0);
+    return {
+      days: rows.length, gscDays: gsc.length, clicks, imps,
+      ctr: imps ? clicks/imps*100 : null,
+      avg: gsc.length ? gsc.reduce((a,r)=>a+(+r.avg_position||0),0)/gsc.length : null,
+      sessions: rows.reduce((a,r)=>a+(+r.sessions||0),0),
+      conv: rows.reduce((a,r)=>a+(+r.conversions||0),0)
+    };
+  };
+  const seoMonth = monthOf(mk);
   if(seoMonth.length){
-    const gsc = seoMonth.filter(r=>r.clicks!=null);
-    const clicks = gsc.reduce((s,r)=>s+(+r.clicks||0),0);
-    const imps   = gsc.reduce((s,r)=>s+(+r.impressions||0),0);
-    const avg    = gsc.length ? gsc.reduce((s,r)=>s+(+r.avg_position||0),0)/gsc.length : null;
-    const conv   = seoMonth.reduce((s,r)=>s+(+r.conversions||0),0);
-    $('sc1').textContent = num(clicks);
-    $('sc2').textContent = num(imps);
-    $('sc3').textContent = avg? avg.toFixed(1) : '—';
-    $('sc4').textContent = num(conv);
-    const awaiting = seoMonth.length - gsc.length;
-    $('scNote').innerHTML = `${monLabel(P)} — ${seoMonth.length} day${seoMonth.length===1?'':'s'} of data`
-      + (awaiting ? `, ${awaiting} still awaiting Search Console (it reports about two days behind)` : '')
-      + `. <b>Average position here is not the same measure as the rankings above</b> — it is impressions-weighted across every query the site appears for, including people searching for “Manor on High” by name, so it always reads far stronger than a tracked-keyword position.`;
+    const c = roll(seoMonth), pRows = monthOf(pmk), pv = pRows.length ? roll(pRows) : null;
+    $('sc1').textContent = num(c.clicks);
+    $('sc2').textContent = num(c.imps);
+    $('sc5').textContent = c.ctr!=null ? c.ctr.toFixed(1)+'%' : '—';
+    $('sc6').textContent = num(c.sessions);
+    $('sc3').textContent = c.avg ? c.avg.toFixed(1) : '—';
+    $('sc4').textContent = num(c.conv);
+
+    /* Only compare COMPLETE month against COMPLETE month. The current month is
+       part-way through, so a delta against a full previous month reads as a
+       collapse that has not happened. */
+    const curKey = new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+    const partial = mk === curKey;
+    if(pv && !partial){
+      deltaEl($('sc1Delta'), c.clicks, pv.clicks);
+      deltaEl($('sc2Delta'), c.imps, pv.imps);
+      if(c.ctr!=null && pv.ctr!=null) deltaEl($('sc5Delta'), c.ctr, pv.ctr); else $('sc5Delta').textContent='';
+      deltaEl($('sc6Delta'), c.sessions, pv.sessions);
+    } else {
+      ['sc1Delta','sc2Delta','sc5Delta','sc6Delta'].forEach(id=>{
+        const el=$(id); if(el) el.textContent = partial ? 'month in progress' : '';
+        if(el) el.className='delta';
+      });
+    }
+
+    const awaiting = c.days - c.gscDays;
+    $('scNote').innerHTML = `${monLabel(P)} — ${c.days} day${c.days===1?'':'s'} of data`
+      + (awaiting ? `, ${awaiting} still awaiting Search Console (it reports about two days behind, so those days count sessions but not clicks)` : '')
+      + (partial ? '. <b>This month is still in progress</b>, so totals are lower than a full month by definition and no month-on-month change is shown.' : '')
+      + ` <b>Average position is not the same measure as the tracked rankings on Benchmarking</b> — it is impressions-weighted across every query the site appears for, including people searching for “Manor on High” by name, so it always reads far stronger than a tracked-keyword position.`;
+
+    drawSeoChart(seoMonth, P);
   } else {
-    ['sc1','sc2','sc3','sc4'].forEach(id => $(id).textContent = '—');
+    ['sc1','sc2','sc3','sc4','sc5','sc6'].forEach(id => { const el=$(id); if(el) el.textContent='—'; });
+    ['sc1Delta','sc2Delta','sc5Delta','sc6Delta'].forEach(id=>{ const el=$(id); if(el) el.textContent=''; });
     $('scNote').innerHTML = `Search Console and analytics data for Manor on High starts in <b>May 2026</b> — nothing was recorded for ${monthLabel(P)}.`;
+    drawSeoChart([], P);
   }
+}
+
+/* Daily clicks (left axis) and impressions (right). Two axes because impressions
+   run 50-100x clicks — on one scale the clicks line sits flat on the floor.
+   Days awaiting Search Console are simply absent rather than plotted as zero. */
+function drawSeoChart(rows, P){
+  const el = $('scChart'); if(!el) return;
+  const data = (rows||[]).filter(r => r.clicks!=null);
+  if(!data.length){
+    el.innerHTML = '<div class="muted" style="font-family:var(--mono);font-size:12px;padding:10px 2px">No Search Console data for this month yet.</div>';
+    $('scChartNote').textContent=''; return;
+  }
+  const W=1120,H=300,PL=52,PR=64,PT=18,PB=34, pw=W-PL-PR, ph=H-PT-PB;
+  const n=data.length;
+  const maxC=Math.max(1,...data.map(r=>+r.clicks||0));
+  const maxI=Math.max(1,...data.map(r=>+r.impressions||0));
+  const X=i=> PL + (n<=1? pw/2 : pw*i/(n-1));
+  const YC=v=> PT+ph-(Math.max(0,v)/maxC)*ph;
+  const YI=v=> PT+ph-(Math.max(0,v)/maxI)*ph;
+  const kfmt=v=>Math.abs(v)>=1000?(v/1000).toFixed(v%1000?1:0)+'k':Math.round(v);
+  const gold=getComputedStyle(document.body).getPropertyValue('--manor-gold').trim()||'#e2b934';
+  const blue=getComputedStyle(document.body).getPropertyValue('--blue').trim()||'#17B4F0';
+  let grid='',axL='',axR='';
+  for(let g=0;g<=4;g++){
+    const yy=PT+ph-(g/4)*ph;
+    grid+=`<line x1="${PL}" y1="${yy}" x2="${W-PR}" y2="${yy}" stroke="#2A2A33"/>`;
+    axL+=`<text x="${PL-8}" y="${yy+4}" fill="${blue}" font-size="10" font-family="Space Mono, monospace" text-anchor="end">${kfmt(maxC*g/4)}</text>`;
+    axR+=`<text x="${W-PR+8}" y="${yy+4}" fill="${gold}" font-size="10" font-family="Space Mono, monospace" text-anchor="start">${kfmt(maxI*g/4)}</text>`;
+  }
+  const impArea=`M${X(0).toFixed(1)} ${(PT+ph).toFixed(1)} `+data.map((r,i)=>'L'+X(i).toFixed(1)+' '+YI(+r.impressions||0).toFixed(1)).join(' ')+` L${X(n-1).toFixed(1)} ${(PT+ph).toFixed(1)} Z`;
+  const impLine=data.map((r,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+YI(+r.impressions||0).toFixed(1)).join(' ');
+  const clkLine=data.map((r,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+YC(+r.clicks||0).toFixed(1)).join(' ');
+  let xl=''; data.forEach((r,i)=>{ if(i===0||i===n-1||i===Math.floor(n/2))
+    xl+=`<text x="${X(i).toFixed(1)}" y="${H-PB+20}" fill="#8C8C99" font-size="10" font-family="Space Mono, monospace" text-anchor="middle">${String(r.period_date).slice(8,10)}/${String(r.period_date).slice(5,7)}</text>`; });
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily Search Console clicks and impressions">`
+    +`${grid}${axL}${axR}`
+    +`<path d="${impArea}" fill="${gold}" opacity="0.12"/>`
+    +`<path d="${impLine}" fill="none" stroke="${gold}" stroke-width="2"/>`
+    +`<path d="${clkLine}" fill="none" stroke="${blue}" stroke-width="2.5"/>`
+    +`${xl}</svg>`;
+  $('scChartNote').textContent = `${data.length} day${data.length===1?'':'s'} with Search Console data. Left axis clicks, right axis impressions.`;
+  regPinMap(el,'scChart',data.map(r=>String(r.period_date)),data.map(r=>String(r.period_date)),data.map((_,i)=>X(i)),W);
 }
 const ord = n => n+({1:'st',2:'nd',3:'rd'}[n%100>10&&n%100<14?0:n%10]||'th');
 
@@ -1881,21 +2046,23 @@ function gbpChart(rows){
 
 /* ---------- view tabs ---------- */
 function showView(v){
-  if(v!=='social' && v!=='search') v='roi';
+  if(v!=='social' && v!=='search' && v!=='bench') v='roi';
   $('viewRoi').classList.toggle('active',    v==='roi');
   $('viewSocial').classList.toggle('active', v==='social');
   $('viewSearch').classList.toggle('active', v==='search');
+  $('viewBench').classList.toggle('active',  v==='bench');
   $('tabRoi').classList.toggle('active',     v==='roi');
   $('tabSocial').classList.toggle('active',  v==='social');
   $('tabSearch').classList.toggle('active',  v==='search');
+  $('tabBench').classList.toggle('active',   v==='bench');
   // Per-tab co-branding: ROI = Manor+R2R, Social = Manor+Savvas, Search = R2R-led.
   document.body.dataset.theme = v;
-  $('viewLabel').textContent = v==='social' ? 'Social' : v==='search' ? 'Search & Local' : 'Marketing ROI';
+  $('viewLabel').textContent = v==='social' ? 'Social' : v==='search' ? 'Search & Local' : v==='bench' ? 'Benchmarking' : 'Marketing ROI';
   syncHash();
   // The reporting period is the month chip selection, the same on every tab.
   if(PERIOD) $('period').textContent = monthLabel(PERIOD);
   if(v==='social') loadSocial();
-  if(v==='search' && !SEARCH_LOADED) loadSearch();
+  if((v==='search' || v==='bench') && !SEARCH_LOADED) loadSearch();
   // Panels live inside each view, and beacons are page-positioned, so both are
   // repainted on every switch rather than only on load.
   if(typeof renderInsightPanels==='function'){ renderInsightPanels(); updateAddButton(); queueBeacons(); }
@@ -1940,12 +2107,12 @@ const PINMAPS = {};   // chart_id -> {el, dates, labels, xs, viewW}
 
 /* Social is delivered by Savvas, SEO and paid by R2R — same split as Cobalt.
    A view with an owner shows that team's name on the panel; null = whole team. */
-const VIEW_OWNER = { search:'r2r', roi:'r2r', social:'savvas' };
+const VIEW_OWNER = { search:'r2r', roi:'r2r', bench:'r2r', social:'savvas' };
 const TEAM_INFO  = {
   r2r:    { name:'Ready to Rank', av:'rtr-logo.png' },
   savvas: { name:'Savvas Studio',  av:'https://cdn.prod.website-files.com/67afd385cf839b0956c26535/68313a1298a186b5fcc266c2_Savvas%20Icon%20Logomarks-05.png' }
 };
-const CHART_TITLE = { 'chart':'Leads & booked value', 'sDailyChart':'Instagram reach & views', 'gChart':'Google Business Profile views' };
+const CHART_TITLE = { 'chart':'Leads & booked value', 'sDailyChart':'Instagram reach & views', 'gChart':'Google Business Profile views', 'scChart':'Search Console clicks & impressions' };
 
 const insCode    = () => localStorage.getItem('manorEditCode') || '';
 const insAuthor  = () => localStorage.getItem('manorInsightAuthor') || '';
@@ -2224,7 +2391,7 @@ function renderBeacons(){
 
 /* ---------- per-view panel ---------- */
 function renderInsightPanels(){
-  [['roi','viewRoi'],['social','viewSocial'],['search','viewSearch']].forEach(([view, id]) => {
+  [['roi','viewRoi'],['social','viewSocial'],['search','viewSearch'],['bench','viewBench']].forEach(([view, id]) => {
     const sec = $(id); if(!sec) return;
     let panel = sec.querySelector('.inspanel');
     if(!panel){ panel = document.createElement('div'); panel.className = 'inspanel'; sec.appendChild(panel); }
@@ -2286,6 +2453,7 @@ document.addEventListener('click', ev => {
     return;
   }
   if(p && p.contains(ev.target)) return;
+  if(ev.target.closest('.cardedit')) return;   // editing a figure is not pinning a note
   const t = ev.target.closest('[data-anchor]'); if(!t) return;
   ev.preventDefault(); ev.stopPropagation();
   const r = t.getBoundingClientRect();
