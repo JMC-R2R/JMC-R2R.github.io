@@ -842,7 +842,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-09-08-0200';
+const BUILD = '2026-09-08-0230';
 
 async function newerBuildAvailable(){
   try{
@@ -1780,8 +1780,17 @@ function renderCompetitors(D){
       <div class="lval">${(+r.visibility).toFixed(2)}%<em>${mv}</em></div>
     </div>`;
   }).join('');
+  /* Rankings are a point-in-time reading, so a mid-month snapshot is legitimate —
+     but earlier months were captured at month end. Say which day this one is from
+     rather than let it read as a settled month-end figure. */
+  const snap = (D.ranks.find(r => r.period_date === P) || {}).snapshot_date;
+  const curKey = new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+  const partialMonth = String(P).slice(0,7) === curKey;
   $('qLeagueNote').innerHTML =
-    `<b>Search visibility</b> weights every tracked keyword by its monthly search volume and by how many people click a result in that position — so ranking #3 on a busy term counts for far more than #40 on a quiet one. Read it as: of all the searching happening across these ${me?me.keywords_tracked:''} keywords, this is the share landing on each venue. Movement is versus ${PP?monLabel(PP):'the previous month'}.`;
+    (partialMonth && snap
+      ? `<b>Positions as at ${new Date(snap+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'long'})} — this month is still running.</b> Rankings are a snapshot rather than a running total, so this is a fair reading of where things stand today, but earlier months were captured at month end. `
+      : '')
+    + `<b>Search visibility</b> weights every tracked keyword by its monthly search volume and by how many people click a result in that position — so ranking #3 on a busy term counts for far more than #40 on a quiet one. Read it as: of all the searching happening across these ${me?me.keywords_tracked:''} keywords, this is the share landing on each venue. Movement is versus ${PP?monLabel(PP):'the previous month'}.`;
 
   /* ---- visibility trend ---- */
   visTrend(D.vis, periods, nameOf, colourOf);
