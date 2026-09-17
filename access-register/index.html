@@ -3,205 +3,235 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
 <title>Access Register</title>
+<!--
+  Access Register — LIVE page. Published to update.readytorank.com.au/access-register/
+  Source of truth: Ready-to-Rank/r2r-operations  operations-apps/access-register/index.html
+  A push to main that touches this file deploys it (see .github/workflows/deploy-registers.yml).
+
+  Rows load after sign-in under RLS. Layout, labels, colours and custom fields live in Supabase
+  (so_page_layouts / so_custom_fields page 'access-register'), so changing what the page shows
+  needs no code. Writers = so_register_writers; field edits are logged to so_register_edits.
+  Item names and categories are NOT editable here: a rename must also change
+  so_access_templates or it reverts on the next onboard. Notes are not shown: some hold ad budgets.
+-->
 <style>
-@font-face{font-family:"Archivo";src:url("../operations/assets/Archivo-var.ttf") format("truetype");font-weight:100 900;font-style:normal;font-display:swap;}
-@font-face{font-family:"Space Mono";src:url("../operations/assets/SpaceMono-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap;}
-@font-face{font-family:"Space Mono";src:url("../operations/assets/SpaceMono-Bold.ttf") format("truetype");font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:"Archivo";src:url("/operations/assets/Archivo-var.ttf") format("truetype");font-weight:100 900;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("/operations/assets/SpaceMono-Regular.ttf") format("truetype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("/operations/assets/SpaceMono-Bold.ttf") format("truetype");font-weight:700;font-display:swap;}
 :root{
   --bg:#0F0F12; --surface:#17171C; --card:#1B1B21; --raise:#212129;
   --line:#2A2A32; --line-soft:#22222A;
   --white:#fff; --text:#D8D8E0; --muted:#9B9BA6; --faint:#6E6E7A;
-  --accent:#17B4F0; --green:#2BD9A6; --amber:#F5B02E; --red:#E04B4B;
+  --accent:#17B4F0; --accent-ink:#04222E; --green:#2BD9A6; --amber:#F5B02E; --red:#E04B4B;
   --mono:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --sans:"Archivo",system-ui,-apple-system,sans-serif;
+  --cardpad:17px; --rowpad:9px; --gap:14px;
 }
+body.compact{--cardpad:11px; --rowpad:5px; --gap:9px;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;
-  -webkit-font-smoothing:antialiased;padding:0 0 90px;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;padding:0 0 90px;}
+button,input,select,textarea{font:inherit;color:inherit;}
+button{cursor:pointer;}
+.hide{display:none!important;}
 .wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
 h1{font-size:clamp(26px,4vw,42px);font-weight:900;letter-spacing:-.025em;line-height:1.03;color:var(--white);}
 h1 em{font-style:normal;color:var(--accent);}
-h2{font-size:clamp(17px,2vw,22px);font-weight:800;letter-spacing:-.015em;color:var(--white);}
-.eyebrow{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--accent);}
-.lede{font-size:clamp(13.5px,1.5vw,16px);color:var(--muted);max-width:66ch;}
-
-/* ---------- login ---------- */
+.lede{font-size:clamp(13.5px,1.5vw,16px);color:var(--muted);max-width:66ch;white-space:pre-line;margin-top:10px;}
+.btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:6px;padding:8px 14px;
+  font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.02em;}
+.btn:hover{filter:brightness(1.08);} .btn:disabled{opacity:.5;cursor:not-allowed;}
+.ghost{background:none;border:1px solid var(--line);color:var(--muted);border-radius:5px;padding:5px 10px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;}
+.ghost:hover{color:#fff;border-color:var(--accent);}
+.small{font-family:var(--mono);font-size:10.5px;padding:6px 9px;}
+/* login */
 .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-.gate .box{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);
-  border-radius:10px;padding:30px 28px;}
+.gate .box{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:30px 28px;}
 .gate h1{font-size:26px;margin-bottom:6px;}
 .gate p{font-size:12.8px;color:var(--muted);margin-bottom:22px;}
-label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--faint);margin:0 0 6px;}
-input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;
-  padding:11px 12px;color:var(--white);font-family:var(--sans);font-size:14px;margin-bottom:15px;}
-input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
-button{font-family:var(--sans);cursor:pointer;}
-.btn{width:100%;background:var(--accent);color:#04222E;border:none;border-radius:6px;
-  padding:12px;font-size:14px;font-weight:800;letter-spacing:.01em;}
-.btn:hover{filter:brightness(1.08);} .btn:disabled{opacity:.5;cursor:not-allowed;}
-.err{font-size:12.5px;color:#FF9C9C;background:rgba(224,75,75,.1);border:1px solid rgba(224,75,75,.4);
-  border-radius:6px;padding:9px 11px;margin-bottom:14px;}
-
-/* ---------- masthead ---------- */
-.mast{border-bottom:1px solid var(--line);
-  background:linear-gradient(180deg,rgba(23,180,240,.07),rgba(23,180,240,0));}
+.fl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 6px;}
+.in{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px;color:var(--white);font-size:14px;margin-bottom:14px;}
+.in:focus{outline:none;border-color:var(--accent);}
+.gate .btn{width:100%;padding:12px;font-size:13px;}
+.linkbtn{background:none;border:none;color:var(--accent);font-size:12.5px;margin-top:12px;padding:0;}
+.msg{font-size:12.5px;border-radius:6px;padding:9px 11px;margin-bottom:14px;}
+.msg.bad{color:#FF9C9C;background:rgba(224,75,75,.1);border:1px solid rgba(224,75,75,.4);}
+.msg.ok{color:#8FF0D2;background:rgba(43,217,166,.08);border:1px solid rgba(43,217,166,.35);}
+/* masthead */
+.mast{border-bottom:1px solid var(--line);background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 7%,transparent),transparent);}
 .mast .wrap{padding:38px 24px 26px;}
-.crumb{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--faint);margin-bottom:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.crumb b{color:var(--accent);font-weight:700;}
-.crumb a{color:var(--muted);text-decoration:none;border:1px solid var(--line);
-  background:var(--card);border-radius:5px;padding:5px 10px;}
+.crumb{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  margin-bottom:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.crumb b{color:var(--accent);}
+.crumb a{color:var(--muted);text-decoration:none;border:1px solid var(--line);background:var(--card);border-radius:5px;padding:5px 10px;}
 .crumb a:hover{color:#fff;border-color:var(--accent);}
-.who{margin-left:auto;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10.5px;}
-.who .ro{color:var(--amber);border:1px solid rgba(245,176,46,.4);background:rgba(245,176,46,.1);
-  padding:4px 8px;border-radius:4px;letter-spacing:.08em;}
-.who button{background:none;border:1px solid var(--line);color:var(--muted);border-radius:5px;
-  padding:5px 10px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;}
-.who button:hover{color:#fff;border-color:var(--accent);}
-
-/* ---------- client cards ---------- */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;margin-top:26px;}
-.cc{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);
-  border-radius:8px;padding:17px 18px;display:flex;flex-direction:column;gap:11px;
-  text-align:left;color:inherit;font:inherit;width:100%;}
+.who{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.who .ro{color:var(--amber);border:1px solid rgba(245,176,46,.4);background:rgba(245,176,46,.1);padding:4px 8px;border-radius:4px;}
+.toolbar{display:flex;gap:8px;align-items:center;margin-top:22px;flex-wrap:wrap;}
+.toolbar input{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px 11px;font-size:13px;width:220px;}
+.toolbar input:focus{outline:none;border-color:var(--accent);}
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:var(--gap);margin-top:22px;}
+.cc{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:8px;
+  padding:var(--cardpad) calc(var(--cardpad) + 1px);display:flex;flex-direction:column;gap:11px;text-align:left;width:100%;}
 .cc:hover{border-color:var(--accent);border-left-color:var(--accent);background:var(--raise);}
-.cc.red{border-left-color:var(--red);} .cc.amber{border-left-color:var(--amber);}
-.cc.green{border-left-color:var(--green);}
+.cc.red{border-left-color:var(--red);} .cc.amber{border-left-color:var(--amber);} .cc.green{border-left-color:var(--green);}
 .cc-h{display:flex;align-items:baseline;gap:9px;}
 .cc-h .nm{font-size:15.5px;font-weight:800;color:var(--white);line-height:1.2;}
-.cc-h .pk{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--faint);
-  white-space:nowrap;text-transform:uppercase;letter-spacing:.06em;}
+.cc-h .pk{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--faint);white-space:nowrap;text-transform:uppercase;letter-spacing:.06em;}
 .cc .mo{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);}
-.headline{font-size:13px;color:var(--text);line-height:1.4;}
-.headline b{color:var(--white);}
-.headline .ok{color:var(--green);} .headline .warn{color:var(--amber);} .headline .bad{color:#FF9C9C;}
+.headline{font-size:13px;line-height:1.4;}
+.ok{color:var(--green);} .warn{color:var(--amber);} .bad{color:#FF9C9C;}
 .bars{display:flex;flex-direction:column;gap:7px;}
-.bar-row{display:grid;grid-template-columns:64px 1fr 46px;gap:9px;align-items:center;}
-.bar-row .lb{font-size:11px;color:var(--muted);text-transform:capitalize;}
+.bar-row{display:grid;grid-template-columns:70px 1fr 46px;gap:9px;align-items:center;}
+.bar-row .lb{font-size:11px;color:var(--muted);}
 .track{height:6px;background:#101014;border-radius:4px;overflow:hidden;display:flex;}
 .fill-v{background:var(--green);} .fill-r{background:var(--amber);} .fill-p{background:#33333D;}
 .bar-row .ct{font-family:var(--mono);font-size:10px;color:var(--faint);text-align:right;}
-.cc .open{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--accent);padding-top:8px;border-top:1px solid var(--line-soft);}
-
-/* ---------- modal ---------- */
-.scrim{position:fixed;inset:0;background:rgba(6,6,9,.78);backdrop-filter:blur(3px);
-  display:flex;align-items:flex-start;justify-content:center;padding:34px 18px;z-index:50;overflow-y:auto;}
-.modal{width:100%;max-width:860px;background:var(--card);border:1px solid var(--line);
-  border-radius:11px;overflow:hidden;}
-.modal-h{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding:19px 22px;
-  border-bottom:1px solid var(--line-soft);background:var(--surface);position:sticky;top:0;z-index:2;}
+.cc .open{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);padding-top:8px;border-top:1px solid var(--line-soft);}
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(6,6,9,.78);backdrop-filter:blur(3px);display:flex;align-items:flex-start;
+  justify-content:center;padding:34px 18px;z-index:50;overflow-y:auto;}
+.modal{width:100%;max-width:880px;background:var(--card);border:1px solid var(--line);border-radius:11px;overflow:hidden;}
+.modal-h{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding:19px 22px;border-bottom:1px solid var(--line-soft);
+  background:var(--surface);position:sticky;top:0;z-index:2;}
 .modal-h .nm{font-size:18px;font-weight:900;color:var(--white);}
 .modal-h .meta{font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.06em;}
-.modal-h .x{margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted);
-  border-radius:6px;width:30px;height:30px;font-size:16px;line-height:1;}
+.modal-h .x{margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;width:30px;height:30px;font-size:16px;}
 .modal-h .x:hover{color:#fff;border-color:var(--accent);}
 .modal-b{padding:8px 22px 22px;}
 .cat{margin-top:20px;}
-.cat h4{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--faint);margin-bottom:10px;
-  display:flex;align-items:baseline;gap:9px;}
+.cat h4{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  margin-bottom:10px;display:flex;align-items:baseline;gap:9px;}
 .cat h4 span{color:var(--muted);letter-spacing:.06em;}
-.row{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding:9px 0;
-  border-bottom:1px solid var(--line-soft);}
+.row{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding:var(--rowpad) 0;border-bottom:1px solid var(--line-soft);}
 .row:last-child{border-bottom:none;}
-.row .it{font-size:13px;flex:1 1 200px;min-width:0;}
+.row .it{font-size:13px;flex:1 1 220px;min-width:0;}
 .row .it b{color:var(--white);font-weight:700;}
-.row .it .sub{display:block;font-family:var(--mono);font-size:9.5px;color:var(--faint);
-  letter-spacing:.05em;margin-top:2px;}
-.blk{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:var(--amber);
-  border:1px solid rgba(245,176,46,.4);border-radius:3px;padding:2px 5px;margin-left:6px;
-  vertical-align:middle;}
+.row .sub{display:block;font-family:var(--mono);font-size:9.5px;color:var(--faint);letter-spacing:.05em;margin-top:2px;}
+.blk{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:var(--amber);border:1px solid rgba(245,176,46,.4);
+  border-radius:3px;padding:2px 5px;margin-left:6px;vertical-align:middle;text-transform:uppercase;}
+.fields{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.fchip{font-family:var(--mono);font-size:10px;border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:3px 7px;color:var(--muted);}
+.fchip i{font-style:normal;color:var(--faint);}
+button.fchip:hover{border-color:var(--accent);color:#fff;}
+.fchip.saving{opacity:.5;}
+.fchip input,.fchip select{background:var(--bg);border:none;outline:none;color:var(--white);font-size:11px;min-width:110px;}
 .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;flex:none;}
-.seg button{background:var(--bg);border:none;color:var(--faint);font-family:var(--mono);
-  font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:7px 9px;
-  border-right:1px solid var(--line);white-space:nowrap;}
+.seg button{background:var(--bg);border:none;color:var(--faint);font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;padding:7px 9px;border-right:1px solid var(--line);white-space:nowrap;}
 .seg button:last-child{border-right:none;}
 .seg button:hover:not(:disabled){color:#fff;background:var(--raise);}
 .seg button:disabled{cursor:not-allowed;}
 .seg button.on{background:rgba(43,217,166,.16);color:var(--green);font-weight:700;}
 .seg button.on[data-s="requested"]{background:rgba(245,176,46,.16);color:var(--amber);}
-.seg button.on[data-s="received"]{background:rgba(23,180,240,.16);color:var(--accent);}
+.seg button.on[data-s="received"]{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);}
 .seg button.on[data-s="pending"]{background:#2A2A32;color:var(--text);}
 .seg button.on[data-s="not_applicable"]{background:#26262E;color:var(--faint);}
 .row.saving{opacity:.5;}
-.note{margin-top:18px;font-size:12.3px;color:var(--muted);line-height:1.5;
-  background:var(--surface);border-left:2px solid var(--accent);padding:12px 15px;border-radius:0 5px 5px 0;}
+.note{margin-top:18px;font-size:12.3px;color:var(--muted);line-height:1.5;background:var(--surface);
+  border-left:2px solid var(--accent);padding:12px 15px;border-radius:0 5px 5px 0;}
 .note b{color:var(--white);}
-.empty{font-size:13px;color:var(--amber);background:rgba(245,176,46,.07);
-  border:1px solid rgba(245,176,46,.3);border-radius:7px;padding:15px 17px;}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:80;
-  background:var(--raise);border:1px solid var(--line);border-radius:7px;padding:11px 17px;
-  font-size:13px;color:var(--text);box-shadow:0 8px 30px rgba(0,0,0,.5);}
+.empty{font-size:13px;color:var(--amber);background:rgba(245,176,46,.07);border:1px solid rgba(245,176,46,.3);border-radius:7px;padding:15px 17px;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:80;background:var(--raise);border:1px solid var(--line);
+  border-radius:7px;padding:11px 17px;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:92vw;}
 .toast.bad{border-color:rgba(224,75,75,.55);color:#FF9C9C;}
-.foot{margin-top:48px;padding-top:17px;border-top:1px solid var(--line);
-  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+.foot{margin-top:48px;padding-top:17px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
   font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;color:var(--faint);text-transform:uppercase;}
-.hide{display:none!important;}
-@media (max-width:620px){.row .seg{width:100%;}.seg button{flex:1;}}
+/* layout drawer */
+#drawer{position:fixed;top:0;right:0;height:100vh;width:min(460px,100vw);background:var(--surface);border-left:1px solid var(--line);
+  z-index:70;display:flex;flex-direction:column;box-shadow:-20px 0 50px rgba(0,0,0,.45);}
+#drawer header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;}
+#drawer header h3{color:var(--white);font-size:17px;font-weight:900;}
+#drawer header .ghost{margin-left:auto;}
+#drawer .body{overflow-y:auto;padding:6px 20px 20px;flex:1;}
+#drawer footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;}
+#drawer h4{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:22px 0 10px;}
+#drawer .hint{font-size:12px;color:var(--faint);margin:-4px 0 10px;}
+.frow{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.frow > label:first-child{font-size:12.5px;color:var(--muted);min-width:92px;}
+.frow .in{margin:0;flex:1;padding:8px 10px;font-size:13px;}
+textarea.in{min-height:64px;resize:vertical;}
+input[type=color]{width:38px;height:34px;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:2px;}
+.swatches{display:flex;gap:6px;}
+.swatches button{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);}
+.colrow{display:flex;align-items:center;gap:8px;padding:7px 8px;border:1px solid var(--line-soft);border-radius:7px;margin-bottom:6px;background:var(--card);}
+.colrow .in{margin:0;padding:6px 8px;font-size:12.5px;flex:1;min-width:0;}
+.kind{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);white-space:nowrap;}
+.kind.edit{color:var(--green);}
+.mv{background:var(--bg);border:1px solid var(--line);border-radius:4px;width:24px;height:24px;color:var(--muted);font-size:11px;}
+.mv:hover:not(:disabled){border-color:var(--accent);color:#fff;} .mv:disabled{opacity:.3;cursor:default;}
+.sw{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap;}
+.sw input{accent-color:var(--accent);width:15px;height:15px;}
+.cf{border:1px solid var(--line-soft);border-radius:7px;padding:10px;margin-bottom:8px;background:var(--card);}
+.cf.archived{opacity:.55;}
+.cf .frow{margin-bottom:6px;} .cf .frow:last-child{margin-bottom:0;}
+@media (max-width:620px){.wrap{padding:0 16px;}.mast .wrap{padding:28px 16px 20px;}.row .seg{width:100%;}.seg button{flex:1;}
+  .toolbar input{flex:1;width:auto;}}
 </style>
 </head>
 <body>
 
-<!-- login -->
-<div id="gate" class="gate">
+<div id="gate" class="gate hide">
   <div class="box">
     <h1>Access <em>Register</em></h1>
     <p>Ready to Rank internal. Sign in with your team account.</p>
-    <div id="gateErr" class="err hide"></div>
+    <div id="gateMsg" class="msg hide"></div>
     <form id="loginForm">
-      <label for="email">Email</label>
-      <input id="email" type="email" autocomplete="username" required>
-      <label for="pw">Password</label>
-      <input id="pw" type="password" autocomplete="current-password" required>
+      <label class="fl" for="email">Email</label>
+      <input class="in" id="email" type="email" autocomplete="username" required>
+      <label class="fl" for="pw">Password</label>
+      <input class="in" id="pw" type="password" autocomplete="current-password">
       <button class="btn" id="loginBtn" type="submit">Sign in</button>
     </form>
+    <button class="linkbtn" id="magicBtn" type="button">No password? Email me a sign-in link</button>
   </div>
 </div>
 
-<!-- app -->
 <div id="app" class="hide">
   <div class="mast">
     <div class="wrap">
       <div class="crumb">
         <a href="/operations/">&larr;&nbsp; Operations</a>
-        <a href="/operations/clients/">Client standing</a>
-        <span>/ <b>Access register</b></span>
+        <a href="/operations/registry/">Client registry</a>
+        <span>/ <b id="crumbTitle">Access register</b></span>
         <span class="who">
           <span id="whoami"></span>
           <span id="roBadge" class="ro hide">Read only</span>
-          <button id="signout" type="button">Sign out</button>
+          <button id="signout" class="ghost" type="button">Sign out</button>
         </span>
       </div>
-      <h1>Access <em>Register</em></h1>
-      <p class="lede">What each client still owes us, and what we have already checked. Tick a row
-        as you get it &mdash; the client standing page reads the same rows, so the lights follow
-        along on the next scoring run.</p>
+      <h1 id="title"></h1>
+      <p class="lede" id="lede"></p>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Find a client" aria-label="Find a client">
+        <button id="layoutBtn" class="btn hide" type="button">Edit layout</button>
+      </div>
     </div>
   </div>
 
   <div class="wrap">
     <div id="cards" class="grid"></div>
     <div id="noneMsg" class="hide" style="margin-top:26px;"></div>
-
-    <div class="note" style="margin-top:30px;">
-      <b>What the four states mean.</b> <b>Not asked</b> &mdash; nobody has requested it yet.
-      <b>Asked</b> &mdash; requested, not arrived. <b>Received</b> &mdash; they sent something, but
-      nobody has logged in with it, so it is not proven. <b>Verified</b> &mdash; someone signed in and
-      it works. <b>N/A</b> &mdash; genuinely does not apply to this client, which counts as complete.
-      <br><br><b>Received is not done.</b> Credentials that nobody has tested are the most common way
-      a register reads finished while the work is still blocked.
-    </div>
-
+    <div class="note" id="guide" style="margin-top:30px;"></div>
     <div class="foot">
       <span>Ready to Rank &middot; Operations &middot; Access register</span>
       <span id="stamp">Internal</span>
     </div>
   </div>
 </div>
+
+<aside id="drawer" class="hide" aria-label="Edit layout">
+  <header><h3>Edit layout</h3><button class="ghost" id="drawerX" type="button">Close</button></header>
+  <div class="body" id="drawerBody"></div>
+  <footer>
+    <button class="btn" id="saveLayout" type="button">Save layout</button>
+    <button class="ghost" id="cancelLayout" type="button">Cancel</button>
+    <button class="ghost" id="resetLayout" type="button" style="margin-left:auto">Reset to default</button>
+  </footer>
+</aside>
 
 <div id="scrim" class="scrim hide"></div>
 <div id="toast" class="toast hide"></div>
@@ -210,336 +240,551 @@ button{font-family:var(--sans);cursor:pointer;}
 <script>
 const SB_URL = "https://tjgrtrazyepvbcmmdhet.supabase.co";
 const SB_KEY = "sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
+const PAGE = "access-register";
 const sb = supabase.createClient(SB_URL, SB_KEY);
-
 const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const auDate = d => { if (!d) return ""; const [y,m,dd] = String(d).slice(0,10).split("-"); return `${dd}/${m}`; };
 
-// The ladder, in order. `pending` reads as "not asked" because that is what it means
-// to the person looking at it - "pending" sounds like someone is already dealing with it.
-const STATES = [
-  { key:"pending",        label:"Not asked" },
-  { key:"requested",      label:"Asked" },
-  { key:"received",       label:"Received" },
-  { key:"verified",       label:"Verified" },
-  { key:"not_applicable", label:"N/A" },
-];
+// The ladder, in order. `pending` reads as "not asked" because that is what it means to the
+// person looking at it. Keys are fixed (the database checks them); labels are layout.
+const STATE_KEYS = ["pending","requested","received","verified","not_applicable"];
 const DONE = new Set(["verified","not_applicable"]);
+const CATEGORIES = ["access","business","asset","tooling"];
 
-let ME = null;          // { id, name }
-let CAN_WRITE = false;
-let CLIENTS = [];       // lifecycle rows that have register items
-let ITEMS = {};         // slug -> [items]
+// Per-item fields. kind "edit" must match so_access_set_field's allow-list (owner, blocker).
+const ITEM_FIELDS = [
+  { key:"stamps",  label:"Dates",       kind:"info" },
+  { key:"owner",   label:"Owner",       kind:"edit", type:"text" },
+  { key:"blocker", label:"Blocks work", kind:"edit", type:"checkbox" },
+  { key:"chain",   label:"Chain",       kind:"info", hidden:true },
+];
 
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
-  ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-
-const auDate = d => {
-  if (!d) return "";
-  const [y,m,dd] = d.split("-");
-  return `${dd}/${m}`;
+const DEFAULT_CFG = {
+  title: "Access Register",
+  lede: "What each client still owes us, and what we have already checked. Tick a row as you get it. The client registry reads the same rows, so its score follows along.",
+  accent: "#17B4F0", density: "comfortable", sort: "least", showBars: true, showGuide: true,
+  stateLabels: { pending:"Not asked", requested:"Asked", received:"Received", verified:"Verified", not_applicable:"N/A" },
+  categoryLabels: { access:"Access", business:"Business", asset:"Assets", tooling:"Tooling" },
+  fields: [],
 };
+const SWATCHES = ["#17B4F0","#2BD9A6","#F5B02E","#E04B4B","#A78BFA","#F472B6","#FFFFFF"];
+
+let ME = null, CAN_WRITE = false;
+let CLIENTS = [], ITEMS = {}, FIELDS = [], VALUES = {}, NO_ROWS = [];
+let SAVED_CFG = null, CFG = null, DRAFT = null, LAYOUT_META = null, OPEN_SLUG = null;
 
 function toast(msg, bad) {
-  const t = $("toast");
-  t.textContent = msg;
-  t.className = "toast" + (bad ? " bad" : "");
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.add("hide"), bad ? 6000 : 2600);
+  const t = $("toast"); t.innerHTML = msg; t.className = "toast" + (bad ? " bad" : "");
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.add("hide"), bad ? 6500 : 2800);
+}
+function rpcError(res) {
+  if (res.error) return res.error.message;
+  if (res.data && res.data.ok === false) return res.data.error || "Refused.";
+  return null;
 }
 
-// ---------------------------------------------------------------- auth
+// ------------------------------------------------------------------ config
 
+function cleanCfg(raw) {
+  const r = raw || {};
+  const c = Object.assign({}, DEFAULT_CFG, r);
+  c.title = String(c.title || DEFAULT_CFG.title).slice(0, 80);
+  c.lede = String(c.lede ?? "").slice(0, 600);
+  c.accent = /^#[0-9a-f]{6}$/i.test(c.accent) ? c.accent : DEFAULT_CFG.accent;
+  c.density = c.density === "compact" ? "compact" : "comfortable";
+  c.sort = ["least","name","deadline"].includes(c.sort) ? c.sort : "least";
+  c.stateLabels = Object.assign({}, DEFAULT_CFG.stateLabels, r.stateLabels || {});
+  c.categoryLabels = Object.assign({}, DEFAULT_CFG.categoryLabels, r.categoryLabels || {});
+  for (const k of STATE_KEYS) c.stateLabels[k] = String(c.stateLabels[k] || DEFAULT_CFG.stateLabels[k]).slice(0, 20);
+  for (const k of CATEGORIES) c.categoryLabels[k] = String(c.categoryLabels[k] || DEFAULT_CFG.categoryLabels[k]).slice(0, 30);
+  c.fields = Array.isArray(c.fields) ? c.fields : [];
+  return c;
+}
+const stateLabel = k => CFG.stateLabels[k] || k;
+const catLabel = k => CFG.categoryLabels[k] || k;
+
+function fieldsFor(cfg) {
+  const known = {};
+  ITEM_FIELDS.forEach(f => known[f.key] = { ...f, visible: !f.hidden });
+  FIELDS.filter(f => f.active).forEach(f => known["cf:" + f.id] =
+    { key:"cf:" + f.id, label:f.label, kind:"edit", type:f.field_type, custom:f, visible:true });
+  const out = [];
+  for (const s of cfg.fields) {
+    const k = known[s.key]; if (!k) continue;
+    out.push({ ...k, label: (s.label && String(s.label).trim()) ? String(s.label).slice(0,60) : k.label, visible: s.visible !== false });
+    delete known[s.key];
+  }
+  out.push(...Object.values(known));
+  return out;
+}
+
+function inkFor(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const lum = (0.2126*((n>>16)&255) + 0.7152*((n>>8)&255) + 0.0722*(n&255)) / 255;
+  return lum > 0.55 ? "#0B0B0E" : "#FFFFFF";
+}
+
+function applyLook() {
+  document.documentElement.style.setProperty("--accent", CFG.accent);
+  document.documentElement.style.setProperty("--accent-ink", inkFor(CFG.accent));
+  document.body.classList.toggle("compact", CFG.density === "compact");
+  document.title = CFG.title;
+  $("crumbTitle").textContent = CFG.title;
+  const words = CFG.title.trim().split(/\s+/);
+  $("title").innerHTML = words.length > 1
+    ? esc(words.slice(0,-1).join(" ")) + " <em>" + esc(words[words.length-1]) + "</em>" : "<em>" + esc(CFG.title) + "</em>";
+  $("lede").textContent = CFG.lede;
+  const L = CFG.stateLabels;
+  $("guide").innerHTML = `<b>What the states mean.</b> <b>${esc(L.pending)}</b>: nobody has requested it yet.
+    <b>${esc(L.requested)}</b>: requested, not arrived. <b>${esc(L.received)}</b>: they sent something, but nobody has
+    logged in with it, so it is not proven. <b>${esc(L.verified)}</b>: someone signed in and it works.
+    <b>${esc(L.not_applicable)}</b>: genuinely does not apply to this client, which counts as complete.
+    <br><br><b>${esc(L.received)} is not done.</b> Credentials nobody has tested are the most common way a register
+    reads finished while the work is still blocked.`;
+  $("guide").classList.toggle("hide", !CFG.showGuide);
+}
+
+// ------------------------------------------------------------------ auth
+
+function gateMsg(t, bad) { const m = $("gateMsg"); m.textContent = t; m.className = "msg " + (bad ? "bad" : "ok"); }
 $("loginForm").addEventListener("submit", async ev => {
   ev.preventDefault();
+  if (!$("pw").value) { gateMsg("Enter your password, or use the sign-in link below.", true); return; }
   $("loginBtn").disabled = true;
-  $("gateErr").classList.add("hide");
-  const { error } = await sb.auth.signInWithPassword({
-    email: $("email").value.trim(),
-    password: $("pw").value,
-  });
+  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("pw").value });
   $("loginBtn").disabled = false;
-  if (error) {
-    $("gateErr").textContent = error.message;
-    $("gateErr").classList.remove("hide");
-    return;
-  }
+  if (error) { gateMsg(error.message, true); return; }
   boot();
 });
-
-$("signout").addEventListener("click", async () => {
-  await sb.auth.signOut();
-  location.reload();
+$("magicBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim();
+  if (!email) { gateMsg("Type your Ready to Rank email first.", true); return; }
+  const { error } = await sb.auth.signInWithOtp({ email,
+    options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
+  gateMsg(error ? error.message : "Check your inbox for a sign-in link.", !!error);
 });
-
-// ---------------------------------------------------------------- load
+$("signout").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
 
 async function boot() {
   const { data:{ session } } = await sb.auth.getSession();
   if (!session) { $("gate").classList.remove("hide"); $("app").classList.add("hide"); return; }
-
-  // Who am I, and may I write? Both come from the database, never from the page.
   const [{ data:person }, { data:writer }] = await Promise.all([
     sb.from("tt_people").select("id,name").eq("id", session.user.id).maybeSingle(),
     sb.from("so_register_writers").select("person_id,active").eq("person_id", session.user.id).maybeSingle(),
   ]);
-
   if (!person) {
-    $("gateErr").textContent =
-      "That account is not on the internal team list, so it cannot see the register.";
-    $("gateErr").classList.remove("hide");
-    await sb.auth.signOut();
-    return;
+    gateMsg("That account is not on the internal team list, so it cannot see the register.", true);
+    await sb.auth.signOut(); $("gate").classList.remove("hide"); return;
   }
-
-  ME = person;
-  CAN_WRITE = !!(writer && writer.active);
-
-  $("gate").classList.add("hide");
-  $("app").classList.remove("hide");
+  ME = person; CAN_WRITE = !!(writer && writer.active);
+  $("gate").classList.add("hide"); $("app").classList.remove("hide");
   $("whoami").textContent = ME.name;
   $("roBadge").classList.toggle("hide", CAN_WRITE);
-
+  $("layoutBtn").classList.toggle("hide", !CAN_WRITE);
   await loadData();
 }
 
 async function loadData() {
-  const [{ data:items, error:e1 }, { data:clients, error:e2 }] = await Promise.all([
-    sb.from("so_access_items").select("*").order("category").order("sort"),
-    sb.from("so_client_lifecycle")
-      .select("client_slug,client_name,status,services,tier_name,start_date,access_deadline"),
+  const [items, clients, layout, fields, values] = await Promise.all([
+    sb.from("so_access_items").select("id,client_slug,category,item,blocker,status,owner,requested_on,received_on,verified_on,verified_by,sort,chain")
+      .order("category").order("sort"),
+    sb.from("so_client_lifecycle").select("client_slug,client_name,status,services,tier_name,start_date,access_deadline"),
+    sb.from("so_page_layouts").select("*").eq("page", PAGE).maybeSingle(),
+    sb.from("so_custom_fields").select("*").eq("page", PAGE).order("sort").order("created_at"),
+    sb.from("so_custom_values").select("field_id,record_key,value"),
   ]);
-  if (e1 || e2) { toast((e1||e2).message, true); return; }
+  const err = items.error || clients.error || layout.error || fields.error || values.error;
+  if (err) { toast("Could not load: " + esc(err.message), true); return; }
 
   ITEMS = {};
-  for (const it of items) (ITEMS[it.client_slug] ||= []).push(it);
-
-  // Only clients that actually have a register. A client with none is a different
-  // problem - it is called out below rather than rendered as an empty card.
+  for (const it of items.data) (ITEMS[it.client_slug] ||= []).push(it);
   const withRows = new Set(Object.keys(ITEMS));
-  CLIENTS = clients
-    .filter(c => withRows.has(c.client_slug))
-    .sort((a,b) => summarise(a.client_slug).pctDone - summarise(b.client_slug).pctDone);
-
-  const onboardingNoRows = clients
-    .filter(c => c.status === "onboarding" && !withRows.has(c.client_slug))
-    .map(c => c.client_name);
-
-  renderCards();
-
-  $("noneMsg").innerHTML = onboardingNoRows.length
-    ? `<div class="empty"><b>No register exists yet for ${onboardingNoRows.length} client(s) in
-       onboarding:</b> ${esc(onboardingNoRows.join(", "))}. Month one cannot be measured for them
-       until one is created.</div>`
-    : "";
-  $("noneMsg").classList.toggle("hide", !onboardingNoRows.length);
-  $("stamp").textContent = "Live from the registry · Internal";
+  CLIENTS = clients.data.filter(c => withRows.has(c.client_slug));
+  NO_ROWS = clients.data.filter(c => c.status === "onboarding" && !withRows.has(c.client_slug)).map(c => c.client_name);
+  FIELDS = fields.data || [];
+  const ids = new Set(FIELDS.map(f => f.id));
+  VALUES = {};
+  for (const v of values.data || []) if (ids.has(v.field_id)) VALUES[v.field_id + "|" + v.record_key] = v.value;
+  LAYOUT_META = layout.data;
+  SAVED_CFG = cleanCfg(layout.data && layout.data.config);
+  CFG = DRAFT || SAVED_CFG;
+  renderAll();
 }
 
-// ---------------------------------------------------------------- render
+// ------------------------------------------------------------------ render
 
 function summarise(slug) {
   const rows = ITEMS[slug] || [];
   const done = rows.filter(r => DONE.has(r.status)).length;
-  const blockersOpen = rows.filter(r => r.blocker && !DONE.has(r.status)).length;
-  const received = rows.filter(r => r.status === "received").length;
   const byCat = {};
   for (const r of rows) {
-    (byCat[r.category] ||= { total:0, done:0, part:0 });
-    byCat[r.category].total++;
-    if (DONE.has(r.status)) byCat[r.category].done++;
-    else if (r.status === "requested" || r.status === "received") byCat[r.category].part++;
+    const b = (byCat[r.category] ||= { total:0, done:0, part:0 });
+    b.total++;
+    if (DONE.has(r.status)) b.done++;
+    else if (r.status === "requested" || r.status === "received") b.part++;
   }
-  return {
-    rows, done, total: rows.length, blockersOpen, received, byCat,
-    pctDone: rows.length ? done / rows.length : 0,
-  };
+  return { rows, done, total: rows.length, byCat, pctDone: rows.length ? done / rows.length : 0,
+    blockersOpen: rows.filter(r => r.blocker && !DONE.has(r.status)).length,
+    received: rows.filter(r => r.status === "received").length };
 }
 
 function deadlineBits(c) {
-  if (!c.access_deadline) return { cls:"", text:"No deadline set" };
+  if (!c.access_deadline) return { cls:"", text:"No deadline set", days: 99999 };
   const today = new Date(); today.setHours(0,0,0,0);
-  const dl = new Date(c.access_deadline + "T00:00:00");
-  const days = Math.round((dl - today) / 86400000);
-  if (days < 0)  return { cls:"bad",  text:`Deadline passed ${auDate(c.access_deadline)}, ${Math.abs(days)} days ago` };
-  if (days === 0) return { cls:"bad",  text:`Deadline is today, ${auDate(c.access_deadline)}` };
-  if (days <= 5) return { cls:"warn", text:`${days} days to deadline, ${auDate(c.access_deadline)}` };
-  return { cls:"", text:`${days} days to deadline, ${auDate(c.access_deadline)}` };
+  const days = Math.round((new Date(c.access_deadline + "T00:00:00") - today) / 86400000);
+  const d = auDate(c.access_deadline);
+  if (days < 0) return { cls:"bad", text:`Deadline passed ${d}, ${Math.abs(days)} days ago`, days };
+  if (days === 0) return { cls:"bad", text:`Deadline is today, ${d}`, days };
+  return { cls: days <= 5 ? "warn" : "", text:`${days} days to deadline, ${d}`, days };
+}
+
+function renderAll() {
+  applyLook();
+  renderCards();
+  if (OPEN_SLUG) openModal(OPEN_SLUG, true);
+  $("noneMsg").innerHTML = NO_ROWS.length ? `<div class="empty"><b>No register exists yet for ${NO_ROWS.length} client(s) in
+    onboarding:</b> ${esc(NO_ROWS.join(", "))}. Month one cannot be measured for them until one is created.</div>` : "";
+  $("noneMsg").classList.toggle("hide", !NO_ROWS.length);
+  const who = LAYOUT_META && LAYOUT_META.updated_by ? ` · layout last changed by ${esc(LAYOUT_META.updated_by)} ${auDate(LAYOUT_META.updated_at)}` : "";
+  $("stamp").innerHTML = "Live from the registry" + who;
 }
 
 function renderCards() {
-  $("cards").innerHTML = CLIENTS.map(c => {
-    const s = summarise(c.client_slug);
-    const dl = deadlineBits(c);
-    const light = s.blockersOpen === 0 ? "green"
-                : (dl.cls === "bad" ? "red" : "amber");
+  const q = $("search").value.trim().toLowerCase();
+  const list = CLIENTS.filter(c => !q || c.client_name.toLowerCase().includes(q));
+  const sorters = {
+    least: (a,b) => summarise(a.client_slug).pctDone - summarise(b.client_slug).pctDone,
+    name: (a,b) => a.client_name.localeCompare(b.client_name),
+    deadline: (a,b) => deadlineBits(a).days - deadlineBits(b).days,
+  };
+  list.sort(sorters[CFG.sort]);
 
-    const bars = Object.entries(s.byCat).sort().map(([cat,v]) => {
+  $("cards").innerHTML = list.map(c => {
+    const s = summarise(c.client_slug), dl = deadlineBits(c);
+    const light = s.blockersOpen === 0 ? "green" : (dl.cls === "bad" ? "red" : "amber");
+    const bars = CFG.showBars ? `<div class="bars">${Object.entries(s.byCat).sort().map(([cat,v]) => {
       const dp = Math.round(100*v.done/v.total), pp = Math.round(100*v.part/v.total);
-      return `<div class="bar-row"><span class="lb">${esc(cat)}</span>
-        <span class="track"><span class="fill-v" style="width:${dp}%"></span>
-        <span class="fill-r" style="width:${pp}%"></span>
-        <span class="fill-p" style="width:${100-dp-pp}%"></span></span>
-        <span class="ct">${v.done}/${v.total}</span></div>`;
-    }).join("");
-
-    const bits = [];
-    bits.push(s.blockersOpen
-      ? `<b class="bad">${s.blockersOpen} blocker${s.blockersOpen>1?"s":""} open</b>`
-      : `<b class="ok">No blockers open</b>`);
-    if (s.received) bits.push(`<span class="warn">${s.received} received but never logged in with</span>`);
-
+      return `<div class="bar-row"><span class="lb">${esc(catLabel(cat))}</span>
+        <span class="track"><span class="fill-v" style="width:${dp}%"></span><span class="fill-r" style="width:${pp}%"></span>
+        <span class="fill-p" style="width:${100-dp-pp}%"></span></span><span class="ct">${v.done}/${v.total}</span></div>`;
+    }).join("")}</div>` : "";
+    const bits = [s.blockersOpen ? `<b class="bad">${s.blockersOpen} blocker${s.blockersOpen > 1 ? "s" : ""} open</b>` : `<b class="ok">No blockers open</b>`];
+    if (s.received) bits.push(`<span class="warn">${s.received} ${esc(stateLabel("received").toLowerCase())} but never logged in with</span>`);
     return `<button class="cc ${light}" data-slug="${esc(c.client_slug)}" type="button">
-      <div class="cc-h"><span class="nm">${esc(c.client_name)}</span>
-        <span class="pk">${esc(c.tier_name || (c.services||[])[0] || "")}</span></div>
+      <div class="cc-h"><span class="nm">${esc(c.client_name)}</span><span class="pk">${esc(c.tier_name || (c.services || [])[0] || "")}</span></div>
       <span class="mo">${s.done} of ${s.total} complete &middot; <span class="${dl.cls}">${esc(dl.text)}</span></span>
-      <span class="headline">${bits.join(" &middot; ")}</span>
-      <div class="bars">${bars}</div>
-      <span class="open">Open the full register &rarr;</span>
-    </button>`;
-  }).join("");
-
-  for (const b of $("cards").querySelectorAll(".cc")) {
-    b.addEventListener("click", () => openModal(b.dataset.slug));
-  }
+      <span class="headline">${bits.join(" &middot; ")}</span>${bars}
+      <span class="open">Open the full register &rarr;</span></button>`;
+  }).join("") || `<p class="lede">No clients match that search.</p>`;
+  for (const b of $("cards").querySelectorAll(".cc")) b.addEventListener("click", () => openModal(b.dataset.slug));
 }
 
-// ---------------------------------------------------------------- modal
+// ------------------------------------------------------------------ modal
 
-let OPEN_SLUG = null;
-
-function openModal(slug) {
+function openModal(slug, keepScroll) {
+  const c = CLIENTS.find(x => x.client_slug === slug); if (!c) return;
   OPEN_SLUG = slug;
-  const c = CLIENTS.find(x => x.client_slug === slug);
-  const s = summarise(slug);
-  const dl = deadlineBits(c);
-
+  const prevScroll = keepScroll ? $("scrim").scrollTop : 0;
+  const s = summarise(slug), dl = deadlineBits(c);
   const cats = {};
   for (const r of s.rows) (cats[r.category] ||= []).push(r);
-
-  const body = Object.entries(cats).sort().map(([cat, rows]) => {
-    const d = rows.filter(r => DONE.has(r.status)).length;
-    return `<div class="cat"><h4>${esc(cat)} <span>${d} of ${rows.length}</span></h4>
-      ${rows.map(r => rowHtml(r)).join("")}</div>`;
-  }).join("");
-
+  const body = Object.entries(cats).sort().map(([cat, rows]) =>
+    `<div class="cat"><h4>${esc(catLabel(cat))} <span>${rows.filter(r => DONE.has(r.status)).length} of ${rows.length}</span></h4>
+      ${rows.map(rowHtml).join("")}</div>`).join("");
   $("scrim").innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="${esc(c.client_name)} access register">
-    <div class="modal-h">
-      <span class="nm">${esc(c.client_name)}</span>
+    <div class="modal-h"><span class="nm">${esc(c.client_name)}</span>
       <span class="meta">${s.done} OF ${s.total} &middot; ${s.blockersOpen} BLOCKERS OPEN &middot; ${esc(dl.text.toUpperCase())}</span>
-      <button class="x" type="button" aria-label="Close">&times;</button>
-    </div>
+      <button class="x" type="button" aria-label="Close">&times;</button></div>
     <div class="modal-b">${body}
-      ${CAN_WRITE ? "" : `<div class="note"><b>You have read-only access.</b>
-        Ticking rows is limited to Jose, Jhen and Janice. Ask one of them to update a row.</div>`}
-    </div>
-  </div>`;
+      ${CAN_WRITE ? "" : `<div class="note"><b>You have read-only access.</b> Changing rows is limited to the register writers.</div>`}
+    </div></div>`;
   $("scrim").classList.remove("hide");
+  $("scrim").scrollTop = prevScroll;
   document.body.style.overflow = "hidden";
-
   $("scrim").querySelector(".x").addEventListener("click", closeModal);
   wireRows();
 }
 
+function fieldChip(f, r) {
+  let v;
+  if (f.custom) v = VALUES[f.custom.id + "|" + r.id];
+  else v = r[f.key];
+  let shown;
+  if (f.type === "checkbox") shown = (v === true || v === "true") ? "Yes" : "No";
+  else if (f.type === "date") shown = v ? auDate(v) : "—";
+  else shown = (v === null || v === undefined || v === "") ? "—" : v;
+  const inner = `<i>${esc(f.label)}:</i> ${esc(shown)}`;
+  return CAN_WRITE
+    ? `<button type="button" class="fchip" data-f="${esc(f.key)}">${inner}</button>`
+    : `<span class="fchip">${inner}</span>`;
+}
+
 function rowHtml(r) {
-  const segs = STATES.map(st =>
-    `<button data-s="${st.key}" class="${r.status===st.key?"on":""}"
-      ${CAN_WRITE?"":"disabled"} type="button">${st.label}</button>`).join("");
-
+  const flds = fieldsFor(CFG).filter(f => f.visible);
+  const segs = STATE_KEYS.map(k => `<button data-s="${k}" class="${r.status === k ? "on" : ""}" ${CAN_WRITE ? "" : "disabled"} type="button">${esc(stateLabel(k))}</button>`).join("");
   const sub = [];
-  if (r.status === "verified" && r.verified_on)
-    sub.push(`verified ${auDate(r.verified_on)}${r.verified_by ? " by "+esc(r.verified_by) : ""}`);
-  else if (r.status === "received" && r.received_on)
-    sub.push(`received ${auDate(r.received_on)}, nobody has logged in yet`);
-  else if (r.status === "requested" && r.requested_on)
-    sub.push(`asked ${auDate(r.requested_on)}`);
-  if (r.owner) sub.push(esc(r.owner));
-
+  const chips = [];
+  for (const f of flds) {
+    if (f.key === "stamps") {
+      if (r.status === "verified" && r.verified_on) sub.push(`${esc(stateLabel("verified").toLowerCase())} ${auDate(r.verified_on)}${r.verified_by ? " by " + esc(r.verified_by) : ""}`);
+      else if (r.status === "received" && r.received_on) sub.push(`${esc(stateLabel("received").toLowerCase())} ${auDate(r.received_on)}, nobody has logged in yet`);
+      else if (r.status === "requested" && r.requested_on) sub.push(`${esc(stateLabel("requested").toLowerCase())} ${auDate(r.requested_on)}`);
+    } else if (f.key === "chain") {
+      if (r.chain) sub.push(`${esc(f.label.toLowerCase())}: ${esc(r.chain)}`);
+    } else if (f.key === "blocker" && !CAN_WRITE) {
+      // readers just see the badge
+    } else if (f.key === "owner" && !CAN_WRITE) {
+      if (r.owner) sub.push(esc(r.owner));
+    } else chips.push(fieldChip(f, r));
+  }
+  const showBadge = flds.some(f => f.key === "blocker") && r.blocker;
   return `<div class="row" data-id="${esc(r.id)}">
-    <span class="it"><b>${esc(r.item)}</b>${r.blocker?'<span class="blk">Blocks work</span>':""}
-      ${sub.length?`<span class="sub">${sub.join(" &middot; ")}</span>`:""}</span>
-    <span class="seg">${segs}</span>
-  </div>`;
+    <span class="it"><b>${esc(r.item)}</b>${showBadge ? `<span class="blk">${esc(flds.find(f => f.key === "blocker").label)}</span>` : ""}
+      ${sub.length ? `<span class="sub">${sub.join(" &middot; ")}</span>` : ""}
+      ${chips.length ? `<span class="fields">${chips.join("")}</span>` : ""}</span>
+    <span class="seg">${segs}</span></div>`;
 }
 
 function wireRows() {
   if (!CAN_WRITE) return;
   for (const row of $("scrim").querySelectorAll(".row")) {
-    for (const btn of row.querySelectorAll(".seg button")) {
-      btn.addEventListener("click", () => setStatus(row, btn.dataset.s));
-    }
+    for (const btn of row.querySelectorAll(".seg button")) btn.addEventListener("click", () => setStatus(row.dataset.id, btn.dataset.s));
+    for (const chip of row.querySelectorAll("button.fchip")) chip.addEventListener("click", () => editField(row.dataset.id, chip));
   }
 }
 
 function closeModal() {
-  $("scrim").classList.add("hide");
-  $("scrim").innerHTML = "";
-  document.body.style.overflow = "";
-  OPEN_SLUG = null;
+  $("scrim").classList.add("hide"); $("scrim").innerHTML = "";
+  document.body.style.overflow = ""; OPEN_SLUG = null;
 }
-
 $("scrim").addEventListener("click", ev => { if (ev.target === $("scrim")) closeModal(); });
-document.addEventListener("keydown", ev => { if (ev.key === "Escape" && OPEN_SLUG) closeModal(); });
 
-// ---------------------------------------------------------------- write
+function findItem(id) { return (ITEMS[OPEN_SLUG] || []).find(r => String(r.id) === String(id)); }
 
-async function setStatus(rowEl, next) {
-  const id = rowEl.dataset.id;
-  const rows = ITEMS[OPEN_SLUG];
-  const item = rows.find(r => String(r.id) === String(id));
+// ------------------------------------------------------------------ writes
+
+async function setStatus(id, next) {
+  const item = findItem(id);
   if (!item || item.status === next) return;
-
   const before = { ...item };
   const today = new Date().toISOString().slice(0,10);
-
   const patch = { status: next };
-  // Stamp the ladder as it is climbed, and clear stamps on the way back down so a
-  // row never claims it was verified on a day it was not.
-  if (next === "requested") { patch.requested_on = item.requested_on || today;
-                              patch.received_on = null; patch.verified_on = null; patch.verified_by = null; }
-  if (next === "received")  { patch.received_on = today; patch.verified_on = null; patch.verified_by = null; }
-  if (next === "verified")  { patch.verified_on = today; patch.verified_by = ME.name;
-                              patch.received_on = item.received_on || today; }
-  if (next === "pending")   { patch.requested_on = null; patch.received_on = null;
-                              patch.verified_on = null; patch.verified_by = null; }
-  if (next === "not_applicable") { patch.verified_on = today; patch.verified_by = ME.name; }
+  // Stamp the ladder as it is climbed, and clear stamps on the way back down so a row never
+  // claims it was verified on a day it was not.
+  if (next === "requested") Object.assign(patch, { requested_on: item.requested_on || today, received_on: null, verified_on: null, verified_by: null });
+  if (next === "received") Object.assign(patch, { received_on: today, verified_on: null, verified_by: null });
+  if (next === "verified") Object.assign(patch, { verified_on: today, verified_by: ME.name, received_on: item.received_on || today });
+  if (next === "pending") Object.assign(patch, { requested_on: null, received_on: null, verified_on: null, verified_by: null });
+  if (next === "not_applicable") Object.assign(patch, { verified_on: today, verified_by: ME.name });
 
   Object.assign(item, patch);
-  rowEl.classList.add("saving");
-  rowEl.outerHTML = rowHtml(item);
-  const fresh = $("scrim").querySelector(`.row[data-id="${CSS.escape(String(id))}"]`);
-  for (const btn of fresh.querySelectorAll(".seg button"))
-    btn.addEventListener("click", () => setStatus(fresh, btn.dataset.s));
-
+  openModal(OPEN_SLUG, true);
+  $("scrim").querySelector(`.row[data-id="${CSS.escape(String(id))}"]`)?.classList.add("saving");
   const { error } = await sb.from("so_access_items").update(patch).eq("id", id);
-
-  if (error) {
-    Object.assign(item, before);          // roll back, the database said no
-    const el = $("scrim").querySelector(`.row[data-id="${CSS.escape(String(id))}"]`);
-    if (el) { el.outerHTML = rowHtml(item); wireRows(); }
-    toast("Not saved: " + error.message, true);
-    return;
-  }
-
-  const el = $("scrim").querySelector(`.row[data-id="${CSS.escape(String(id))}"]`);
-  if (el) el.classList.remove("saving");
-  renderCards();
-  refreshModalHeader();
-  toast(`${item.item} → ${STATES.find(s=>s.key===next).label}`);
+  if (error) { Object.assign(item, before); toast("Not saved: " + esc(error.message), true); }
+  else toast(`${esc(item.item)} → ${esc(stateLabel(next))}`);
+  renderCards(); openModal(OPEN_SLUG, true);
 }
 
-function refreshModalHeader() {
-  const c = CLIENTS.find(x => x.client_slug === OPEN_SLUG);
-  if (!c) return;
-  const s = summarise(OPEN_SLUG), dl = deadlineBits(c);
-  const m = $("scrim").querySelector(".modal-h .meta");
-  if (m) m.textContent = `${s.done} OF ${s.total} · ${s.blockersOpen} BLOCKERS OPEN · ${dl.text.toUpperCase()}`;
-  for (const h of $("scrim").querySelectorAll(".cat h4")) {
-    const cat = h.childNodes[0].textContent.trim();
-    const rows = s.rows.filter(r => r.category === cat);
-    const span = h.querySelector("span");
-    if (span) span.textContent = `${rows.filter(r=>DONE.has(r.status)).length} of ${rows.length}`;
+async function saveField(f, item, value) {
+  const res = f.custom
+    ? await sb.rpc("so_set_custom_value", { p_field_id: f.custom.id, p_record_key: String(item.id), p_value: value })
+    : await sb.rpc("so_access_set_field", { p_id: item.id, p_field: f.key, p_value: value });
+  const err = rpcError(res);
+  if (err) { toast("Not saved: " + esc(err), true); return false; }
+  if (f.custom) VALUES[f.custom.id + "|" + item.id] = value === "" ? null : value;
+  else item[f.key] = f.type === "checkbox" ? value === "true" : (value === "" ? null : value);
+  return true;
+}
+
+async function editField(id, chip) {
+  const item = findItem(id), f = fieldsFor(CFG).find(x => x.key === chip.dataset.f);
+  if (!item || !f) return;
+  const cur = f.custom ? VALUES[f.custom.id + "|" + item.id] : item[f.key];
+  if (f.type === "checkbox") {
+    chip.classList.add("saving");
+    if (await saveField(f, item, String(!(cur === true || cur === "true")))) toast(`${esc(f.label)} updated.`);
+    renderCards(); openModal(OPEN_SLUG, true); return;
+  }
+  const span = document.createElement("span");
+  span.className = "fchip";
+  let input;
+  if (f.type === "select") {
+    input = document.createElement("select");
+    input.innerHTML = `<option value="">—</option>` + (f.custom.options || []).map(o => `<option ${o === cur ? "selected" : ""}>${esc(o)}</option>`).join("");
+  } else {
+    input = document.createElement("input");
+    input.type = f.type === "date" ? "date" : f.type === "number" ? "number" : "text";
+    input.value = cur ?? "";
+    input.placeholder = f.label;
+  }
+  span.appendChild(input); chip.replaceWith(span); input.focus();
+  let done = false;
+  const finish = async commit => {
+    if (done) return; done = true;
+    const v = input.value.trim();
+    if (commit && v !== String(cur ?? "")) {
+      span.classList.add("saving");
+      if (await saveField(f, item, v)) toast(`${esc(f.label)} saved.`);
+    }
+    openModal(OPEN_SLUG, true);
+  };
+  input.addEventListener("keydown", e => { if (e.key === "Enter") finish(true); if (e.key === "Escape") finish(false); });
+  input.addEventListener("blur", () => finish(true));
+  if (f.type === "select") input.addEventListener("change", () => finish(true));
+}
+
+// ------------------------------------------------------------------ layout drawer
+
+function openDrawer() {
+  DRAFT = JSON.parse(JSON.stringify(SAVED_CFG));
+  DRAFT.fields = fieldsFor(DRAFT).map(f => ({ key:f.key, label:f.label, visible:f.visible }));
+  CFG = DRAFT; drawDrawer();
+  $("drawer").classList.remove("hide");
+}
+function closeDrawer(keep) {
+  if (!keep) CFG = SAVED_CFG;
+  DRAFT = null; $("drawer").classList.add("hide"); renderAll();
+}
+function live() { renderAll(); }
+
+function drawDrawer() {
+  const flds = fieldsFor(DRAFT);
+  $("drawerBody").innerHTML = `
+    <h4>Page</h4>
+    <div class="frow"><label for="d_title">Title</label><input class="in" id="d_title" maxlength="80" value="${esc(DRAFT.title)}"></div>
+    <div class="frow"><label for="d_lede">Intro</label><textarea class="in" id="d_lede" maxlength="600">${esc(DRAFT.lede)}</textarea></div>
+    <div class="frow"><label>Accent colour</label><input type="color" id="d_accent" value="${esc(DRAFT.accent)}">
+      <span class="swatches">${SWATCHES.map(s => `<button type="button" data-sw="${s}" style="background:${s}" aria-label="${s}"></button>`).join("")}</span></div>
+    <div class="frow"><label for="d_density">Spacing</label><select class="in" id="d_density">
+      <option value="comfortable">Comfortable</option><option value="compact" ${DRAFT.density === "compact" ? "selected" : ""}>Compact</option></select></div>
+    <div class="frow"><label for="d_sort">Card order</label><select class="in" id="d_sort">
+      <option value="least" ${DRAFT.sort === "least" ? "selected" : ""}>Least complete first</option>
+      <option value="deadline" ${DRAFT.sort === "deadline" ? "selected" : ""}>Nearest deadline first</option>
+      <option value="name" ${DRAFT.sort === "name" ? "selected" : ""}>Client name A–Z</option></select></div>
+    <div class="frow"><label class="sw"><input type="checkbox" id="d_bars" ${DRAFT.showBars ? "checked" : ""}> Show category bars on cards</label></div>
+    <div class="frow"><label class="sw"><input type="checkbox" id="d_guide" ${DRAFT.showGuide ? "checked" : ""}> Show the states explainer</label></div>
+
+    <h4>State names</h4>
+    <p class="hint">Renames the buttons only. What each state means, and what counts as complete, stays the same.</p>
+    ${STATE_KEYS.map(k => `<div class="frow"><label>${esc(DEFAULT_CFG.stateLabels[k])}</label><input class="in" data-state="${k}" maxlength="20" value="${esc(DRAFT.stateLabels[k])}"></div>`).join("")}
+
+    <h4>Category names</h4>
+    ${CATEGORIES.map(k => `<div class="frow"><label>${esc(DEFAULT_CFG.categoryLabels[k])}</label><input class="in" data-cat="${k}" maxlength="30" value="${esc(DRAFT.categoryLabels[k])}"></div>`).join("")}
+
+    <h4>Fields on each row</h4>
+    <p class="hint">Rename, reorder, show or hide. Item names and categories can't be renamed here: that has to change the onboarding templates too, so ask Jose.</p>
+    ${flds.map((f, i) => `<div class="colrow" data-i="${i}">
+      <button class="mv" data-mv="-1" type="button" ${i === 0 ? "disabled" : ""} aria-label="Move up">▲</button>
+      <button class="mv" data-mv="1" type="button" ${i === flds.length - 1 ? "disabled" : ""} aria-label="Move down">▼</button>
+      <input class="in" data-lbl value="${esc(f.label)}" maxlength="60" aria-label="Field label">
+      <span class="kind ${f.kind === "edit" ? "edit" : ""}">${f.custom ? "custom · " + esc(f.type) : f.kind === "edit" ? "editable" : "info"}</span>
+      <label class="sw"><input type="checkbox" data-vis ${f.visible ? "checked" : ""}> Show</label></div>`).join("")}
+
+    <h4>Custom fields</h4>
+    <p class="hint">Added to every register row. They save straight away. Archiving hides a field but keeps its data.</p>
+    <div class="cf">
+      <div class="frow"><label for="n_label">Name</label><input class="in" id="n_label" maxlength="60" placeholder="e.g. Login tested by"></div>
+      <div class="frow"><label for="n_type">Type</label><select class="in" id="n_type">
+        <option value="text">Text</option><option value="date">Date</option><option value="number">Number</option>
+        <option value="select">Dropdown</option><option value="checkbox">Tick box</option></select></div>
+      <div class="frow hide" id="n_optrow"><label for="n_opts">Options</label><input class="in" id="n_opts" placeholder="Comma separated"></div>
+      <div class="frow"><button class="btn small" id="n_add" type="button">Add field</button></div>
+    </div>
+    ${FIELDS.map(f => `<div class="cf ${f.active ? "" : "archived"}" data-fid="${esc(f.id)}">
+      <div class="frow"><label>Name</label><input class="in" data-flabel value="${esc(f.label)}" maxlength="60"></div>
+      ${f.field_type === "select" ? `<div class="frow"><label>Options</label><input class="in" data-fopts value="${esc((f.options || []).join(", "))}"></div>` : ""}
+      <div class="frow"><span class="kind">${esc(f.field_type)} · added by ${esc(f.created_by || "—")}</span>
+        <button class="ghost small" data-fsave type="button" style="margin-left:auto">Save</button>
+        <button class="ghost small" data-farch type="button">${f.active ? "Archive" : "Restore"}</button></div></div>`).join("")}
+  `;
+  const bind = (id, fn, ev = "input") => $(id).addEventListener(ev, e => { fn(e.target); live(); });
+  bind("d_title", el => DRAFT.title = el.value || DEFAULT_CFG.title);
+  bind("d_lede", el => DRAFT.lede = el.value);
+  bind("d_accent", el => DRAFT.accent = el.value);
+  bind("d_density", el => DRAFT.density = el.value, "change");
+  bind("d_sort", el => DRAFT.sort = el.value, "change");
+  bind("d_bars", el => DRAFT.showBars = el.checked, "change");
+  bind("d_guide", el => DRAFT.showGuide = el.checked, "change");
+  for (const b of $("drawerBody").querySelectorAll("[data-sw]"))
+    b.addEventListener("click", () => { DRAFT.accent = b.dataset.sw; $("d_accent").value = b.dataset.sw; live(); });
+  for (const el of $("drawerBody").querySelectorAll("[data-state]"))
+    el.addEventListener("input", () => { DRAFT.stateLabels[el.dataset.state] = el.value || DEFAULT_CFG.stateLabels[el.dataset.state]; live(); });
+  for (const el of $("drawerBody").querySelectorAll("[data-cat]"))
+    el.addEventListener("input", () => { DRAFT.categoryLabels[el.dataset.cat] = el.value || DEFAULT_CFG.categoryLabels[el.dataset.cat]; live(); });
+  for (const row of $("drawerBody").querySelectorAll(".colrow")) {
+    const i = +row.dataset.i;
+    row.querySelector("[data-lbl]").addEventListener("input", e => { DRAFT.fields[i].label = e.target.value; live(); });
+    row.querySelector("[data-vis]").addEventListener("change", e => { DRAFT.fields[i].visible = e.target.checked; live(); });
+    for (const mv of row.querySelectorAll("[data-mv]")) mv.addEventListener("click", () => {
+      const j = i + +mv.dataset.mv; if (j < 0 || j >= DRAFT.fields.length) return;
+      [DRAFT.fields[i], DRAFT.fields[j]] = [DRAFT.fields[j], DRAFT.fields[i]];
+      drawDrawer(); live();
+    });
+  }
+  $("n_type").addEventListener("change", e => $("n_optrow").classList.toggle("hide", e.target.value !== "select"));
+  $("n_add").addEventListener("click", async () => {
+    const label = $("n_label").value.trim(), type = $("n_type").value;
+    const opts = $("n_opts").value.split(",").map(s => s.trim()).filter(Boolean);
+    if (!label) { toast("Give the field a name.", true); return; }
+    if (type === "select" && !opts.length) { toast("A dropdown needs at least one option.", true); return; }
+    const res = await sb.rpc("so_upsert_custom_field", { p_id: null, p_page: PAGE, p_label: label, p_type: type,
+      p_options: type === "select" ? opts : [], p_sort: 100 + FIELDS.length, p_active: true });
+    const err = rpcError(res); if (err) { toast("Not added: " + esc(err), true); return; }
+    toast(`Field &ldquo;${esc(label)}&rdquo; added.`); await reloadFields();
+  });
+  for (const box of $("drawerBody").querySelectorAll(".cf[data-fid]")) {
+    const f = FIELDS.find(x => x.id === box.dataset.fid);
+    const save = async active => {
+      const label = box.querySelector("[data-flabel]").value.trim();
+      const optEl = box.querySelector("[data-fopts]");
+      const opts = optEl ? optEl.value.split(",").map(s => s.trim()).filter(Boolean) : [];
+      if (!label) { toast("A field needs a name.", true); return; }
+      const res = await sb.rpc("so_upsert_custom_field", { p_id: f.id, p_page: PAGE, p_label: label, p_type: f.field_type,
+        p_options: opts, p_sort: f.sort, p_active: active });
+      const err = rpcError(res); if (err) { toast("Not saved: " + esc(err), true); return; }
+      toast(active === f.active ? "Field saved." : active ? "Field restored." : "Field archived. Its data is kept.");
+      await reloadFields();
+    };
+    box.querySelector("[data-fsave]").addEventListener("click", () => save(f.active));
+    box.querySelector("[data-farch]").addEventListener("click", () => save(!f.active));
   }
 }
+
+async function reloadFields() {
+  const { data, error } = await sb.from("so_custom_fields").select("*").eq("page", PAGE).order("sort").order("created_at");
+  if (error) { toast(esc(error.message), true); return; }
+  FIELDS = data || [];
+  DRAFT.fields = fieldsFor(DRAFT).map(f => ({ key:f.key, label:f.label, visible:f.visible }));
+  drawDrawer(); live();
+}
+
+$("layoutBtn").addEventListener("click", openDrawer);
+$("drawerX").addEventListener("click", () => closeDrawer(false));
+$("cancelLayout").addEventListener("click", () => closeDrawer(false));
+$("resetLayout").addEventListener("click", () => {
+  DRAFT = cleanCfg({}); CFG = DRAFT;
+  DRAFT.fields = fieldsFor(DRAFT).map(f => ({ key:f.key, label:f.label, visible:f.visible }));
+  drawDrawer(); live();
+  toast("Default layout loaded. Press Save layout to keep it.");
+});
+$("saveLayout").addEventListener("click", async () => {
+  $("saveLayout").disabled = true;
+  const res = await sb.rpc("so_save_layout", { p_page: PAGE, p_config: cleanCfg(DRAFT) });
+  $("saveLayout").disabled = false;
+  const err = rpcError(res); if (err) { toast("Layout not saved: " + esc(err), true); return; }
+  closeDrawer(true);
+  toast("Layout saved. Everyone sees it on their next load.");
+  await loadData();
+});
+
+document.addEventListener("keydown", ev => {
+  if (ev.key !== "Escape") return;
+  if (!$("drawer").classList.contains("hide")) closeDrawer(false);
+  else if (OPEN_SLUG) closeModal();
+});
+$("search").addEventListener("input", renderCards);
 
 boot();
 </script>
