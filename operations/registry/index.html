@@ -281,6 +281,7 @@ const BUILTINS = [
   { key:"score",           label:"Onboarding",            kind:"calc" },
   { key:"state",           label:"State",                 kind:"calc" },
   { key:"blockers",        label:"Blockers",              kind:"calc" },
+  { key:"launch",          label:"Launch checklist",      kind:"calc" },
   { key:"next",            label:"Next thing — and whose", kind:"calc" },
   { key:"month_one_end",   label:"Month 1",               kind:"edit", type:"date" },
   { key:"start_date",      label:"Start",                 kind:"edit", type:"date", hidden:true },
@@ -495,8 +496,19 @@ function displayValue(col, v) {
 function cellHtml(col, r) {
   const slug = esc(r.client_slug);
   switch (col.key) {
-    case "client":
-      return `<td><div class="nm">${esc(r.client_name)}</div><div class="pk">${esc(r.package)}</div></td>`;
+    case "client": {
+      // Every client with a page links to it: update.readytorank.com.au/<slug>/ (onboarding, brief, launch).
+      const nm = r.client_page
+        ? `<a class="nm" href="${esc(r.client_page)}" style="color:inherit;text-decoration:none;border-bottom:1px dotted currentColor">${esc(r.client_name)}</a>`
+        : `<div class="nm">${esc(r.client_name)}</div>`;
+      return `<td>${nm}<div class="pk">${esc(r.package)}</div></td>`;
+    }
+    case "launch": {
+      if (!r.launch_total) return `<td><span class="empty-v">—</span></td>`;
+      const pct = Math.round(100 * r.launch_done / r.launch_total);
+      const cell = `<div class="meter"><i style="width:${pct}%"></i></div><div class="sc">${r.launch_done} of ${r.launch_total}</div>`;
+      return `<td>${r.client_page ? `<a href="${esc(r.client_page)}#launch" style="color:inherit;text-decoration:none">${cell}</a>` : cell}</td>`;
+    }
     case "running":
       return `<td><span class="chip">${esc(r.running)}</span></td>`;
     case "score": {
