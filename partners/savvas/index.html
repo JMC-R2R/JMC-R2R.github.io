@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Ready to Rank × Savvas Studio · Partner Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0c0e; --panel:#141619; --panel2:#1b1e23; --line:#272b31;
+  --ink:#eef1f4; --muted:#9aa4b0; --dim:#6f7883;
+  --accent:#17B4F0; --accent-dim:#0e7ba6; --savvas:#a53023;
+  --ok:#3ddc97; --warn:#ffb454; --bad:#ff6b6b;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:Archivo,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:'Space Mono',ui-monospace,monospace}
+a{color:var(--accent)}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
+
+/* ---------- login ---------- */
+#login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.card-login{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:32px}
+.brandmark{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
+.field{margin-bottom:14px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;letter-spacing:.03em}
+input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:11px 12px;font-family:inherit;font-size:14px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+button{font-family:inherit;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid transparent;padding:11px 16px;font-size:14px}
+.btn{background:var(--accent);color:#04222f}
+.btn:hover{background:#37c4f8}
+.btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+
+/* ---------- shell ---------- */
+#app{display:none}
+header{position:sticky;top:0;z-index:20;background:rgba(11,12,14,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:1180px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.logo{font-weight:800;font-size:17px;letter-spacing:-.03em}
+.logo span{color:var(--accent)}
+.who{margin-left:auto;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:12px}
+nav{max-width:1180px;margin:0 auto;padding:0 22px;display:flex;gap:4px;overflow-x:auto}
+.tab{background:none;border:none;color:var(--muted);padding:12px 14px;font-size:14px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+main{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
+.pane{display:none}
+.pane.on{display:block}
+
+.lede{color:var(--muted);font-size:14px;max-width:70ch;margin:6px 0 26px}
+.note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--muted);margin-bottom:26px}
+.note b{color:var(--ink)}
+
+/* ---------- pricing ---------- */
+.svc{margin-bottom:38px}
+.svc-h{display:flex;align-items:baseline;gap:12px;margin-bottom:4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.svc-h h2{font-size:19px}
+.svc-h .cnt{font-family:'Space Mono',monospace;font-size:11px;color:var(--dim)}
+.svc-blurb{color:var(--dim);font-size:13px;margin:8px 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
+.pkg{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column}
+.pkg.poa{border-style:dashed;opacity:.72}
+.pkg h3{font-size:16px;margin-bottom:10px}
+.price{font-family:'Space Mono',monospace;font-size:26px;font-weight:700;color:var(--accent);line-height:1.1}
+.price .u{display:block;font-size:11px;color:var(--dim);font-weight:400;margin-top:5px;letter-spacing:.04em}
+.price.poa-v{color:var(--warn);font-size:20px}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.chip{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;background:var(--panel2);border:1px solid var(--line);color:var(--muted);padding:4px 8px;border-radius:20px}
+.best{font-size:13px;color:var(--muted);margin-bottom:14px;flex:1}
+details{border-top:1px solid var(--line);padding-top:12px;margin-top:auto}
+summary{cursor:pointer;font-size:12px;color:var(--accent);font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:'▸ ';}
+details[open] summary::before{content:'▾ ';}
+details ul{margin:12px 0 0;padding-left:16px}
+details li{font-size:13px;color:var(--muted);margin-bottom:7px}
+.addbtn{margin-top:14px;width:100%}
+
+/* ---------- bundle ---------- */
+.bcols{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
+@media (max-width:900px){.bcols{grid-template-columns:1fr}}
+.picker{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.prow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.prow:last-child{border-bottom:none}
+.prow input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent);flex:none}
+.prow .nm{flex:1;font-size:14px}
+.prow .nm small{display:block;color:var(--dim);font-size:11px}
+.prow .pr{font-family:'Space Mono',monospace;font-size:13px;color:var(--muted);white-space:nowrap}
+.gh{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:20px 0 8px}
+.gh:first-child{margin-top:0}
+.cart{position:sticky;top:96px;background:var(--panel);border:1px solid var(--accent-dim);border-radius:var(--r);padding:20px}
+.cart h3{font-size:15px;margin-bottom:14px}
+.line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:7px 0;color:var(--muted)}
+.line b{color:var(--ink);font-weight:500}
+.tot{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);margin-top:12px;padding-top:14px}
+.tot .lbl{font-size:12px;color:var(--muted)}
+.tot .val{font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--accent)}
+.save{background:rgba(61,220,151,.09);border:1px solid rgba(61,220,151,.3);color:var(--ok);border-radius:9px;padding:10px 12px;font-size:12.5px;margin-top:14px}
+.empty{color:var(--dim);font-size:13px;text-align:center;padding:26px 0}
+.rules{font-size:12px;color:var(--dim);margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.rules li{margin-bottom:6px}
+.warnbox{background:rgba(255,180,84,.08);border:1px solid rgba(255,180,84,.32);color:var(--warn);border-radius:9px;padding:10px 12px;font-size:12.5px;margin-top:12px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);padding:9px 10px;border-bottom:1px solid var(--line);font-weight:600}
+td{padding:11px 10px;border-bottom:1px solid var(--line);color:var(--muted)}
+td b{color:var(--ink);font-weight:600}
+.wrap-x{overflow-x:auto}
+footer{max-width:1180px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-size:12px}
+
+/* ---------- co-brand ---------- */
+.logos{display:flex;align-items:center;gap:12px}
+.logos img{display:block;height:26px;width:auto}
+.logos .x{color:var(--dim);font-size:13px}
+.logos img.sv{height:30px}
+
+/* ---------- launching meta ads ---------- */
+.rule{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--savvas);border-radius:10px;padding:16px 18px;font-size:14px;color:var(--muted);margin-bottom:34px;max-width:78ch}
+.rule b{color:var(--ink)}
+.sec{margin:0 0 38px}
+.sec h2{font-size:17px;margin-bottom:4px}
+.sec .sub{color:var(--dim);font-size:13px;margin:0 0 14px;max-width:70ch}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:8px;max-width:78ch}
+.checks li{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px 11px 40px;position:relative;font-size:14px;color:var(--ink)}
+.checks li::before{content:'';position:absolute;left:14px;top:14px;width:13px;height:13px;border:2px solid var(--accent);border-radius:3px}
+.checks li small{display:block;color:var(--dim);font-size:12.5px;margin-top:2px}
+.tl td:first-child{font-family:'Space Mono',monospace;font-size:12px;color:var(--accent);white-space:nowrap;vertical-align:top}
+.tl td{vertical-align:top}
+.tl td.tlwho{white-space:nowrap}
+.slow li{font-size:14px;color:var(--muted);margin-bottom:8px;max-width:78ch}
+.slow li b{color:var(--ink)}
+@media (max-width:600px){.logos img{height:20px}.logos img.sv{height:23px}.tl td.tlwho{white-space:normal}}
+@media print{header,nav,.addbtn,.btn,.btn-ghost{display:none!important}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="card-login" id="loginForm">
+    <div class="logos" style="margin-bottom:22px"><img src="assets/r2r-logo-white.png" alt="Ready to Rank"><span class="x">×</span><img class="sv" src="assets/savvas-wordmark-light.png" alt="Savvas Studio"></div>
+    <h1 style="font-size:22px;margin-bottom:6px">Partner Hub</h1>
+    <p style="color:var(--muted);font-size:13.5px;margin:0 0 22px" id="loginLede">Sign in with your email. We'll email you a sign-in link and code, no password needed.</p>
+    <div id="step1">
+      <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required /></div>
+      <button class="btn" style="width:100%" type="submit" id="sendBtn">Email me a sign-in link</button>
+    </div>
+    <div id="step2" style="display:none">
+      <div class="field"><label for="code">Code from the email</label><input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" /></div>
+      <button class="btn" style="width:100%" type="submit" id="verifyBtn">Sign in</button>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12.5px">
+        <a href="#" id="resend">Send a new email</a><a href="#" id="restart">Use a different email</a>
+      </div>
+    </div>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="app">
+  <header>
+    <div class="hwrap">
+      <div class="logos"><img src="assets/r2r-logo-white.png" alt="Ready to Rank"><span class="x">×</span><img class="sv" src="assets/savvas-wordmark-light.png" alt="Savvas Studio"></div>
+      <div class="mono" style="font-size:11px;color:var(--dim);letter-spacing:.14em">PARTNER HUB</div>
+      <div class="who"><span id="whoami"></span><button class="btn-ghost" id="out" style="padding:7px 12px;font-size:12px">Sign out</button></div>
+    </div>
+    <nav>
+      <button class="tab on" data-p="meta">Launching Meta ads</button>
+      <button class="tab" data-p="pricing">Pricing &amp; deliverables</button>
+      <button class="tab" data-p="bundle">Bundle builder</button>
+      <button class="tab" data-p="saved">Saved bundles</button>
+      <button class="tab" data-p="how">How we work</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="pane" id="p-pricing">
+      <h1 style="font-size:24px">Pricing &amp; deliverables</h1>
+      <p class="lede">Everything Ready to Rank sells, what's included, and what it costs. These are <b>retail</b> prices — what we'd charge the end client. Price your own margin on top.</p>
+      <div class="note">
+        All prices <b>AUD, ex GST</b>. Ad spend is <b>separate</b> where marked — the client pays the platform direct.
+        Minimum terms apply. <b>POA</b> means we haven't set that price yet — ask Jose, don't quote it.
+      </div>
+      <div id="services"></div>
+    </section>
+
+    <section class="pane" id="p-bundle">
+      <h1 style="font-size:24px">Bundle builder</h1>
+      <p class="lede">Tick what the client needs. The total updates as you go, and a bundle discount can be applied to the monthly line.</p>
+      <div class="bcols">
+        <div class="picker" id="picker"></div>
+        <div class="cart" id="cart"></div>
+      </div>
+    </section>
+
+    <section class="pane" id="p-saved">
+      <h1 style="font-size:24px">Saved bundles</h1>
+      <p class="lede">Bundles you've built. Only you and Ready to Rank can see these.</p>
+      <div class="wrap-x"><table id="savedTbl"><thead><tr><th>Bundle</th><th>For</th><th>Monthly</th><th>One-off</th><th>Saved</th><th></th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="pane" id="p-how">
+      <h1 style="font-size:24px">How we work</h1>
+      <p class="lede">The bits that decide whether a quote holds up.</p>
+      <div class="note">
+        <b>Bundles are always cheaper than the sum of the parts</b> — and the client will do that sum, so the arithmetic has to be shown honestly.
+        The bundle rate holds only while <b>both</b> services run; drop one and each reverts to its standalone price.
+        Minimum term follows the <b>longest</b> component.
+      </div>
+      <h2 style="font-size:16px;margin:26px 0 10px">Ad spend</h2>
+      <p class="lede" style="margin-bottom:18px">Management fees never include ad spend. The client pays Google or Meta direct. Quoting a combined number is the fastest way to a difficult conversation in month two.</p>
+      <h2 style="font-size:16px;margin:26px 0 10px">Minimum terms</h2>
+      <p class="lede" style="margin-bottom:18px">Paid ads run a 3-month minimum — anything shorter doesn't clear the learning phase. Everything else is 6 months. SEO on a 3-month term is a refund conversation waiting to happen.</p>
+      <h2 style="font-size:16px;margin:26px 0 10px">What isn't on this page</h2>
+      <p class="lede">Anything showing <b>POA</b> has no agreed price yet. If a client needs one of those, message Jose rather than estimating — a number quoted here becomes the number they expect.</p>
+    </section>
+
+    <section class="pane on" id="p-meta">
+      <h1 style="font-size:24px">Launching Meta ads for your client</h1>
+      <p class="lede">What we need from you and from the client, and when. Follow this and every campaign you sell goes live four weeks after the onboarding call.</p>
+
+      <div class="rule"><b>Name every campaign in the signed scope.</b> If the scope says two campaigns, we build two. If a campaign was only mentioned in conversation, it won't make it into the build. One line per campaign, with its goal.</div>
+
+      <div class="sec">
+        <h2>1. What you send us with every lead</h2>
+        <p class="sub">Before the onboarding call, so the brief is ready on day one.</p>
+        <div class="wrap-x"><table>
+          <thead><tr><th>Item</th><th>Why we need it</th></tr></thead>
+          <tbody>
+            <tr><td><b>Signed scope listing every campaign by name</b></td><td>Each campaign is built, tracked and approved as its own line</td></tr>
+            <tr><td><b>For each campaign: the goal, the product or service, and the locations</b></td><td>Enquiries, bookings or online sales each need a different setup, landing page and audience</td></tr>
+            <tr><td><b>The client's main contact, and who approves the ads</b></td><td>Approvals go by email to one named person</td></tr>
+            <tr><td><b>Brand kit: logo, fonts and colours</b></td><td>Keeps the ads and the landing page consistent with your creative</td></tr>
+            <tr><td><b>Filming date</b></td><td>Sets the launch date</td></tr>
+            <tr><td><b>Website or Shopify login, if they sell online</b></td><td>Needed to install tracking where the sale happens</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+
+      <div class="sec">
+        <h2>2. What the client does on the onboarding call</h2>
+        <p class="sub">Done live with us on the call, so none of it has to be chased later.</p>
+        <ul class="checks">
+          <li>Adds their own credit card to the Meta ad account<small>The client pays Meta directly for ad spend</small></li>
+          <li>Completes Meta business verification<small>Unverified accounts are held back on spend and lead forms</small></li>
+          <li>Verifies their website domain in Meta<small>Separate from business verification. Both are needed</small></li>
+          <li>Gives Ready to Rank partner access to the ad account, Facebook Page, Instagram account and pixel</li>
+          <li>Names the person who approves ads</li>
+        </ul>
+      </div>
+
+      <div class="sec">
+        <h2>3. What you film and deliver</h2>
+        <ul class="checks">
+          <li>Hooks and scripts agreed with us before the shoot<small>So the videos match the ad copy the client approves</small></li>
+          <li>Creative for every campaign in the scope<small>Each campaign needs its own videos</small></li>
+          <li>Filmed by day 14, edited and delivered by day 21</li>
+          <li>Vertical 9:16 for Reels and Stories, plus 4:5 for Feed</li>
+          <li>One folder per campaign, with each file named for the ad it belongs to</li>
+        </ul>
+      </div>
+
+      <div class="sec">
+        <h2>4. What Ready to Rank delivers</h2>
+        <ul class="checks">
+          <li>Campaign strategy and build for every campaign in the scope</li>
+          <li>Ad copy, headlines and calls to action, sent to the client for approval by email</li>
+          <li>Landing page<small>Included with Meta Ads Management</small></li>
+          <li>Tracking, tested before launch<small>Pixel and conversions set up, a test lead sent through to the CRM, and every lead tagged with the ad it came from</small></li>
+          <li>Ad previews sent to the client for approval before launch</li>
+          <li>Final pre-launch check, then launch</li>
+          <li>Monthly performance report after launch</li>
+        </ul>
+      </div>
+
+      <div class="sec">
+        <h2>5. The four weeks</h2>
+        <div class="wrap-x"><table class="tl">
+          <thead><tr><th>When</th><th>Milestone</th><th>Who</th></tr></thead>
+          <tbody>
+            <tr><td>Day 0</td><td><b>Onboarding call:</b> card added, verification done, access given, approver named</td><td class="tlwho">Client, with us</td></tr>
+            <tr><td>Day 7</td><td><b>Brief confirmed:</b> goal, audience, locations and every campaign. Shoot booked</td><td class="tlwho">Ready to Rank, Savvas</td></tr>
+            <tr><td>Day 14</td><td><b>Ad copy, headlines and calls to action approved.</b> Filming done</td><td class="tlwho">Client, Savvas</td></tr>
+            <tr><td>Day 21</td><td><b>Videos delivered.</b> Landing page live and tracking tested</td><td class="tlwho">Savvas, Ready to Rank</td></tr>
+            <tr><td>Day 28</td><td><b>Ad previews approved, final check, launch</b></td><td class="tlwho">Client, Ready to Rank</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+
+      <div class="sec">
+        <h2>6. What pushes a launch back</h2>
+        <ul class="slow">
+          <li><b>No card on the account.</b> The ads can't spend.</li>
+          <li><b>Verification left until later.</b> Meta limits spend and lead forms until it's done.</li>
+          <li><b>A campaign that isn't in the scope.</b> It doesn't get built.</li>
+          <li><b>Videos after day 21.</b> Launch moves back by the same number of days.</li>
+          <li><b>Approvals waiting on the client.</b> Nothing goes live without their written OK.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer>Ready to Rank × Savvas Studio · Partner hub · Prices retail (ex GST, AUD) · <span id="stamp"></span></footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL="https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZ3J0cmF6eWVwdmJjbW1kaGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTM0MTEsImV4cCI6MjA4NzkyOTQxMX0.0nYnlrLC3pfDPpcQ9k5XsAMU8fu-ZhV543W8TMAoiUU";
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const $=id=>document.getElementById(id);
+const money=n=>'$'+Number(n).toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:0});
+
+let SERVICES=[],PACKAGES=[],DELIVS=[],ME=null;
+const picked=new Map();          // package_id -> qty
+let discount=0;
+
+/* ---------------- auth: emailed code (or the link in the same email) ---------------- */
+let otpEmail='',booted=false;
+function showStep(n){
+  $('step1').style.display=n===1?'block':'none';
+  $('step2').style.display=n===2?'block':'none';
+  $('loginLede').innerHTML=n===1?"Sign in with your email. We'll email you a sign-in link and code, no password needed."
+    :'We emailed <b>'+esc(otpEmail)+'</b>. Click the link in that email, or type the code from it here. It can take a minute to arrive, so check spam too.';
+  (n===1?$('email'):$('code')).focus();
+}
+async function sendCode(){
+  $('loginErr').textContent='';
+  const {error}=await sb.auth.signInWithOtp({email:otpEmail,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
+  if(error){
+    $('loginErr').textContent=error.status===429?'Too many codes requested. Wait a minute, then try again.'
+      :"We couldn't send a code to that email. Use the address Ready to Rank set up for you.";
+    return false;
+  }
+  return true;
+}
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault(); $('loginErr').textContent='';
+  if($('step1').style.display!=='none'){
+    otpEmail=$('email').value.trim().toLowerCase(); if(!otpEmail) return;
+    $('sendBtn').disabled=true;
+    if(await sendCode()) showStep(2);
+    $('sendBtn').disabled=false;
+  }else{
+    const token=$('code').value.replace(/\D/g,''); if(!token) return;
+    $('verifyBtn').disabled=true;
+    const {error}=await sb.auth.verifyOtp({email:otpEmail,token,type:'email'});
+    $('verifyBtn').disabled=false;
+    if(error){$('loginErr').textContent="That code didn't work. Use the newest email, or send a new code.";return;}
+    boot();
+  }
+});
+$('resend').addEventListener('click',async e=>{e.preventDefault(); if(await sendCode()) $('loginErr').textContent='New email sent.';});
+$('restart').addEventListener('click',e=>{e.preventDefault(); $('code').value=''; $('loginErr').textContent=''; showStep(1);});
+$('out').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
+sb.auth.onAuthStateChange(ev=>{ if(ev==='SIGNED_IN') setTimeout(boot,0); });
+
+async function boot(){
+  if(booted) return;
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) return;
+  // Savvas people sign in as partners; R2R staff (tt_people) can view the hub too
+  const {data:pu}=await sb.from('sv_partner_users').select('*').eq('id',session.user.id).maybeSingle();
+  let who=pu&&pu.active?pu:null;
+  if(!who){
+    const {data:staff}=await sb.from('tt_people').select('*').eq('id',session.user.id).maybeSingle();
+    if(staff&&staff.active) who={name:staff.name||staff.email||'Ready to Rank',org:'Ready to Rank'};
+  }
+  if(!who){
+    $('loginErr').textContent='This email has no partner access. Ask Ready to Rank to add you.';
+    await sb.auth.signOut(); showStep(1); return;
+  }
+  booted=true;
+  const me=ME={...who,id:session.user.id};
+  $('login').style.display='none'; $('app').style.display='block';
+  $('whoami').textContent=me.name+' · '+me.org;
+  $('stamp').textContent='Updated '+new Date().toLocaleDateString('en-AU');
+  await load();
+}
+
+async function load(){
+  const [s,p,d]=await Promise.all([
+    sb.from('sv_services').select('*').eq('active',true).order('sort'),
+    sb.from('sv_packages').select('*').eq('active',true).order('sort'),
+    sb.from('sv_deliverables').select('*').order('sort')
+  ]);
+  SERVICES=s.data||[]; PACKAGES=p.data||[]; DELIVS=d.data||[];
+  renderPricing(); renderPicker(); renderCart(); loadSaved();
+}
+
+/* ---------------- pricing ---------------- */
+function pkgPrice(p){
+  if(!p.price_confirmed||p.retail_price==null) return {txt:'POA',poa:true};
+  return {txt:money(p.retail_price),poa:false};
+}
+function renderPricing(){
+  $('services').innerHTML=SERVICES.map(s=>{
+    const pk=PACKAGES.filter(p=>p.service_id===s.id);
+    if(!pk.length) return '';
+    return `<div class="svc">
+      <div class="svc-h"><h2>${esc(s.name)}</h2><span class="cnt">${pk.length} package${pk.length>1?'s':''}</span></div>
+      ${s.blurb?`<div class="svc-blurb">${esc(s.blurb)}</div>`:''}
+      <div class="grid">${pk.map(p=>pkgCard(p)).join('')}</div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.addbtn').forEach(b=>b.addEventListener('click',()=>{
+    const id=+b.dataset.id; picked.set(id,1); renderPicker(); renderCart(); go('bundle');
+  }));
+}
+function pkgCard(p){
+  const pr=pkgPrice(p);
+  const items=DELIVS.filter(d=>d.package_id===p.id);
+  return `<div class="pkg${pr.poa?' poa':''}">
+    <h3>${esc(p.name)}</h3>
+    <div class="price${pr.poa?' poa-v':''}">${pr.txt}<span class="u">${pr.poa?'price not set — ask Jose':esc(p.unit)+' · ex GST'}</span></div>
+    <div class="meta">
+      ${p.min_term?`<span class="chip">Min ${esc(p.min_term)}</span>`:''}
+      ${p.ad_spend_separate?`<span class="chip">Ad spend separate</span>`:''}
+      ${p.unit==='one-off'?`<span class="chip">One-off</span>`:''}
+    </div>
+    ${p.best_for?`<div class="best">${esc(p.best_for)}</div>`:''}
+    ${items.length?`<details><summary>What's included (${items.length})</summary><ul>${items.map(i=>`<li>${esc(i.item)}</li>`).join('')}</ul></details>`:''}
+    ${pr.poa?'':`<button class="btn addbtn" data-id="${p.id}">Add to bundle</button>`}
+  </div>`;
+}
+
+/* ---------------- bundle ---------------- */
+function renderPicker(){
+  $('picker').innerHTML=SERVICES.map(s=>{
+    const pk=PACKAGES.filter(p=>p.service_id===s.id&&p.price_confirmed&&p.retail_price!=null);
+    if(!pk.length) return '';
+    return `<div class="gh">${esc(s.name)}</div>`+pk.map(p=>`
+      <label class="prow">
+        <input type="checkbox" data-id="${p.id}" ${picked.has(p.id)?'checked':''}>
+        <span class="nm">${esc(p.name)}<small>${esc(p.unit)}${p.min_term?' · min '+esc(p.min_term):''}</small></span>
+        <span class="pr">${money(p.retail_price)}</span>
+      </label>`).join('');
+  }).join('');
+  $('picker').querySelectorAll('input[type=checkbox]').forEach(c=>c.addEventListener('change',()=>{
+    const id=+c.dataset.id;
+    c.checked?picked.set(id,1):picked.delete(id);
+    renderCart();
+  }));
+}
+
+function totals(){
+  let monthly=0,oneoff=0,adSep=false,longest=null;
+  picked.forEach((q,id)=>{
+    const p=PACKAGES.find(x=>x.id===id); if(!p) return;
+    if(p.unit==='one-off') oneoff+=Number(p.retail_price)*q; else monthly+=Number(p.retail_price)*q;
+    if(p.ad_spend_separate) adSep=true;
+    if(p.min_term){const m=parseInt(p.min_term); if(!longest||m>longest) longest=m;}
+  });
+  const disc=monthly*(discount/100);
+  return {monthly,oneoff,disc,monthlyNet:monthly-disc,adSep,longest};
+}
+
+function renderCart(){
+  const t=totals();
+  if(!picked.size){
+    $('cart').innerHTML=`<h3>Your bundle</h3><div class="empty">Nothing selected yet.<br>Tick services on the left.</div>`;
+    return;
+  }
+  const rows=[...picked.keys()].map(id=>{
+    const p=PACKAGES.find(x=>x.id===id); if(!p) return '';
+    return `<div class="line"><b>${esc(p.name)}</b><span>${money(p.retail_price)}${p.unit==='one-off'?'':'/mo'}</span></div>`;
+  }).join('');
+  $('cart').innerHTML=`
+    <h3>Your bundle</h3>
+    ${rows}
+    <div style="margin-top:14px">
+      <label for="disc">Bundle discount on monthly (%)</label>
+      <input id="disc" type="number" min="0" max="40" step="1" value="${discount}">
+    </div>
+    ${t.monthly?`<div class="tot"><span class="lbl">Monthly${discount?' (after '+discount+'%)':''}</span><span class="val">${money(t.monthlyNet)}</span></div>`:''}
+    ${t.oneoff?`<div class="tot"><span class="lbl">One-off</span><span class="val">${money(t.oneoff)}</span></div>`:''}
+    ${t.disc?`<div class="save">Bought separately ${money(t.monthly)}/mo → bundled <b>${money(t.monthlyNet)}/mo</b>. Saves ${money(t.disc)}/mo.</div>`:''}
+    ${t.adSep?`<div class="warnbox">Ad spend is <b>not</b> included — the client pays the platform direct.</div>`:''}
+    ${t.longest?`<div class="warnbox" style="background:rgba(23,180,240,.07);border-color:rgba(23,180,240,.3);color:var(--accent)">Minimum term follows the longest component: <b>${t.longest} months</b>.</div>`:''}
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn" id="saveB" style="flex:1">Save bundle</button>
+      <button class="btn-ghost" id="printB">Print</button>
+    </div>
+    <ul class="rules">
+      <li>Prices are retail, ex GST — your margin sits on top.</li>
+      <li>The bundle rate holds only while every component runs.</li>
+      <li>Drop one service and each reverts to its standalone price.</li>
+    </ul>`;
+  $('disc').addEventListener('input',e=>{discount=Math.max(0,Math.min(40,+e.target.value||0));renderCart();$('disc').focus();});
+  $('saveB').addEventListener('click',saveBundle);
+  $('printB').addEventListener('click',()=>window.print());
+}
+
+async function saveBundle(){
+  const name=prompt('Name this bundle (e.g. "RAWA Co — launch stack")'); if(!name) return;
+  const forC=prompt('Which client is it for? (optional)')||null;
+  const {data:b,error}=await sb.from('sv_bundles')
+    .insert({name,for_client:forC,discount_pct:discount,built_by:ME.id}).select().single();
+  if(error){alert('Could not save: '+error.message);return;}
+  const items=[...picked.entries()].map(([package_id,qty])=>({bundle_id:b.id,package_id,qty}));
+  const {error:e2}=await sb.from('sv_bundle_items').insert(items);
+  if(e2){alert('Bundle saved but items failed: '+e2.message);return;}
+  alert('Saved. Ready to Rank can see it too.');
+  loadSaved();
+}
+
+async function loadSaved(){
+  const {data:bs}=await sb.from('sv_bundles').select('*').order('created_at',{ascending:false});
+  const {data:its}=await sb.from('sv_bundle_items').select('*');
+  const tb=$('savedTbl').querySelector('tbody');
+  if(!bs||!bs.length){tb.innerHTML='<tr><td colspan="6" style="color:var(--dim)">No saved bundles yet.</td></tr>';return;}
+  tb.innerHTML=bs.map(b=>{
+    const mine=(its||[]).filter(i=>i.bundle_id===b.id);
+    let m=0,o=0;
+    mine.forEach(i=>{const p=PACKAGES.find(x=>x.id===i.package_id);if(!p)return;
+      if(p.unit==='one-off')o+=Number(p.retail_price)*i.qty;else m+=Number(p.retail_price)*i.qty;});
+    const net=m-m*(Number(b.discount_pct)/100);
+    return `<tr><td><b>${esc(b.name)}</b></td><td>${esc(b.for_client||'—')}</td>
+      <td>${m?money(net)+'/mo':'—'}</td><td>${o?money(o):'—'}</td>
+      <td>${new Date(b.created_at).toLocaleDateString('en-AU')}</td>
+      <td><button class="btn-ghost" style="padding:5px 10px;font-size:12px" data-del="${b.id}">Delete</button></td></tr>`;
+  }).join('');
+  tb.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('Delete this bundle?'))return;
+    await sb.from('sv_bundles').delete().eq('id',+b.dataset.del); loadSaved();
+  }));
+}
+
+/* ---------------- tabs ---------------- */
+function go(p){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
+  document.querySelectorAll('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p));
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.p)));
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+boot();
+</script>
+</body>
+</html>

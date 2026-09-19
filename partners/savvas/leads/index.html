@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Savvas Leads · Internal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0c0e; --panel:#141619; --panel2:#1b1e23; --line:#272b31;
+  --ink:#eef1f4; --muted:#9aa4b0; --dim:#6f7883;
+  --accent:#17B4F0; --ok:#3ddc97; --warn:#ffb454; --bad:#ff6b6b; --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Archivo,system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
+a{color:var(--accent)}
+#login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.card-login{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:32px}
+.brandmark{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
+.field{margin-bottom:14px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:11px 12px;font-family:inherit;font-size:14px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+button{font-family:inherit;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid transparent;padding:11px 16px;font-size:14px}
+.btn{background:var(--accent);color:#04222f}
+.btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+#app{display:none}
+header{position:sticky;top:0;z-index:20;background:rgba(11,12,14,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:1260px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.logo{font-weight:800;font-size:17px;letter-spacing:-.03em}.logo span{color:var(--accent)}
+.who{margin-left:auto;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:12px}
+nav{max-width:1260px;margin:0 auto;padding:0 22px;display:flex;gap:4px;overflow-x:auto}
+.tab{background:none;border:none;color:var(--muted);padding:12px 14px;font-size:14px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+main{max-width:1260px;margin:0 auto;padding:26px 22px 90px}
+.pane{display:none}.pane.on{display:block}
+.lede{color:var(--muted);font-size:14px;max-width:70ch;margin:6px 0 22px}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:26px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.stat .n{font-family:'Space Mono',monospace;font-size:26px;font-weight:700;color:var(--accent)}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.stat.warn .n{color:var(--warn)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.lead{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:10px}
+.lead.blocked{border-left:3px solid var(--bad)}
+.lead.due{border-left:3px solid var(--warn)}
+.lead h3{font-size:16px}
+.row1{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.badge{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;border-radius:20px;white-space:nowrap;border:1px solid var(--line);color:var(--muted);background:var(--panel2)}
+.badge.b-built{color:var(--ok);border-color:rgba(61,220,151,.4)}
+.badge.b-blocked{color:var(--bad);border-color:rgba(255,107,107,.4)}
+.badge.b-await{color:var(--warn);border-color:rgba(255,180,84,.4)}
+.sub{font-size:12px;color:var(--dim)}
+.ask{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+.flags{display:flex;gap:6px;flex-wrap:wrap}
+.flag{font-size:10.5px;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;border-radius:5px}
+.f-nofee{background:rgba(255,107,107,.12);color:var(--bad)}
+.f-model{background:rgba(255,180,84,.12);color:var(--warn)}
+.f-ok{background:rgba(61,220,151,.12);color:var(--ok)}
+details.blk{margin-top:auto;border-top:1px solid var(--line);padding-top:10px}
+details.blk summary{cursor:pointer;font-size:12px;color:var(--accent);font-weight:600;list-style:none}
+details.blk summary::-webkit-details-marker{display:none}
+details.blk summary::before{content:'▸ '}details.blk[open] summary::before{content:'▾ '}
+details.blk p{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+.k{font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:10px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);padding:9px 10px;border-bottom:1px solid var(--line);font-weight:600}
+td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:middle}
+td b{color:var(--ink)}
+td input,td select{padding:7px 9px;font-size:13px}
+.wrap-x{overflow-x:auto}
+.poa-tag{color:var(--warn);font-family:'Space Mono',monospace;font-size:11px}
+.note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--muted);margin-bottom:24px}
+.note b{color:var(--ink)}
+.saved{color:var(--ok);font-size:12px;margin-left:8px}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="card-login" id="loginForm">
+    <div class="brandmark">Ready to Rank · Internal</div>
+    <h1 style="font-size:22px;margin-bottom:6px">Savvas Lead Dashboard</h1>
+    <p style="color:var(--muted);font-size:13.5px;margin:0 0 22px" id="loginLede">Leads, fees and pricing control. Sign in with your email and we'll send you a link and code.</p>
+    <div id="step1">
+      <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required /></div>
+      <button class="btn" style="width:100%" type="submit" id="sendBtn">Email me a sign-in link</button>
+    </div>
+    <div id="step2" style="display:none">
+      <div class="field"><label for="code">Code from the email</label><input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" /></div>
+      <button class="btn" style="width:100%" type="submit" id="verifyBtn">Sign in</button>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12.5px">
+        <a href="#" id="resend">Send a new email</a><a href="#" id="restart">Use a different email</a>
+      </div>
+    </div>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="app">
+  <header>
+    <div class="hwrap">
+      <div class="logo">READY TO <span>RANK</span></div>
+      <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:.14em">SAVVAS · INTERNAL</div>
+      <div class="who"><span id="whoami"></span><button class="btn-ghost" id="out" style="padding:7px 12px;font-size:12px">Sign out</button></div>
+    </div>
+    <nav>
+      <button class="tab on" data-p="leads">Leads</button>
+      <button class="tab" data-p="pricing">Pricing control</button>
+      <button class="tab" data-p="bundles">George's bundles</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="pane on" id="p-leads">
+      <h1 style="font-size:24px">Leads</h1>
+      <p class="lede">Everything George has sent. Red edge = blocked. Amber edge = a deadline that's passed or due.</p>
+      <div class="stats" id="stats"></div>
+      <div class="grid" id="leads"></div>
+    </section>
+
+    <section class="pane" id="p-pricing">
+      <h1 style="font-size:24px">Pricing control</h1>
+      <p class="lede">Edit a price and it changes in George's portal immediately. Leave <b>Set?</b> unticked and it shows as POA — he can see the package exists but can't quote a number.</p>
+      <div class="note" id="poaNote"></div>
+      <div class="wrap-x">
+        <table id="priceTbl">
+          <thead><tr><th>Service</th><th>Package</th><th style="width:130px">Retail (ex GST)</th><th style="width:120px">Unit</th><th style="width:110px">Min term</th><th style="width:70px">Set?</th><th style="width:70px">Live?</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="pane" id="p-bundles">
+      <h1 style="font-size:24px">George's bundles</h1>
+      <p class="lede">What he's actually quoting. Useful before a call — you can see the stack he's put in front of a client.</p>
+      <div class="wrap-x"><table id="bTbl"><thead><tr><th>Bundle</th><th>For</th><th>Components</th><th>Monthly</th><th>One-off</th><th>Disc</th><th>Built</th></tr></thead><tbody></tbody></table></div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL="https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZ3J0cmF6eWVwdmJjbW1kaGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTM0MTEsImV4cCI6MjA4NzkyOTQxMX0.0nYnlrLC3pfDPpcQ9k5XsAMU8fu-ZhV543W8TMAoiUU";
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const $=id=>document.getElementById(id);
+const money=n=>'$'+Number(n).toLocaleString('en-AU',{maximumFractionDigits:0});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let SERVICES=[],PACKAGES=[],LEADS=[];
+
+/* auth: emailed code (or the link in the same email) */
+let otpEmail='',booted=false;
+function showStep(n){
+  $('step1').style.display=n===1?'block':'none';
+  $('step2').style.display=n===2?'block':'none';
+  $('loginLede').innerHTML=n===1?"Leads, fees and pricing control. Sign in with your email and we'll send you a link and code."
+    :'We emailed <b>'+esc(otpEmail)+'</b>. Click the link in that email, or type the code from it here.';
+  (n===1?$('email'):$('code')).focus();
+}
+async function sendCode(){
+  $('loginErr').textContent='';
+  const {error}=await sb.auth.signInWithOtp({email:otpEmail,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
+  if(error){$('loginErr').textContent=error.status===429?'Too many codes requested. Wait a minute, then try again.':"We couldn't send a code to that email.";return false;}
+  return true;
+}
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault(); $('loginErr').textContent='';
+  if($('step1').style.display!=='none'){
+    otpEmail=$('email').value.trim().toLowerCase(); if(!otpEmail) return;
+    $('sendBtn').disabled=true; if(await sendCode()) showStep(2); $('sendBtn').disabled=false;
+  }else{
+    const token=$('code').value.replace(/\D/g,''); if(!token) return;
+    $('verifyBtn').disabled=true;
+    const {error}=await sb.auth.verifyOtp({email:otpEmail,token,type:'email'});
+    $('verifyBtn').disabled=false;
+    if(error){$('loginErr').textContent="That code didn't work. Use the newest email, or send a new code.";return;}
+    boot();
+  }
+});
+$('resend').addEventListener('click',async e=>{e.preventDefault(); if(await sendCode()) $('loginErr').textContent='New email sent.';});
+$('restart').addEventListener('click',e=>{e.preventDefault(); $('code').value=''; $('loginErr').textContent=''; showStep(1);});
+$('out').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
+sb.auth.onAuthStateChange(ev=>{ if(ev==='SIGNED_IN') setTimeout(boot,0); });
+
+async function boot(){
+  if(booted) return;
+  const {data:{session}}=await sb.auth.getSession(); if(!session) return;
+  const {data:me}=await sb.from('tt_people').select('*').eq('id',session.user.id).maybeSingle();
+  if(!me||!me.active){$('loginErr').textContent='This login is not on the internal team.';await sb.auth.signOut();showStep(1);return;}
+  booted=true;
+  $('login').style.display='none';$('app').style.display='block';
+  $('whoami').textContent=me.name||me.email||'';
+  await load();
+}
+
+async function load(){
+  const [s,p,l]=await Promise.all([
+    sb.from('sv_services').select('*').order('sort'),
+    sb.from('sv_packages').select('*').order('sort'),
+    sb.from('sv_leads').select('*').order('received_on',{ascending:false})
+  ]);
+  SERVICES=s.data||[];PACKAGES=p.data||[];LEADS=l.data||[];
+  renderStats();renderLeads();renderPricing();loadBundles();
+}
+
+function renderStats(){
+  const today=new Date().toISOString().slice(0,10);
+  const noFee=LEADS.filter(l=>!l.fee_agreed).length;
+  const unclear=LEADS.filter(l=>!l.commercial_model||l.commercial_model==='Unclear').length;
+  const blocked=LEADS.filter(l=>l.status==='Blocked').length;
+  const overdue=LEADS.filter(l=>l.deadline&&l.deadline<today&&l.status!=='Built'&&l.status!=='Won').length;
+  $('stats').innerHTML=`
+    <div class="stat"><div class="n">${LEADS.length}</div><div class="l">Leads tracked</div></div>
+    <div class="stat ${noFee?'warn':''}"><div class="n">${noFee}</div><div class="l">No fee agreed</div></div>
+    <div class="stat ${unclear?'warn':''}"><div class="n">${unclear}</div><div class="l">Model unclear</div></div>
+    <div class="stat ${blocked?'warn':''}"><div class="n">${blocked}</div><div class="l">Blocked</div></div>
+    <div class="stat ${overdue?'warn':''}"><div class="n">${overdue}</div><div class="l">Past deadline</div></div>`;
+}
+
+function badgeCls(s){
+  if(s==='Built'||s==='Won') return 'b-built';
+  if(s==='Blocked') return 'b-blocked';
+  if((s||'').startsWith('Awaiting')||(s||'').startsWith('Sent')) return 'b-await';
+  return '';
+}
+function renderLeads(){
+  const today=new Date().toISOString().slice(0,10);
+  $('leads').innerHTML=LEADS.map(l=>{
+    const late=l.deadline&&l.deadline<today&&l.status!=='Built'&&l.status!=='Won';
+    const cls=l.status==='Blocked'?'blocked':(late?'due':'');
+    return `<div class="lead ${cls}">
+      <div class="row1">
+        <div><h3>${esc(l.business)}</h3>
+          <div class="sub">${esc(l.website||'')}${l.contact_name?' · '+esc(l.contact_name):''}</div></div>
+        <span class="badge ${badgeCls(l.status)}">${esc(l.status)}</span>
+      </div>
+      <div class="flags">
+        ${l.fee_agreed?'<span class="flag f-ok">Fee agreed</span>':'<span class="flag f-nofee">No fee</span>'}
+        <span class="flag ${(!l.commercial_model||l.commercial_model==='Unclear')?'f-model':'f-ok'}">${esc(l.commercial_model||'Model unset')}</span>
+        ${late?'<span class="flag f-nofee">Past '+esc(l.deadline)+'</span>':''}
+      </div>
+      ${l.ask?`<div class="ask">${esc(l.ask.slice(0,190))}${l.ask.length>190?'…':''}</div>`:''}
+      <details class="blk"><summary>Detail</summary>
+        ${l.dependencies?`<span class="k">Dependencies</span><p>${esc(l.dependencies)}</p>`:''}
+        ${l.blocking_questions?`<span class="k">Blocking questions</span><p>${esc(l.blocking_questions)}</p>`:''}
+        ${l.fee_notes?`<span class="k">Fee</span><p>${esc(l.fee_notes)}</p>`:''}
+        ${l.internal_notes?`<span class="k">Internal</span><p>${esc(l.internal_notes)}</p>`:''}
+        ${l.folder_path?`<span class="k">Folder</span><p>${esc(l.folder_path)}</p>`:''}
+      </details>
+    </div>`;
+  }).join('');
+}
+
+function renderPricing(){
+  const poa=PACKAGES.filter(p=>!p.price_confirmed).length;
+  $('poaNote').innerHTML=poa
+    ? `<b>${poa} package${poa>1?'s':''} still showing POA to George.</b> Until a price is set he can't quote them — which is why the audits and plans keep coming back to you.`
+    : `<b>Every package has a price set.</b>`;
+  const tb=$('priceTbl').querySelector('tbody');
+  tb.innerHTML=PACKAGES.map(p=>{
+    const s=SERVICES.find(x=>x.id===p.service_id);
+    return `<tr data-id="${p.id}">
+      <td>${esc(s?s.name:'')}</td>
+      <td><b>${esc(p.name)}</b>${p.notes?`<div class="sub" style="max-width:340px">${esc(p.notes)}</div>`:''}</td>
+      <td><input type="number" step="10" class="f-price" value="${p.retail_price??''}" placeholder="—"></td>
+      <td><select class="f-unit">
+        <option${p.unit==='per month'?' selected':''}>per month</option>
+        <option${p.unit==='one-off'?' selected':''}>one-off</option></select></td>
+      <td><input class="f-term" value="${esc(p.min_term||'')}" placeholder="—"></td>
+      <td style="text-align:center"><input type="checkbox" class="f-conf" ${p.price_confirmed?'checked':''}></td>
+      <td style="text-align:center"><input type="checkbox" class="f-active" ${p.active?'checked':''}></td>
+      <td><button class="btn-ghost f-save" style="padding:6px 12px;font-size:12px">Save</button><span class="saved"></span></td>
+    </tr>`;
+  }).join('');
+  tb.querySelectorAll('.f-save').forEach(b=>b.addEventListener('click',async()=>{
+    const tr=b.closest('tr'),id=+tr.dataset.id;
+    const price=tr.querySelector('.f-price').value;
+    const patch={
+      retail_price:price===''?null:Number(price),
+      unit:tr.querySelector('.f-unit').value,
+      min_term:tr.querySelector('.f-term').value||null,
+      price_confirmed:tr.querySelector('.f-conf').checked,
+      active:tr.querySelector('.f-active').checked
+    };
+    if(patch.price_confirmed&&patch.retail_price==null){
+      alert('Tick "Set?" only once there is a price. An empty confirmed price would show as $0 to George.');return;
+    }
+    const {error}=await sb.from('sv_packages').update(patch).eq('id',id);
+    const s=tr.querySelector('.saved');
+    if(error){s.textContent='failed';s.style.color='var(--bad)';return;}
+    s.textContent='saved';s.style.color='var(--ok)';setTimeout(()=>s.textContent='',2000);
+    const p=PACKAGES.find(x=>x.id===id); Object.assign(p,patch); renderPricing();
+  }));
+}
+
+async function loadBundles(){
+  const {data:bs}=await sb.from('sv_bundles').select('*').order('created_at',{ascending:false});
+  const {data:its}=await sb.from('sv_bundle_items').select('*');
+  const tb=$('bTbl').querySelector('tbody');
+  if(!bs||!bs.length){tb.innerHTML='<tr><td colspan="7" style="color:var(--dim)">George hasn\'t saved a bundle yet.</td></tr>';return;}
+  tb.innerHTML=bs.map(b=>{
+    const mine=(its||[]).filter(i=>i.bundle_id===b.id);
+    let m=0,o=0,names=[];
+    mine.forEach(i=>{const p=PACKAGES.find(x=>x.id===i.package_id);if(!p)return;names.push(p.name);
+      if(p.unit==='one-off')o+=Number(p.retail_price)*i.qty;else m+=Number(p.retail_price)*i.qty;});
+    const net=m-m*(Number(b.discount_pct)/100);
+    return `<tr><td><b>${esc(b.name)}</b></td><td>${esc(b.for_client||'—')}</td>
+      <td style="max-width:280px">${esc(names.join(', '))||'—'}</td>
+      <td>${m?money(net)+'/mo':'—'}</td><td>${o?money(o):'—'}</td>
+      <td>${Number(b.discount_pct)?b.discount_pct+'%':'—'}</td>
+      <td>${new Date(b.created_at).toLocaleDateString('en-AU')}</td></tr>`;
+  }).join('');
+}
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
+  document.querySelectorAll('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+t.dataset.p));
+}));
+boot();
+</script>
+</body>
+</html>
