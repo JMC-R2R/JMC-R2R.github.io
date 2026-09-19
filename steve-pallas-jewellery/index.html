@@ -4,36 +4,39 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
-<title>Launch checklist · Ready to Rank</title>
+<title>Client · Ready to Rank</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* Paid ads launch checklist. One generic page: the client comes from the folder name,
-   so update.readytorank.com.au/<client-slug>/ loads that client's brief. */
+/* One page per client: Onboarding, Ads brief, Launch checklist.
+   Generic file: the client comes from the folder name, so
+   update.readytorank.com.au/<client-slug>/ loads that client. Master copy: /steve-pallas-jewellery/. */
 :root{
   --bg:#0b0c0e; --panel:#141619; --panel2:#1b1e23; --line:#272b31;
   --ink:#eef1f4; --muted:#9aa4b0; --dim:#6f7883;
   --accent:#17B4F0; --client:#17B4F0;
-  --ok:#3ddc97; --bad:#ff6b6b; --r:14px;
+  --ok:#3ddc97; --bad:#ff6b6b; --warn:#ffb454; --r:14px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:Archivo,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 a{color:var(--accent)}
-h1,h2{margin:0;font-weight:700;letter-spacing:-.02em}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .mono{font-family:'Space Mono',ui-monospace,monospace}
 
 #login{min-height:100vh;display:grid;place-items:center;padding:24px}
 .card-login{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:32px}
 .field{margin-bottom:14px}
 label.l{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-input[type=email],input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:11px 12px;font-family:inherit;font-size:14px}
-input:focus{outline:none;border-color:var(--accent)}
-button{font-family:inherit;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid transparent;padding:11px 16px;font-size:14px}
+input[type=email],input[type=text],input[type=number],textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:14px}
+textarea{min-height:120px;resize:vertical;line-height:1.5}
+input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+button{font-family:inherit;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid transparent;padding:10px 16px;font-size:14px}
 .btn{background:var(--accent);color:#04222f}
 .btn:disabled{opacity:.6;cursor:default}
 .btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
 .err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
 
 .logos{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -43,9 +46,15 @@ button{font-family:inherit;font-weight:600;cursor:pointer;border-radius:9px;bord
 
 #app{display:none}
 header{position:sticky;top:0;z-index:20;background:rgba(11,12,14,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.hwrap{max-width:1080px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.hwrap{max-width:1080px;margin:0 auto;padding:16px 22px 8px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .who{margin-left:auto;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:12px}
+nav{max-width:1080px;margin:0 auto;padding:0 22px;display:flex;gap:4px;overflow-x:auto}
+.tab{background:none;border:none;border-radius:0;color:var(--muted);padding:11px 14px;font-size:14px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.tab .cnt{font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);margin-left:6px}
 main{max-width:1080px;margin:0 auto;padding:28px 22px 90px}
+.pane{display:none}.pane.on{display:block}
 
 .eyebrow{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--client);margin-bottom:10px}
 .summary{display:flex;flex-wrap:wrap;gap:10px 26px;color:var(--muted);font-size:14px;margin:10px 0 18px}
@@ -55,7 +64,7 @@ main{max-width:1080px;margin:0 auto;padding:28px 22px 90px}
 .rule{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--client);border-radius:10px;padding:13px 16px;font-size:13.5px;color:var(--muted);margin:22px 0 30px;max-width:78ch}
 .rule b{color:var(--ink)}
 h2{font-size:17px;margin:0 0 12px}
-.sec{margin-bottom:36px}
+.sec{margin-bottom:34px}
 .wrap-x{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);padding:9px 10px;border-bottom:1px solid var(--line);font-weight:600}
@@ -64,11 +73,34 @@ td b{color:var(--ink);font-weight:600}
 td.tick{width:44px}
 td.owner{white-space:nowrap;color:var(--ink)}
 tr.done td.item{color:var(--dim)}
+tr.stage td{padding:18px 10px 6px;border-bottom:none;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--client)}
 .cb{width:22px;height:22px;accent-color:var(--ok);cursor:pointer;margin:0}
 .cb:disabled{cursor:default}
 .st{white-space:nowrap}
 .note{color:var(--dim);font-size:12.5px;margin-left:4px;white-space:normal}
 .sync{font-size:12px;color:var(--dim)}
+
+/* onboarding */
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:8px;max-width:640px}
+.checks li{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;gap:12px;align-items:center;font-size:14.5px}
+.checks li .i{font-size:17px;width:22px;text-align:center}
+.checks li.off{color:var(--muted)}
+.hint{color:var(--dim);font-size:12.5px;max-width:70ch;margin-top:12px}
+
+/* brief */
+.para{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.65;max-width:80ch;color:var(--ink)}
+.camp{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden}
+.camp h3{font-size:15.5px;padding:13px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:baseline}
+.camp h3 .pl{font-family:'Space Mono',monospace;font-size:11px;color:var(--client);letter-spacing:.1em;text-transform:uppercase}
+.kv{width:100%}
+.kv th{width:200px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);padding:10px 16px;vertical-align:top}
+.kv td{color:var(--ink);padding:10px 16px}
+.kv td.tbc{color:var(--warn)}
+.money{background:rgba(255,180,84,.07);border:1px solid rgba(255,180,84,.3);border-radius:12px;padding:14px 16px;margin:0 0 22px;max-width:640px}
+.money .t{font-size:12px;color:var(--warn);font-family:'Space Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.money table td,.money table th{padding:7px 8px;border-bottom:1px solid rgba(255,180,84,.18)}
+.bar2{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px}
+
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
 .toast.on{opacity:1}
 footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-size:12px}
@@ -77,6 +109,7 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
   td.owner{white-space:normal}
   th.hide-sm,td.hide-sm{display:none}
   td .owner-sm{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+  .kv th{width:120px;padding:9px 10px}.kv td{padding:9px 10px}
 }
 @media (min-width:641px){ td .owner-sm{display:none} }
 </style>
@@ -86,7 +119,7 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
 <div id="login">
   <form class="card-login" id="loginForm">
     <div class="logos" style="margin-bottom:22px"><img src="/operations/assets/r2r-logo.png" alt="Ready to Rank"></div>
-    <h1 style="font-size:22px;margin-bottom:6px">Launch checklist</h1>
+    <h1 style="font-size:22px;margin-bottom:6px">Client page</h1>
     <p style="color:var(--muted);font-size:13.5px;margin:0 0 22px" id="loginLede">Ready to Rank team only. Sign in with your email and we'll send you a link and code.</p>
     <div id="step1">
       <div class="field"><label class="l" for="email">Email</label><input id="email" type="email" autocomplete="email" required /></div>
@@ -107,35 +140,46 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
   <header>
     <div class="hwrap">
       <div class="logos"><img src="/operations/assets/r2r-logo.png" alt="Ready to Rank"><span class="x">×</span><span class="cname" id="cname"></span></div>
-      <div class="mono" style="font-size:11px;color:var(--dim);letter-spacing:.14em">LAUNCH CHECKLIST</div>
+      <a class="mono" href="/operations/registry/" style="font-size:11px;color:var(--dim);letter-spacing:.14em;text-decoration:none">← ALL CLIENTS</a>
       <div class="who"><span id="whoami"></span><button class="btn-ghost" id="out" style="padding:7px 12px;font-size:12px">Sign out</button></div>
     </div>
+    <nav>
+      <button class="tab" data-p="onboarding">Onboarding<span class="cnt" id="cntOnb"></span></button>
+      <button class="tab" data-p="brief">Ads brief</button>
+      <button class="tab" data-p="launch">Launch checklist<span class="cnt" id="cntLaunch"></span></button>
+    </nav>
   </header>
   <main>
     <div class="eyebrow" id="eyebrow"></div>
-    <h1 style="font-size:26px" id="title"></h1>
-    <div class="summary" id="summary"></div>
-    <div class="bar"><i id="barFill"></i></div>
-    <div class="sync" id="syncNote"></div>
-    <div class="rule"><b>Nothing launches until every row is ticked</b> and Jose or Jhen has done the final check. Tick a row only when you've seen it working yourself, not when someone says it's done.</div>
+    <h1 style="font-size:26px;margin-bottom:22px" id="title"></h1>
 
-    <div class="sec">
-      <h2 id="campH">Campaigns</h2>
-      <div class="wrap-x"><table>
-        <thead><tr><th>#</th><th>Campaign</th><th>Goal</th><th class="hide-sm">Sends to</th><th class="hide-sm">Locations</th><th class="hide-sm">Ads</th></tr></thead>
-        <tbody id="camps"></tbody>
-      </table></div>
-    </div>
+    <!-- ONBOARDING -->
+    <section class="pane" id="p-onboarding">
+      <div id="onbBody"></div>
+      <p class="hint">Computed from the records, never ticked by hand. Client access for ads clients comes from the day 0 rows of the launch checklist (card, verification, account access), done live on the onboarding call.</p>
+    </section>
 
-    <div class="sec">
-      <h2>Launch checklist</h2>
+    <!-- BRIEF -->
+    <section class="pane" id="p-brief">
+      <div class="bar2" id="briefBtns"></div>
+      <div id="moneyBox"></div>
+      <div class="sec"><h2>Summary</h2><div id="summaryBox"></div></div>
+      <div class="sec"><h2 id="campH">Campaigns</h2><div id="campBox"></div></div>
+    </section>
+
+    <!-- LAUNCH -->
+    <section class="pane" id="p-launch">
+      <div class="summary" id="summary"></div>
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="sync" id="syncNote"></div>
+      <div class="rule"><b>Nothing launches until every row is ticked</b> and Jose or Jhen has done the final check. Tick a row only when you've seen it working yourself, not when someone says it's done.</div>
       <div class="wrap-x"><table>
         <thead><tr><th></th><th>Item</th><th class="hide-sm">Owner</th><th>Status</th></tr></thead>
         <tbody id="items"></tbody>
       </table></div>
-    </div>
+    </section>
   </main>
-  <footer>Ready to Rank · internal launch checklist · <span id="stamp"></span></footer>
+  <footer>Ready to Rank · internal client page · <span id="stamp"></span></footer>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -148,7 +192,10 @@ const SLUG=(location.pathname.split('/').filter(Boolean)[0]||'').toLowerCase();
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let BRIEF=null,ITEMS=[],CAN_WRITE=false,booted=false;
+let BRIEF=null,ITEMS=[],ONB=[],BUDGETS=[],CAN_WRITE=false,booted=false,EDIT=false;
+
+const STAGES=[['day0','Day 0 · onboarding call'],['brief','Day 7 · brief'],['copy','Day 14 · copy approved'],['build','Day 21 · build ready'],['campaign','Campaigns'],['launch','Day 28 · launch']];
+const FIELDS=[['goal','Goal'],['sends_to','Sends to'],['locations','Locations (radius / postcodes / regions)'],['age','Age'],['gender','Gender'],['interests','Interests'],['placements','Placements'],['offer','Offer'],['creative','Creative'],['conversion_event','Conversion event'],['notes','Notes']];
 
 /* ---------- sign-in: emailed code or link ---------- */
 let otpEmail='';
@@ -198,72 +245,144 @@ async function boot(){
 
 /* ---------- data ---------- */
 async function load(){
-  const [b,i]=await Promise.all([
+  const [b,i,o,m]=await Promise.all([
     sb.from('pa_launch_briefs').select('*').eq('client_slug',SLUG).maybeSingle(),
-    sb.from('pa_launch_items').select('*').eq('client_slug',SLUG).order('sort')
+    sb.from('pa_launch_items').select('*').eq('client_slug',SLUG).order('sort'),
+    sb.rpc('pa_client_onboarding',{p_slug:SLUG}),
+    sb.from('pa_launch_budgets').select('*').eq('client_slug',SLUG).order('campaign_no')
   ]);
-  if(!b.data){ $('title').textContent='No launch checklist for this client yet.'; return; }
-  BRIEF=b.data; ITEMS=i.data||[];
+  BRIEF=b.data; ITEMS=i.data||[]; ONB=o.data||[]; BUDGETS=m.data||[];
+  if(!BRIEF){ $('title').textContent='No client page set up for this client yet.'; return; }
   if(BRIEF.accent) document.documentElement.style.setProperty('--client',BRIEF.accent);
-  render();
+  renderAll();
+  const want=(location.hash||'').replace('#','');
+  go(['onboarding','brief','launch'].includes(want)?want:'onboarding');
+}
+function go(p){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
+  document.querySelectorAll('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p));
+  history.replaceState(null,'','#'+p);
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.p)));
+
+function renderAll(){
+  document.title=BRIEF.client_name+' · Ready to Rank';
+  $('cname').textContent=BRIEF.client_name.toUpperCase();
+  $('eyebrow').textContent=BRIEF.platform+' ads';
+  $('title').textContent=BRIEF.client_name;
+  renderOnboarding(); renderBrief(); renderLaunch();
+  $('stamp').textContent='Loaded '+new Date().toLocaleString('en-AU',{day:'2-digit',month:'2-digit',hour:'numeric',minute:'2-digit'});
 }
 
+/* ---------- onboarding ---------- */
+function renderOnboarding(){
+  if(!ONB.length){ $('onbBody').innerHTML='<p class="hint">This client has no onboarding record yet. Run <b>onboard</b> for them first.</p>'; $('cntOnb').textContent=''; return; }
+  $('onbBody').innerHTML=ONB.map(o=>{
+    const pct=o.applicable?Math.round(o.met/o.applicable*100):0;
+    const closed=o.onboarding_complete_at?`<b>Onboarding complete</b> ${new Date(o.onboarding_complete_at).toLocaleDateString('en-AU')}`:`<b>${o.met} of ${o.applicable}</b> done`;
+    return `<div class="sec"><div class="summary"><span>${esc((o.chain||'').toUpperCase())} engagement</span><span>${closed}</span>${o.start_date?`<span>Started <b>${new Date(o.start_date).toLocaleDateString('en-AU')}</b></span>`:''}</div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <ul class="checks" style="margin-top:16px">${(o.conditions||[]).map(c=>`<li class="${c.done?'':'off'}"><span class="i">${c.done?'✅':'❌'}</span>${esc(c.label)}</li>`).join('')}</ul></div>`;
+  }).join('');
+  const o=ONB[0]; $('cntOnb').textContent=o?`${o.met}/${o.applicable}`:'';
+}
+
+/* ---------- brief ---------- */
+const tbc=v=>!v||/^to confirm/i.test(String(v).trim());
+const money=n=>n==null||n===''?null:'$'+Number(n).toLocaleString('en-AU',{maximumFractionDigits:0});
+function renderBrief(){
+  const c=BRIEF.campaigns||[];
+  $('briefBtns').innerHTML=CAN_WRITE?(EDIT
+    ?'<button class="btn" id="saveBrief">Save brief</button><button class="btn-ghost" id="cancelBrief">Cancel</button>'
+    :'<button class="btn-ghost" id="editBrief">Edit brief</button>'):'';
+  if($('editBrief')) $('editBrief').onclick=()=>{EDIT=true;renderBrief();};
+  if($('cancelBrief')) $('cancelBrief').onclick=()=>{EDIT=false;renderBrief();};
+  if($('saveBrief')) $('saveBrief').onclick=saveBrief;
+
+  // Budget: only Jose, Jhen and Janice ever receive these rows (database rule). Never sent to Slack.
+  if(CAN_WRITE){
+    const get=n=>BUDGETS.find(b=>b.campaign_no===n)||{};
+    const rows=[[0,'Total, all campaigns']].concat(c.map((x,k)=>[k+1,'Campaign '+(k+1)+': '+x.name]));
+    $('moneyBox').innerHTML=`<div class="money"><div class="t">Ad budget · only Jose, Jhen and Janice see this</div>
+      <table>${rows.map(([n,l])=>{const b=get(n);return `<tr><th style="width:55%">${esc(l)}</th><td>${EDIT
+        ?`<input type="number" min="0" step="50" data-bud="${n}" value="${b.monthly_amount??''}" placeholder="AUD per month">`
+        :(money(b.monthly_amount)?`<b>${money(b.monthly_amount)}</b>/month`:'<span style="color:var(--warn)">Not confirmed</span>')}${b.note&&!EDIT?`<div class="note" style="margin:4px 0 0">${esc(b.note)}</div>`:''}</td></tr>`;}).join('')}</table></div>`;
+  } else $('moneyBox').innerHTML='';
+
+  $('summaryBox').innerHTML=EDIT?`<textarea id="sumEdit">${esc(BRIEF.summary||'')}</textarea>`
+    :`<div class="para">${BRIEF.summary?esc(BRIEF.summary):'<span style="color:var(--warn)">No summary yet.</span>'}</div>`;
+  $('campH').textContent=`Campaigns (${c.length})`;
+  $('campBox').innerHTML=c.map((x,k)=>`<div class="camp"><h3>Campaign ${k+1}: ${EDIT?`<input type="text" data-k="${k}" data-f="name" value="${esc(x.name)}" style="max-width:360px">`:esc(x.name)}<span class="pl">${esc(x.platform||BRIEF.platform)}</span></h3>
+    <table class="kv">${FIELDS.map(([f,l])=>`<tr><th>${esc(l)}</th>${EDIT
+      ?`<td><input type="text" data-k="${k}" data-f="${f}" value="${esc(x[f]||'')}"></td>`
+      :`<td class="${tbc(x[f])?'tbc':''}">${x[f]?esc(x[f]):'To confirm'}</td>`}</tr>`).join('')}</table></div>`).join('');
+}
+async function saveBrief(){
+  const c=JSON.parse(JSON.stringify(BRIEF.campaigns||[]));
+  document.querySelectorAll('[data-k][data-f]').forEach(inp=>{c[+inp.dataset.k][inp.dataset.f]=inp.value.trim();});
+  c.forEach(x=>{ if(!x.ads&&x.creative) x.ads=x.creative; });
+  const summary=$('sumEdit').value.trim();
+  $('saveBrief').disabled=true;
+  const r=await sb.rpc('pa_update_brief',{p_slug:SLUG,p_summary:summary,p_campaigns:c});
+  if(r.error){ toast('Not saved: '+r.error.message); $('saveBrief').disabled=false; return; }
+  for(const inp of document.querySelectorAll('[data-bud]')){
+    const n=+inp.dataset.bud, v=inp.value.trim(), cur=(BUDGETS.find(b=>b.campaign_no===n)||{}).monthly_amount;
+    const val=v===''?null:Number(v);
+    if(val!==(cur??null)){ const b=await sb.rpc('pa_set_budget',{p_slug:SLUG,p_campaign:n,p_amount:val,p_note:null}); if(b.error){toast('Budget not saved: '+b.error.message);} }
+  }
+  EDIT=false; await load(); toast('Brief saved.'); go('brief');
+  if(BRIEF&&BRIEF.slack_ts) syncSlack(true);
+}
+
+/* ---------- launch checklist ---------- */
 function fmtLaunch(d){
   if(!d) return 'not set';
   return new Date(d+'T00:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'2-digit',month:'2-digit'}).replace(',','');
 }
-function render(){
+function renderLaunch(){
   const done=ITEMS.filter(i=>i.done).length, n=ITEMS.length;
-  document.title=BRIEF.client_name+' · launch checklist';
-  $('cname').textContent=BRIEF.client_name.toUpperCase();
-  $('eyebrow').textContent=BRIEF.platform+' ads launch';
-  $('title').textContent=BRIEF.client_name+' · '+BRIEF.platform+' ads launch checklist';
-  $('summary').innerHTML=`<span>Launch <b>${esc(fmtLaunch(BRIEF.launch_date))}</b></span><span>Brief owner <b>${esc(BRIEF.brief_owner||'not set')}</b></span><span><b>${done} of ${n}</b> done</span>`;
+  $('cntLaunch').textContent=n?`${done}/${n}`:'';
+  $('summary').innerHTML=`<span>Launch <b>${esc(fmtLaunch(BRIEF.launch_date))}</b></span><span>Checklist owner <b>${esc(BRIEF.brief_owner||'not set')}</b></span><span><b>${done} of ${n}</b> done</span>`;
   $('barFill').style.width=(n?Math.round(done/n*100):0)+'%';
   $('syncNote').innerHTML=BRIEF.slack_ts?'Every tick updates the pinned checklist in Slack.'
     :'Not in Slack yet. Ticks save here.'+(CAN_WRITE?' <a href="#" id="postSlack">Post checklist to Slack</a>':'');
-  if($('postSlack')) $('postSlack').addEventListener('click',e=>{e.preventDefault();syncSlack();});
-  const c=BRIEF.campaigns||[];
-  $('campH').textContent=`Campaigns (${c.length})`;
-  $('camps').innerHTML=c.map((x,k)=>`<tr><td>${k+1}</td><td><b>${esc(x.name)}</b></td><td>${esc(x.goal)}</td><td class="hide-sm">${esc(x.sends_to)}</td><td class="hide-sm">${esc(x.locations)}</td><td class="hide-sm">${esc(x.ads)}</td></tr>`).join('');
-  $('items').innerHTML=ITEMS.map(i=>`<tr class="${i.done?'done':''}">
+  if($('postSlack')) $('postSlack').addEventListener('click',e=>{e.preventDefault();syncSlack(false);});
+  const row=i=>`<tr class="${i.done?'done':''}">
     <td class="tick"><input type="checkbox" class="cb" data-id="${i.id}" ${i.done?'checked':''} ${CAN_WRITE?'':'disabled'} aria-label="${esc(i.item)}"></td>
     <td class="item">${esc(i.item)}<span class="owner-sm">${esc(i.owner_name)}</span></td>
     <td class="owner hide-sm">${esc(i.owner_name)}</td>
-    <td><span class="st">${i.done?'✅':'❌'}</span><span class="note">${esc(i.note||'')}</span></td>
-  </tr>`).join('');
+    <td><span class="st">${i.done?'✅':'❌'}</span><span class="note">${esc(i.note||'')}</span></td></tr>`;
+  $('items').innerHTML=STAGES.map(([s,label])=>{
+    const rows=ITEMS.filter(i=>(i.stage||'campaign')===s); if(!rows.length) return '';
+    return `<tr class="stage"><td colspan="4">${esc(label)} · ${rows.filter(r=>r.done).length}/${rows.length}</td></tr>`+rows.map(row).join('');
+  }).join('');
   document.querySelectorAll('.cb').forEach(cb=>cb.addEventListener('change',()=>tick(cb)));
-  $('stamp').textContent='Loaded '+new Date().toLocaleString('en-AU',{day:'2-digit',month:'2-digit',hour:'numeric',minute:'2-digit'});
 }
 
 let toastT;
-function toast(msg){ $('toast').textContent=msg; $('toast').classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>$('toast').classList.remove('on'),3200); }
+function toast(msg){ $('toast').textContent=msg; $('toast').classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>$('toast').classList.remove('on'),3400); }
 
+async function callFn(body){
+  const {data:{session}}=await sb.auth.getSession();
+  const r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':SB_KEY},body:JSON.stringify(body)});
+  const j=await r.json(); if(!r.ok) throw new Error(j.error||'Request failed'); return j;
+}
 async function tick(cb){
   const want=cb.checked; cb.disabled=true;
-  const {data:{session}}=await sb.auth.getSession();
   try{
-    const r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':SB_KEY},
-      body:JSON.stringify({action:'tick',item_id:cb.dataset.id,done:want})});
-    const j=await r.json();
-    if(!r.ok) throw new Error(j.error||'Could not save');
+    const j=await callFn({action:'tick',item_id:cb.dataset.id,done:want});
     if(j.items) ITEMS=j.items;
-    if(j.slack==='updated'){ const b=await sb.from('pa_launch_briefs').select('*').eq('client_slug',SLUG).maybeSingle(); if(b.data) BRIEF=b.data; }
-    render();
+    const o=await sb.rpc('pa_client_onboarding',{p_slug:SLUG}); if(o.data) ONB=o.data;
+    renderLaunch(); renderOnboarding();
     toast(j.slack==='updated'?'Saved. Slack updated.':j.slack==='failed'?'Saved here, but Slack didn’t update. Tell Jose.':'Saved. Slack isn’t connected yet.');
-  }catch(e){
-    cb.checked=!want; cb.disabled=!CAN_WRITE; toast('Not saved: '+e.message);
-  }
+  }catch(e){ cb.checked=!want; cb.disabled=!CAN_WRITE; toast('Not saved: '+e.message); }
 }
-async function syncSlack(){
-  const {data:{session}}=await sb.auth.getSession();
+async function syncSlack(quiet){
   try{
-    const r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':SB_KEY},
-      body:JSON.stringify({action:'sync',client_slug:SLUG})});
-    const j=await r.json(); if(!r.ok) throw new Error(j.error||'Could not post');
+    const j=await callFn({action:'sync',client_slug:SLUG});
     const b=await sb.from('pa_launch_briefs').select('*').eq('client_slug',SLUG).maybeSingle(); if(b.data) BRIEF=b.data;
-    render();
-    toast(j.slack==='updated'?'Posted to Slack and pinned.':j.slack==='failed'?'Slack refused it: '+(j.detail||'unknown'):'Slack isn’t connected yet.');
+    renderLaunch();
+    if(!quiet||j.slack==='failed') toast(j.slack==='updated'?'Slack checklist updated.':j.slack==='failed'?'Slack refused it: '+(j.detail||'unknown'):'Slack isn’t connected yet.');
   }catch(e){ toast('Not posted: '+e.message); }
 }
 boot();
