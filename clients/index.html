@@ -145,6 +145,7 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
     </div>
     <nav>
       <button class="tab" data-p="onboarding">Onboarding<span class="cnt" id="cntOnb"></span></button>
+      <button class="tab" data-p="call">Call brief</button>
       <button class="tab" data-p="brief">Ads brief</button>
       <button class="tab" data-p="launch">Launch checklist<span class="cnt" id="cntLaunch"></span></button>
       <button class="tab" data-p="report">Reporting</button>
@@ -163,6 +164,9 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
       </div>
       <p class="hint">Computed from the records, never ticked by hand. Client access for ads clients comes from the day 0 rows of the launch checklist (card, verification, account access), done live on the onboarding call.</p>
     </section>
+
+    <!-- CALL BRIEF -->
+    <section class="pane" id="p-call"><div id="callBody"></div></section>
 
     <!-- BRIEF -->
     <section class="pane" id="p-brief">
@@ -203,7 +207,7 @@ const SLUG=(new URLSearchParams(location.search).get('c')||location.pathname.spl
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let BRIEF=null,ITEMS=[],ONB=[],BUDGETS=[],JOBS=[],REP=null,CAN_WRITE=false,booted=false,EDIT=false;
+let BRIEF=null,ITEMS=[],ONB=[],BUDGETS=[],JOBS=[],CALL=null,REP=null,CAN_WRITE=false,booted=false,EDIT=false;
 
 const STAGES=[['day0','Day 0 · onboarding call'],['brief','Day 7 · brief'],['copy','Day 14 · copy approved'],['build','Day 21 · build ready'],['campaign','Campaigns'],['launch','Day 28 · launch']];
 const FIELDS=[['goal','Goal'],['sends_to','Sends to'],['locations','Locations (radius / postcodes / regions)'],['age','Age'],['gender','Gender'],['interests','Interests'],['placements','Placements'],['offer','Offer'],['creative','Creative'],['conversion_event','Conversion event'],['notes','Notes']];
@@ -256,19 +260,20 @@ async function boot(){
 
 /* ---------- data ---------- */
 async function load(){
-  const [b,i,o,m,j]=await Promise.all([
+  const [b,i,o,m,j,cb]=await Promise.all([
     sb.from('pa_launch_briefs').select('*').eq('client_slug',SLUG).maybeSingle(),
     sb.from('pa_launch_items').select('*').eq('client_slug',SLUG).order('sort'),
     sb.rpc('pa_client_onboarding',{p_slug:SLUG}),
     sb.from('pa_launch_budgets').select('*').eq('client_slug',SLUG).order('campaign_no'),
-    sb.from('so_onboarding_jobs').select('*').eq('client_slug',SLUG).order('id')
+    sb.from('so_onboarding_jobs').select('*').eq('client_slug',SLUG).order('id'),
+    sb.from('pa_call_briefs').select('*').eq('client_slug',SLUG).maybeSingle()
   ]);
-  BRIEF=b.data; ITEMS=i.data||[]; ONB=o.data||[]; BUDGETS=m.data||[]; JOBS=j.data||[];
+  BRIEF=b.data; ITEMS=i.data||[]; ONB=o.data||[]; BUDGETS=m.data||[]; JOBS=j.data||[]; CALL=cb.data||null;
   if(!BRIEF){ $('title').textContent='No client page set up for this client yet.'; return; }
   if(BRIEF.accent) document.documentElement.style.setProperty('--client',BRIEF.accent);
   renderAll();
   const want=(location.hash||'').replace('#','');
-  go(['onboarding','brief','launch','report'].includes(want)?want:'onboarding');
+  go(['onboarding','call','brief','launch','report'].includes(want)?want:'onboarding');
 }
 function go(p){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
@@ -282,7 +287,7 @@ function renderAll(){
   $('cname').textContent=BRIEF.client_name.toUpperCase();
   $('eyebrow').textContent=BRIEF.platform+' ads';
   $('title').textContent=BRIEF.client_name;
-  renderOnboarding(); renderBrief(); renderLaunch(); loadReport();
+  renderOnboarding(); renderCall(); renderBrief(); renderLaunch(); loadReport();
   $('stamp').textContent='Loaded '+new Date().toLocaleString('en-AU',{day:'2-digit',month:'2-digit',hour:'numeric',minute:'2-digit'});
 }
 
@@ -300,7 +305,7 @@ function renderOnboarding(){
   renderJobs();
 }
 
-const JOB_LABEL={folder:'Client folder on the Mac',drive:'Google Drive folder',memory:'Client memory notes',repo:'GitHub repo',xero_check:'Check the invoice is paid in Xero',slack_channel:'Create the private Slack channel',brief_post:'Post the brief and pin the checklist',custom:'Extra job'};
+const JOB_LABEL={zoom_review:'Review the Zoom onboarding call',connections:'Add to Pipeboard and Windsor for every service',folder:'Client folder on the Mac',drive:'Google Drive folder',memory:'Client memory notes',repo:'GitHub repo',xero_check:'Check the invoice is paid in Xero',slack_channel:'Create the private Slack channel',brief_post:'Post the brief and pin the checklist',custom:'Extra job'};
 function renderJobs(){
   if(!JOBS.length){ $('jobsSec').style.display='none'; return; }
   $('jobsSec').style.display='block';
@@ -314,6 +319,43 @@ function renderJobs(){
     if(r.error){ toast('Not saved: '+r.error.message); b.disabled=false; return; }
     const j=await sb.from('so_onboarding_jobs').select('*').eq('client_slug',SLUG).order('id'); JOBS=j.data||[]; renderJobs(); toast('Job marked done.');
   }));
+}
+
+/* ---------- call brief ---------- */
+function kv(label,value,warn){
+  if(!value||(Array.isArray(value)&&!value.length)) return `<tr><th>${esc(label)}</th><td class="tbc">To confirm</td></tr>`;
+  const v=Array.isArray(value)?value.map(x=>`<span class="chip" style="display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:3px 10px;margin:0 6px 6px 0;font-size:12.5px">${esc(x)}</span>`).join(''):esc(value);
+  return `<tr><th>${esc(label)}</th><td${warn?' class="tbc"':''}>${v}</td></tr>`;
+}
+function renderCall(){
+  if(!CALL){
+    $('callBody').innerHTML=`<div class="rule" style="border-left-color:var(--warn)"><b>No call brief yet.</b>
+      The onboarding call is on Zoom and the recording is usually ready 15 to 30 minutes afterwards. Ask Claude:
+      <b>"review the onboarding call for ${esc(SLUG)}"</b>. It reads the transcript, writes what was covered here, and
+      flags anything that differs from what was typed on the New client form.</div>`;
+    return;
+  }
+  const d=CALL.discrepancies||[];
+  $('callBody').innerHTML=`
+    ${d.length?`<div class="rule" style="border-left-color:var(--bad)"><b>${d.length} difference${d.length>1?'s':''} between the call and the form.</b> The call is the evidence. Nothing was changed automatically.
+      <ul style="margin:10px 0 0">${d.map(x=>`<li><b>${esc(x.field||'')}</b>: form says "${esc(x.form||'')}", the call said "${esc(x.call||'')}"</li>`).join('')}</ul></div>`:''}
+    <div class="summary">${CALL.meeting_on?`<span>Call <b>${esc(new Date(CALL.meeting_on+'T00:00:00').toLocaleDateString('en-AU'))}</b></span>`:''}
+      ${CALL.attendees?`<span>${esc(CALL.attendees)}</span>`:''}
+      ${CALL.created_by?`<span>Written by <b>${esc(CALL.created_by)}</b></span>`:''}</div>
+    <div class="sec"><h2>What we covered</h2><div class="para">${CALL.covered?esc(CALL.covered):'<span style="color:var(--warn)">Not written yet.</span>'}</div></div>
+    <div class="sec"><h2>Confirmed on the call</h2><div class="camp"><table class="kv">
+      ${kv('Services bought',CALL.services_confirmed)}
+      ${kv('Services, in their words',CALL.services_list)}
+      ${kv('Locations',CALL.locations)}
+      ${kv('Priority locations',CALL.priority_locations)}
+      ${kv('Target keywords',CALL.keywords)}
+      ${kv('Competitors',CALL.competitors)}
+      ${kv('Promised on the call',CALL.promised)}
+    </table></div></div>
+    <div class="sec"><h2>Access, as agreed on the call</h2><div class="camp"><table class="kv">
+      ${Object.keys(CALL.access_confirmed||{}).length?Object.entries(CALL.access_confirmed).map(([k,v])=>`<tr><th>${esc(k.toUpperCase())}</th><td>${esc(v)}</td></tr>`).join(''):'<tr><th>Access</th><td class="tbc">Nothing recorded from the call</td></tr>'}
+    </table></div></div>
+    ${CALL.transcript_ref?`<p class="hint">Transcript: ${esc(CALL.transcript_ref)}</p>`:''}`;
 }
 
 /* ---------- brief ---------- */
