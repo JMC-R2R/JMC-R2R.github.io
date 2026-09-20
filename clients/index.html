@@ -147,6 +147,7 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
       <button class="tab" data-p="onboarding">Onboarding<span class="cnt" id="cntOnb"></span></button>
       <button class="tab" data-p="brief">Ads brief</button>
       <button class="tab" data-p="launch">Launch checklist<span class="cnt" id="cntLaunch"></span></button>
+      <button class="tab" data-p="report">Reporting</button>
     </nav>
   </header>
   <main>
@@ -169,6 +170,11 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
       <div id="moneyBox"></div>
       <div class="sec"><h2>Summary</h2><div id="summaryBox"></div></div>
       <div class="sec"><h2 id="campH">Campaigns</h2><div id="campBox"></div></div>
+    </section>
+
+    <!-- REPORTING -->
+    <section class="pane" id="p-report">
+      <div id="repBody"></div>
     </section>
 
     <!-- LAUNCH -->
@@ -197,7 +203,7 @@ const SLUG=(new URLSearchParams(location.search).get('c')||location.pathname.spl
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let BRIEF=null,ITEMS=[],ONB=[],BUDGETS=[],JOBS=[],CAN_WRITE=false,booted=false,EDIT=false;
+let BRIEF=null,ITEMS=[],ONB=[],BUDGETS=[],JOBS=[],REP=null,CAN_WRITE=false,booted=false,EDIT=false;
 
 const STAGES=[['day0','Day 0 · onboarding call'],['brief','Day 7 · brief'],['copy','Day 14 · copy approved'],['build','Day 21 · build ready'],['campaign','Campaigns'],['launch','Day 28 · launch']];
 const FIELDS=[['goal','Goal'],['sends_to','Sends to'],['locations','Locations (radius / postcodes / regions)'],['age','Age'],['gender','Gender'],['interests','Interests'],['placements','Placements'],['offer','Offer'],['creative','Creative'],['conversion_event','Conversion event'],['notes','Notes']];
@@ -262,7 +268,7 @@ async function load(){
   if(BRIEF.accent) document.documentElement.style.setProperty('--client',BRIEF.accent);
   renderAll();
   const want=(location.hash||'').replace('#','');
-  go(['onboarding','brief','launch'].includes(want)?want:'onboarding');
+  go(['onboarding','brief','launch','report'].includes(want)?want:'onboarding');
 }
 function go(p){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
@@ -276,7 +282,7 @@ function renderAll(){
   $('cname').textContent=BRIEF.client_name.toUpperCase();
   $('eyebrow').textContent=BRIEF.platform+' ads';
   $('title').textContent=BRIEF.client_name;
-  renderOnboarding(); renderBrief(); renderLaunch();
+  renderOnboarding(); renderBrief(); renderLaunch(); loadReport();
   $('stamp').textContent='Loaded '+new Date().toLocaleString('en-AU',{day:'2-digit',month:'2-digit',hour:'numeric',minute:'2-digit'});
 }
 
@@ -355,6 +361,71 @@ async function saveBrief(){
   }
   EDIT=false; await load(); toast('Brief saved.'); go('brief');
   if(BRIEF&&BRIEF.slack_ts) syncSlack(true);
+}
+
+/* ---------- reporting (phase 2) ---------- */
+const num=n=>Number(n||0).toLocaleString('en-AU',{maximumFractionDigits:0});
+const aud=n=>'$'+Number(n||0).toLocaleString('en-AU',{maximumFractionDigits:0});
+const per=(a,b)=>Number(b||0)>0?'$'+(Number(a||0)/Number(b)).toLocaleString('en-AU',{maximumFractionDigits:0}):'\u2014';
+async function loadReport(){
+  const r=await sb.rpc('pa_report',{p_slug:SLUG});
+  REP=r.data||null; renderReport();
+}
+function tile(label,value,sub){
+  return `<div class="camp" style="padding:16px 18px;margin:0"><div class="mono" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)">${esc(label)}</div>
+    <div style="font-size:26px;font-weight:700;margin-top:6px">${value}</div>${sub?`<div class="note" style="margin:4px 0 0">${sub}</div>`:''}</div>`;
+}
+function renderReport(){
+  if(!REP){ $('repBody').innerHTML='<p class="hint">Reporting is not available for this client.</p>'; return; }
+  const t=REP.totals||{}, p=REP.prev||{}, l7=REP.last7||{}, tgt=REP.target;
+  const month=new Date(REP.month+'T00:00:00').toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+  const delta=(now,then)=>{ if(!Number(then)) return ''; const d=Math.round((Number(now)-Number(then))/Number(then)*100);
+    return `<span style="color:${d>=0?'var(--ok)':'var(--bad)'}">${d>=0?'+':''}${d}%</span> on last month`; };
+  if(!REP.has_data){
+    $('repBody').innerHTML=`<div class="rule" style="border-left-color:var(--warn)"><b>No figures yet.</b> Reporting starts once the campaigns are live and the account is connected to Pipeboard. Nothing is estimated here: an empty report means no data, not zero performance.</div>
+      ${targetBox(tgt)}`;
+    wireTarget(); return;
+  }
+  $('repBody').innerHTML=`
+    <div class="summary"><span>${esc(month)}</span><span>Last pulled <b>${REP.last_pull?new Date(REP.last_pull).toLocaleString('en-AU',{day:'2-digit',month:'2-digit',hour:'numeric',minute:'2-digit'}):'never'}</b></span></div>
+    <div class="sec" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+      ${tile('Spend',aud(t.spend),delta(t.spend,p.spend))}
+      ${tile('Leads',num(t.leads),delta(t.leads,p.leads))}
+      ${tile('Cost per lead',per(t.spend,t.leads),tgt&&tgt.value?`Target ${aud(tgt.value)}`:'')}
+      ${tile('Purchases',num(t.purchases),delta(t.purchases,p.purchases))}
+      ${tile('Revenue',aud(t.revenue),Number(t.spend)>0?`ROAS ${(Number(t.revenue)/Number(t.spend)).toFixed(1)}x`:'')}
+      ${tile('Last 7 days',aud(l7.spend),`${num(l7.leads)} leads, ${num(l7.purchases)} purchases`)}
+    </div>
+    <div class="sec"><h2>By campaign, this month</h2><div class="wrap-x"><table>
+      <thead><tr><th>Campaign</th><th>Platform</th><th>Spend</th><th>Clicks</th><th>Leads</th><th>Cost per lead</th><th>Purchases</th></tr></thead>
+      <tbody>${(REP.by_campaign||[]).map(c=>`<tr><td><b>${esc(c.campaign)}</b></td><td>${esc(c.platform)}</td><td>${aud(c.spend)}</td><td>${num(c.clicks)}</td><td>${num(c.leads)}</td><td>${per(c.spend,c.leads)}</td><td>${num(c.purchases)}</td></tr>`).join('')||'<tr><td colspan="7" class="note">Nothing this month yet.</td></tr>'}</tbody>
+    </table></div></div>
+    <div class="sec"><h2>What we changed</h2><div class="wrap-x"><table>
+      <thead><tr><th>Date</th><th>Change</th><th>Why</th><th>Source</th></tr></thead>
+      <tbody>${(REP.actions||[]).map(a=>`<tr><td class="mono">${esc(new Date(a.on+'T00:00:00').toLocaleDateString('en-AU'))}</td><td><b>${esc(a.what)}</b></td><td>${esc(a.why||'')}</td><td>${esc(a.source==='platform_log'?'platform log':'noted')}</td></tr>`).join('')||'<tr><td colspan="4" class="note">Nothing recorded yet. Changes are read from the ad platform\u2019s own log, so this fills itself once the account is connected.</td></tr>'}</tbody>
+    </table></div></div>
+    ${targetBox(tgt)}`;
+  wireTarget();
+}
+function targetBox(tgt){
+  return `<div class="sec"><h2>Success measure</h2>
+    <div class="camp" style="padding:16px 18px">
+      ${CAN_WRITE?`<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:2;min-width:220px"><label class="l" for="tgtM">What we measure</label><input type="text" id="tgtM" value="${esc(tgt&&tgt.measure||'')}" placeholder="Cost per booked consultation"></div>
+        <div style="min-width:150px"><label class="l" for="tgtV">Target (AUD)</label><input type="number" id="tgtV" step="1" value="${tgt&&tgt.value!=null?tgt.value:''}"></div>
+        <button class="btn" id="tgtSave">Save</button></div>`
+      :`<div>${tgt&&tgt.measure?`<b>${esc(tgt.measure)}</b>${tgt.value!=null?' \u00b7 target '+aud(tgt.value):''}`:'<span style="color:var(--warn)">Not agreed yet.</span>'}</div>`}
+    </div></div>`;
+}
+function wireTarget(){
+  if(!$('tgtSave')) return;
+  $('tgtSave').addEventListener('click',async()=>{
+    $('tgtSave').disabled=true;
+    const r=await sb.rpc('pa_set_target',{p_slug:SLUG,p_measure:$('tgtM').value,p_value:$('tgtV').value===''?null:Number($('tgtV').value)});
+    $('tgtSave').disabled=false;
+    if(r.error){ toast('Not saved: '+r.error.message); return; }
+    toast('Success measure saved.'); loadReport();
+  });
 }
 
 /* ---------- launch checklist ---------- */
