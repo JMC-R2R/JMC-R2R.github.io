@@ -145,8 +145,10 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
     </div>
     <nav>
       <button class="tab" data-p="onboarding">Onboarding<span class="cnt" id="cntOnb"></span></button>
+      <button class="tab" data-p="call">Call brief</button>
       <button class="tab" data-p="brief">Ads brief</button>
       <button class="tab" data-p="launch">Launch checklist<span class="cnt" id="cntLaunch"></span></button>
+      <button class="tab" data-p="report">Reporting</button>
     </nav>
   </header>
   <main>
@@ -156,8 +158,15 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
     <!-- ONBOARDING -->
     <section class="pane" id="p-onboarding">
       <div id="onbBody"></div>
+      <div class="sec" id="jobsSec" style="display:none"><h2>Set-up jobs for Claude</h2>
+        <p class="hint" style="margin:0 0 12px">Created when the client was set up on the New client form. A web page can't make a folder, a Drive folder, a repo or a Slack channel, so Claude does these and ticks them off.</p>
+        <div class="wrap-x"><table><thead><tr><th>Job</th><th>Status</th><th></th></tr></thead><tbody id="jobsBody"></tbody></table></div>
+      </div>
       <p class="hint">Computed from the records, never ticked by hand. Client access for ads clients comes from the day 0 rows of the launch checklist (card, verification, account access), done live on the onboarding call.</p>
     </section>
+
+    <!-- CALL BRIEF -->
+    <section class="pane" id="p-call"><div id="callBody"></div></section>
 
     <!-- BRIEF -->
     <section class="pane" id="p-brief">
@@ -165,6 +174,11 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
       <div id="moneyBox"></div>
       <div class="sec"><h2>Summary</h2><div id="summaryBox"></div></div>
       <div class="sec"><h2 id="campH">Campaigns</h2><div id="campBox"></div></div>
+    </section>
+
+    <!-- REPORTING -->
+    <section class="pane" id="p-report">
+      <div id="repBody"></div>
     </section>
 
     <!-- LAUNCH -->
@@ -177,6 +191,7 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
         <thead><tr><th></th><th>Item</th><th class="hide-sm">Owner</th><th>Status</th></tr></thead>
         <tbody id="items"></tbody>
       </table></div>
+      <div id="addRow" style="margin-top:18px"></div>
     </section>
   </main>
   <footer>Ready to Rank · internal client page · <span id="stamp"></span></footer>
@@ -188,11 +203,11 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
 const SB_URL="https://tjgrtrazyepvbcmmdhet.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZ3J0cmF6eWVwdmJjbW1kaGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTM0MTEsImV4cCI6MjA4NzkyOTQxMX0.0nYnlrLC3pfDPpcQ9k5XsAMU8fu-ZhV543W8TMAoiUU";
 const FN=SB_URL+"/functions/v1/paid-ads-launch";
-const SLUG=(location.pathname.split('/').filter(Boolean)[0]||'').toLowerCase();
+const SLUG=(new URLSearchParams(location.search).get('c')||location.pathname.split('/').filter(Boolean)[0]||'').toLowerCase();
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let BRIEF=null,ITEMS=[],ONB=[],BUDGETS=[],CAN_WRITE=false,booted=false,EDIT=false;
+let BRIEF=null,ITEMS=[],ONB=[],BUDGETS=[],JOBS=[],CALL=null,REP=null,CAN_WRITE=false,booted=false,EDIT=false;
 
 const STAGES=[['day0','Day 0 · onboarding call'],['brief','Day 7 · brief'],['copy','Day 14 · copy approved'],['build','Day 21 · build ready'],['campaign','Campaigns'],['launch','Day 28 · launch']];
 const FIELDS=[['goal','Goal'],['sends_to','Sends to'],['locations','Locations (radius / postcodes / regions)'],['age','Age'],['gender','Gender'],['interests','Interests'],['placements','Placements'],['offer','Offer'],['creative','Creative'],['conversion_event','Conversion event'],['notes','Notes']];
@@ -245,18 +260,20 @@ async function boot(){
 
 /* ---------- data ---------- */
 async function load(){
-  const [b,i,o,m]=await Promise.all([
+  const [b,i,o,m,j,cb]=await Promise.all([
     sb.from('pa_launch_briefs').select('*').eq('client_slug',SLUG).maybeSingle(),
     sb.from('pa_launch_items').select('*').eq('client_slug',SLUG).order('sort'),
     sb.rpc('pa_client_onboarding',{p_slug:SLUG}),
-    sb.from('pa_launch_budgets').select('*').eq('client_slug',SLUG).order('campaign_no')
+    sb.from('pa_launch_budgets').select('*').eq('client_slug',SLUG).order('campaign_no'),
+    sb.from('so_onboarding_jobs').select('*').eq('client_slug',SLUG).order('id'),
+    sb.from('pa_call_briefs').select('*').eq('client_slug',SLUG).maybeSingle()
   ]);
-  BRIEF=b.data; ITEMS=i.data||[]; ONB=o.data||[]; BUDGETS=m.data||[];
+  BRIEF=b.data; ITEMS=i.data||[]; ONB=o.data||[]; BUDGETS=m.data||[]; JOBS=j.data||[]; CALL=cb.data||null;
   if(!BRIEF){ $('title').textContent='No client page set up for this client yet.'; return; }
   if(BRIEF.accent) document.documentElement.style.setProperty('--client',BRIEF.accent);
   renderAll();
   const want=(location.hash||'').replace('#','');
-  go(['onboarding','brief','launch'].includes(want)?want:'onboarding');
+  go(['onboarding','call','brief','launch','report'].includes(want)?want:'onboarding');
 }
 function go(p){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
@@ -270,7 +287,7 @@ function renderAll(){
   $('cname').textContent=BRIEF.client_name.toUpperCase();
   $('eyebrow').textContent=BRIEF.platform+' ads';
   $('title').textContent=BRIEF.client_name;
-  renderOnboarding(); renderBrief(); renderLaunch();
+  renderOnboarding(); renderCall(); renderBrief(); renderLaunch(); loadReport();
   $('stamp').textContent='Loaded '+new Date().toLocaleString('en-AU',{day:'2-digit',month:'2-digit',hour:'numeric',minute:'2-digit'});
 }
 
@@ -285,6 +302,60 @@ function renderOnboarding(){
       <ul class="checks" style="margin-top:16px">${(o.conditions||[]).map(c=>`<li class="${c.done?'':'off'}"><span class="i">${c.done?'✅':'❌'}</span>${esc(c.label)}</li>`).join('')}</ul></div>`;
   }).join('');
   const o=ONB[0]; $('cntOnb').textContent=o?`${o.met}/${o.applicable}`:'';
+  renderJobs();
+}
+
+const JOB_LABEL={zoom_review:'Review the Zoom onboarding call',connections:'Add to Pipeboard and Windsor for every service',folder:'Client folder on the Mac',drive:'Google Drive folder',memory:'Client memory notes',repo:'GitHub repo',xero_check:'Check the invoice is paid in Xero',slack_channel:'Create the private Slack channel',brief_post:'Post the brief and pin the checklist',custom:'Extra job'};
+function renderJobs(){
+  if(!JOBS.length){ $('jobsSec').style.display='none'; return; }
+  $('jobsSec').style.display='block';
+  const badge=s=>s==='done'?'\u2705':s==='failed'?'\u274c':s==='running'?'\u23f3':s==='skipped'?'\u2014':'\u274c';
+  $('jobsBody').innerHTML=JOBS.map(j=>`<tr><td><b>${esc(JOB_LABEL[j.job]||j.job)}</b>${j.job==='custom'&&j.detail&&j.detail.what?`<div class="note" style="margin:2px 0 0">${esc(j.detail.what)}</div>`:''}${j.result?`<div class="note" style="margin:2px 0 0">${esc(j.result)}</div>`:''}</td>
+    <td>${badge(j.status)} ${esc(j.status)}</td>
+    <td>${CAN_WRITE&&j.status!=='done'?`<button class="btn-ghost" style="padding:6px 10px;font-size:12px" data-job="${j.id}">Mark done</button>`:''}</td></tr>`).join('');
+  document.querySelectorAll('[data-job]').forEach(b=>b.addEventListener('click',async()=>{
+    b.disabled=true;
+    const r=await sb.rpc('so_job_update',{p_id:+b.dataset.job,p_status:'done',p_result:'Marked done on the client page'});
+    if(r.error){ toast('Not saved: '+r.error.message); b.disabled=false; return; }
+    const j=await sb.from('so_onboarding_jobs').select('*').eq('client_slug',SLUG).order('id'); JOBS=j.data||[]; renderJobs(); toast('Job marked done.');
+  }));
+}
+
+/* ---------- call brief ---------- */
+function kv(label,value,warn){
+  if(!value||(Array.isArray(value)&&!value.length)) return `<tr><th>${esc(label)}</th><td class="tbc">To confirm</td></tr>`;
+  const v=Array.isArray(value)?value.map(x=>`<span class="chip" style="display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:3px 10px;margin:0 6px 6px 0;font-size:12.5px">${esc(x)}</span>`).join(''):esc(value);
+  return `<tr><th>${esc(label)}</th><td${warn?' class="tbc"':''}>${v}</td></tr>`;
+}
+function renderCall(){
+  if(!CALL){
+    $('callBody').innerHTML=`<div class="rule" style="border-left-color:var(--warn)"><b>No call brief yet.</b>
+      The onboarding call is on Zoom and the recording is usually ready 15 to 30 minutes afterwards. Ask Claude:
+      <b>"review the onboarding call for ${esc(SLUG)}"</b>. It reads the transcript, writes what was covered here, and
+      flags anything that differs from what was typed on the New client form.</div>`;
+    return;
+  }
+  const d=CALL.discrepancies||[];
+  $('callBody').innerHTML=`
+    ${d.length?`<div class="rule" style="border-left-color:var(--bad)"><b>${d.length} difference${d.length>1?'s':''} between the call and the form.</b> The call is the evidence. Nothing was changed automatically.
+      <ul style="margin:10px 0 0">${d.map(x=>`<li><b>${esc(x.field||'')}</b>: form says "${esc(x.form||'')}", the call said "${esc(x.call||'')}"</li>`).join('')}</ul></div>`:''}
+    <div class="summary">${CALL.meeting_on?`<span>Call <b>${esc(new Date(CALL.meeting_on+'T00:00:00').toLocaleDateString('en-AU'))}</b></span>`:''}
+      ${CALL.attendees?`<span>${esc(CALL.attendees)}</span>`:''}
+      ${CALL.created_by?`<span>Written by <b>${esc(CALL.created_by)}</b></span>`:''}</div>
+    <div class="sec"><h2>What we covered</h2><div class="para">${CALL.covered?esc(CALL.covered):'<span style="color:var(--warn)">Not written yet.</span>'}</div></div>
+    <div class="sec"><h2>Confirmed on the call</h2><div class="camp"><table class="kv">
+      ${kv('Services bought',CALL.services_confirmed)}
+      ${kv('Services, in their words',CALL.services_list)}
+      ${kv('Locations',CALL.locations)}
+      ${kv('Priority locations',CALL.priority_locations)}
+      ${kv('Target keywords',CALL.keywords)}
+      ${kv('Competitors',CALL.competitors)}
+      ${kv('Promised on the call',CALL.promised)}
+    </table></div></div>
+    <div class="sec"><h2>Access, as agreed on the call</h2><div class="camp"><table class="kv">
+      ${Object.keys(CALL.access_confirmed||{}).length?Object.entries(CALL.access_confirmed).map(([k,v])=>`<tr><th>${esc(k.toUpperCase())}</th><td>${esc(v)}</td></tr>`).join(''):'<tr><th>Access</th><td class="tbc">Nothing recorded from the call</td></tr>'}
+    </table></div></div>
+    ${CALL.transcript_ref?`<p class="hint">Transcript: ${esc(CALL.transcript_ref)}</p>`:''}`;
 }
 
 /* ---------- brief ---------- */
@@ -334,6 +405,71 @@ async function saveBrief(){
   if(BRIEF&&BRIEF.slack_ts) syncSlack(true);
 }
 
+/* ---------- reporting (phase 2) ---------- */
+const num=n=>Number(n||0).toLocaleString('en-AU',{maximumFractionDigits:0});
+const aud=n=>'$'+Number(n||0).toLocaleString('en-AU',{maximumFractionDigits:0});
+const per=(a,b)=>Number(b||0)>0?'$'+(Number(a||0)/Number(b)).toLocaleString('en-AU',{maximumFractionDigits:0}):'\u2014';
+async function loadReport(){
+  const r=await sb.rpc('pa_report',{p_slug:SLUG});
+  REP=r.data||null; renderReport();
+}
+function tile(label,value,sub){
+  return `<div class="camp" style="padding:16px 18px;margin:0"><div class="mono" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)">${esc(label)}</div>
+    <div style="font-size:26px;font-weight:700;margin-top:6px">${value}</div>${sub?`<div class="note" style="margin:4px 0 0">${sub}</div>`:''}</div>`;
+}
+function renderReport(){
+  if(!REP){ $('repBody').innerHTML='<p class="hint">Reporting is not available for this client.</p>'; return; }
+  const t=REP.totals||{}, p=REP.prev||{}, l7=REP.last7||{}, tgt=REP.target;
+  const month=new Date(REP.month+'T00:00:00').toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+  const delta=(now,then)=>{ if(!Number(then)) return ''; const d=Math.round((Number(now)-Number(then))/Number(then)*100);
+    return `<span style="color:${d>=0?'var(--ok)':'var(--bad)'}">${d>=0?'+':''}${d}%</span> on last month`; };
+  if(!REP.has_data){
+    $('repBody').innerHTML=`<div class="rule" style="border-left-color:var(--warn)"><b>No figures yet.</b> Reporting starts once the campaigns are live and the account is connected to Pipeboard. Nothing is estimated here: an empty report means no data, not zero performance.</div>
+      ${targetBox(tgt)}`;
+    wireTarget(); return;
+  }
+  $('repBody').innerHTML=`
+    <div class="summary"><span>${esc(month)}</span><span>Last pulled <b>${REP.last_pull?new Date(REP.last_pull).toLocaleString('en-AU',{day:'2-digit',month:'2-digit',hour:'numeric',minute:'2-digit'}):'never'}</b></span></div>
+    <div class="sec" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+      ${tile('Spend',aud(t.spend),delta(t.spend,p.spend))}
+      ${tile('Leads',num(t.leads),delta(t.leads,p.leads))}
+      ${tile('Cost per lead',per(t.spend,t.leads),tgt&&tgt.value?`Target ${aud(tgt.value)}`:'')}
+      ${tile('Purchases',num(t.purchases),delta(t.purchases,p.purchases))}
+      ${tile('Revenue',aud(t.revenue),Number(t.spend)>0?`ROAS ${(Number(t.revenue)/Number(t.spend)).toFixed(1)}x`:'')}
+      ${tile('Last 7 days',aud(l7.spend),`${num(l7.leads)} leads, ${num(l7.purchases)} purchases`)}
+    </div>
+    <div class="sec"><h2>By campaign, this month</h2><div class="wrap-x"><table>
+      <thead><tr><th>Campaign</th><th>Platform</th><th>Spend</th><th>Clicks</th><th>Leads</th><th>Cost per lead</th><th>Purchases</th></tr></thead>
+      <tbody>${(REP.by_campaign||[]).map(c=>`<tr><td><b>${esc(c.campaign)}</b></td><td>${esc(c.platform)}</td><td>${aud(c.spend)}</td><td>${num(c.clicks)}</td><td>${num(c.leads)}</td><td>${per(c.spend,c.leads)}</td><td>${num(c.purchases)}</td></tr>`).join('')||'<tr><td colspan="7" class="note">Nothing this month yet.</td></tr>'}</tbody>
+    </table></div></div>
+    <div class="sec"><h2>What we changed</h2><div class="wrap-x"><table>
+      <thead><tr><th>Date</th><th>Change</th><th>Why</th><th>Source</th></tr></thead>
+      <tbody>${(REP.actions||[]).map(a=>`<tr><td class="mono">${esc(new Date(a.on+'T00:00:00').toLocaleDateString('en-AU'))}</td><td><b>${esc(a.what)}</b></td><td>${esc(a.why||'')}</td><td>${esc(a.source==='platform_log'?'platform log':'noted')}</td></tr>`).join('')||'<tr><td colspan="4" class="note">Nothing recorded yet. Changes are read from the ad platform\u2019s own log, so this fills itself once the account is connected.</td></tr>'}</tbody>
+    </table></div></div>
+    ${targetBox(tgt)}`;
+  wireTarget();
+}
+function targetBox(tgt){
+  return `<div class="sec"><h2>Success measure</h2>
+    <div class="camp" style="padding:16px 18px">
+      ${CAN_WRITE?`<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:2;min-width:220px"><label class="l" for="tgtM">What we measure</label><input type="text" id="tgtM" value="${esc(tgt&&tgt.measure||'')}" placeholder="Cost per booked consultation"></div>
+        <div style="min-width:150px"><label class="l" for="tgtV">Target (AUD)</label><input type="number" id="tgtV" step="1" value="${tgt&&tgt.value!=null?tgt.value:''}"></div>
+        <button class="btn" id="tgtSave">Save</button></div>`
+      :`<div>${tgt&&tgt.measure?`<b>${esc(tgt.measure)}</b>${tgt.value!=null?' \u00b7 target '+aud(tgt.value):''}`:'<span style="color:var(--warn)">Not agreed yet.</span>'}</div>`}
+    </div></div>`;
+}
+function wireTarget(){
+  if(!$('tgtSave')) return;
+  $('tgtSave').addEventListener('click',async()=>{
+    $('tgtSave').disabled=true;
+    const r=await sb.rpc('pa_set_target',{p_slug:SLUG,p_measure:$('tgtM').value,p_value:$('tgtV').value===''?null:Number($('tgtV').value)});
+    $('tgtSave').disabled=false;
+    if(r.error){ toast('Not saved: '+r.error.message); return; }
+    toast('Success measure saved.'); loadReport();
+  });
+}
+
 /* ---------- launch checklist ---------- */
 function fmtLaunch(d){
   if(!d) return 'not set';
@@ -357,6 +493,30 @@ function renderLaunch(){
     return `<tr class="stage"><td colspan="4">${esc(label)} · ${rows.filter(r=>r.done).length}/${rows.length}</td></tr>`+rows.map(row).join('');
   }).join('');
   document.querySelectorAll('.cb').forEach(cb=>cb.addEventListener('change',()=>tick(cb)));
+  renderAdd();
+}
+
+function renderAdd(){
+  if(!CAN_WRITE){ $('addRow').innerHTML=''; return; }
+  $('addRow').innerHTML=`<div class="camp" style="padding:14px 16px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:2;min-width:220px"><label class="l" for="newItem">Add a row</label><input id="newItem" type="text" placeholder="What has to be true before launch"></div>
+      <div style="flex:1;min-width:130px"><label class="l" for="newOwner">Owner</label><input id="newOwner" type="text" placeholder="Name"></div>
+      <div style="min-width:150px"><label class="l" for="newStage">Stage</label>
+        <select id="newStage" style="width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:14px">
+          ${['day0','brief','copy','build','campaign','launch'].map(s=>`<option value="${s}"${s==='build'?' selected':''}>${s}</option>`).join('')}
+        </select></div>
+      <button class="btn" id="addBtn">Add</button>
+    </div></div>`;
+  $('addBtn').addEventListener('click',async()=>{
+    const item=$('newItem').value.trim(); if(!item){ toast('Type the row first.'); return; }
+    $('addBtn').disabled=true;
+    const r=await sb.rpc('pa_add_item',{p_slug:SLUG,p_item:item,p_owner:$('newOwner').value.trim(),p_stage:$('newStage').value});
+    $('addBtn').disabled=false;
+    if(r.error){ toast('Not added: '+r.error.message); return; }
+    const i=await sb.from('pa_launch_items').select('*').eq('client_slug',SLUG).order('sort'); ITEMS=i.data||[];
+    renderLaunch(); toast('Row added.'); if(BRIEF.slack_ts) syncSlack(true);
+  });
 }
 
 let toastT;
