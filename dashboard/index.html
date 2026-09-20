@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Marketing Dashboard · Ready to Rank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* CLIENT-FACING dashboard. Deliberately a separate page from the internal client page:
+   it contains no checklist, no owners, no set-up jobs, no call brief and no fees, so none of
+   that can leak. Access is by email membership in pa_client_users, enforced in the database. */
+:root{
+  --bg:#0b0c0e; --panel:#141619; --panel2:#1b1e23; --line:#272b31;
+  --ink:#eef1f4; --muted:#9aa4b0; --dim:#6f7883;
+  --accent:#17B4F0; --client:#17B4F0;
+  --ok:#3ddc97; --bad:#ff6b6b; --warn:#ffb454; --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:Archivo,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
+.mono{font-family:'Space Mono',ui-monospace,monospace}
+
+#login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.card-login{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:32px}
+label.l{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+input[type=email],input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:11px 12px;font-family:inherit;font-size:14px}
+input:focus{outline:none;border-color:var(--accent)}
+button{font-family:inherit;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid transparent;padding:11px 16px;font-size:14px}
+.btn{background:var(--accent);color:#04222f}
+.btn:disabled{opacity:.6;cursor:default}
+.btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+.field{margin-bottom:14px}
+.logos{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logos img{display:block;height:24px;width:auto}
+.logos .x{color:var(--dim);font-size:13px}
+.logos .cname{font-weight:700;font-size:16px;letter-spacing:.02em;color:var(--client)}
+
+#app{display:none}
+header{position:sticky;top:0;z-index:20;background:rgba(11,12,14,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:1080px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.who{margin-left:auto;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:12px}
+main{max-width:1080px;margin:0 auto;padding:28px 22px 90px}
+.eyebrow{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--client);margin-bottom:10px}
+.summary{display:flex;flex-wrap:wrap;gap:10px 26px;color:var(--muted);font-size:14px;margin:10px 0 22px}
+.summary b{color:var(--ink)}
+.rule{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--client);border-radius:10px;padding:13px 16px;font-size:13.5px;color:var(--muted);margin:0 0 26px;max-width:80ch}
+.rule b{color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:26px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px;min-height:104px;display:flex;flex-direction:column;gap:7px}
+.kpi .lab{font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.kpi .val{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.kpi .val.na{color:var(--dim);font-weight:600;font-size:20px}
+.kpi .foot{font-size:11.5px;color:var(--dim);margin-top:auto}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px}
+.chip.up{color:var(--ok);background:rgba(61,220,151,.12)} .chip.dn{color:var(--bad);background:rgba(255,107,107,.12)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:22px}
+.cardhead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.cardhead h3{font-size:15px;margin:0}
+.cardhead .sub{font-size:12px;color:var(--dim);margin-top:2px}
+.chartbox{position:relative}
+.chartbox svg{width:100%;height:230px;display:block;overflow:visible}
+.gridline{stroke:var(--line);stroke-width:1}
+.axtxt{fill:var(--dim);font-size:10px;font-family:'Space Mono',monospace}
+.tip{position:absolute;top:6px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12px;pointer-events:none;opacity:0;transition:opacity .12s;min-width:130px}
+.tip .td{color:var(--dim);font-size:11px;margin-bottom:5px}
+.tip .tr{display:flex;justify-content:space-between;gap:14px}
+.tip .tr i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.empty-note{color:var(--dim);font-size:13px;text-align:center;padding:52px 10px}
+.wrap-x{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);padding:9px 10px;border-bottom:1px solid var(--line);font-weight:600}
+td{padding:11px 10px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top}
+td b{color:var(--ink);font-weight:600}
+.note{color:var(--dim);font-size:12.5px}
+footer{max-width:1080px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-size:12px}
+@media (max-width:640px){ .logos img{height:20px} th.hide-sm,td.hide-sm{display:none} }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="card-login" id="loginForm">
+    <div class="logos" style="margin-bottom:22px;justify-content:center"><img src="/operations/assets/r2r-logo.png" alt="Ready to Rank"></div>
+    <h1 style="font-size:20px;margin-bottom:6px;text-align:center">Marketing Dashboard</h1>
+    <p style="color:var(--muted);font-size:13.5px;margin:0 0 22px;text-align:center" id="loginLede">Sign in with your email. We'll send you a link and a code, so there's no password to remember.</p>
+    <div id="step1">
+      <div class="field"><label class="l" for="email">Email</label><input id="email" type="email" autocomplete="email" required /></div>
+      <button class="btn" style="width:100%" type="submit" id="sendBtn">Email me a sign-in link</button>
+    </div>
+    <div id="step2" style="display:none">
+      <div class="field"><label class="l" for="code">Code from the email</label><input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" /></div>
+      <button class="btn" style="width:100%" type="submit" id="verifyBtn">Sign in</button>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12.5px">
+        <a href="#" id="resend">Send a new email</a><a href="#" id="restart">Use a different email</a>
+      </div>
+    </div>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="app">
+  <header><div class="hwrap">
+    <div class="logos"><span class="cname" id="cname"></span><span class="x">×</span><img src="/operations/assets/r2r-logo.png" alt="Ready to Rank"></div>
+    <div class="mono" style="font-size:11px;color:var(--dim);letter-spacing:.14em">MARKETING DASHBOARD</div>
+    <div class="who"><span id="whoami"></span><button class="btn-ghost" id="out" style="padding:7px 12px;font-size:12px">Sign out</button></div>
+  </div></header>
+  <main>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 style="font-size:26px" id="title"></h1>
+    <div class="summary" id="summary"></div>
+    <div id="body"></div>
+  </main>
+  <footer>Ready to Rank · <span id="stamp"></span></footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL="https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZ3J0cmF6eWVwdmJjbW1kaGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTM0MTEsImV4cCI6MjA4NzkyOTQxMX0.0nYnlrLC3pfDPpcQ9k5XsAMU8fu-ZhV543W8TMAoiUU";
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const SLUG_Q=(new URLSearchParams(location.search).get('c')||'').toLowerCase();
+/* Chart palette validated with the dataviz validator for this dark surface. */
+const SERIES={spend:'#1F8FC4',leads:'#C2628F'};
+const num=n=>Number(n||0).toLocaleString('en-AU',{maximumFractionDigits:0});
+const aud=n=>'$'+Number(n||0).toLocaleString('en-AU',{maximumFractionDigits:0});
+const NA='<span class="val na">N/A</span>';
+const has=v=>v!=null&&Number(v)>0;
+let D=null, booted=false;
+
+/* ---------- sign in ---------- */
+let otpEmail='';
+function showStep(n){
+  $('step1').style.display=n===1?'block':'none';
+  $('step2').style.display=n===2?'block':'none';
+  $('loginLede').innerHTML=n===1?"Sign in with your email. We'll send you a link and a code, so there's no password to remember."
+    :'We emailed <b>'+esc(otpEmail)+'</b>. Click the link in that email, or type the code from it here.';
+  (n===1?$('email'):$('code')).focus();
+}
+async function sendCode(){
+  $('loginErr').textContent='';
+  const {error}=await sb.auth.signInWithOtp({email:otpEmail,options:{emailRedirectTo:location.origin+location.pathname+location.search}});
+  if(error){$('loginErr').textContent=error.status===429?'Too many codes requested. Wait a minute, then try again.':"We couldn't send a code to that email.";return false;}
+  return true;
+}
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault(); $('loginErr').textContent='';
+  if($('step1').style.display!=='none'){
+    otpEmail=$('email').value.trim().toLowerCase(); if(!otpEmail) return;
+    $('sendBtn').disabled=true; if(await sendCode()) showStep(2); $('sendBtn').disabled=false;
+  }else{
+    const token=$('code').value.replace(/\D/g,''); if(!token) return;
+    $('verifyBtn').disabled=true;
+    const {error}=await sb.auth.verifyOtp({email:otpEmail,token,type:'email'});
+    $('verifyBtn').disabled=false;
+    if(error){$('loginErr').textContent="That code didn't work. Use the newest email, or send a new code.";return;}
+    boot();
+  }
+});
+$('resend').addEventListener('click',async e=>{e.preventDefault(); if(await sendCode()) $('loginErr').textContent='New email sent.';});
+$('restart').addEventListener('click',e=>{e.preventDefault(); $('code').value=''; $('loginErr').textContent=''; showStep(1);});
+$('out').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
+sb.auth.onAuthStateChange(ev=>{ if(ev==='SIGNED_IN') setTimeout(boot,0); });
+
+async function boot(){
+  if(booted) return;
+  const {data:{session}}=await sb.auth.getSession(); if(!session) return;
+  // the database decides which dashboard this email may open
+  let slug=SLUG_Q;
+  if(!slug){ const {data}=await sb.rpc('pa_viewer_slug'); slug=data||''; }
+  if(!slug){ $('loginErr').textContent='This email has no dashboard. Ask your Ready to Rank contact.'; await sb.auth.signOut(); showStep(1); return; }
+  const {data,error}=await sb.rpc('pa_client_dashboard',{p_slug:slug});
+  if(error||!data){ $('loginErr').textContent='This email has no access to that dashboard.'; await sb.auth.signOut(); showStep(1); return; }
+  D=data; booted=true;
+  $('login').style.display='none'; $('app').style.display='block';
+  $('whoami').textContent=session.user.email;
+  if(D.accent) document.documentElement.style.setProperty('--client',D.accent);
+  render();
+}
+
+function kpi(lab,val,foot){ return `<div class="kpi"><div class="lab">${esc(lab)}</div><div class="val">${val}</div><div class="foot">${foot||''}</div></div>`; }
+function delta(now,then){
+  if(!has(then)||!has(now)) return '';
+  const d=Math.round((Number(now)-Number(then))/Number(then)*100);
+  return `<span class="chip ${d>=0?'up':'dn'}">${d>=0?'+':''}${d}%</span> on last month`;
+}
+function render(){
+  document.title=D.client_name+' · Marketing Dashboard';
+  $('cname').textContent=(D.client_name||'').toUpperCase();
+  $('eyebrow').textContent=(D.platform||'')+' ads';
+  $('title').textContent='Marketing Dashboard';
+  const month=new Date(D.month+'T00:00:00').toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+  const live=!!D.has_data;
+  const t=D.totals||{},p=D.prev||{},l7=D.last7||{},tgt=D.target;
+  const cpl=has(t.leads)?aud(Number(t.spend)/Number(t.leads)):NA;
+  const roas=has(t.spend)&&has(t.revenue)?(Number(t.revenue)/Number(t.spend)).toFixed(1)+'x':'N/A';
+  $('summary').innerHTML=`<span>${esc(month)}</span>${D.launch_date?`<span>Launched <b>${new Date(D.launch_date+'T00:00:00').toLocaleDateString('en-AU')}</b></span>`:''}
+    <span>Updated <b>${D.last_pull?new Date(D.last_pull).toLocaleDateString('en-AU'):'not yet'}</b></span>`;
+  $('body').innerHTML=`
+    ${live?'':`<div class="rule"><b>The campaigns have not started spending yet.</b> Every figure below reads N/A until they do. We never estimate numbers: when something is unknown it says so.</div>`}
+    <div class="kpis">
+      ${kpi('Spend', has(t.spend)?aud(t.spend):NA, live?delta(t.spend,p.spend):'not started')}
+      ${kpi('Leads', has(t.leads)?num(t.leads):NA, live?delta(t.leads,p.leads):'not started')}
+      ${kpi('Cost per lead', cpl, tgt&&tgt.value?('Target '+aud(tgt.value)):'')}
+      ${kpi('Purchases', has(t.purchases)?num(t.purchases):NA, live?delta(t.purchases,p.purchases):'not started')}
+      ${kpi('Revenue', has(t.revenue)?aud(t.revenue):NA, 'Return on ad spend '+roas)}
+      ${kpi('Last 7 days', has(l7.spend)?aud(l7.spend):NA, has(l7.spend)?`${num(l7.leads)} leads, ${num(l7.purchases)} purchases`:'nothing yet')}
+    </div>
+    <div class="card"><div class="cardhead"><div><h3>Daily spend</h3><div class="sub">Last 30 days · AUD</div></div></div><div class="chartbox" id="chartSpend"></div></div>
+    <div class="card"><div class="cardhead"><div><h3>Daily leads</h3><div class="sub">Last 30 days · one bar per day</div></div></div><div class="chartbox" id="chartLeads"></div></div>
+    <div class="card"><div class="cardhead"><div><h3>Campaigns</h3><div class="sub">${live?'This month':'Built and ready to start'}</div></div></div>
+      <div class="wrap-x"><table><thead><tr><th>Campaign</th><th>Spend</th><th class="hide-sm">Clicks</th><th>Leads</th><th>Cost per lead</th><th>Purchases</th></tr></thead>
+      <tbody>${campaignRows(live)}</tbody></table></div></div>
+    <div class="card"><div class="cardhead"><div><h3>What we changed</h3><div class="sub">Every adjustment we made to your campaigns</div></div></div>
+      <div class="wrap-x"><table><thead><tr><th>Date</th><th>Change</th><th>Why</th></tr></thead>
+      <tbody>${(D.actions||[]).map(a=>`<tr><td class="mono">${esc(new Date(a.on+'T00:00:00').toLocaleDateString('en-AU'))}</td><td><b>${esc(a.what)}</b></td><td>${esc(a.why||'')}</td></tr>`).join('')||'<tr><td colspan="3" class="note">Nothing to report yet.</td></tr>'}</tbody></table></div></div>
+    ${tgt&&tgt.measure?`<div class="card"><div class="cardhead"><div><h3>What we are aiming for</h3></div></div>
+      <div><b>${esc(tgt.measure)}</b>${tgt.value!=null?' · target '+aud(tgt.value):''}</div></div>`:''}`;
+  $('stamp').textContent='Loaded '+new Date().toLocaleString('en-AU',{day:'2-digit',month:'2-digit',hour:'numeric',minute:'2-digit'});
+  drawChart();
+}
+function campaignRows(live){
+  if(live&&(D.by_campaign||[]).length){
+    return D.by_campaign.map(c=>`<tr><td><b>${esc(c.campaign)}</b></td><td>${aud(c.spend)}</td><td class="hide-sm">${num(c.clicks)}</td><td>${num(c.leads)}</td><td>${has(c.leads)?aud(Number(c.spend)/Number(c.leads)):'N/A'}</td><td>${num(c.purchases)}</td></tr>`).join('');
+  }
+  const c=D.campaigns||[];
+  if(!c.length) return '<tr><td colspan="6" class="note">No campaigns yet.</td></tr>';
+  return c.map(x=>`<tr><td><b>${esc(x.name)}</b><div class="note">${esc(x.goal||'')}</div></td>
+    <td class="note">N/A</td><td class="note hide-sm">N/A</td><td class="note">N/A</td><td class="note">N/A</td><td class="note">N/A</td></tr>`).join('');
+}
+
+/* charts: spend and leads are separate plots, never two scales on one */
+function drawChart(){
+  const days=D.daily||[], sM=$('chartSpend'), lM=$('chartLeads');
+  if(!sM||!lM) return;
+  if(!days.length){ const m='<div class="empty-note">No daily figures yet. The chart appears once the campaigns start spending.</div>'; sM.innerHTML=m; lM.innerHTML=m; return; }
+  lineChart(sM,days,d=>Number(d.spend||0),SERIES.spend,aud,'Daily spend');
+  barChart(lM,days,d=>Number(d.leads||0),SERIES.leads,num,'Daily leads');
+}
+function axisDays(days,X,H){
+  const step=Math.max(1,Math.floor(days.length/6)); let s='';
+  days.forEach((d,i)=>{ if(i%step) return;
+    s+=`<text class="axtxt" x="${X(i)}" y="${H-7}" text-anchor="middle">${new Date(d.day+'T00:00:00').toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit'})}</text>`;});
+  return s;
+}
+function tipFor(mount){ const t=document.createElement('div'); t.className='tip'; mount.appendChild(t); return t; }
+function lineChart(mount,days,val,colour,fmt,label){
+  const W=800,H=230,P={t:12,r:14,b:24,l:48},iw=W-P.l-P.r,ih=H-P.t-P.b,N=days.length;
+  const v=days.map(val), mx=Math.max(...v,1)*1.12;
+  const X=i=>P.l+(N<=1?iw/2:iw*i/(N-1)), Y=n=>P.t+ih-(n/mx)*ih;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">`;
+  for(let t=0;t<=4;t++){const y=Y(mx*t/4);
+    svg+=`<line class="gridline" x1="${P.l}" y1="${y.toFixed(1)}" x2="${W-P.r}" y2="${y.toFixed(1)}"/><text class="axtxt" x="${P.l-6}" y="${y+3}" text-anchor="end">${t?fmt(mx*t/4):'0'}</text>`;}
+  svg+=axisDays(days,X,H);
+  const d=v.map((n,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(n).toFixed(1)}`).join('');
+  svg+=`<path d="${d}L${X(N-1)} ${Y(0)}L${X(0)} ${Y(0)}Z" fill="${colour}" opacity="0.12"/>`;
+  svg+=`<path d="${d}" fill="none" stroke="${colour}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  svg+=`<line class="xh" x1="0" y1="${P.t}" x2="0" y2="${P.t+ih}" stroke="${colour}" stroke-width="1" opacity="0"/>`;
+  svg+=`<circle class="hd" r="4.5" fill="${colour}" stroke="var(--panel)" stroke-width="2" opacity="0"/></svg>`;
+  mount.innerHTML=svg; const tip=tipFor(mount);
+  const el=mount.querySelector('svg'),xh=el.querySelector('.xh'),hd=el.querySelector('.hd');
+  el.addEventListener('pointermove',e=>{
+    const r=el.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W;
+    let i=Math.round((px-P.l)/iw*(N-1)); i=Math.max(0,Math.min(N-1,i)); const x=X(i);
+    xh.setAttribute('x1',x); xh.setAttribute('x2',x); xh.style.opacity=.5;
+    hd.setAttribute('cx',x); hd.setAttribute('cy',Y(v[i])); hd.style.opacity=1;
+    tip.innerHTML=`<div class="td">${new Date(days[i].day+'T00:00:00').toLocaleDateString('en-AU',{day:'2-digit',month:'short'})}</div>
+      <div class="tr"><span><i style="background:${colour}"></i>${label.replace('Daily ','')}</span><b>${fmt(v[i])}</b></div>`;
+    tip.style.opacity=1;
+    const tw=tip.offsetWidth; tip.style.left=Math.min(Math.max(x/W*r.width-tw/2,4),r.width-tw-4)+'px';
+  });
+  el.addEventListener('pointerleave',()=>{tip.style.opacity=0;xh.style.opacity=0;hd.style.opacity=0;});
+}
+function barChart(mount,days,val,colour,fmt,label){
+  const W=800,H=230,P={t:12,r:14,b:24,l:48},iw=W-P.l-P.r,ih=H-P.t-P.b,N=days.length;
+  const v=days.map(val), mx=Math.max(1,Math.ceil(Math.max(...v)))*1.15;
+  const bw=Math.max(4,Math.min(22,iw/N-2)), cx=i=>P.l+iw*(i+0.5)/N, Y=n=>P.t+ih-(n/mx)*ih;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">`;
+  const top=Math.max(1,Math.ceil(Math.max(...v))), ticks=Math.min(4,top), seen=new Set();
+  for(let t=0;t<=ticks;t++){const raw=top*t/ticks,n=Math.round(raw),y=Y(raw);
+    const lbl=seen.has(n)?'':fmt(n); seen.add(n);
+    svg+=`<line class="gridline" x1="${P.l}" y1="${y.toFixed(1)}" x2="${W-P.r}" y2="${y.toFixed(1)}"/><text class="axtxt" x="${P.l-6}" y="${y+3}" text-anchor="end">${lbl}</text>`;}
+  svg+=axisDays(days,cx,H);
+  v.forEach((n,i)=>{ const hgt=Math.max(0,(n/mx)*ih);
+    svg+=`<rect x="${(cx(i)-bw/2).toFixed(1)}" y="${Y(n).toFixed(1)}" width="${bw.toFixed(1)}" height="${hgt.toFixed(1)}" rx="3" fill="${colour}" opacity="${n?1:0.25}"><title>${new Date(days[i].day+'T00:00:00').toLocaleDateString('en-AU')}: ${fmt(n)}</title></rect>`;});
+  svg+='</svg>'; mount.innerHTML=svg; const tip=tipFor(mount);
+  const el=mount.querySelector('svg');
+  el.addEventListener('pointermove',e=>{
+    const r=el.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W;
+    let i=Math.floor((px-P.l)/iw*N); i=Math.max(0,Math.min(N-1,i));
+    tip.innerHTML=`<div class="td">${new Date(days[i].day+'T00:00:00').toLocaleDateString('en-AU',{day:'2-digit',month:'short'})}</div>
+      <div class="tr"><span><i style="background:${colour}"></i>${label.replace('Daily ','')}</span><b>${fmt(v[i])}</b></div>`;
+    tip.style.opacity=1;
+    const tw=tip.offsetWidth; tip.style.left=Math.min(Math.max(cx(i)/W*r.width-tw/2,4),r.width-tw-4)+'px';
+  });
+  el.addEventListener('pointerleave',()=>{tip.style.opacity=0;});
+}
+boot();
+</script>
+</body>
+</html>
