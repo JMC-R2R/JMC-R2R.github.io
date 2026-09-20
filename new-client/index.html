@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>New client setup · Ready to Rank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* New client setup: one form that fires the whole setup.
+   Everything it can do in the database happens on submit (so_new_client).
+   The rest becomes jobs for Claude, and Slack is prepared for Jose to approve. */
+:root{
+  --bg:#0b0c0e; --panel:#141619; --panel2:#1b1e23; --line:#272b31;
+  --ink:#eef1f4; --muted:#9aa4b0; --dim:#6f7883;
+  --accent:#17B4F0; --ok:#3ddc97; --bad:#ff6b6b; --warn:#ffb454; --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:Archivo,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
+.mono{font-family:'Space Mono',ui-monospace,monospace}
+
+#login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.card-login{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:32px}
+label.l{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+input[type=email],input[type=text],input[type=number],input[type=date],textarea,select{
+  width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:14px}
+textarea{min-height:110px;resize:vertical;line-height:1.55}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+button{font-family:inherit;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid transparent;padding:11px 16px;font-size:14px}
+.btn{background:var(--accent);color:#04222f}
+.btn:disabled{opacity:.55;cursor:default}
+.btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+.field{margin-bottom:14px}
+
+#app{display:none}
+header{position:sticky;top:0;z-index:20;background:rgba(11,12,14,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:980px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.logos img{display:block;height:26px;width:auto}
+.who{margin-left:auto;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:12px}
+main{max-width:980px;margin:0 auto;padding:26px 22px 120px}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:18px}
+.card h2{font-size:16px;margin-bottom:4px}
+.card .sub{color:var(--dim);font-size:12.5px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid.three{grid-template-columns:1fr 1fr 1fr}
+@media (max-width:720px){.grid,.grid.three{grid-template-columns:1fr}}
+.pick{display:flex;gap:10px;flex-wrap:wrap}
+.pick label{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;display:flex;gap:9px;align-items:center;cursor:pointer;font-size:14px}
+.pick label.on{border-color:var(--accent);color:var(--ink)}
+.pick input{accent-color:var(--accent);width:17px;height:17px}
+.ticks{display:grid;gap:8px}
+.ticks label{display:flex;gap:11px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;cursor:pointer}
+.ticks input{accent-color:var(--ok);width:19px;height:19px;margin:1px 0 0}
+.ticks small{display:block;color:var(--dim);font-size:12px}
+.gate{border-left:3px solid var(--warn)}
+.money{border-left:3px solid var(--warn)}
+.campc{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.rowbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(11,12,14,.96);border-top:1px solid var(--line);padding:14px 22px}
+.barin{max-width:980px;margin:0 auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.barin .msg{color:var(--muted);font-size:13px}
+.done{background:var(--panel);border:1px solid var(--ok);border-radius:var(--r);padding:22px}
+.done h2{color:var(--ok);margin-bottom:10px}
+.done ul{margin:10px 0 0;padding-left:18px;color:var(--muted)}
+.done li{margin-bottom:6px}
+.hint{color:var(--dim);font-size:12.5px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="card-login" id="loginForm">
+    <div class="logos" style="margin-bottom:22px"><img src="/operations/assets/r2r-logo.png" alt="Ready to Rank"></div>
+    <h1 style="font-size:22px;margin-bottom:6px">New client setup</h1>
+    <p style="color:var(--muted);font-size:13.5px;margin:0 0 22px" id="loginLede">Sign in with your email and we'll send you a link and code.</p>
+    <div id="step1">
+      <div class="field"><label class="l" for="email">Email</label><input id="email" type="email" autocomplete="email" required /></div>
+      <button class="btn" style="width:100%" type="submit" id="sendBtn">Email me a sign-in link</button>
+    </div>
+    <div id="step2" style="display:none">
+      <div class="field"><label class="l" for="code">Code from the email</label><input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" /></div>
+      <button class="btn" style="width:100%" type="submit" id="verifyBtn">Sign in</button>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12.5px">
+        <a href="#" id="resend">Send a new email</a><a href="#" id="restart">Use a different email</a>
+      </div>
+    </div>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="app">
+  <header><div class="hwrap">
+    <div class="logos"><img src="/operations/assets/r2r-logo.png" alt="Ready to Rank"></div>
+    <div class="mono" style="font-size:11px;color:var(--dim);letter-spacing:.14em">NEW CLIENT SETUP</div>
+    <div class="who"><a href="/operations/registry/" style="color:var(--dim);text-decoration:none">All clients</a><span id="whoami"></span><button class="btn-ghost" id="out" style="padding:7px 12px;font-size:12px">Sign out</button></div>
+  </div></header>
+
+  <main id="formWrap">
+    <h1 style="font-size:25px;margin-bottom:6px">Set up a new client</h1>
+    <p class="hint" style="margin-bottom:22px;max-width:75ch">Fill this in once, at the start. On submit it creates the client, their page, the launch checklist with a row per campaign, the registry entry, and the jobs Claude finishes off. Slack is prepared for Jose to approve, never posted automatically.</p>
+
+    <div class="card gate">
+      <h2>Before anything else</h2>
+      <div class="sub">Nothing client-facing starts until both are true. Only Jose waives this, out loud.</div>
+      <div class="ticks">
+        <label><input type="checkbox" id="contract_signed"><span><b>Contract signed</b></span></label>
+        <label><input type="checkbox" id="deposit_paid"><span><b>Deposit paid</b></span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>The business</h2>
+      <div class="sub">The slug is the short name used for their page, folder and repo.</div>
+      <div class="grid">
+        <div><label class="l" for="client_name">Business name</label><input type="text" id="client_name" placeholder="Acme Plumbing"></div>
+        <div><label class="l" for="slug">Slug</label><input type="text" id="slug" placeholder="acme-plumbing"></div>
+        <div><label class="l" for="website">Website</label><input type="text" id="website" placeholder="acme.com.au"></div>
+        <div><label class="l" for="contact">Main contact (name, email, phone)</label><input type="text" id="contact"></div>
+        <div><label class="l" for="location">Location and service area</label><input type="text" id="location"></div>
+        <div><label class="l" for="accent">Brand colour (from their logo)</label><input type="text" id="accent" placeholder="#B98586"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Services bought</h2>
+      <div class="sub">Pick every service. The fields below change to match.</div>
+      <div class="pick" id="svc">
+        <label><input type="checkbox" value="seo"> SEO retainer</label>
+        <label><input type="checkbox" value="build"> Website build</label>
+        <label><input type="checkbox" value="meta"> Meta ads</label>
+        <label><input type="checkbox" value="google"> Google ads</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Commercial</h2>
+      <div class="sub">Who pays, and what Kate needs for the invoice. The fee is only ever seen here and in Xero.</div>
+      <div class="grid three">
+        <div><label class="l" for="package">Package name</label><input type="text" id="package" placeholder="Meta Ads Management"></div>
+        <div><label class="l" for="fee_ex_gst">Monthly fee ex GST (AUD)</label><input type="number" id="fee_ex_gst" min="0" step="50"></div>
+        <div><label class="l" for="partner">Partner deal?</label><select id="partner"><option value="">Direct client</option><option value="savvas">Savvas Studio pays</option></select></div>
+        <div><label class="l" for="legal_entity">Legal entity</label><input type="text" id="legal_entity"></div>
+        <div><label class="l" for="abn">ABN</label><input type="text" id="abn"></div>
+        <div><label class="l" for="billing_email">Billing email</label><input type="text" id="billing_email"></div>
+        <div><label class="l" for="start_date">Start date</label><input type="date" id="start_date"></div>
+        <div><label class="l" for="invoice_day">Invoice day</label><input type="number" id="invoice_day" min="1" max="28" value="1"></div>
+        <div><label class="l" for="launch_date">Target launch (ads)</label><input type="date" id="launch_date"></div>
+      </div>
+    </div>
+
+    <div class="card" id="day0card">
+      <h2>Done on the onboarding call</h2>
+      <div class="sub">This is the part that causes the stress later. Tick only what you have actually seen working. Anything unticked arrives on the launch checklist as still open.</div>
+      <div class="ticks" id="day0"></div>
+    </div>
+
+    <div class="card" id="adsCard" style="display:none">
+      <h2>The ads brief</h2>
+      <div class="sub">One block per campaign sold. Write the summary as if handing it to someone new.</div>
+      <div class="field"><label class="l" for="summary">Summary paragraph</label><textarea id="summary" placeholder="We are running two campaigns for..."></textarea></div>
+      <div id="camps"></div>
+      <div class="rowbtns"><button class="btn-ghost" id="addCamp" type="button">Add a campaign</button></div>
+    </div>
+
+    <div class="card money" id="budgetCard" style="display:none">
+      <h2>Ad budget</h2>
+      <div class="sub">Only Jose, Jhen and Janice ever see this. It never goes to Slack or any team channel.</div>
+      <div class="grid"><div><label class="l" for="budget_total">Total ad spend per month (AUD)</label><input type="number" id="budget_total" min="0" step="50"></div></div>
+    </div>
+
+    <div class="card">
+      <h2>Anything else Claude should do</h2>
+      <div class="sub">One per line. These become jobs on the client's page alongside the standard ones.</div>
+      <textarea id="extra_jobs" placeholder="Ask Savvas for the brand kit&#10;Book the kickoff call"></textarea>
+      <div class="field" style="margin-top:14px"><label class="l" for="notes">Notes for the team</label><input type="text" id="notes"></div>
+    </div>
+  </main>
+
+  <div id="doneWrap" style="display:none;max-width:980px;margin:0 auto;padding:26px 22px 80px"></div>
+
+  <div class="bar" id="bar"><div class="barin">
+    <button class="btn" id="submitBtn">Create the client</button>
+    <span class="msg" id="barMsg"></span>
+  </div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL="https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZ3J0cmF6eWVwdmJjbW1kaGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTM0MTEsImV4cCI6MjA4NzkyOTQxMX0.0nYnlrLC3pfDPpcQ9k5XsAMU8fu-ZhV543W8TMAoiUU";
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let CAN_WRITE=false,booted=false,CAMPS=[];
+
+/* day 0 tick lists per service. The key must appear in the matching launch checklist row. */
+const DAY0={
+  meta:[['card',"Client's own card on the Meta ad account",'Ads cannot spend without it'],
+        ['business verification','Meta business verification done','Different from domain verification'],
+        ['domain','Website domain verified in Meta','Needed for conversion setup'],
+        ['portfolio','Ad account, Page, Instagram and pixel shared to the R2R portfolio','Check it is visible to our login, not just granted']],
+  google:[['card',"Client's own card on the Google Ads account",''],
+          ['advertiser verification','Advertiser verification started','Google often asks after spend starts. Finished before launch'],
+          ['manager account','Account linked to the R2R manager account','']],
+  seo:[['gsc','Search Console access','' ],['ga4','GA4 access',''],['gbp','Google Business Profile access','Use the Loom walkthrough'],['website admin','Website admin access','']],
+  build:[['domain registrar','Domain registrar access',''],['hosting','Hosting and DNS access',''],['content','Content, images and logo received','']],
+  any:[['ghl','GoHighLevel sub-account ready','Read-only for us, never write'],['shopify','Shopify admin access','Only if they sell online']]
+};
+
+/* ---------- sign-in ---------- */
+let otpEmail='';
+function showStep(n){
+  $('step1').style.display=n===1?'block':'none';
+  $('step2').style.display=n===2?'block':'none';
+  $('loginLede').innerHTML=n===1?"Sign in with your email and we'll send you a link and code."
+    :'We emailed <b>'+esc(otpEmail)+'</b>. Click the link in that email, or type the code from it here.';
+  (n===1?$('email'):$('code')).focus();
+}
+async function sendCode(){
+  $('loginErr').textContent='';
+  const {error}=await sb.auth.signInWithOtp({email:otpEmail,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
+  if(error){$('loginErr').textContent=error.status===429?'Too many codes requested. Wait a minute, then try again.':"We couldn't send a code to that email.";return false;}
+  return true;
+}
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault(); $('loginErr').textContent='';
+  if($('step1').style.display!=='none'){
+    otpEmail=$('email').value.trim().toLowerCase(); if(!otpEmail) return;
+    $('sendBtn').disabled=true; if(await sendCode()) showStep(2); $('sendBtn').disabled=false;
+  }else{
+    const token=$('code').value.replace(/\D/g,''); if(!token) return;
+    $('verifyBtn').disabled=true;
+    const {error}=await sb.auth.verifyOtp({email:otpEmail,token,type:'email'});
+    $('verifyBtn').disabled=false;
+    if(error){$('loginErr').textContent="That code didn't work. Use the newest email, or send a new code.";return;}
+    boot();
+  }
+});
+$('resend').addEventListener('click',async e=>{e.preventDefault(); if(await sendCode()) $('loginErr').textContent='New email sent.';});
+$('restart').addEventListener('click',e=>{e.preventDefault(); $('code').value=''; $('loginErr').textContent=''; showStep(1);});
+$('out').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
+sb.auth.onAuthStateChange(ev=>{ if(ev==='SIGNED_IN') setTimeout(boot,0); });
+
+async function boot(){
+  if(booted) return;
+  const {data:{session}}=await sb.auth.getSession(); if(!session) return;
+  const {data:me}=await sb.from('tt_people').select('name,email,active').eq('id',session.user.id).maybeSingle();
+  if(!me||!me.active){$('loginErr').textContent='This page is for the Ready to Rank team only.';await sb.auth.signOut();showStep(1);return;}
+  const {data:w}=await sb.rpc('so_can_write_register'); CAN_WRITE=w===true;
+  booted=true;
+  $('login').style.display='none'; $('app').style.display='block';
+  $('whoami').textContent=(me.name||me.email);
+  if(!CAN_WRITE){
+    $('formWrap').innerHTML='<div class="card"><h2>View only</h2><div class="sub">Setting up a client is limited to Jose, Jhen and Janice. Ask one of them to add you.</div></div>';
+    $('bar').style.display='none'; return;
+  }
+  $('start_date').value=new Date().toISOString().slice(0,10);
+  renderDay0(); renderCamps();
+}
+
+/* ---------- services drive the rest of the form ---------- */
+function services(){ return [...document.querySelectorAll('#svc input:checked')].map(i=>i.value); }
+document.querySelectorAll('#svc input').forEach(i=>i.addEventListener('change',()=>{
+  i.closest('label').classList.toggle('on',i.checked);
+  const s=services(), ads=s.includes('meta')||s.includes('google');
+  $('adsCard').style.display=ads?'block':'none';
+  $('budgetCard').style.display=ads?'block':'none';
+  if(ads&&!CAMPS.length){ CAMPS=[blankCamp(s.includes('meta')?'meta':'google')]; }
+  renderDay0(); renderCamps();
+}));
+
+function renderDay0(){
+  const s=services(); const groups=[];
+  s.forEach(x=>{ if(DAY0[x]) groups.push([x.toUpperCase(),DAY0[x]]); });
+  if(s.length) groups.push(['ALSO',DAY0.any]);
+  $('day0card').style.display=s.length?'block':'none';
+  $('day0').innerHTML=groups.map(([label,rows])=>
+    `<div class="mono" style="font-size:11px;letter-spacing:.14em;color:var(--accent);margin:10px 0 2px">${esc(label)}</div>`+
+    rows.map(([k,txt,sub])=>`<label><input type="checkbox" data-day0="${esc(k)}"><span>${esc(txt)}${sub?`<small>${esc(sub)}</small>`:''}</span></label>`).join('')
+  ).join('');
+}
+
+const blankCamp=p=>({platform:p,name:'',goal:'',sends_to:'',locations:'',age:'',gender:'',interests:'',placements:'',offer:'',creative:'',conversion_event:'',notes:''});
+function renderCamps(){
+  const s=services(); const opts=['meta','google'].filter(x=>s.includes(x));
+  $('camps').innerHTML=CAMPS.map((c,k)=>`<div class="campc">
+    <div class="grid">
+      <div><label class="l">Campaign name</label><input type="text" data-c="${k}" data-f="name" value="${esc(c.name)}" placeholder="Hot water leads"></div>
+      <div><label class="l">Platform</label><select data-c="${k}" data-f="platform">${opts.map(o=>`<option value="${o}"${c.platform===o?' selected':''}>${o}</option>`).join('')}</select></div>
+      <div><label class="l">Goal</label><input type="text" data-c="${k}" data-f="goal" value="${esc(c.goal)}" placeholder="Form enquiry"></div>
+      <div><label class="l">Sends to</label><input type="text" data-c="${k}" data-f="sends_to" value="${esc(c.sends_to)}" placeholder="Landing page, Shopify, GHL page"></div>
+      <div><label class="l">Locations (radius / postcodes / regions)</label><input type="text" data-c="${k}" data-f="locations" value="${esc(c.locations)}"></div>
+      <div><label class="l">Age</label><input type="text" data-c="${k}" data-f="age" value="${esc(c.age)}" placeholder="25 to 54"></div>
+      <div><label class="l">Gender</label><input type="text" data-c="${k}" data-f="gender" value="${esc(c.gender)}"></div>
+      <div><label class="l">Interests</label><input type="text" data-c="${k}" data-f="interests" value="${esc(c.interests)}"></div>
+      <div><label class="l">Placements</label><input type="text" data-c="${k}" data-f="placements" value="${esc(c.placements)}"></div>
+      <div><label class="l">Offer</label><input type="text" data-c="${k}" data-f="offer" value="${esc(c.offer)}"></div>
+      <div><label class="l">Creative (who supplies, what)</label><input type="text" data-c="${k}" data-f="creative" value="${esc(c.creative)}"></div>
+      <div><label class="l">Conversion event</label><input type="text" data-c="${k}" data-f="conversion_event" value="${esc(c.conversion_event)}" placeholder="Lead, Purchase"></div>
+    </div>
+    <div class="field" style="margin-top:12px"><label class="l">Notes</label><input type="text" data-c="${k}" data-f="notes" value="${esc(c.notes)}"></div>
+    ${CAMPS.length>1?`<button class="btn-ghost" type="button" data-rm="${k}" style="padding:7px 12px;font-size:12px">Remove campaign</button>`:''}
+  </div>`).join('');
+  document.querySelectorAll('[data-c][data-f]').forEach(el=>el.addEventListener('input',()=>{CAMPS[+el.dataset.c][el.dataset.f]=el.value;}));
+  document.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click',()=>{CAMPS.splice(+b.dataset.rm,1);renderCamps();}));
+}
+$('addCamp').addEventListener('click',()=>{const s=services();CAMPS.push(blankCamp(s.includes('meta')?'meta':'google'));renderCamps();});
+
+$('client_name').addEventListener('blur',()=>{
+  if(!$('slug').value.trim()) $('slug').value=$('client_name').value.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+});
+
+let toastT;
+function toast(msg){ $('toast').textContent=msg; $('toast').classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>$('toast').classList.remove('on'),3600); }
+
+/* ---------- submit ---------- */
+$('submitBtn').addEventListener('click',async()=>{
+  const s=services();
+  const problems=[];
+  if(!$('contract_signed').checked||!$('deposit_paid').checked) problems.push('contract signed and deposit paid');
+  if(!$('client_name').value.trim()) problems.push('business name');
+  if(!$('slug').value.trim()) problems.push('slug');
+  if(!s.length) problems.push('at least one service');
+  const ads=s.includes('meta')||s.includes('google');
+  if(ads){
+    const named=CAMPS.filter(c=>c.name.trim());
+    if(!named.length) problems.push('at least one campaign with a name');
+    if(!$('summary').value.trim()) problems.push('the summary paragraph');
+  }
+  if(problems.length){ toast('Still needed: '+problems.join(', ')); return; }
+
+  const day0={}; document.querySelectorAll('[data-day0]').forEach(cb=>{ if(cb.checked) day0[cb.dataset.day0]=true; });
+  const payload={
+    slug:$('slug').value.trim().toLowerCase(), client_name:$('client_name').value.trim(), website:$('website').value.trim(),
+    services:s, contract_signed:true, deposit_paid:true,
+    package:$('package').value.trim(), fee_ex_gst:$('fee_ex_gst').value||null, partner:$('partner').value,
+    legal_entity:$('legal_entity').value.trim(), abn:$('abn').value.trim(), billing_email:$('billing_email').value.trim(),
+    start_date:$('start_date').value||null, invoice_day:$('invoice_day').value||null, launch_date:$('launch_date').value||null,
+    accent:$('accent').value.trim(), notes:$('notes').value.trim(), summary:$('summary').value.trim(),
+    budget_total:$('budget_total').value||null,
+    campaigns:CAMPS.filter(c=>c.name.trim()),
+    day0, carry_forward:{contact:$('contact').value.trim(),location:$('location').value.trim(),website:$('website').value.trim()},
+    extra_jobs:$('extra_jobs').value.split('\n').map(x=>x.trim()).filter(Boolean)
+  };
+  $('submitBtn').disabled=true; $('barMsg').textContent='Setting up...';
+  const r=await sb.rpc('so_new_client',{p:payload});
+  $('submitBtn').disabled=false; $('barMsg').textContent='';
+  if(r.error){ toast('Not created: '+r.error.message); return; }
+  const d=r.data;
+  $('formWrap').style.display='none'; $('bar').style.display='none';
+  $('doneWrap').style.display='block';
+  $('doneWrap').innerHTML=`<div class="done">
+    <h2>${esc(payload.client_name)} is set up</h2>
+    <p>${d.launch_rows?`Launch checklist created with <b>${d.launch_rows}</b> rows, <b>${d.day0_ticked}</b> already ticked from this form.`:'Client and chains created.'}</p>
+    <p style="margin-top:12px"><a href="${esc(d.page)}">Open their page</a> &middot; <a href="/operations/registry/">All clients</a></p>
+    <h3 style="font-size:14px;margin-top:20px">Claude still has to do these</h3>
+    <ul>${(d.jobs||[]).map(j=>`<li>${esc(({folder:'Client folder on the Mac',drive:'Google Drive folder',memory:'Client memory notes',repo:'GitHub repo',xero_check:'Check the invoice is paid in Xero',slack_channel:'Create the private Slack channel',brief_post:'Post the brief and pin the checklist',custom:'Extra job'})[j.job]||j.job)}</li>`).join('')}</ul>
+    <p class="hint" style="margin-top:14px">They show on the client's page under Onboarding. Say <b>"finish the setup jobs for ${esc(payload.slug)}"</b> in Claude Code, or wait for the runner to pick them up. Slack is prepared, not posted: you approve it.</p>
+    <p style="margin-top:18px"><button class="btn" onclick="location.reload()">Set up another client</button></p>
+  </div>`;
+  window.scrollTo(0,0);
+});
+boot();
+</script>
+</body>
+</html>
