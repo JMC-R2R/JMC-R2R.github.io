@@ -68,8 +68,6 @@
   .gate-msg{min-height:18px;margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--bad)}
   .gate-sent{margin-top:14px;font-size:13.5px;line-height:1.6;color:var(--white);background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px}
   .gate-sent b{color:var(--blue)}
-  #codeForm{margin-top:12px}
-  #gateCode{text-align:center;letter-spacing:.3em;font-family:var(--mono);font-size:18px}
   .gate-sent button{margin-top:10px;background:none;border:none;color:var(--muted);font-family:var(--mono);font-size:11px;text-decoration:underline;cursor:pointer;width:auto;padding:0}
   .signout{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:6px 10px;cursor:pointer}
   .signout:hover{color:var(--white);border-color:var(--muted)}
@@ -586,10 +584,6 @@
     </form>
     <div class="gate-msg" id="gateMsg"></div>
     <div class="gate-sent" id="gateSent" hidden></div>
-    <form id="codeForm" hidden autocomplete="off">
-      <input id="gateCode" inputmode="numeric" pattern="[0-9]{6,10}" placeholder="8-digit code" aria-label="Sign-in code" autocomplete="one-time-code">
-      <button id="codeBtn" type="submit">Sign in with code</button>
-    </form>
   </div>
 </div>
 
@@ -1033,7 +1027,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-10-04-1700';
+const BUILD = '2026-10-04-1715';
 
 async function newerBuildAvailable(){
   try{
@@ -1154,7 +1148,7 @@ function consumeAuthRedirect(){
   history.replaceState(null, '', location.pathname + location.search + ret);
   if(q.get('error')){
     return { error: /expired|invalid/i.test(q.get('error_description')||q.get('error_code')||'')
-      ? 'That sign-in link has expired or was already used. Enter your email for a fresh one.'
+      ? 'That sign-in button has already been used or has expired — each one works once. Enter your email for a fresh one.'
       : (q.get('error_description') || 'Sign-in failed — please request a new link.').replace(/\+/g,' ') };
   }
   const exp = +q.get('expires_at') || Math.floor(Date.now()/1000) + (+q.get('expires_in') || 3600);
@@ -1167,17 +1161,6 @@ async function hasAccess(){
   const r = await fetch(SUPA.rpc + 'manor_has_access', { method:'POST',
     headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:'{}' }).catch(() => null);
   return !!(r && r.ok && await r.json());
-}
-/* Typing the code instead of clicking: same session, works when the email is opened
-   on a different device from the one viewing the dashboard. */
-async function verifyCode(email, code){
-  const res = await fetch(SUPA.url + '/auth/v1/verify', { method:'POST',
-    headers:{ 'Content-Type':'application/json', apikey:SUPA.key },
-    body:JSON.stringify({ type:'email', email, token:String(code||'').replace(/\s/g,'') }) });
-  const out = await res.json().catch(()=>({}));
-  if(!res.ok || !out.access_token) throw new Error('That code didn’t work — it may have expired or already been used. Request a new one.');
-  saveSession({ access_token:out.access_token, refresh_token:out.refresh_token,
-    expires_at: out.expires_at || Math.floor(Date.now()/1000) + (out.expires_in || 3600) });
 }
 let GATE_EMAIL = '';
 function sessionEmail(){
@@ -1204,7 +1187,7 @@ async function signOut(){
 
 function showGate(msg){
   $('gate').classList.remove('hide');
-  $('gateForm').hidden = false; $('gateSent').hidden = true; $('codeForm').hidden = true;
+  $('gateForm').hidden = false; $('gateSent').hidden = true;
   $('gateMsg').textContent = msg || '';
   const em = $('gateEmail'); if(em) em.focus();
 }
@@ -2653,14 +2636,6 @@ function showView(v){
   if(typeof renderInsightPanels==='function'){ renderInsightPanels(); updateAddButton(); queueBeacons(); }
 }
 /* ---------- gate form + boot ---------- */
-document.getElementById('codeForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const msg=$('gateMsg'), btn=$('codeBtn');
-  msg.textContent=''; btn.disabled=true; btn.textContent='Checking…';
-  try{ await verifyCode(GATE_EMAIL, $('gateCode').value); await boot(); }
-  catch(err){ msg.textContent = err.message; }
-  finally{ btn.disabled=false; btn.textContent='Sign in with code'; }
-});
 document.getElementById('gateForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const msg=$('gateMsg'), btn=$('gateBtn');
@@ -2672,9 +2647,8 @@ document.getElementById('gateForm').addEventListener('submit', async (e)=>{
     $('gateForm').hidden = true;
     const box = $('gateSent'); box.hidden = false;
     GATE_EMAIL = sent;
-    box.innerHTML = `Check your inbox — we’ve sent a sign-in email to <b>${esc(sent)}</b>. Click <b>Sign in</b> in the email on this device, or type the code from it below. It works once and expires soon.<br><button type="button" id="gateRetry">Use a different email</button>`;
+    box.innerHTML = `Check your inbox — we’ve sent a sign-in email to <b>${esc(sent)}</b>.<br><br>Open it <b>on the device you want to view the dashboard on</b> and click <b>Sign in</b>. Each button works once — if it’s already been used, just request a new one here.<br><button type="button" id="gateRetry">Send another / use a different email</button>`;
     $('gateRetry').onclick = () => showGate();
-    $('codeForm').hidden = false; $('gateCode').value = ''; $('gateCode').focus();
   }catch(err){
     msg.textContent = err.message || 'Could not send the link.';
   }finally{
