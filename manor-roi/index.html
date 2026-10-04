@@ -59,12 +59,18 @@
   .gate-card img{height:34px;margin-bottom:22px}
   .gate-card h2{font-weight:900;font-size:22px;letter-spacing:-.01em;margin-bottom:6px}
   .gate-card h2 span{color:var(--blue)}
+  .gate-card .gate-word{font-family:var(--script);font-size:40px;line-height:1;color:var(--manor-gold);margin:-4px 0 6px}
   .gate-card .gate-sub{color:var(--muted);font-size:13px;margin-bottom:24px;line-height:1.4}
   .gate-card input{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;color:var(--white);font-family:var(--sans);font-size:15px;padding:13px 14px;margin-bottom:12px;outline:none}
   .gate-card input:focus{border-color:var(--blue)}
   .gate-card button{width:100%;background:var(--blue);color:var(--ink);border:none;border-radius:10px;font-family:var(--sans);font-weight:700;font-size:15px;padding:13px;cursor:pointer}
   .gate-card button:disabled{opacity:.55;cursor:default}
   .gate-msg{min-height:18px;margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--bad)}
+  .gate-sent{margin-top:14px;font-size:13.5px;line-height:1.6;color:var(--white);background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .gate-sent b{color:var(--blue)}
+  #codeForm{margin-top:12px}
+  #gateCode{text-align:center;letter-spacing:.3em;font-family:var(--mono);font-size:18px}
+  .gate-sent button{margin-top:10px;background:none;border:none;color:var(--muted);font-family:var(--mono);font-size:11px;text-decoration:underline;cursor:pointer;width:auto;padding:0}
   .signout{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:6px 10px;cursor:pointer}
   .signout:hover{color:var(--white);border-color:var(--muted)}
 
@@ -571,13 +577,19 @@
 <div id="gate" class="hide">
   <div class="gate-card">
     <img src="rtr-logo.png" alt="Ready to Rank">
-    <h2>Manor on High<br><span>Marketing ROI</span></h2>
-    <div class="gate-sub">This dashboard is private. Enter the access password to continue.</div>
-    <form id="gateForm" autocomplete="off">
-      <input id="gatePw" type="password" placeholder="Access password" aria-label="Access password" autocomplete="current-password">
-      <button id="gateBtn" type="submit">View dashboard</button>
+    <div class="gate-word">Manor on High</div>
+    <h2><span>Marketing dashboard</span></h2>
+    <div class="gate-sub" id="gateSub">This dashboard is private. Enter your email and we’ll send you a one-click sign-in link — no password needed.</div>
+    <form id="gateForm" autocomplete="on">
+      <input id="gateEmail" type="email" placeholder="you@company.com.au" aria-label="Email address" autocomplete="email" required>
+      <button id="gateBtn" type="submit">Email me a sign-in link</button>
     </form>
     <div class="gate-msg" id="gateMsg"></div>
+    <div class="gate-sent" id="gateSent" hidden></div>
+    <form id="codeForm" hidden autocomplete="off">
+      <input id="gateCode" inputmode="numeric" pattern="[0-9]{6,10}" placeholder="8-digit code" aria-label="Sign-in code" autocomplete="one-time-code">
+      <button id="codeBtn" type="submit">Sign in with code</button>
+    </form>
   </div>
 </div>
 
@@ -1021,7 +1033,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-10-04-1500';
+const BUILD = '2026-10-04-1700';
 
 async function newerBuildAvailable(){
   try{
@@ -1076,12 +1088,18 @@ setTimeout(async () => { if(await newerBuildAvailable()) showUpdateBanner(); }, 
    before the gate was built. To switch it on: set true, create the shared
    account in Supabase Auth, and tighten RLS to authenticated-only — all three
    together (see docs/auth-gate-setup.md), or the page blanks. */
-const GATE_ENABLED = false;
+/* MAGIC-LINK GATE (Oct 2026). Each person signs in with their own email — no shared
+   password. Supabase emails a one-click link; it returns here with the session in the
+   URL hash. Access is decided by the public.manor_users allowlist (manor_has_access()),
+   enforced by RLS on every manor_* table, so the data endpoint refuses anyone not on
+   the list — not just this page. Add or remove people by editing manor_users. */
+const GATE_ENABLED = true;
 
 const AUTH = {
-  email: "directors@manoronhigh.com.au",   // shared viewer account (create in Supabase Auth)
   tokenUrl: SUPA.url + "/auth/v1/token",
-  store: "manorAuth"
+  otpUrl:   SUPA.url + "/auth/v1/otp",
+  store: "manorAuth",
+  returnStore: "manorReturnHash"   // the #view/month to reopen after the link round-trip
 };
 let SESSION = null;  // { access_token, refresh_token, expires_at (unix s) }
 
@@ -1104,18 +1122,66 @@ function sessionValid(){
   return !!(SESSION && SESSION.access_token && SESSION.expires_at*1000 > Date.now()+60000);
 }
 
-async function signIn(password){
-  const res = await fetch(AUTH.tokenUrl+'?grant_type=password',{
-    method:'POST',
+/* Ask the allowlist first, so someone without access gets a clear answer instead of
+   waiting for an email that unlocks nothing. Then request the link. The link returns
+   to this exact page; the view/month they were on is restored after sign-in. */
+async function sendMagicLink(email){
+  email = String(email||'').trim().toLowerCase();
+  const ok = await fetch(SUPA.rpc + 'manor_email_allowed', { method:'POST',
+    headers:{ 'Content-Type':'application/json', apikey:SUPA.key, Authorization:'Bearer '+SUPA.key },
+    body:JSON.stringify({ p_email: email }) }).then(r => r.ok ? r.json() : null).catch(() => null);
+  if(ok === false) throw new Error('That email doesn’t have access yet. Ask your Ready to Rank contact to add you.');
+  try{ const h = location.hash; if(h && !/access_token|error=/.test(h)) localStorage.setItem(AUTH.returnStore, h); }catch(e){}
+  const back = location.origin + location.pathname;
+  const res = await fetch(AUTH.otpUrl + '?redirect_to=' + encodeURIComponent(back), { method:'POST',
     headers:{ 'Content-Type':'application/json', apikey:SUPA.key },
-    body:JSON.stringify({ email:AUTH.email, password })
-  });
-  const out = await res.json().catch(()=>({}));
-  if(!res.ok || !out.access_token){
-    const wrongPw = out.error_code==='invalid_credentials' || /invalid login/i.test(out.msg||'');
-    throw new Error(wrongPw ? 'Incorrect password — please try again.' : (out.error_description||out.msg||'Sign-in failed.'));
+    body:JSON.stringify({ email, create_user:true }) });
+  if(!res.ok){
+    const out = await res.json().catch(()=>({}));
+    if(res.status === 429) throw new Error('Too many sign-in emails requested — please wait a minute and try again.');
+    throw new Error(out.msg || out.error_description || 'Could not send the sign-in link. Please try again.');
   }
-  saveSession({ access_token:out.access_token, refresh_token:out.refresh_token, expires_at:out.expires_at });
+  return email;
+}
+
+/* Coming back from the email link: the session (or an error) is in the URL hash.
+   Store the session, then put the dashboard's own #view/month back in the address bar. */
+function consumeAuthRedirect(){
+  const h = location.hash.replace(/^#/, '');
+  if(!/access_token=|error=/.test(h)) return null;
+  const q = new URLSearchParams(h);
+  let ret = ''; try{ ret = localStorage.getItem(AUTH.returnStore) || ''; localStorage.removeItem(AUTH.returnStore); }catch(e){}
+  history.replaceState(null, '', location.pathname + location.search + ret);
+  if(q.get('error')){
+    return { error: /expired|invalid/i.test(q.get('error_description')||q.get('error_code')||'')
+      ? 'That sign-in link has expired or was already used. Enter your email for a fresh one.'
+      : (q.get('error_description') || 'Sign-in failed — please request a new link.').replace(/\+/g,' ') };
+  }
+  const exp = +q.get('expires_at') || Math.floor(Date.now()/1000) + (+q.get('expires_in') || 3600);
+  saveSession({ access_token:q.get('access_token'), refresh_token:q.get('refresh_token'), expires_at:exp });
+  return { ok:true };
+}
+
+/* Signed in is not the same as allowed in: check the allowlist with the user's token. */
+async function hasAccess(){
+  const r = await fetch(SUPA.rpc + 'manor_has_access', { method:'POST',
+    headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:'{}' }).catch(() => null);
+  return !!(r && r.ok && await r.json());
+}
+/* Typing the code instead of clicking: same session, works when the email is opened
+   on a different device from the one viewing the dashboard. */
+async function verifyCode(email, code){
+  const res = await fetch(SUPA.url + '/auth/v1/verify', { method:'POST',
+    headers:{ 'Content-Type':'application/json', apikey:SUPA.key },
+    body:JSON.stringify({ type:'email', email, token:String(code||'').replace(/\s/g,'') }) });
+  const out = await res.json().catch(()=>({}));
+  if(!res.ok || !out.access_token) throw new Error('That code didn’t work — it may have expired or already been used. Request a new one.');
+  saveSession({ access_token:out.access_token, refresh_token:out.refresh_token,
+    expires_at: out.expires_at || Math.floor(Date.now()/1000) + (out.expires_in || 3600) });
+}
+let GATE_EMAIL = '';
+function sessionEmail(){
+  try{ return JSON.parse(atob(SESSION.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).email || ''; }catch(e){ return ''; }
 }
 async function tryRefresh(){
   if(!SESSION||!SESSION.refresh_token) return false;
@@ -1131,9 +1197,17 @@ async function tryRefresh(){
     return true;
   }catch{ return false; }
 }
-function signOut(){ saveSession(null); showGate(); }
+async function signOut(){
+  try{ if(SESSION) await fetch(SUPA.url + '/auth/v1/logout', { method:'POST', headers:authHeaders() }); }catch(e){}
+  saveSession(null); location.replace(location.pathname);
+}
 
-function showGate(){ $('gate').classList.remove('hide'); const pw=$('gatePw'); if(pw){ pw.value=''; pw.focus(); } }
+function showGate(msg){
+  $('gate').classList.remove('hide');
+  $('gateForm').hidden = false; $('gateSent').hidden = true; $('codeForm').hidden = true;
+  $('gateMsg').textContent = msg || '';
+  const em = $('gateEmail'); if(em) em.focus();
+}
 function hideGate(){ $('gate').classList.add('hide'); }
 
 /* Called when an authenticated read returns 401/403 mid-session
@@ -1148,15 +1222,22 @@ async function reauthOrGate(){
 // Boot: use a valid stored session, else silently refresh, else gate.
 async function boot(){
   if(!GATE_ENABLED){ startApp(); return; }   // gate off → open dashboard directly
+  const back = consumeAuthRedirect();
+  if(back && back.error){ saveSession(null); showGate(back.error); return; }
   loadSession();
-  if(sessionValid()){ startApp(); return; }
-  if(SESSION && await tryRefresh()){ startApp(); return; }
-  showGate();
+  if(!sessionValid() && !(SESSION && await tryRefresh())){ showGate(); return; }
+  if(!(await hasAccess())){
+    const who = sessionEmail();
+    saveSession(null);
+    showGate((who ? who + ' is' : 'This account is') + ' signed in but not on the access list for this dashboard. Ask your Ready to Rank contact to add you.');
+    return;
+  }
+  startApp();
 }
 // Runs once the viewer is authenticated (or immediately when the gate is off).
 async function startApp(){
   hideGate();
-  const so=$('signoutBtn'); if(so) so.hidden = !GATE_ENABLED;
+  const so=$('signoutBtn'); if(so){ so.hidden = !GATE_ENABLED; if(GATE_ENABLED){ const em = sessionEmail(); so.textContent = 'Sign out'; so.title = em ? 'Signed in as ' + em : ''; } }
   // Month chips must exist before any view renders — every view renders PERIOD.
   const h = parseHash();
   if(h.period) PERIOD = h.period;
@@ -1674,7 +1755,7 @@ async function loadSocial(){
     const allPosts = pRes.ok ? await pRes.json() : [];
     let daily = dRes.ok ? await dRes.json() : [];
     // Fallback: if the daily DB table is empty/absent, use the static snapshot deployed alongside.
-    if(!daily.length){ try{ const jr=await fetch('social-daily.json',{cache:'no-store'}); if(jr.ok) daily=await jr.json(); }catch(e){} }
+    // (The old public social-daily.json fallback is retired: a static file sits outside the sign-in gate.)
     const extra = {
       daily,
       anns:  aRes.ok ? await aRes.json() : [],
@@ -2572,19 +2653,32 @@ function showView(v){
   if(typeof renderInsightPanels==='function'){ renderInsightPanels(); updateAddButton(); queueBeacons(); }
 }
 /* ---------- gate form + boot ---------- */
+document.getElementById('codeForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const msg=$('gateMsg'), btn=$('codeBtn');
+  msg.textContent=''; btn.disabled=true; btn.textContent='Checking…';
+  try{ await verifyCode(GATE_EMAIL, $('gateCode').value); await boot(); }
+  catch(err){ msg.textContent = err.message; }
+  finally{ btn.disabled=false; btn.textContent='Sign in with code'; }
+});
 document.getElementById('gateForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const msg=$('gateMsg'), btn=$('gateBtn');
-  const pw=$('gatePw').value;
-  if(!pw){ msg.textContent='Enter the access password.'; return; }
-  msg.textContent=''; btn.disabled=true; btn.textContent='Checking…';
+  const email=$('gateEmail').value;
+  if(!email){ msg.textContent='Enter your email address.'; return; }
+  msg.textContent=''; btn.disabled=true; btn.textContent='Sending…';
   try{
-    await signIn(pw);
-    startApp();
+    const sent = await sendMagicLink(email);
+    $('gateForm').hidden = true;
+    const box = $('gateSent'); box.hidden = false;
+    GATE_EMAIL = sent;
+    box.innerHTML = `Check your inbox — we’ve sent a sign-in email to <b>${esc(sent)}</b>. Click <b>Sign in</b> in the email on this device, or type the code from it below. It works once and expires soon.<br><button type="button" id="gateRetry">Use a different email</button>`;
+    $('gateRetry').onclick = () => showGate();
+    $('codeForm').hidden = false; $('gateCode').value = ''; $('gateCode').focus();
   }catch(err){
-    msg.textContent = err.message || 'Sign-in failed.';
+    msg.textContent = err.message || 'Could not send the link.';
   }finally{
-    btn.disabled=false; btn.textContent='View dashboard';
+    btn.disabled=false; btn.textContent='Email me a sign-in link';
   }
 });
 
