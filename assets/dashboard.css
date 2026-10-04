@@ -228,3 +228,7 @@ footer.foot{border-top:1px solid var(--bd);padding:22px 0 46px;color:var(--ink3)
 .donecol .tick{color:var(--good);font-weight:800;flex:none}
 .donecol .dlink a{color:var(--accent);font-size:12px;word-break:break-all}
 .donecol .ddate{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:2px}
+.gate-card .gate-alt{margin:14px 0 0;font-size:12.5px;text-align:center}
+.gate-card .gate-alt a{color:var(--ink3);text-decoration:underline}
+.gate-card .gate-alt a:hover{color:var(--ink)}
+.gate-card p b{color:var(--ink)}

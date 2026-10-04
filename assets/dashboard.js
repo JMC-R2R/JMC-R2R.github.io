@@ -294,10 +294,12 @@ function renderAll(){
   }[state.tab] || (() => emptyState('Unknown tab', 'Nothing to render.')))();
   $('#monthlabel').textContent = monthName(state.month);
   drawCharts(); wireTables();
+  /* The refresh log is admin-only, so a client falls back to the newest dated row. */
+  const newest = [...RAW.seo, ...RAW.gbp, ...RAW.paid].map(r => r.date).filter(Boolean).sort().pop();
   $('#stamp').textContent = RAW.refresh?.length
     ? 'Data as at ' + new Date(RAW.refresh.map(r => r.finished_at).filter(Boolean).sort().pop() || Date.now())
         .toLocaleDateString('en-AU')
-    : 'No refresh recorded yet';
+    : newest ? 'Data to ' + new Date(newest + 'T00:00:00').toLocaleDateString('en-AU') : '';
 }
 
 /* Charts render after innerHTML so their mounts have a measured width. */
@@ -1056,21 +1058,63 @@ function renderShell(){
   let t; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(drawCharts, 180); });
 }
 
+/* Sign-in: an emailed one-time code by default, the same as the content hub, so a
+   client has one email address and no password for both. Staff with a password can
+   still use it. shouldCreateUser:false — a code is only ever sent to an existing login. */
 function renderGate(msg){
   document.documentElement.style.setProperty('--accent', CFG.accent || '#17B4F0');
-  document.body.innerHTML = `<div class="gate"><form class="gate-card" id="gf">
-    <h1>${CFG.name}</h1><p>Marketing dashboard — sign in to continue.</p>
-    <input type="email" id="email" placeholder="Email" autocomplete="username" required>
-    <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
-    <button type="submit">Sign in</button>
-    <div class="gate-err">${msg || ''}</div></form></div>`;
-  $('#gf').addEventListener('submit', async e => {
-    e.preventDefault();
-    const { error } = await sb.auth.signInWithPassword({
-      email: $('#email').value.trim(), password: $('#password').value });
-    if (error) return $('.gate-err').textContent = error.message;
-    start();
-  });
+  const card = (inner) => { document.body.innerHTML = `<div class="gate"><form class="gate-card" id="gf">
+    <h1>${CFG.name}</h1>${inner}<div class="gate-err">${msg || ''}</div></form></div>`; msg = ''; };
+  const err = t => $('.gate-err').textContent = t;
+
+  const askEmail = () => {
+    card(`<p>Marketing dashboard. Enter your email and we’ll send you a sign-in code.</p>
+      <input type="email" id="email" placeholder="Email" autocomplete="username" required>
+      <button type="submit">Email me a code</button>
+      <p class="gate-alt"><a href="#" id="usepw">Sign in with a password instead</a></p>`);
+    $('#usepw').addEventListener('click', e => { e.preventDefault(); askPassword(); });
+    $('#gf').addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = $('#email').value.trim(), b = $('#gf button'); b.disabled = true; b.textContent = 'Sending…';
+      const { error } = await sb.auth.signInWithOtp({ email,
+        options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
+      if (error){ b.disabled = false; b.textContent = 'Email me a code';
+        return err(/not.*found|signups not allowed/i.test(error.message)
+          ? 'That email doesn’t have access to this dashboard. Check the address, or ask your account manager.' : error.message); }
+      askCode(email);
+    });
+  };
+
+  const askCode = (email) => {
+    card(`<p>We’ve emailed a sign-in code to <b>${esc(email)}</b>. Enter it below, or tap the link in that email.</p>
+      <input type="text" id="code" inputmode="numeric" autocomplete="one-time-code" placeholder="Sign-in code" required>
+      <button type="submit">Sign in</button>
+      <p class="gate-alt"><a href="#" id="back">Use a different email</a></p>`);
+    $('#back').addEventListener('click', e => { e.preventDefault(); askEmail(); });
+    $('#gf').addEventListener('submit', async e => {
+      e.preventDefault();
+      const { error } = await sb.auth.verifyOtp({ email, token: $('#code').value.replace(/\s/g, ''), type: 'email' });
+      if (error) return err('That code didn’t work. It may have expired — go back and request a new one.');
+      start();
+    });
+  };
+
+  const askPassword = () => {
+    card(`<p>Marketing dashboard. Sign in with your password.</p>
+      <input type="email" id="email" placeholder="Email" autocomplete="username" required>
+      <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+      <button type="submit">Sign in</button>
+      <p class="gate-alt"><a href="#" id="usecode">Email me a code instead</a></p>`);
+    $('#usecode').addEventListener('click', e => { e.preventDefault(); askEmail(); });
+    $('#gf').addEventListener('submit', async e => {
+      e.preventDefault();
+      const { error } = await sb.auth.signInWithPassword({
+        email: $('#email').value.trim(), password: $('#password').value });
+      if (error) return err(error.message);
+      start();
+    });
+  };
+  askEmail();
 }
 
 async function start(){
