@@ -505,15 +505,16 @@ function viewMapGrid(){
         /* No top_competitor = Google returned no businesses at this point at all. */
         const none = p.rank == null && !p.top_competitor, d = s.depth || 20;
         const tip = (p.rank != null ? 'Position ' + p.rank : none ? 'Google showed no businesses for this search here' : `Not in the top ${d} here`) + (p.top_competitor ? ' · #1 here: ' + p.top_competitor : '');
-        const label = p.rank != null ? p.rank : none ? '·' : `${d}+`;
+        /* Not found = not ranking at that point either way, so every square carries a value. */
+        const label = p.rank != null ? p.rank : `${d}+`;
         return `<div title="${esc(tip)}"
-          style="aspect-ratio:1;border-radius:5px;background:${cell(p.rank)};opacity:${none ? .35 : 1};
+          style="aspect-ratio:1;border-radius:5px;background:${cell(p.rank)};opacity:${none ? .7 : 1};
           display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:${String(label).length > 2 ? 8.5 : 10}px;color:${p.rank != null && p.rank <= 10 ? '#06212e' : 'var(--ink2)'};font-weight:700">${label}</div>`;
       }).join('')}</div></div>`; }).filter(Boolean);
   if (grids.length) out += `<div class="legend" style="margin:18px 0 10px"><span><i style="background:var(--good)"></i>Top 3</span>
       <span><i style="background:var(--warn)"></i>4–10</span><span><i style="background:var(--bad)"></i>11–20</span>
       <span><i style="background:#7a2e2e"></i>21+</span><span><i style="background:var(--s3)"></i>${scans[0]?.depth || 20}+ = not in the top ${scans[0]?.depth || 20}</span>
-      <span>· = no businesses shown there</span></div><div class="grid2">${grids.join('')}</div>`;
+      <span>Hover a square for who is #1 there</span></div><div class="grid2">${grids.join('')}</div>`;
 
   /* Who holds the map where we don't */
   const comp = {}; (RAW.points || []).filter(p => scans.some(s => s.id === p.scan_id) && p.top_competitor)
