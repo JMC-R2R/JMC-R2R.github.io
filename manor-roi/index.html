@@ -444,6 +444,124 @@
   .wt-frac{font-family:var(--mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
   @media(max-width:600px){.beacon-av{width:32px;height:32px}.inspop{width:calc(100vw - 24px)}}
 
+  /* ======================================================================
+     DESIGN LAYER v4 (Oct 2026) — refresh on top of the existing system.
+     Same brand rules (Archivo + Space Mono, dark canvas, Manor gold +
+     R2R blue co-brand); modernised surfaces, sticky navigation, clearer
+     section headings, delta pills and tabular figures.
+     ====================================================================== */
+  :root{ --radius:16px; --radius-sm:10px; --shadow:0 1px 0 rgba(255,255,255,.035) inset, 0 10px 30px -18px rgba(0,0,0,.7); }
+  body[data-theme="ai"]{
+    --ink:#1B1719; --panel:#241F21; --panel-2:#2C2629; --line:#3A3236;
+    --blue:#17B4F0; --azure:#E2B934;
+  }
+  html{scroll-behavior:smooth}
+  body{padding:28px 24px 48px;max-width:1220px}
+  html,body{background:
+    radial-gradient(1200px 420px at 50% -160px, color-mix(in srgb, var(--blue) 14%, transparent), transparent 70%),
+    var(--ink)}
+  body{background-attachment:fixed}
+  /* figures line up digit for digit */
+  .big,.lval,.bval,.h2hval,table.kw td.num,.fstep .n{font-variant-numeric:tabular-nums}
+
+  /* quieter neon frame — the glow read as dated at full strength */
+  #neonFrame{border-width:1px}
+  body[data-theme] #neonFrame{opacity:.55}
+  body[data-theme="ai"] #neonFrame{opacity:.55;border-color:rgba(23,180,240,.5);box-shadow:inset 0 0 26px rgba(23,180,240,.18)}
+
+  header{border-bottom:none;padding-bottom:6px;margin-bottom:14px}
+  .head-left .wordmark{font-size:50px}
+  .head-left h1{font-size:22px;letter-spacing:.01em}
+  .head-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+  .head-right .period{font-family:var(--sans);font-weight:800;font-size:20px;letter-spacing:-.01em}
+  .head-right button{border-radius:999px;padding:6px 13px;transition:border-color .15s,background .15s}
+  .head-right .btnrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:6px}
+  .head-right .btnrow button{margin-top:0}
+
+  /* ---- sticky navigation ---- */
+  .navbar{position:sticky;top:0;z-index:40;margin:0 -24px 22px;padding:12px 24px 10px;
+    background:color-mix(in srgb, var(--ink) 82%, transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .tabs{display:flex;gap:4px;margin:0 0 10px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:14px;width:max-content;max-width:100%;overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-family:var(--sans);font-weight:600;font-size:13.5px;letter-spacing:0;text-transform:none;
+    border:none;border-radius:10px;padding:9px 15px;color:var(--muted);transition:background .15s,color .15s}
+  .tab:hover{color:var(--white);background:rgba(255,255,255,.05)}
+  .tab.active{background:var(--blue);color:var(--ink);box-shadow:0 6px 18px -8px var(--blue)}
+  .tab:focus-visible{outline:2px solid var(--azure);outline-offset:2px}
+  .tab .ti{font-size:13px;opacity:.75;width:14px;text-align:center}
+  .tab .tnew{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:999px;background:var(--manor-gold);color:#1b1618;font-weight:700}
+  .tab.active .tnew{background:var(--ink);color:var(--manor-gold)}
+  .months{margin:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .months::-webkit-scrollbar{display:none}
+  .chip{white-space:nowrap;padding:5px 12px;font-size:11px}
+
+  /* ---- section headings: readable titles, not tiny mono captions ---- */
+  .seclabel{display:flex;align-items:center;gap:10px;font-family:var(--sans);font-size:15.5px;font-weight:700;
+    letter-spacing:-.005em;text-transform:none;color:var(--white);margin:36px 2px 14px}
+  .seclabel::before{content:"";flex:none;width:4px;height:17px;border-radius:2px;background:var(--blue)}
+
+  /* ---- surfaces ---- */
+  .card,.trend{border-radius:var(--radius);box-shadow:var(--shadow);
+    background:linear-gradient(180deg, rgba(255,255,255,.028), rgba(255,255,255,0) 60%), var(--panel);
+    transition:border-color .2s}
+  .card:hover,.trend:hover{border-color:color-mix(in srgb, var(--blue) 28%, var(--line))}
+  .card{padding:20px}
+  .card .lbl{letter-spacing:.1em;font-size:10.5px}
+  .card .big{font-weight:800;letter-spacing:-.02em}
+  .hero .big{font-size:40px}
+  .hero.accent{background:linear-gradient(155deg, color-mix(in srgb, var(--blue) 20%, var(--panel)) 0%, var(--panel) 62%);
+    border-color:color-mix(in srgb, var(--blue) 45%, var(--line))}
+  .card.summary,#qSummary,#sSummary{font-size:15px;line-height:1.7;color:var(--white);border-left:3px solid var(--blue)}
+  .card.summary b,#qSummary b,#sSummary b{color:var(--white);background:color-mix(in srgb, var(--blue) 16%, transparent);padding:0 4px;border-radius:4px}
+
+  /* ---- delta pills ---- */
+  .delta{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:11.5px;background:rgba(255,255,255,.05)}
+  .delta:empty{display:none}
+  .delta.up{background:rgba(63,208,127,.13)}
+  .delta.down{background:rgba(255,107,107,.13)}
+
+  /* ---- banners: slimmer ---- */
+  .savvas-banner,.r2r-banner{border-radius:var(--radius);padding:14px 20px;box-shadow:none}
+  .savvas-banner .savvas-mascot,.r2r-banner .r2r-mark{height:44px}
+
+  /* ---- tables ---- */
+  table.kw tbody tr{transition:background .12s}
+  table.kw tbody tr:hover td{background:rgba(255,255,255,.025)}
+  table.kw tr.me td{background:rgba(226,185,52,.07)}
+  table.kw tr.me td:first-child{color:var(--manor-gold);font-weight:700}
+  table.kw td .up{color:var(--good)} table.kw td .down{color:var(--bad)}
+  a.handle{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-decoration:none;margin-left:6px}
+  a.handle:hover{color:var(--blue)}
+  .lrow{border-radius:var(--radius-sm);padding:10px 12px}
+  .ltrack,.btrack,.h2htrack{background:rgba(255,255,255,.055)}
+
+  /* ---- AI Search ---- */
+  .aimark{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10.5px;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .aimark.win{background:rgba(63,208,127,.16);color:var(--good);font-weight:700}
+  .aimark.miss{background:rgba(255,107,107,.12);color:#FF8F8F}
+  .aimark.none{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+  .vtag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;padding:2px 9px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);margin:2px 2px 2px 0;white-space:nowrap}
+  .vtag::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+
+  footer{border-top:1px solid var(--line);margin-top:40px}
+
+  @media (max-width:820px){
+    body{padding:18px 16px 40px}
+    .navbar{margin:0 -16px 18px;padding:10px 16px 8px}
+    .head-right{align-items:flex-start}
+    .head-right .btnrow{justify-content:flex-start}
+    .head-left .wordmark{font-size:40px}
+    .hero .big{font-size:32px}
+    .lrow{grid-template-columns:22px 1fr 70px;}
+    .lrow > div:nth-child(3){display:none}
+    .bench .brow{grid-template-columns:110px 1fr 70px}
+    .h2hrow{grid-template-columns:110px 1fr 70px}
+    .bandrow{grid-template-columns:100px 1fr}
+  }
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} *{transition:none!important;animation:none!important} }
+  @media print{ .navbar{position:static;backdrop-filter:none} }
+
 </style>
 </head>
 <body data-theme="search">
@@ -477,10 +595,12 @@
     <div class="kicker">Reporting period</div>
     <div class="period" id="period">—</div>
     <div id="updated">Last updated —</div>
-    <button onclick="refreshAll()">↻ Refresh</button>
-    <button class="edit" onclick="openUpdate()">✎ Update data</button>
-    <button class="addins" id="addins" style="display:none" type="button">✎ Add insight</button>
-    <button class="signout" id="signoutBtn" onclick="signOut()" hidden>Sign out</button>
+    <div class="btnrow">
+      <button onclick="refreshAll()">↻ Refresh</button>
+      <button class="edit" onclick="openUpdate()">✎ Update data</button>
+      <button class="addins" id="addins" style="display:none" type="button">✎ Add insight</button>
+      <button class="signout" id="signoutBtn" onclick="signOut()" hidden>Sign out</button>
+    </div>
   </div>
 </header>
 
@@ -492,14 +612,17 @@
 <div class="wt" id="walkthrough"></div>
 <div id="beacon-layer"></div>
 
-<div class="tabs">
-  <button class="tab active" id="tabSearch" onclick="showView('search')">Search &amp; Local</button>
-  <button class="tab" id="tabRoi" onclick="showView('roi')">Marketing ROI</button>
-  <button class="tab" id="tabBench" onclick="showView('bench')">Benchmarking</button>
-  <button class="tab" id="tabSocial" onclick="showView('social')">Social</button>
-</div>
-
-<div class="months" id="months"></div>
+<!-- Sticky navigation: tabs + month selector stay in reach while scrolling a long view -->
+<nav class="navbar" aria-label="Dashboard sections">
+  <div class="tabs" role="tablist">
+    <button class="tab active" id="tabSearch" role="tab" onclick="showView('search')"><span class="ti">◎</span>Search &amp; Local</button>
+    <button class="tab" id="tabBench" role="tab" onclick="showView('bench')"><span class="ti">▤</span>Benchmarking</button>
+    <button class="tab" id="tabAi" role="tab" onclick="showView('ai')"><span class="ti">✦</span>AI Search<span class="tnew">New</span></button>
+    <button class="tab" id="tabSocial" role="tab" onclick="showView('social')"><span class="ti">◍</span>Social</button>
+    <button class="tab" id="tabRoi" role="tab" onclick="showView('roi')"><span class="ti">$</span>Marketing ROI</button>
+  </div>
+  <div class="months" id="months"></div>
+</nav>
 
 <!-- ===== ROI VIEW ===== -->
 <div class="view" id="viewRoi" data-anchor="sec:roi">
@@ -624,10 +747,21 @@
     <div id="sDailyChart"></div>
   </div>
 
-  <div class="seclabel">Competitive benchmarks</div>
-  <div class="card" style="padding:14px 16px">
-    <button class="cardedit" type="button" data-edit="bench" title="Add or update a competitor">✎ Edit</button>
-    <div class="bench" id="sBench"></div>
+  <div class="seclabel">Competitor social presence · how Manor stacks up</div>
+  <div class="grid g4" id="scKpis"></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <div class="lbl">Instagram followers</div>
+      <div class="bench" id="sBenchIg" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">Facebook followers</div>
+      <div class="bench" id="sBenchFb" style="margin-top:12px"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="tblwrap"><table class="kw" id="sCompTbl"></table></div>
+    <div class="note" id="sCompNote"></div>
   </div>
 
   <div class="seclabel">Top Instagram posts this month</div>
@@ -760,6 +894,51 @@
   <div class="card" id="qSummary" style="line-height:1.65;font-size:14.5px;color:var(--white)">—</div>
 </div><!-- /viewBench -->
 
+<!-- ===== AI SEARCH VIEW — is Manor recommended when couples ask AI? ===== -->
+<div class="view" id="viewAi" data-anchor="sec:ai">
+  <div class="monthnotice" id="aEmpty" hidden></div>
+  <div class="r2r-banner">
+    <img class="r2r-mark" src="rtr-logo.png" alt="Ready to Rank">
+    <div class="sb-body">
+      <div class="sb-title">AI search visibility by Ready&nbsp;to&nbsp;Rank</div>
+      <div class="sb-sub">Whether Google’s AI answers name and link Manor on High when couples ask for a venue. <a href="https://readytorank.com.au/" target="_blank" rel="noopener">readytorank.com.au&nbsp;↗</a></div>
+    </div>
+  </div>
+
+  <div class="seclabel">Summary</div>
+  <div class="card summary" id="aSummary">—</div>
+
+  <div class="seclabel">AI presence · tracked venue questions, asked from Melbourne</div>
+  <div class="grid g4" id="aKpis"></div>
+
+  <div class="seclabel">Presence over time · share of tracked questions where Manor is named</div>
+  <div class="trend">
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>Google AI Overviews</span>
+      <span><i style="background:var(--manor-gold)"></i>Google AI Mode</span>
+    </div>
+    <div id="aChart"></div>
+    <div class="note" id="aChartNote"></div>
+  </div>
+
+  <div class="seclabel">Question by question · who the AI recommends</div>
+  <div class="card"><div class="tblwrap"><table class="kw" id="aPrompts"></table></div>
+    <div class="note" id="aPromptsNote"></div>
+  </div>
+
+  <div class="seclabel">Share of AI mentions · Manor vs the venues we track</div>
+  <div class="card">
+    <div class="league" id="aLeague"></div>
+    <div class="note" id="aLeagueNote"></div>
+  </div>
+
+  <div class="seclabel">Questions where Google’s AI already cites Manor</div>
+  <div class="grid g2">
+    <div class="card"><div class="lbl">On target · venue-buying questions</div><div class="terms" id="aQOn" style="margin-top:12px"></div></div>
+    <div class="card"><div class="lbl">Off target · unrelated questions</div><div class="terms" id="aQOff" style="margin-top:12px"></div><div class="note" id="aQNote"></div></div>
+  </div>
+</div><!-- /viewAi -->
+
 <footer>
   <div class="chans">Channels: <span>SEO</span> · <span>Google Ads</span> · <span>Meta (migrating)</span> · <span>Email</span> · Website maintenance</div>
   <div>Prepared by <img src="rtr-logo.png" alt="Ready to Rank"> · readytorank.com.au</div>
@@ -842,7 +1021,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-09-08-0230';
+const BUILD = '2026-10-04-1500';
 
 async function newerBuildAvailable(){
   try{
@@ -873,6 +1052,7 @@ async function refreshAll(){
   const v = document.body.dataset.theme;
   if(v === 'social') loadSocial();
   else if(v === 'search' || v === 'bench'){ SEARCH_LOADED = false; loadSearch(); }
+  else if(v === 'ai') loadAi();
   else loadData();
   loadInsights();
   if(await newerBuildAvailable()) showUpdateBanner();
@@ -986,6 +1166,7 @@ async function startApp(){
   if(h.view === 'roi') showView('roi');
   else if(h.view === 'social') showView('social');
   else if(h.view === 'bench') showView('bench');
+  else if(h.view === 'ai') showView('ai');
   else showView('search');
   // The ROI figure element is id="roi", so a #roi url makes the browser anchor-jump
   // to it mid-page. Land at the top of the dashboard regardless of which tab opened.
@@ -1047,6 +1228,7 @@ SUPA.daily   = SUPA.url + "/rest/v1/manor_social_daily";
 SUPA.ann     = SUPA.url + "/rest/v1/manor_social_annotations";
 SUPA.bench   = SUPA.url + "/rest/v1/manor_social_benchmarks";
 SUPA.smeta   = SUPA.url + "/rest/v1/manor_social_meta";
+SUPA.scomp   = SUPA.url + "/rest/v1/manor_social_competitor_snapshots";
 SUPA.rpc     = SUPA.url + "/rest/v1/rpc/";
 /* Search & Local endpoints */
 SUPA.comps   = SUPA.url + "/rest/v1/manor_competitors";
@@ -1142,6 +1324,7 @@ function setPeriod(p){
   const v = document.body.dataset.theme;
   if(v === 'search' || v === 'bench'){ SEARCH_LOADED = false; loadSearch(); }
   else if(v === 'social'){ loadSocial(); }
+  else if(v === 'ai'){ if(AI_DATA) renderAi(AI_DATA); else loadAi(); }
   else if(LOADED.length) render(LOADED, false);
 }
 
@@ -1475,13 +1658,15 @@ function renderPosts(posts, isSample, elId){
 
 async function loadSocial(){
   try{
-    const [mRes,pRes,dRes,aRes,bRes,tRes] = await Promise.all([
+    const [mRes,pRes,dRes,aRes,bRes,tRes,cRes,kRes] = await Promise.all([
       fetch(`${SUPA.social}?select=*&order=period_date.asc`, {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.sposts}?select=*&order=engagement.desc`,  {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.daily}?select=*&order=metric_date.asc`,   {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.ann}?select=*&order=ann_date.asc`,        {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.bench}?select=*`,                          {cache:'no-store', headers: authHeaders()}),
-      fetch(`${SUPA.smeta}?select=*`,                          {cache:'no-store', headers: authHeaders()})
+      fetch(`${SUPA.smeta}?select=*`,                          {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.scomp}?select=*&order=snapshot_date`,      {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.comps}?select=domain,label,colour&active=is.true&order=sort_order`, {cache:'no-store', headers: authHeaders()})
     ]);
     if(mRes.status===401||mRes.status===403){ if(await reauthOrGate()) return loadSocial(); return; }
     if(!mRes.ok) throw new Error('HTTP '+mRes.status);
@@ -1494,7 +1679,9 @@ async function loadSocial(){
       daily,
       anns:  aRes.ok ? await aRes.json() : [],
       bench: bRes.ok ? await bRes.json() : [],
-      meta:  tRes.ok ? await tRes.json() : []
+      meta:  tRes.ok ? await tRes.json() : [],
+      comp:  cRes.ok ? await cRes.json() : [],
+      comps: kRes.ok ? await kRes.json() : []
     };
     SOCIAL_DATA = extra;
     if(groups.length){
@@ -1581,7 +1768,7 @@ function renderSocial(groups, posts, isSample, extra){
   $('sSummary').innerHTML = socialSummary(groups);
 
   drawDailyChart((extra.daily||[]).filter(r=>r.platform==='instagram'));
-  renderBench(extra.bench||[], last);
+  renderSocialComp(extra.comp||[], extra.comps||[], last);
 
   renderPosts(posts.filter(p=>p.platform!=='facebook'), isSample, 'sPostsIg');
   renderPosts(posts.filter(p=>p.platform==='facebook'), isSample, 'sPostsFb');
@@ -1614,18 +1801,78 @@ function drawDailyChart(rows){
 }
 
 
-/* Competitive benchmarks — Manor vs manually-entered competitors (by followers). */
-function renderBench(bench, last){
-  const el=$('sBench'); if(!el) return;
-  const rows=(bench||[]).slice();
-  if(!rows.length){ el.innerHTML='<div class="muted" style="font-family:var(--mono);font-size:12px">No benchmarks yet — add competitors via <b>✎ Update data</b>.</div>'; return; }
-  const latestByComp={}; rows.forEach(r=>{ const k=r.competitor; if(!latestByComp[k]||String(r.period_date)>String(latestByComp[k].period_date)) latestByComp[k]=r; });
-  const me={competitor:'Manor on High', followers:last.t.followers, me:true};
-  const all=[me, ...Object.values(latestByComp)].sort((a,b)=>(+b.followers||0)-(+a.followers||0));
-  const max=Math.max(1,...all.map(r=>+r.followers||0));
-  const nf=n=>(+n||0).toLocaleString('en-AU');
-  el.innerHTML=`<div class="brow"><span class="bhead">Account</span><span class="bhead">Followers</span><span class="bhead" style="text-align:right">Total</span></div>`
-    + all.map(r=>`<div class="brow ${r.me?'me':''}"><span class="bname ${r.me?'me':''}">${esc(r.competitor)}</span><div class="btrack"><div class="bfill" style="width:${Math.max(2,Math.round((+r.followers||0)/max*100))}%"></div></div><span class="bval">${nf(r.followers)}</span></div>`).join('');
+/* Competitor social presence — public profile headline numbers for every tracked
+   venue, Manor included, captured on the same day so the comparison is like for
+   like (Manor's figure here can differ by a follower or two from the Windsor-fed
+   KPI above, which is pulled at a different time). Followers and post counts are
+   all that Instagram and Facebook show publicly; reach and engagement for other
+   accounts are private, so they are never estimated. Posting pace and follower
+   growth need two snapshots in different months and appear once they exist. */
+function renderSocialComp(snaps, comps, last){
+  const nf = n => (+n||0).toLocaleString('en-AU');
+  const nameOf = {}, colourOf = {};
+  (comps||[]).forEach(c => { nameOf[c.domain] = c.label; colourOf[c.domain] = c.colour; });
+  const dates = [...new Set((snaps||[]).map(r => r.snapshot_date))].sort();
+  const kp = $('scKpis');
+  if(!dates.length){
+    kp.innerHTML = ''; $('sBenchIg').innerHTML = $('sBenchFb').innerHTML = '';
+    $('sCompTbl').innerHTML = ''; $('sCompNote').textContent = 'No competitor snapshot yet.'; return;
+  }
+  const endOf = p => { const d = new Date(p.slice(0,4), +p.slice(5,7), 0); return d.toISOString().slice(0,10); };
+  const inScope = PERIOD ? dates.filter(d => d <= endOf(PERIOD)) : dates;
+  const S = inScope.length ? inScope[inScope.length-1] : dates[dates.length-1];
+  const after = !inScope.length;  // the only snapshot is later than the month being viewed
+  const prevS = dates.filter(d => d < S && d.slice(0,7) < S.slice(0,7)).pop() || null;
+  const at = (d, dom, pl) => (snaps.find(r => r.snapshot_date === d && r.domain === dom && r.platform === pl) || {});
+  const doms = [...new Set(snaps.filter(r => r.snapshot_date === S).map(r => r.domain))];
+  const rows = doms.map(d => {
+    const ig = at(S,d,'instagram'), fb = at(S,d,'facebook');
+    const pig = prevS ? at(prevS,d,'instagram') : {}, pfb = prevS ? at(prevS,d,'facebook') : {};
+    const months = prevS ? Math.max(1, (new Date(S) - new Date(prevS)) / (86400000*30.44)) : null;
+    return { d, me: d === CLIENT_DOMAIN, name: nameOf[d] || d,
+      igF: ig.followers ?? null, igP: ig.posts ?? null, fbF: fb.followers ?? null, fbT: fb.talking_about ?? null,
+      igH: ig.handle, fbH: fb.handle,
+      igGrow: prevS && ig.followers != null && pig.followers != null ? ig.followers - pig.followers : null,
+      pace: prevS && ig.posts != null && pig.posts != null ? (ig.posts - pig.posts) / months : null };
+  });
+  const me = rows.find(r => r.me) || {};
+  const rankBy = k => { const v = rows.filter(r => r[k] != null).sort((a,b) => b[k]-a[k]); const i = v.findIndex(r => r.me); return { rank: i < 0 ? null : i+1, of: v.length, top: v[0] }; };
+  const rIg = rankBy('igF'), rFb = rankBy('fbF'), rP = rankBy('igP'), rT = rankBy('fbT');
+  const tile = (lbl, big, small, accent) => `<div class="card hero${accent?' accent':''}"><div class="lbl">${lbl}</div><div class="big">${big}</div><div class="small">${small}</div></div>`;
+  const rk = r => r.rank ? `${ord(r.rank)}<span class="roi-unit"> of ${r.of}</span>` : '—';
+  const lead = r => r.top && !r.top.me ? `leader: ${esc(r.top.name)}` : 'leading the set';
+  kp.innerHTML =
+      tile('Instagram audience', rk(rIg), `${nf(me.igF)} followers · ${lead(rIg)} (${nf(rIg.top && rIg.top.igF)})`, true)
+    + tile('Facebook audience', rk(rFb), `${nf(me.fbF)} followers · ${lead(rFb)} (${nf(rFb.top && rFb.top.fbF)})`)
+    + tile('Instagram posts published', rk(rP), `${nf(me.igP)} posts all-time · ${lead(rP)} (${nf(rP.top && rP.top.igP)})`)
+    + (prevS
+        ? tile('Posting pace', me.pace != null ? me.pace.toFixed(1) + '<span class="roi-unit"> / mo</span>' : '—', `Instagram posts per month since ${fmtAU(prevS)}`)
+        : tile('Facebook conversation', rk(rT), `${nf(me.fbT)} people talking about the page · ${lead(rT)}`));
+
+  const bars = (el, k) => {
+    const v = rows.slice().sort((a,b) => (b[k]??-1)-(a[k]??-1));
+    const max = Math.max(1, ...v.map(r => +r[k]||0));
+    $(el).innerHTML = v.map(r => `<div class="brow ${r.me?'me':''}"><span class="bname ${r.me?'me':''}">${esc(r.name)}</span>`
+      + (r[k] == null ? `<div class="btrack"></div><span class="bval">not public</span>`
+                      : `<div class="btrack"><div class="bfill" style="width:${Math.max(2,Math.round(r[k]/max*100))}%${r.me?'':';background:'+(colourOf[r.d]||'#8C8C99')}"></div></div><span class="bval">${nf(r[k])}</span>`)
+      + `</div>`).join('');
+  };
+  bars('sBenchIg','igF'); bars('sBenchFb','fbF');
+
+  const cellN = v => v == null ? '<span class="muted">not public</span>' : nf(v);
+  const growth = r => r.igGrow == null ? '—' : `<span class="${r.igGrow>0?'up':r.igGrow<0?'down':''}">${r.igGrow>0?'+':''}${nf(r.igGrow)}</span>`;
+  $('sCompTbl').innerHTML =
+    `<thead><tr><th>Venue</th><th class="num">IG followers</th><th class="num">IG posts</th><th class="num">FB followers</th><th class="num">FB talking about</th>`
+    + (prevS ? `<th class="num">IG growth</th><th class="num">Posts / mo</th>` : '') + `</tr></thead><tbody>`
+    + rows.slice().sort((a,b) => (b.igF||0)-(a.igF||0)).map(r => `<tr class="${r.me?'me':''}">
+        <td>${esc(r.name)}${r.igH ? ` <a class="handle" href="https://www.instagram.com/${esc(r.igH)}/" target="_blank" rel="noopener">@${esc(r.igH)}</a>` : ''}</td>
+        <td class="num">${cellN(r.igF)}</td><td class="num">${cellN(r.igP)}</td><td class="num">${cellN(r.fbF)}</td><td class="num">${cellN(r.fbT)}</td>`
+      + (prevS ? `<td class="num">${growth(r)}</td><td class="num">${r.pace != null ? r.pace.toFixed(1) : '—'}</td>` : '') + `</tr>`).join('')
+    + '</tbody>';
+  $('sCompNote').innerHTML = `Public profile figures for each venue as at <b>${fmtAU(S)}</b>${after && PERIOD ? ` — the first snapshot was taken after ${monthLabel(PERIOD)}, so this is today’s standing rather than that month’s` : ''}. `
+    + `Instagram and Facebook only show followers and post counts publicly; other venues’ reach and engagement are private, so they are not compared. `
+    + (prevS ? `Growth and posting pace compare against ${fmtAU(prevS)}. ` : `This is the baseline: <b>follower growth and posts per month appear from the next monthly snapshot</b>. `)
+    + `“Talking about” is Facebook’s own count of people interacting with the page over the last week. “Not public” means the page hides the figure, which is never shown as zero.`;
 }
 
 /* Auto-updating recap. States current standing + current-month figures (labelled
@@ -1753,6 +2000,9 @@ function renderCompetitors(D){
   const prev = PP ? D.vis.filter(r=>r.period_date===PP).sort((a,b)=> b.visibility-a.visibility) : [];
   const rankIn = (arr,d) => { const i = arr.findIndex(r=>r.domain===d); return i<0?null:i+1; };
   const me = cur.find(r=>r.domain===CLIENT_DOMAIN);
+  /* map_top3 only says "somewhere in the top 3" — read the actual best map-pack
+     position from the rank rows rather than calling every top-3 result "#1". */
+  const bestMap = d => { const v = D.ranks.filter(r=>r.period_date===P && r.domain===d && r.map_position!=null).map(r=>+r.map_position); return v.length ? Math.min(...v) : null; };
   // The shared header shows the ROI reporting month; on this tab the data is the
   // latest measured search month, so relabel it rather than let the two disagree.
 
@@ -1775,7 +2025,7 @@ function renderCompetitors(D){
     const w = Math.max((+r.visibility/maxVis)*100, r.visibility>0?2:0);
     return `<div class="lrow ${isMe?'me':''}">
       <div class="lpos">${now}</div>
-      <div class="lname">${nameOf[r.domain]||r.domain}<small>${r.keywords_ranked} of ${r.keywords_tracked} keywords ranking${r.map_top3?' · map pack #1':''}</small></div>
+      <div class="lname">${nameOf[r.domain]||r.domain}<small>${r.keywords_ranked} of ${r.keywords_tracked} keywords ranking${bestMap(r.domain)?' · map pack #'+bestMap(r.domain):''}</small></div>
       <div><div class="ltrack"><div class="lfill" style="width:${w}%;background:${isMe?'linear-gradient(90deg,var(--manor-gold),#f5c400)':colourOf[r.domain]||'#666'}"></div></div></div>
       <div class="lval">${(+r.visibility).toFixed(2)}%<em>${mv}</em></div>
     </div>`;
@@ -1786,10 +2036,14 @@ function renderCompetitors(D){
   const snap = (D.ranks.find(r => r.period_date === P) || {}).snapshot_date;
   const curKey = new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
   const partialMonth = String(P).slice(0,7) === curKey;
+  const snapLbl = snap ? new Date(snap+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'long'}) : '';
+  const monthEnd = snap ? new Date(+snap.slice(0,4), +snap.slice(5,7), 0).getDate() - +snap.slice(8,10) <= 2 : true;
   $('qLeagueNote').innerHTML =
     (partialMonth && snap
-      ? `<b>Positions as at ${new Date(snap+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'long'})} — this month is still running.</b> Rankings are a snapshot rather than a running total, so this is a fair reading of where things stand today, but earlier months were captured at month end. `
-      : '')
+      ? `<b>Positions as at ${snapLbl} — this month is still running.</b> Rankings are a snapshot rather than a running total, so this is a fair reading of where things stand today, but earlier months were captured at month end. `
+      : (!monthEnd && snap
+          ? `<b>Positions as at ${snapLbl}.</b> This is the last day in ${monLabel(P)} when the rank tracker checked every venue in full — later checks that month were incomplete, so they are not used. `
+          : ''))
     + `<b>Search visibility</b> weights every tracked keyword by its monthly search volume and by how many people click a result in that position — so ranking #3 on a busy term counts for far more than #40 on a quiet one. Read it as: of all the searching happening across these ${me?me.keywords_tracked:''} keywords, this is the share landing on each venue. Movement is versus ${PP?monLabel(PP):'the previous month'}.`;
 
   /* ---- visibility trend ---- */
@@ -1868,7 +2122,7 @@ function renderCompetitors(D){
     $('qSummary').innerHTML =
       `Across the ${me.keywords_tracked} wedding and function keywords we track, <b>Manor on High ranks ${ord(myRank)} of ${cur.length}</b> venues on search visibility (${(+me.visibility).toFixed(2)}%).${moved} ` +
       `You appear for <b>${me.keywords_ranked}</b> of them — ${coverPhrase} — with an average position of ${me.avg_position!=null?Math.round(me.avg_position):'—'}. ` +
-      (me.map_top3?`You also hold <b>#1 in the Google map pack</b>, which is where most local wedding searches actually convert. `:'') +
+      (bestMap(CLIENT_DOMAIN)?`You also hold <b>#${bestMap(CLIENT_DOMAIN)} in the Google map pack</b> on ${me.map_top3} tracked keyword${me.map_top3===1?'':'s'}, which is where most local wedding searches actually convert. `:'') +
       `The blue-link results for these terms are dominated by directories rather than venues, so the realistic near-term win is moving page-two rankings onto page one.`;
   }
 
@@ -2121,9 +2375,178 @@ function gbpChart(rows){
   regPinMap(el,'gChart',data.map(r=>String(r.period_date)),data.map(r=>monLabel(r.period_date)),data.map((_,i)=>xc(i)),W);
 }
 
+/* ================= AI SEARCH =================
+   Two independent sources, kept apart on purpose:
+   - SE Ranking AI Result Tracker: Manor's own 12 venue questions, asked daily from
+     Melbourne on Google AI Overviews and AI Mode. This is the headline — it is the
+     set of questions we chose because couples actually ask them.
+   - DataForSEO LLM Mentions: every Google AI Overview answer in its Australian
+     database that cites each venue. Broader but unfiltered, so a share of Manor's
+     mentions come from questions that have nothing to do with booking a venue.
+   AI tracking starts September 2026; it is a rolling reading, not a monthly total,
+   so the tab shows the latest snapshot and says which date it is from. */
+SUPA.aiMent   = SUPA.url + "/rest/v1/manor_ai_mentions";
+SUPA.aiQ      = SUPA.url + "/rest/v1/manor_ai_questions";
+SUPA.aiDaily  = SUPA.url + "/rest/v1/manor_ai_presence_daily";
+SUPA.aiPrompt = SUPA.url + "/rest/v1/manor_ai_prompts";
+const AI_FIRST_MONTH = '2026-09-01';
+const AI_ENGINE = { google_ai_overview:'AI Overviews', google_ai_mode:'AI Mode', chatgpt:'ChatGPT' };
+let AI_DATA = null;
+const fmtAU = d => d ? new Date(d+'T00:00:00').toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+
+async function loadAi(){
+  try{
+    const [comps, ment, qs, daily, prompts] = await Promise.all([
+      getJSON(SUPA.comps   + '?select=domain,label,colour&active=is.true&order=sort_order'),
+      getJSON(SUPA.aiMent  + '?select=*&order=snapshot_date.desc'),
+      getJSON(SUPA.aiQ     + '?select=*&order=ai_search_volume.desc.nullslast'),
+      getJSON(SUPA.aiDaily + '?select=*&order=metric_date'),
+      getJSON(SUPA.aiPrompt+ '?select=*&order=search_volume.desc.nullslast')
+    ]);
+    AI_DATA = {comps, ment, qs, daily, prompts};
+    renderAi(AI_DATA);
+  }catch(e){
+    $('aSummary').innerHTML = '⚠ Could not reach the live database — no AI visibility data is shown rather than stale or sample figures. ('+esc(e.message||String(e))+')';
+  }
+}
+
+function renderAi(D){
+  if(PERIOD && PERIOD < AI_FIRST_MONTH){
+    monthNotice('viewAi','aEmpty', true, 'AI search wasn’t tracked in ' + monthLabel(PERIOD),
+      'Tracking of Google’s AI answers for Manor on High starts in <b>September 2026</b>. Earlier months were never measured, which is not the same as Manor being absent.');
+    return;
+  }
+  monthNotice('viewAi','aEmpty', false);
+  const nameOf = {}, colourOf = {};
+  D.comps.forEach(c => { nameOf[c.domain] = c.label; colourOf[c.domain] = c.colour; });
+  const latestOf = arr => arr.reduce((m, r) => (r.snapshot_date > m ? r.snapshot_date : m), '');
+
+  /* ---- presence: latest day + 30-day average, per engine ---- */
+  const byEng = e => D.daily.filter(r => r.engine === e && r.mention_presence != null);
+  const stat = e => {
+    const rows = byEng(e); if(!rows.length) return null;
+    const last = rows[rows.length-1], recent = rows.slice(-30);
+    const avg = k => recent.reduce((a,r)=>a+(+r[k]||0),0)/recent.length;
+    return { last, mAvg: avg('mention_presence'), lAvg: avg('link_presence'), days: recent.length };
+  };
+  const aio = stat('google_ai_overview'), aim = stat('google_ai_mode');
+
+  /* ---- prompt scorecard (latest snapshot) ---- */
+  const PS = latestOf(D.prompts);
+  const pr = D.prompts.filter(r => r.snapshot_date === PS);
+  const prompts = [...new Set(pr.map(r => r.prompt))];
+  const cell = (p, e) => pr.find(r => r.prompt === p && r.engine === e);
+  const won = e => pr.filter(r => r.engine === e && r.manor_mentioned).length;
+  const answered = e => pr.filter(r => r.engine === e && r.has_answer).length;
+
+  /* ---- DataForSEO mention league (latest snapshot) ---- */
+  const MS = latestOf(D.ment);
+  const ment = D.ment.filter(r => r.snapshot_date === MS).sort((a,b) => (b.mentions||0)-(a.mentions||0) || (b.ai_search_volume||0)-(a.ai_search_volume||0));
+  const meM = ment.find(r => r.domain === CLIENT_DOMAIN);
+  const myRank = meM ? 1 + ment.filter(r => (r.mentions||0) > (meM.mentions||0)).length : null;
+  const tied = meM ? ment.filter(r => r.domain !== CLIENT_DOMAIN && r.mentions === meM.mentions).map(r => nameOf[r.domain]||r.domain) : [];
+  const QS = latestOf(D.qs);
+  const qs = D.qs.filter(r => r.snapshot_date === QS);
+  const qOn = qs.filter(r => r.is_relevant), qOff = qs.filter(r => !r.is_relevant);
+
+  /* ---- KPI tiles ---- */
+  const pct = v => v == null ? '—' : Math.round(v) + '%';
+  const tile = (lbl, big, small, accent) =>
+    `<div class="card hero${accent?' accent':''}"><div class="lbl">${lbl}</div><div class="big">${big}</div><div class="small">${small}</div></div>`;
+  $('aKpis').innerHTML =
+      tile('AI Overviews · named', aio ? pct(aio.mAvg) : '—',
+           aio ? `of tracked questions, ${aio.days}-day average · linked ${pct(aio.lAvg)}` : 'no readings yet', true)
+    + tile('AI Mode · named', aim ? pct(aim.mAvg) : '—',
+           aim ? `of tracked questions, ${aim.days}-day average · linked ${pct(aim.lAvg)}` : 'no readings yet')
+    + tile('Answers naming Manor', `${won('google_ai_overview') + won('google_ai_mode')}<span class="roi-unit"> of ${pr.length}</span>`,
+           `${prompts.length} questions × 2 engines on ${fmtAU(PS)} · AI Overviews ${won('google_ai_overview')}/${answered('google_ai_overview')} answered, AI Mode ${won('google_ai_mode')}/${answered('google_ai_mode')}`)
+    + tile('AI answers citing Manor', meM ? num(meM.mentions) : '—',
+           meM ? `${ord(myRank)} of ${ment.length} venues${tied.length?` (level with ${tied.join(', ')})`:''} · ${num(qOn.length)} on venue-buying questions` : 'no reading yet');
+
+  /* ---- presence chart ---- */
+  aiChart(D.daily);
+
+  /* ---- prompt table ---- */
+  const mark = c => !c ? '<span class="pos none">—</span>'
+    : !c.has_answer ? '<span class="aimark none" title="Google showed no AI answer for this question">no AI answer</span>'
+    : c.manor_mentioned ? `<span class="aimark win" title="Manor is named in the answer">${c.manor_linked ? 'Named + linked' : 'Named'}</span>`
+    : '<span class="aimark miss" title="An AI answer was shown and Manor was not in it">Not named</span>';
+  const rivalsIn = p => {
+    const s = new Set(); pr.filter(r => r.prompt === p).forEach(r => (r.competitors||[]).forEach(d => s.add(d)));
+    return [...s].map(d => `<span class="vtag" style="--c:${colourOf[d]||'#666'}">${esc(nameOf[d]||d)}</span>`).join(' ') || '<span class="muted">—</span>';
+  };
+  const volOf = p => { const c = pr.find(r => r.prompt === p && r.search_volume != null); return c ? c.search_volume : null; };
+  const rowsP = prompts.slice().sort((a,b) => (volOf(b)||0)-(volOf(a)||0));
+  $('aPrompts').innerHTML =
+    `<thead><tr><th>Question asked</th><th class="num">Searches / mo</th><th>AI Overviews</th><th>AI Mode</th><th>Tracked rivals named</th></tr></thead><tbody>`
+    + rowsP.map(p => `<tr><td>${esc(p)}</td><td class="num">${volOf(p) ? num(volOf(p)) : '—'}</td>`
+      + `<td>${mark(cell(p,'google_ai_overview'))}</td><td>${mark(cell(p,'google_ai_mode'))}</td><td>${rivalsIn(p)}</td></tr>`).join('')
+    + '</tbody>';
+  $('aPromptsNote').innerHTML = `Answers as Google gave them on ${fmtAU(PS)}, asked from Melbourne. AI answers change day to day, which is why the chart above tracks the share over time rather than relying on one day. “No AI answer” means Google showed ordinary results for that question — there was nothing to be named in. Directories such as Easy Weddings are left out of the rivals column.`;
+
+  /* ---- mention league ---- */
+  const maxM = Math.max(1, ...ment.map(r => +r.mentions||0));
+  $('aLeague').innerHTML = ment.map((r,i) => {
+    const me = r.domain === CLIENT_DOMAIN;
+    const w = Math.max((+r.mentions||0)/maxM*100, r.mentions ? 2 : 0);
+    return `<div class="lrow ${me?'me':''}"><div class="lpos">${1 + ment.filter(x => (x.mentions||0) > (r.mentions||0)).length}</div>
+      <div class="lname">${esc(nameOf[r.domain]||r.domain)}<small>reaching ${num(r.ai_search_volume)} AI searches / mo</small></div>
+      <div><div class="ltrack"><div class="lfill" style="width:${w}%;background:${me?'linear-gradient(90deg,var(--manor-gold),#f5c400)':colourOf[r.domain]||'#666'}"></div></div></div>
+      <div class="lval">${num(r.mentions)}<em>answers</em></div></div>`;
+  }).join('');
+  $('aLeagueNote').innerHTML = `Google AI Overview answers in Australia that cite each venue’s website, from DataForSEO’s AI answer database as at ${fmtAU(MS)}. This counts every question, not just wedding-venue ones — see below for how much of Manor’s count is on target. Equal counts share a rank.`;
+
+  /* ---- questions ---- */
+  const qchip = r => `<span class="term">${esc(r.question)}<b>${r.ai_search_volume ? num(r.ai_search_volume) : '—'}</b></span>`;
+  $('aQOn').innerHTML  = qOn.map(qchip).join('')  || '<span class="muted">None yet.</span>';
+  $('aQOff').innerHTML = qOff.map(r => qchip(r).replace('class="term"','class="term brand"')).join('') || '<span class="muted">None.</span>';
+  $('aQNote').innerHTML = `Mostly wedding-planner-app and dance-theme questions — the same legacy off-target content flagged in the strategy reset. They inflate the headline count without bringing couples looking for a venue. Figures are monthly AI search volume.`;
+
+  /* ---- summary ---- */
+  const aioWon = pr.filter(r => r.engine==='google_ai_overview' && r.manor_mentioned).map(r => r.prompt);
+  const aimWon = pr.filter(r => r.engine==='google_ai_mode' && r.manor_mentioned).map(r => r.prompt);
+  const allWon = [...new Set([...aioWon, ...aimWon])];
+  const quote = a => a.map(p => `“${esc(p)}”`).join(', ');
+  const big = pr.filter(r => r.has_answer && !r.manor_mentioned).sort((a,b)=>(b.search_volume||0)-(a.search_volume||0))[0];
+  $('aSummary').innerHTML =
+    (aio && aim ? `Across the ${prompts.length} venue questions we track, Google’s AI names Manor on High in about <b>${pct(aio.mAvg)}</b> of AI Overview answers and <b>${pct(aim.mAvg)}</b> of AI Mode answers (${aio.days}-day averages). ` : '')
+    + (allWon.length ? `On ${fmtAU(PS)} it was named for ${quote(allWon)}. ` : '')
+    + (big ? `The biggest gap is <b>“${esc(big.prompt)}”</b>${big.search_volume?` (${num(big.search_volume)} searches a month)`:''}, where an AI answer appears and Manor isn’t in it. ` : '')
+    + (meM ? `More broadly, Google’s AI cites manoronhigh.com.au in <b>${num(meM.mentions)}</b> Australian answers — ${ord(myRank)} of ${ment.length} tracked venues${tied.length?`, level with ${esc(tied.join(', '))}`:''} — but only <b>${num(qOn.length)}</b> of those are venue-buying questions. The aim is to swap the off-target mentions for the questions couples actually ask.` : '');
+}
+
+/* Daily presence lines, one per engine. Days with no reading are skipped, not drawn as zero. */
+function aiChart(rows){
+  const el = $('aChart'); if(!el) return;
+  const engines = ['google_ai_overview','google_ai_mode'];
+  const dates = [...new Set(rows.map(r => r.metric_date))].sort();
+  if(dates.length < 2){ el.innerHTML = '<div class="muted" style="font-family:var(--mono);font-size:12px;padding:10px 2px">Not enough daily readings yet.</div>'; return; }
+  const W=1120,H=280,PL=46,PR=18,PT=16,PB=34, pw=W-PL-PR, ph=H-PT-PB;
+  const X = i => PL + pw*i/(dates.length-1), Y = v => PT + ph - (v/100)*ph;
+  const cols = { google_ai_overview: getComputedStyle(document.body).getPropertyValue('--blue').trim()||'#17B4F0', google_ai_mode:'#E2B934' };
+  let grid='';
+  for(let g=0; g<=4; g++){ const v=g*25, yy=Y(v);
+    grid += `<line x1="${PL}" y1="${yy}" x2="${W-PR}" y2="${yy}" stroke="rgba(255,255,255,.07)"/><text x="${PL-8}" y="${yy+4}" text-anchor="end" font-family="Space Mono,monospace" font-size="10" fill="#8A8A93">${v}%</text>`; }
+  let lines='';
+  engines.forEach(e => {
+    const pts = dates.map((d,i) => { const r = rows.find(x => x.engine===e && x.metric_date===d); return r && r.mention_presence!=null ? [X(i), Y(+r.mention_presence), +r.mention_presence, d] : null; }).filter(Boolean);
+    if(!pts.length) return;
+    lines += `<path d="M${PL} ${PT+ph} ${pts.map(p=>'L'+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')} L${pts[pts.length-1][0].toFixed(1)} ${PT+ph} Z" fill="${cols[e]}" opacity=".08"/>`
+          +  `<polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${cols[e]}" stroke-width="2.4" stroke-linejoin="round"/>`
+          +  pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.6" fill="${cols[e]}"><title>${AI_ENGINE[e]} · ${fmtAU(p[3])}: named in ${Math.round(p[2])}% of answers</title></circle>`).join('');
+  });
+  let xl=''; dates.forEach((d,i) => { if(i===0 || i===dates.length-1 || i%7===0)
+    xl += `<text x="${X(i).toFixed(1)}" y="${H-PB+20}" text-anchor="${i===0?'start':i===dates.length-1?'end':'middle'}" font-family="Space Mono,monospace" font-size="10" fill="#8C8C99">${d.slice(8,10)}/${d.slice(5,7)}</text>`; });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Share of tracked questions where Google's AI names Manor on High, by day">${grid}${lines}${xl}</svg>`;
+  $('aChartNote').innerHTML = `Daily share of the tracked questions where an AI answer names Manor on High, ${fmtAU(dates[0])} – ${fmtAU(dates[dates.length-1])}. Only questions that produced an AI answer that day count, so the share moves when Google shows more or fewer AI answers — read the trend, not any single day. ChatGPT is set up in the tracker but has not returned readings yet.`;
+  regPinMap(el, 'aChart', dates, dates, dates.map((_,i)=>X(i)), W);
+}
+
 /* ---------- view tabs ---------- */
 function showView(v){
-  if(v!=='social' && v!=='search' && v!=='bench') v='roi';
+  if(v!=='social' && v!=='search' && v!=='bench' && v!=='ai') v='roi';
+  $('viewAi').classList.toggle('active',     v==='ai');
+  $('tabAi').classList.toggle('active',      v==='ai');
   $('viewRoi').classList.toggle('active',    v==='roi');
   $('viewSocial').classList.toggle('active', v==='social');
   $('viewSearch').classList.toggle('active', v==='search');
@@ -2134,12 +2557,16 @@ function showView(v){
   $('tabBench').classList.toggle('active',   v==='bench');
   // Per-tab co-branding: ROI = Manor+R2R, Social = Manor+Savvas, Search = R2R-led.
   document.body.dataset.theme = v;
-  $('viewLabel').textContent = v==='social' ? 'Social' : v==='search' ? 'Search & Local' : v==='bench' ? 'Benchmarking' : 'Marketing ROI';
+  $('viewLabel').textContent = v==='social' ? 'Social' : v==='search' ? 'Search & Local' : v==='bench' ? 'Benchmarking' : v==='ai' ? 'AI Search' : 'Marketing ROI';
   syncHash();
   // The reporting period is the month chip selection, the same on every tab.
   if(PERIOD) $('period').textContent = monthLabel(PERIOD);
   if(v==='social') loadSocial();
   if((v==='search' || v==='bench') && !SEARCH_LOADED) loadSearch();
+  if(v==='ai') AI_DATA ? renderAi(AI_DATA) : loadAi();
+  // keep the active tab visible when the tab strip scrolls sideways on a phone
+  const at = $('tab' + v.charAt(0).toUpperCase() + v.slice(1));
+  if(at && at.scrollIntoView) at.scrollIntoView({block:'nearest', inline:'nearest'});
   // Panels live inside each view, and beacons are page-positioned, so both are
   // repainted on every switch rather than only on load.
   if(typeof renderInsightPanels==='function'){ renderInsightPanels(); updateAddButton(); queueBeacons(); }
@@ -2184,12 +2611,12 @@ const PINMAPS = {};   // chart_id -> {el, dates, labels, xs, viewW}
 
 /* Social is delivered by Savvas, SEO and paid by R2R — same split as Cobalt.
    A view with an owner shows that team's name on the panel; null = whole team. */
-const VIEW_OWNER = { search:'r2r', roi:'r2r', bench:'r2r', social:'savvas' };
+const VIEW_OWNER = { search:'r2r', roi:'r2r', bench:'r2r', ai:'r2r', social:'savvas' };
 const TEAM_INFO  = {
   r2r:    { name:'Ready to Rank', av:'rtr-logo.png' },
   savvas: { name:'Savvas Studio',  av:'https://cdn.prod.website-files.com/67afd385cf839b0956c26535/68313a1298a186b5fcc266c2_Savvas%20Icon%20Logomarks-05.png' }
 };
-const CHART_TITLE = { 'chart':'Leads & booked value', 'sDailyChart':'Instagram reach & views', 'gChart':'Google Business Profile views', 'scChart':'Search Console clicks & impressions' };
+const CHART_TITLE = { 'aChart':'AI presence over time', 'chart':'Leads & booked value', 'sDailyChart':'Instagram reach & views', 'gChart':'Google Business Profile views', 'scChart':'Search Console clicks & impressions' };
 
 const insCode    = () => localStorage.getItem('manorEditCode') || '';
 const insAuthor  = () => localStorage.getItem('manorInsightAuthor') || '';
@@ -2468,7 +2895,7 @@ function renderBeacons(){
 
 /* ---------- per-view panel ---------- */
 function renderInsightPanels(){
-  [['roi','viewRoi'],['social','viewSocial'],['search','viewSearch'],['bench','viewBench']].forEach(([view, id]) => {
+  [['roi','viewRoi'],['social','viewSocial'],['search','viewSearch'],['bench','viewBench'],['ai','viewAi']].forEach(([view, id]) => {
     const sec = $(id); if(!sec) return;
     let panel = sec.querySelector('.inspanel');
     if(!panel){ panel = document.createElement('div'); panel.className = 'inspanel'; sec.appendChild(panel); }
