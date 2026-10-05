@@ -540,6 +540,32 @@
   .lrow{border-radius:var(--radius-sm);padding:10px 12px}
   .ltrack,.btrack,.h2htrack{background:rgba(255,255,255,.055)}
 
+  /* ---- Social v3: month on month, formats, best times, audience, scorecard ---- */
+  .g2x{display:grid;gap:14px;grid-template-columns:1.6fr 1fr}
+  table.mom td.num,table.mom th.num{white-space:nowrap}
+  table.mom td.cur,table.mom th.cur{background:color-mix(in srgb, var(--blue) 10%, transparent)}
+  table.mom td.chg{font-family:var(--mono);font-size:11.5px}
+  .chg.up{color:var(--good)} .chg.down{color:var(--bad)} .chg.flat{color:var(--muted)}
+  table.kw tr.best td{background:rgba(63,208,127,.07)}
+  .heat{display:grid;grid-template-columns:96px repeat(7,1fr);gap:4px;font-family:var(--mono);font-size:11px}
+  .heat .hh{color:var(--muted);text-align:center;padding:4px 0;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em}
+  .heat .hl{color:var(--muted);display:flex;align-items:center;font-size:10.5px}
+  .heat .hc{border-radius:7px;padding:8px 4px;text-align:center;min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:2px;border:1px solid transparent}
+  .heat .hc b{font-size:12px;color:#12100f}
+  .heat .hc small{font-size:9.5px;opacity:.75;color:#12100f}
+  .heat .hc.few{background:rgba(255,255,255,.04)!important;color:var(--muted)}
+  .heat .hc.few b,.heat .hc.few small{color:var(--muted)}
+  .heat .hc.top{border-color:#fff;box-shadow:0 0 0 1px #fff inset}
+  .agebar{display:grid;grid-template-columns:56px 1fr 52px;gap:8px;align-items:center;margin:7px 0;font-family:var(--mono);font-size:11.5px}
+  .agebar .stack{display:flex;height:14px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.05)}
+  .agebar .stack span{display:block;height:100%}
+  .reelstat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .reelstat .big{font-size:30px}
+  table.score td:first-child{font-weight:600}
+  .rankpill{display:inline-block;min-width:44px;text-align:center;font-family:var(--mono);font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line)}
+  .rankpill.r1{background:var(--manor-gold);color:#1b1618;border-color:var(--manor-gold)}
+  @media (max-width:820px){ .g2x{grid-template-columns:1fr} .heat{grid-template-columns:70px repeat(7,1fr);font-size:10px} }
+
   /* ---- AI Search ---- */
   .aimark{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10.5px;padding:3px 9px;border-radius:999px;white-space:nowrap}
   .aimark.win{background:rgba(63,208,127,.16);color:var(--good);font-weight:700}
@@ -744,6 +770,9 @@
     </div>
   </div>
 
+  <div class="seclabel">Month on month · is the account growing?</div>
+  <div class="card"><div class="tblwrap"><table class="kw mom" id="sMoM"></table></div><div class="note" id="sMoMNote"></div></div>
+
   <div class="seclabel">Reach &amp; Views over time — Instagram</div>
   <div class="trend">
     <div class="legend">
@@ -752,6 +781,23 @@
     </div>
     <div id="sDailyChart"></div>
   </div>
+
+  <div class="seclabel">What content works · Instagram by format</div>
+  <div class="grid g2x">
+    <div class="card"><div class="tblwrap"><table class="kw" id="sFmt"></table></div><div class="note" id="sFmtNote"></div></div>
+    <div class="card"><div class="lbl">Reels · watch-through</div><div id="sReel"></div></div>
+  </div>
+
+  <div class="seclabel">Best times to post · when Manor’s posts earn the most engagement</div>
+  <div class="card"><div id="sBest"></div><div class="note" id="sBestNote"></div></div>
+
+  <div class="seclabel">Who follows Manor · Instagram audience</div>
+  <div class="grid g3">
+    <div class="card"><div class="lbl">Top cities</div><div class="bench" id="sCity" style="margin-top:12px"></div></div>
+    <div class="card"><div class="lbl">Countries</div><div class="bench" id="sCountry" style="margin-top:12px"></div></div>
+    <div class="card"><div class="lbl">Age &amp; gender</div><div id="sAge" style="margin-top:12px"></div></div>
+  </div>
+  <div class="note" id="sAudNote"></div>
 
   <div class="seclabel">Competitor social presence · how Manor stacks up</div>
   <div class="grid g4" id="scKpis"></div>
@@ -764,6 +810,11 @@
       <div class="lbl">Facebook followers</div>
       <div class="bench" id="sBenchFb" style="margin-top:12px"></div>
     </div>
+  </div>
+  <div class="trend" style="margin-top:14px">
+    <div class="lbl" style="margin-bottom:8px">Instagram followers over time</div>
+    <div class="legend" id="sCompLegend"></div>
+    <div id="sCompTrend"></div>
   </div>
   <div class="card" style="margin-top:14px">
     <div class="tblwrap"><table class="kw" id="sCompTbl"></table></div>
@@ -862,6 +913,9 @@
       <div class="sb-sub">Where Manor on High stands against competing venues on Google. <a href="https://readytorank.com.au/" target="_blank" rel="noopener">readytorank.com.au&nbsp;↗</a></div>
     </div>
   </div>
+
+  <div class="seclabel">Scorecard · where Manor ranks across every channel</div>
+  <div class="card"><div class="tblwrap"><table class="kw score" id="qScore"></table></div><div class="note" id="qScoreNote"></div></div>
 
   <div class="seclabel">Where you stand · tracked wedding &amp; function keywords</div>
   <div class="card">
@@ -1027,7 +1081,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-10-04-1715';
+const BUILD = '2026-10-05-2100';
 
 async function newerBuildAvailable(){
   try{
@@ -1293,6 +1347,8 @@ SUPA.ann     = SUPA.url + "/rest/v1/manor_social_annotations";
 SUPA.bench   = SUPA.url + "/rest/v1/manor_social_benchmarks";
 SUPA.smeta   = SUPA.url + "/rest/v1/manor_social_meta";
 SUPA.scomp   = SUPA.url + "/rest/v1/manor_social_competitor_snapshots";
+SUPA.posts   = SUPA.url + "/rest/v1/manor_social_posts";
+SUPA.aud     = SUPA.url + "/rest/v1/manor_social_audience";
 SUPA.rpc     = SUPA.url + "/rest/v1/rpc/";
 /* Search & Local endpoints */
 SUPA.comps   = SUPA.url + "/rest/v1/manor_competitors";
@@ -1722,7 +1778,7 @@ function renderPosts(posts, isSample, elId){
 
 async function loadSocial(){
   try{
-    const [mRes,pRes,dRes,aRes,bRes,tRes,cRes,kRes] = await Promise.all([
+    const [mRes,pRes,dRes,aRes,bRes,tRes,cRes,kRes,qRes,uRes] = await Promise.all([
       fetch(`${SUPA.social}?select=*&order=period_date.asc`, {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.sposts}?select=*&order=engagement.desc`,  {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.daily}?select=*&order=metric_date.asc`,   {cache:'no-store', headers: authHeaders()}),
@@ -1730,7 +1786,9 @@ async function loadSocial(){
       fetch(`${SUPA.bench}?select=*`,                          {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.smeta}?select=*`,                          {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.scomp}?select=*&order=snapshot_date`,      {cache:'no-store', headers: authHeaders()}),
-      fetch(`${SUPA.comps}?select=domain,label,colour&active=is.true&order=sort_order`, {cache:'no-store', headers: authHeaders()})
+      fetch(`${SUPA.comps}?select=domain,label,colour&active=is.true&order=sort_order`, {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.posts}?select=*&order=posted_at`,          {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.aud}?select=*&order=snapshot_date`,        {cache:'no-store', headers: authHeaders()})
     ]);
     if(mRes.status===401||mRes.status===403){ if(await reauthOrGate()) return loadSocial(); return; }
     if(!mRes.ok) throw new Error('HTTP '+mRes.status);
@@ -1745,7 +1803,9 @@ async function loadSocial(){
       bench: bRes.ok ? await bRes.json() : [],
       meta:  tRes.ok ? await tRes.json() : [],
       comp:  cRes.ok ? await cRes.json() : [],
-      comps: kRes.ok ? await kRes.json() : []
+      comps: kRes.ok ? await kRes.json() : [],
+      posts: qRes.ok ? await qRes.json() : [],
+      aud:   uRes.ok ? await uRes.json() : []
     };
     SOCIAL_DATA = extra;
     if(groups.length){
@@ -1833,6 +1893,11 @@ function renderSocial(groups, posts, isSample, extra){
 
   drawDailyChart((extra.daily||[]).filter(r=>r.platform==='instagram'));
   renderSocialComp(extra.comp||[], extra.comps||[], last);
+  const safe = (fn, ...a) => { try{ fn(...a); }catch(e){ console.warn(fn.name + ' failed', e); } };
+  safe(renderMoM, groups, extra.posts||[]);
+  safe(renderFormats, extra.posts||[]);
+  safe(renderBestTimes, extra.posts||[]);
+  safe(renderAudience, extra.aud||[]);
 
   renderPosts(posts.filter(p=>p.platform!=='facebook'), isSample, 'sPostsIg');
   renderPosts(posts.filter(p=>p.platform==='facebook'), isSample, 'sPostsFb');
@@ -1876,42 +1941,52 @@ function renderSocialComp(snaps, comps, last){
   const nf = n => (+n||0).toLocaleString('en-AU');
   const nameOf = {}, colourOf = {};
   (comps||[]).forEach(c => { nameOf[c.domain] = c.label; colourOf[c.domain] = c.colour; });
-  const dates = [...new Set((snaps||[]).map(r => r.snapshot_date))].sort();
+  const all = [...new Set((snaps||[]).map(r => r.snapshot_date))].sort();
   const kp = $('scKpis');
-  if(!dates.length){
+  if(!all.length){
     kp.innerHTML = ''; $('sBenchIg').innerHTML = $('sBenchFb').innerHTML = '';
-    $('sCompTbl').innerHTML = ''; $('sCompNote').textContent = 'No competitor snapshot yet.'; return;
+    $('sCompTbl').innerHTML = ''; $('sCompTrend').innerHTML = ''; $('sCompNote').textContent = 'No competitor snapshot yet.'; return;
   }
-  const endOf = p => { const d = new Date(p.slice(0,4), +p.slice(5,7), 0); return d.toISOString().slice(0,10); };
-  const inScope = PERIOD ? dates.filter(d => d <= endOf(PERIOD)) : dates;
-  const S = inScope.length ? inScope[inScope.length-1] : dates[dates.length-1];
-  const after = !inScope.length;  // the only snapshot is later than the month being viewed
-  const prevS = dates.filter(d => d < S && d.slice(0,7) < S.slice(0,7)).pop() || null;
+  // The latest capture inside the month being viewed; if none yet, the earliest one after it.
+  const inScope = PERIOD ? all.filter(d => d <= monthEndISO(PERIOD)) : all;
+  const S = inScope.length ? inScope[inScope.length-1] : all[all.length-1];
+  const after = !inScope.length;
+  const dates = all.filter(d => d <= S);
+  const base = dates[0];
+  // Month on month = this capture vs the last capture of the previous month.
+  const prevM = dates.filter(d => d.slice(0,7) < S.slice(0,7)).pop() || null;
   const at = (d, dom, pl) => (snaps.find(r => r.snapshot_date === d && r.domain === dom && r.platform === pl) || {});
   const doms = [...new Set(snaps.filter(r => r.snapshot_date === S).map(r => r.domain))];
+  const days = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
   const rows = doms.map(d => {
-    const ig = at(S,d,'instagram'), fb = at(S,d,'facebook');
-    const pig = prevS ? at(prevS,d,'instagram') : {}, pfb = prevS ? at(prevS,d,'facebook') : {};
-    const months = prevS ? Math.max(1, (new Date(S) - new Date(prevS)) / (86400000*30.44)) : null;
-    return { d, me: d === CLIENT_DOMAIN, name: nameOf[d] || d,
+    const ig = at(S,d,'instagram'), fb = at(S,d,'facebook'), b0 = at(base,d,'instagram'), f0 = at(base,d,'facebook');
+    const pm = prevM ? at(prevM,d,'instagram') : {}, pmf = prevM ? at(prevM,d,'facebook') : {};
+    const span = days(base, S);
+    const dlt = (x, y) => x != null && y != null ? x - y : null;
+    return { d, me: d === CLIENT_DOMAIN, name: nameOf[d] || d, igH: ig.handle,
       igF: ig.followers ?? null, igP: ig.posts ?? null, fbF: fb.followers ?? null, fbT: fb.talking_about ?? null,
-      igH: ig.handle, fbH: fb.handle,
-      igGrow: prevS && ig.followers != null && pig.followers != null ? ig.followers - pig.followers : null,
-      pace: prevS && ig.posts != null && pig.posts != null ? (ig.posts - pig.posts) / months : null };
+      igGrow: base !== S ? dlt(ig.followers, b0.followers) : null,
+      igGrowPct: base !== S && b0.followers ? (ig.followers - b0.followers) / b0.followers : null,
+      fbGrow: base !== S ? dlt(fb.followers, f0.followers) : null,
+      postsSince: base !== S ? dlt(ig.posts, b0.posts) : null,
+      pace: span >= 14 && ig.posts != null && b0.posts != null ? (ig.posts - b0.posts) / span * 7 : null,
+      igMoM: prevM ? dlt(ig.followers, pm.followers) : null, fbMoM: prevM ? dlt(fb.followers, pmf.followers) : null,
+      postsMoM: prevM ? dlt(ig.posts, pm.posts) : null };
   });
   const me = rows.find(r => r.me) || {};
   const rankBy = k => { const v = rows.filter(r => r[k] != null).sort((a,b) => b[k]-a[k]); const i = v.findIndex(r => r.me); return { rank: i < 0 ? null : i+1, of: v.length, top: v[0] }; };
-  const rIg = rankBy('igF'), rFb = rankBy('fbF'), rP = rankBy('igP'), rT = rankBy('fbT');
+  const rIg = rankBy('igF'), rFb = rankBy('fbF'), rP = rankBy('igP'), rG = rankBy('igGrow');
   const tile = (lbl, big, small, accent) => `<div class="card hero${accent?' accent':''}"><div class="lbl">${lbl}</div><div class="big">${big}</div><div class="small">${small}</div></div>`;
   const rk = r => r.rank ? `${ord(r.rank)}<span class="roi-unit"> of ${r.of}</span>` : '—';
-  const lead = r => r.top && !r.top.me ? `leader: ${esc(r.top.name)}` : 'leading the set';
+  const lead = (r, k) => r.top && !r.top.me ? `leader: ${esc(r.top.name)} (${nf(r.top[k])})` : 'leading the set';
+  const totIg = rows.reduce((t, r) => t + (r.igF || 0), 0);
   kp.innerHTML =
-      tile('Instagram audience', rk(rIg), `${nf(me.igF)} followers · ${lead(rIg)} (${nf(rIg.top && rIg.top.igF)})`, true)
-    + tile('Facebook audience', rk(rFb), `${nf(me.fbF)} followers · ${lead(rFb)} (${nf(rFb.top && rFb.top.fbF)})`)
-    + tile('Instagram posts published', rk(rP), `${nf(me.igP)} posts all-time · ${lead(rP)} (${nf(rP.top && rP.top.igP)})`)
-    + (prevS
-        ? tile('Posting pace', me.pace != null ? me.pace.toFixed(1) + '<span class="roi-unit"> / mo</span>' : '—', `Instagram posts per month since ${fmtAU(prevS)}`)
-        : tile('Facebook conversation', rk(rT), `${nf(me.fbT)} people talking about the page · ${lead(rT)}`));
+      tile('Instagram audience', rk(rIg), `${nf(me.igF)} followers · ${lead(rIg,'igF')}`, true)
+    + tile('Facebook audience', rk(rFb), `${nf(me.fbF)} followers · ${lead(rFb,'fbF')}`)
+    + tile('Share of Instagram audience', totIg ? (me.igF / totIg * 100).toFixed(1) + '%' : '—', `of ${nf(totIg)} followers across all ${rows.length} venues`)
+    + (rG.rank
+        ? tile('Instagram growth', rk(rG), `${me.igGrow >= 0 ? '+' : ''}${nf(me.igGrow)} since ${fmtAU(base)} · fastest: ${esc(rG.top.name)} (${rG.top.igGrow >= 0 ? '+' : ''}${nf(rG.top.igGrow)})`)
+        : tile('Instagram posts published', rk(rP), `${nf(me.igP)} all-time · ${lead(rP,'igP')}`));
 
   const bars = (el, k) => {
     const v = rows.slice().sort((a,b) => (b[k]??-1)-(a[k]??-1));
@@ -1923,20 +1998,196 @@ function renderSocialComp(snaps, comps, last){
   };
   bars('sBenchIg','igF'); bars('sBenchFb','fbF');
 
+  /* ---- follower trend, one line per venue ---- */
+  const T = $('sCompTrend');
+  if(dates.length < 2){
+    T.innerHTML = '<div class="muted" style="font-family:var(--mono);font-size:12px;padding:10px 2px">The trend line starts with the second weekly capture.</div>'; $('sCompLegend').innerHTML = '';
+  } else {
+    const W=1120,H=260,PL=56,PR=18,PT=14,PB=30, pw=W-PL-PR, ph=H-PT-PB;
+    const vals = []; doms.forEach(d => dates.forEach(t => { const v = at(t,d,'instagram').followers; if(v != null) vals.push(v); }));
+    const lo = Math.min(...vals), hi = Math.max(...vals), pad = Math.max(50, (hi - lo) * .08), y0 = lo - pad, y1 = hi + pad;
+    const X = i => PL + pw * i / (dates.length - 1), Y = v => PT + ph - (v - y0) / (y1 - y0) * ph;
+    let g = '';
+    for(let k = 0; k <= 4; k++){ const v = y0 + (y1 - y0) * k / 4; g += `<line x1="${PL}" y1="${Y(v)}" x2="${W-PR}" y2="${Y(v)}" stroke="rgba(255,255,255,.07)"/><text x="${PL-8}" y="${Y(v)+4}" text-anchor="end" font-family="Space Mono,monospace" font-size="10" fill="#8A8A93">${(v/1000).toFixed(1)}k</text>`; }
+    let ln = '';
+    doms.forEach(d => { const isMe = d === CLIENT_DOMAIN, col = isMe ? '#E2B934' : (colourOf[d] || '#777');
+      const pts = dates.map((t,i) => { const v = at(t,d,'instagram').followers; return v == null ? null : [X(i), Y(v), v, t]; }).filter(Boolean);
+      if(pts.length > 1) ln += `<polyline points="${pts.map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${col}" stroke-width="${isMe?3:1.8}" opacity="${isMe?1:.8}"/>`;
+      ln += pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${isMe?4:2.6}" fill="${col}"><title>${esc(nameOf[d]||d)} · ${fmtAU(p[3])}: ${nf(p[2])}</title></circle>`).join(''); });
+    const xl = dates.map((t,i) => (i === 0 || i === dates.length-1 || dates.length <= 8) ? `<text x="${X(i)}" y="${H-PB+18}" text-anchor="${i===0?'start':i===dates.length-1?'end':'middle'}" font-family="Space Mono,monospace" font-size="10" fill="#8C8C99">${t.slice(8,10)}/${t.slice(5,7)}</text>` : '').join('');
+    T.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Instagram followers by venue over time">${g}${ln}${xl}</svg>`;
+    $('sCompLegend').innerHTML = doms.map(d => `<span><i style="background:${d===CLIENT_DOMAIN?'#E2B934':(colourOf[d]||'#777')}"></i>${esc(nameOf[d]||d)}</span>`).join('');
+  }
+
   const cellN = v => v == null ? '<span class="muted">not public</span>' : nf(v);
-  const growth = r => r.igGrow == null ? '—' : `<span class="${r.igGrow>0?'up':r.igGrow<0?'down':''}">${r.igGrow>0?'+':''}${nf(r.igGrow)}</span>`;
+  const sg = v => v == null ? '—' : `<span class="${v>0?'up':v<0?'down':''}">${v>0?'+':''}${nf(v)}</span>`;
+  const showGrow = base !== S, showMoM = !!prevM;
   $('sCompTbl').innerHTML =
-    `<thead><tr><th>Venue</th><th class="num">IG followers</th><th class="num">IG posts</th><th class="num">FB followers</th><th class="num">FB talking about</th>`
-    + (prevS ? `<th class="num">IG growth</th><th class="num">Posts / mo</th>` : '') + `</tr></thead><tbody>`
+    `<thead><tr><th>Venue</th><th class="num">IG followers</th>${showMoM?'<th class="num">IG vs last month</th>':''}${showGrow?`<th class="num">IG since ${base.slice(8,10)}/${base.slice(5,7)}</th>`:''}`
+    + `<th class="num">IG posts</th>${showMoM?'<th class="num">Posts this month</th>':''}${showGrow&&!showMoM?`<th class="num">Posts since ${base.slice(8,10)}/${base.slice(5,7)}</th>`:''}<th class="num">Posts / week</th>`
+    + `<th class="num">FB followers</th>${showMoM?'<th class="num">FB vs last month</th>':showGrow?`<th class="num">FB since ${base.slice(8,10)}/${base.slice(5,7)}</th>`:''}<th class="num">FB talking about</th></tr></thead><tbody>`
     + rows.slice().sort((a,b) => (b.igF||0)-(a.igF||0)).map(r => `<tr class="${r.me?'me':''}">
         <td>${esc(r.name)}${r.igH ? ` <a class="handle" href="https://www.instagram.com/${esc(r.igH)}/" target="_blank" rel="noopener">@${esc(r.igH)}</a>` : ''}</td>
-        <td class="num">${cellN(r.igF)}</td><td class="num">${cellN(r.igP)}</td><td class="num">${cellN(r.fbF)}</td><td class="num">${cellN(r.fbT)}</td>`
-      + (prevS ? `<td class="num">${growth(r)}</td><td class="num">${r.pace != null ? r.pace.toFixed(1) : '—'}</td>` : '') + `</tr>`).join('')
+        <td class="num">${cellN(r.igF)}</td>${showMoM?`<td class="num">${sg(r.igMoM)}</td>`:''}${showGrow?`<td class="num">${sg(r.igGrow)}${r.igGrowPct!=null?` <span class="muted">(${(r.igGrowPct*100).toFixed(1)}%)</span>`:''}</td>`:''}
+        <td class="num">${cellN(r.igP)}</td>${showMoM?`<td class="num">${sg(r.postsMoM)}</td>`:''}${showGrow&&!showMoM?`<td class="num">${sg(r.postsSince)}</td>`:''}<td class="num">${r.pace!=null?r.pace.toFixed(1):'—'}</td>
+        <td class="num">${cellN(r.fbF)}</td>${showMoM?`<td class="num">${sg(r.fbMoM)}</td>`:showGrow?`<td class="num">${sg(r.fbGrow)}</td>`:''}<td class="num">${cellN(r.fbT)}</td></tr>`).join('')
     + '</tbody>';
-  $('sCompNote').innerHTML = `Public profile figures for each venue as at <b>${fmtAU(S)}</b>${after && PERIOD ? ` — the first snapshot was taken after ${monthLabel(PERIOD)}, so this is today’s standing rather than that month’s` : ''}. `
-    + `Instagram and Facebook only show followers and post counts publicly; other venues’ reach and engagement are private, so they are not compared. `
-    + (prevS ? `Growth and posting pace compare against ${fmtAU(prevS)}. ` : `This is the baseline: <b>follower growth and posts per month appear from the next monthly snapshot</b>. `)
-    + `“Talking about” is Facebook’s own count of people interacting with the page over the last week. “Not public” means the page hides the figure, which is never shown as zero.`;
+  $('sCompNote').innerHTML = `Public profile figures captured weekly; this table is as at <b>${fmtAU(S)}</b>${after && PERIOD ? ` — competitor captures began after ${monthLabel(PERIOD)}, so this is the latest standing rather than that month’s` : ''}. `
+    + (showMoM ? `“Vs last month” compares with the last capture in ${monLabel(prevM.slice(0,7)+'-01')}. ` : `Month-on-month columns appear once captures exist in two different months (from November). `)
+    + (showGrow ? `Growth columns run from the first capture on ${fmtAU(base)}. ` : '')
+    + `Posts per week needs at least two weeks of captures. Instagram and Facebook only show followers and post counts publicly — other venues’ reach and engagement are private, so they are not compared. “Talking about” is Facebook’s own count of people interacting with the page over the last week. “Not public” means the page hides the figure, which is never shown as zero.`;
+}
+
+/* ================= SOCIAL v3 — month on month, formats, Reels, best times, audience =================
+   Post-level metrics come from manor_social_posts (every Instagram post, not just the top 6).
+   Saves and shares are counted on the posts PUBLISHED in each month — Instagram's account-level
+   daily saves swung 100x out of line with the posts themselves, so they are not used. */
+const ymOf = d => String(d||'').slice(0,7);
+const monthEndISO = p => { const d = new Date(+p.slice(0,4), +p.slice(5,7), 0); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const MEL_FMT = new Intl.DateTimeFormat('en-AU', { timeZone:'Australia/Melbourne', weekday:'short', hour:'numeric', hourCycle:'h23' });
+const melSlot = iso => { const parts = MEL_FMT.formatToParts(new Date(iso)); const g = t => (parts.find(x => x.type === t)||{}).value; return { day: g('weekday'), hour: +g('hour') }; };
+const sum = (a, k) => a.reduce((t, r) => t + (+r[k] || 0), 0);
+const avg = a => a.length ? a.reduce((t, v) => t + v, 0) / a.length : null;
+const median = a => { if(!a.length) return null; const b = a.slice().sort((x,y)=>x-y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m-1] + b[m]) / 2; };
+const pct1 = v => v == null ? '—' : (v*100).toFixed(1) + '%';
+const curKeyNow = () => new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+
+function postStats(ps){
+  const reels = ps.filter(p => p.format === 'REEL');
+  const reach = sum(ps,'reach'), eng = sum(ps,'engagement');
+  return { n: ps.length, reach, eng, er: reach ? eng/reach : null, saves: sum(ps,'saves'), shares: sum(ps,'shares'),
+           visits: ps.some(p => p.profile_visits != null) ? sum(ps,'profile_visits') : null,
+           watch: avg(reels.filter(r => r.reel_avg_watch_ms != null).map(r => r.reel_avg_watch_ms/1000)),
+           hold: avg(reels.filter(r => r.reel_skip_rate != null).map(r => 1 - +r.reel_skip_rate)) };
+}
+
+function renderMoM(groups, posts){
+  const el = $('sMoM'); if(!el) return;
+  const ms = groups.slice(-6);
+  if(!ms.length){ el.innerHTML = ''; return; }
+  const cols = ms.map((g, i) => {
+    const ps = posts.filter(p => p.period_date === g.periodDate);
+    const prev = i > 0 ? ms[i-1] : (groups.length > ms.length ? groups[groups.length - ms.length - 1] : null);
+    const hasIg = g.ig.followers > 0, prevIg = prev && prev.ig.followers > 0;
+    return { g, st: postStats(ps), followers: hasIg ? g.t.followers : null,
+             net: hasIg && prevIg ? g.t.followers - prev.t.followers : null, partial: ymOf(g.periodDate) === curKeyNow() };
+  });
+  const nf = n => n == null ? '—' : Math.round(n).toLocaleString('en-AU');
+  const rows = [
+    ['Followers (IG + FB)', c => c.followers, nf, 'abs'],
+    ['Net new followers', c => c.net, n => n == null ? '—' : (n > 0 ? '+' : '') + nf(n), 'abs'],
+    ['Instagram posts published', c => c.st.n, nf, 'pct'],
+    ['Reach (IG + FB)', c => c.g.t.reach, nf, 'pct'],
+    ['Engagement (IG + FB)', c => c.g.t.engagement, nf, 'pct'],
+    ['Engagement rate · IG posts', c => c.st.er, pct1, 'pts'],
+    ['Saves · IG posts', c => c.st.saves, nf, 'pct'],
+    ['Shares · IG posts', c => c.st.shares, nf, 'pct'],
+    ['Profile visits from posts', c => c.st.visits, nf, 'pct'],
+    ['Reel avg watch time', c => c.st.watch, v => v == null ? '—' : v.toFixed(1) + 's', 'pct'],
+    ['Reel hold rate (past 3s)', c => c.st.hold, v => v == null ? '—' : Math.round(v*100) + '%', 'pts']
+  ];
+  const L = cols.length - 1, last = cols[L], prev = cols[L-1];
+  const chg = (a, b, kind) => {
+    if(a == null || b == null || !prev || last.partial) return '<span class="chg flat">—</span>';
+    let d, txt;
+    if(kind === 'pts'){ d = (a - b) * 100; txt = Math.abs(d) < 0.05 ? 'no change' : (d > 0 ? '+' : '') + d.toFixed(1) + ' pts'; }
+    else if(kind === 'abs'){ d = a - b; txt = (d >= 0 ? '+' : '') + Math.round(d).toLocaleString('en-AU'); }
+    else { if(!b) return '<span class="chg flat">—</span>'; d = (a - b) / Math.abs(b) * 100; txt = (d >= 0 ? '▲ ' : '▼ ') + Math.abs(d).toFixed(0) + '%'; }
+    return `<span class="chg ${Math.abs(d) < 0.05 ? 'flat' : d > 0 ? 'up' : 'down'}">${txt}</span>`;
+  };
+  el.innerHTML = `<thead><tr><th>Metric</th>${cols.map((c,i) => `<th class="num${i===L?' cur':''}">${esc(c.g.month)}${c.partial?' *':''}</th>`).join('')}<th class="num">vs ${prev ? esc(prev.g.month.split(' ')[0]) : 'prev'}</th></tr></thead><tbody>`
+    + rows.map(([lbl, get, fmt, kind]) => `<tr><td>${lbl}</td>${cols.map((c,i) => `<td class="num${i===L?' cur':''}">${fmt(get(c))}</td>`).join('')}<td class="num chg">${chg(get(last), prev ? get(prev) : null, kind)}</td></tr>`).join('')
+    + '</tbody>';
+  $('sMoMNote').innerHTML = (last.partial ? '<b>* Month still running</b> — no change is shown against a full month. ' : '')
+    + 'Engagement rate = engagement ÷ reach on that month’s Instagram posts, so a month with fewer posts doesn’t read as a fall. Saves and shares are counted on the posts published that month. Hold rate is the share of Reel plays that didn’t skip in the first three seconds. Instagram followers were not recorded before August 2026, so earlier follower totals show as “—”.';
+}
+
+function renderFormats(posts){
+  const el = $('sFmt'); if(!el) return;
+  const endP = PERIOD || (posts.length ? posts[posts.length-1].period_date : null);
+  if(!endP){ el.innerHTML = ''; return; }
+  const start = (() => { const d = new Date(+endP.slice(0,4), +endP.slice(5,7)-3, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'; })();
+  const win = posts.filter(p => p.period_date >= start && p.period_date <= endP);
+  const NAME = { REEL:'Reels', CAROUSEL:'Carousels', IMAGE:'Single images', VIDEO:'Videos' };
+  const rows = Object.keys(NAME).map(f => ({ f, st: postStats(win.filter(p => p.format === f)) })).filter(r => r.st.n);
+  const eligible = rows.filter(r => r.st.n >= 3);
+  const best = eligible.length ? eligible.reduce((a, b) => (b.st.er || 0) > (a.st.er || 0) ? b : a) : null;
+  const nf = n => Math.round(n).toLocaleString('en-AU');
+  el.innerHTML = `<thead><tr><th>Format</th><th class="num">Posts</th><th class="num">Avg reach</th><th class="num">Eng. rate</th><th class="num">Saves / post</th><th class="num">Shares / post</th><th class="num">Profile visits / post</th></tr></thead><tbody>`
+    + rows.map(r => `<tr class="${best && r.f === best.f ? 'best' : ''}"><td>${NAME[r.f]}${best && r.f === best.f ? ' <span class="mapbadge" style="background:var(--good)">best</span>' : ''}</td>
+      <td class="num">${r.st.n}</td><td class="num">${nf(r.st.reach / r.st.n)}</td><td class="num">${pct1(r.st.er)}</td>
+      <td class="num">${(r.st.saves / r.st.n).toFixed(1)}</td><td class="num">${(r.st.shares / r.st.n).toFixed(1)}</td><td class="num">${r.st.visits == null ? '<span class="muted" title="Instagram does not report profile visits for this format">—</span>' : (r.st.visits / r.st.n).toFixed(1)}</td></tr>`).join('') + '</tbody>';
+  const byReach = rows.slice().sort((a,b) => b.st.reach/b.st.n - a.st.reach/a.st.n)[0];
+  $('sFmtNote').innerHTML = `${monLabel(start)} – ${monLabel(endP)} (three months, so each format has enough posts to compare). `
+    + (best ? `<b>${NAME[best.f]}</b> earn the highest engagement rate (${pct1(best.st.er)})` : '')
+    + (byReach && best && byReach.f !== best.f ? `, while <b>${NAME[byReach.f]}</b> reach the most people per post (${nf(byReach.st.reach/byReach.st.n)})` : '')
+    + '. Saves and shares are the strongest planning signals for a wedding venue — couples saving ideas and sending them to a partner.';
+  // Reels card — selected month vs the months before
+  const R = $('sReel'); if(!R) return;
+  const months = [...new Set(posts.map(p => p.period_date))].filter(m => m <= endP).sort().slice(-6);
+  const per = months.map(m => ({ m, st: postStats(posts.filter(p => p.period_date === m && p.format === 'REEL')) }));
+  const cur = per[per.length-1] || { st:{} };
+  const maxW = Math.max(1, ...per.map(x => x.st.watch || 0));
+  R.innerHTML = `<div class="reelstat"><div><div class="big">${cur.st.watch != null ? cur.st.watch.toFixed(1) + 's' : '—'}</div><div class="small">avg watch time per play · ${esc(monLabel(cur.m || endP))}</div></div>
+      <div><div class="big">${cur.st.hold != null ? Math.round(cur.st.hold*100) + '%' : '—'}</div><div class="small">hold rate — didn’t skip in the first 3s</div></div></div>
+    <div style="display:flex;gap:6px;align-items:flex-end;height:80px;margin-top:16px">${per.map(x => `<div style="flex:1;text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted)"><div title="${x.st.watch!=null?x.st.watch.toFixed(1)+'s':'no Reels'}" style="height:${x.st.watch ? Math.max(4, x.st.watch/maxW*56) : 2}px;background:${x.m===cur.m?'var(--blue)':'rgba(255,255,255,.18)'};border-radius:4px 4px 0 0"></div>${MONTHS[+x.m.slice(5,7)-1]}</div>`).join('')}</div>
+    <div class="note">${per.filter(x=>x.st.n).length} months · ${cur.st.n || 0} Reels in ${esc(monLabel(cur.m || endP))}. Instagram doesn’t report Reel length, so watch-through is shown as watch time and hold rate rather than a percentage watched.</div>`;
+}
+
+function renderBestTimes(posts){
+  const el = $('sBest'); if(!el) return;
+  const endP = PERIOD ? monthEndISO(PERIOD) : '9999-12-31';
+  const ps = posts.filter(p => p.reach > 0 && String(p.posted_at).slice(0,10) <= endP);
+  if(ps.length < 20){ el.innerHTML = '<div class="muted">Not enough posts yet to read posting times reliably.</div>'; return; }
+  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const BANDS = [['Morning','6–11am',6,11],['Midday','11am–2pm',11,14],['Afternoon','2–5pm',14,17],['Evening','5–9pm',17,21],['Late','9pm–6am',21,30]];
+  const bandOf = h => { const hh = h < 6 ? h + 24 : h; return BANDS.findIndex(b => hh >= b[2] && hh < b[3]); };
+  const cell = {}; const used = {};
+  ps.forEach(p => { const s = melSlot(p.posted_at), d = DAYS.indexOf(s.day), b = bandOf(s.hour); if(d < 0 || b < 0) return;
+    const k = d + ':' + b; (cell[k] = cell[k] || []).push(p.engagement / p.reach); used[k] = (used[k] || 0) + 1; });
+  const med = {}; Object.keys(cell).forEach(k => med[k] = median(cell[k]));
+  const solid = Object.keys(med).filter(k => cell[k].length >= 3);
+  const vals = solid.map(k => med[k]), lo = Math.min(...vals), hi = Math.max(...vals);
+  const top = solid.slice().sort((a,b) => med[b] - med[a]).slice(0, 3);
+  const colour = v => { const t = hi > lo ? (v - lo) / (hi - lo) : .5; return `rgba(63,208,127,${(0.18 + t*0.82).toFixed(2)})`; };
+  let h = `<div class="heat"><div></div>${DAYS.map(d => `<div class="hh">${d}</div>`).join('')}`;
+  BANDS.forEach((b, bi) => {
+    h += `<div class="hl">${b[0]}<br>${b[1]}</div>`;
+    DAYS.forEach((d, di) => { const k = di + ':' + bi, n = (cell[k] || []).length;
+      h += n >= 3 ? `<div class="hc${top.includes(k)?' top':''}" style="background:${colour(med[k])}" title="${n} posts · median engagement rate ${(med[k]*100).toFixed(1)}%"><b>${(med[k]*100).toFixed(1)}%</b><small>${n} posts</small></div>`
+                  : `<div class="hc few" title="${n} post${n===1?'':'s'} — too few to judge">${n ? `<small>${n} post${n===1?'':'s'}</small>` : ''}</div>`; });
+  });
+  el.innerHTML = h + '</div>';
+  const label = k => { const [d, b] = k.split(':').map(Number); return `${DAYS[d]} ${BANDS[b][0].toLowerCase()} (${BANDS[b][1]})`; };
+  const busiest = Object.keys(used).sort((a,b) => used[b] - used[a])[0];
+  $('sBestNote').innerHTML = `<b>Best slots: ${top.map(label).join(' · ')}.</b> Based on ${ps.length} Instagram posts since ${fmtAU(String(ps[0].posted_at).slice(0,10))}, Melbourne time. Each cell is the median engagement rate (engagement ÷ reach) of posts published in that slot, so one viral post can’t skew it; cells with fewer than three posts are greyed out rather than guessed. `
+    + (busiest ? `Most posts currently go out on ${label(busiest)} (${used[busiest]} posts)${top.includes(busiest) ? ', which is already one of the strongest slots.' : ' — worth testing the stronger slots above.'}` : '')
+    + ' Facebook no longer reports when followers are online, so this uses what Manor’s own posts have actually earned.';
+}
+
+function renderAudience(aud){
+  const el = $('sCity'); if(!el) return;
+  const dates = [...new Set(aud.map(a => a.snapshot_date))].sort();
+  if(!dates.length){ el.innerHTML = '<div class="muted">No audience data yet.</div>'; return; }
+  const endP = PERIOD ? monthEndISO(PERIOD) : '9999-12-31';
+  const S = dates.filter(d => d <= endP).pop() || dates[dates.length-1];
+  const of = dim => aud.filter(a => a.snapshot_date === S && a.dimension === dim).sort((a,b) => b.followers - a.followers);
+  const bars = (id, rows, label) => { const max = Math.max(1, ...rows.map(r => r.followers)), tot = rows.reduce((t,r)=>t+r.followers,0);
+    $(id).innerHTML = rows.map((r,i) => `<div class="brow ${i===0?'me':''}"><span class="bname ${i===0?'me':''}" title="${esc(label(r.name))}">${esc(label(r.name))}</span><div class="btrack"><div class="bfill" style="width:${Math.max(2,Math.round(r.followers/max*100))}%"></div></div><span class="bval">${r.followers.toLocaleString('en-AU')}</span></div>`).join(''); return tot; };
+  bars('sCity', of('city').slice(0, 8), n => n.replace(/, (Victoria|New South Wales|Queensland)$/, m => m === ', Victoria' ? ', VIC' : m === ', New South Wales' ? ', NSW' : ', QLD'));
+  let rn; try{ rn = new Intl.DisplayNames(['en-AU'], { type:'region' }); }catch(e){ rn = null; }
+  const ctry = of('country'); bars('sCountry', ctry.slice(0, 8), c => (rn && rn.of(c)) || c);
+  const ga = of('gender_age'), ages = [...new Set(ga.map(r => r.name.split('.')[1]))].sort();
+  const by = (g, a) => (ga.find(r => r.name === g + '.' + a) || {}).followers || 0;
+  const mx = Math.max(1, ...ages.map(a => by('F',a) + by('M',a) + by('U',a)));
+  $('sAge').innerHTML = ages.map(a => { const f = by('F',a), m = by('M',a), u = by('U',a), t = f + m + u;
+      return `<div class="agebar"><span>${a}</span><div class="stack" style="width:${Math.max(6, t/mx*100)}%"><span style="width:${f/t*100}%;background:var(--manor-gold)"></span><span style="width:${m/t*100}%;background:var(--blue)"></span><span style="width:${u/t*100}%;background:rgba(255,255,255,.25)"></span></div><span style="text-align:right">${t.toLocaleString('en-AU')}</span></div>`; }).join('')
+    + `<div class="bandkey" style="margin-top:8px"><span><i style="background:var(--manor-gold)"></i>Women</span><span><i style="background:var(--blue)"></i>Men</span><span><i style="background:rgba(255,255,255,.25)"></i>Not stated</span></div>`;
+  const au = (ctry.find(c => c.name === 'AU') || {}).followers || 0, totC = ctry.reduce((t,c) => t + c.followers, 0);
+  const mel = (of('city').find(c => /^Melbourne/.test(c.name)) || {}).followers || 0;
+  const f2534 = by('F','25-34');
+  const overseas = ctry.filter(c => c.name !== 'AU').slice(0, 3).map(c => (rn && rn.of(c.name)) || c.name);
+  $('sAudNote').innerHTML = `Instagram followers as at ${fmtAU(S)}. <b>${totC ? Math.round(au/totC*100) : 0}% are in Australia</b>, with ${mel.toLocaleString('en-AU')} in Melbourne itself; the largest overseas groups are ${overseas.join(', ')}. Women aged 25–34 — the core engaged-couple audience — are the biggest single group (${f2534.toLocaleString('en-AU')}). Instagram reports these as running totals, so change over time appears as each new snapshot is added.`;
 }
 
 /* Auto-updating recap. States current standing + current-month figures (labelled
@@ -2022,7 +2273,12 @@ async function loadSearch(){
       getJSON(SUPA.gbpkw + '?select=*&order=searches.desc'),
       getJSON(SUPA.seod  + '?select=*&order=period_date.desc&limit=500')
     ]);
-    renderSearch({comps, vis, ranks, uni, gbp, gbpkw: gkw, seo});
+    // Scorecard extras: never block the rest of the tab if they fail.
+    const [aiM, soc] = await Promise.all([
+      getJSON(SUPA.url + '/rest/v1/manor_ai_mentions?select=*').catch(() => []),
+      getJSON(SUPA.url + '/rest/v1/manor_social_competitor_snapshots?select=*').catch(() => [])
+    ]);
+    renderSearch({comps, vis, ranks, uni, gbp, gbpkw: gkw, seo, aiM, soc});
     SEARCH_LOADED = true;
   }catch(e){
     $('qSummary').innerHTML = '⚠ Could not reach the live database — no search data is shown rather than stale or sample figures. ('+(e.message||e)+')';
@@ -2035,8 +2291,57 @@ async function loadSearch(){
    showed nothing at all, including figures that existed. Now each half fails on
    its own. */
 function renderSearch(D){
+  try{ renderScorecard(D); }catch(e){ console.warn('scorecard render failed', e); }
   try{ renderCompetitors(D); }catch(e){ console.warn('competitor render failed', e); }
   try{ renderOwn(D);   }catch(e){ console.warn('own-performance render failed', e); }
+}
+
+/* Cross-channel scorecard: Manor's rank in the tracked set on every channel we measure,
+   with movement where an earlier reading exists. Each row says what it is measured on,
+   because the channels have different start dates and cadences. */
+function renderScorecard(D){
+  const el = $('qScore'); if(!el) return;
+  const nameOf = {}; D.comps.forEach(c => nameOf[c.domain] = c.label);
+  const nm = d => esc(nameOf[d] || d);
+  const rankOf = (arr, k) => { const v = arr.filter(r => r[k] != null).sort((a,b) => b[k] - a[k]); const i = v.findIndex(r => r.domain === CLIENT_DOMAIN);
+    return { rank: i < 0 ? null : 1 + v.filter(r => r[k] > (v[i]||{})[k]).length, of: v.length, top: v[0], me: v[i] }; };
+  const periods = [...new Set(D.vis.map(r => r.period_date))].sort().filter(p => !PERIOD || p <= PERIOD);
+  const P = periods[periods.length-1], PP = periods[periods.length-2];
+  const visNow = D.vis.filter(r => r.period_date === P && r.visibility != null), visPrev = D.vis.filter(r => r.period_date === PP && r.visibility != null);
+  const rows = [];
+  const move = (a, b) => (a && b && a !== b) ? `<span class="chg ${a < b ? 'up' : 'down'}">${a < b ? '▲' : '▼'} ${Math.abs(b - a)} place${Math.abs(b-a)===1?'':'s'}</span>` : (a && b ? '<span class="chg flat">no change</span>' : '<span class="chg flat">—</span>');
+  if(P){
+    const r = rankOf(visNow, 'visibility'), q = PP ? rankOf(visPrev, 'visibility') : {};
+    rows.push(['Search visibility', `${(+r.me?.visibility||0).toFixed(2)}%`, r, r.top && nm(r.top.domain), move(r.rank, q.rank), `tracked keywords · ${monLabel(P)}`]);
+    const k = rankOf(visNow, 'keywords_ranked'), kq = PP ? rankOf(visPrev, 'keywords_ranked') : {};
+    rows.push(['Keywords ranking (top 100)', `${r.me?.keywords_ranked ?? '—'} of ${r.me?.keywords_tracked ?? '—'}`, k, k.top && nm(k.top.domain), move(k.rank, kq.rank), `tracked keywords · ${monLabel(P)}`]);
+  }
+  const aiDates = [...new Set((D.aiM||[]).map(r => r.snapshot_date))].sort();
+  if(aiDates.length){
+    const A = aiDates[aiDates.length-1], a = rankOf(D.aiM.filter(r => r.snapshot_date === A), 'mentions');
+    const ap = aiDates.length > 1 ? rankOf(D.aiM.filter(r => r.snapshot_date === aiDates[aiDates.length-2]), 'mentions') : {};
+    rows.push(['Google AI answers citing the venue', (a.me?.mentions ?? 0).toLocaleString('en-AU'), a, a.top && nm(a.top.domain), move(a.rank, ap.rank), `AI Overviews, Australia · ${fmtAU(A)}`]);
+  }
+  const sd = [...new Set((D.soc||[]).map(r => r.snapshot_date))].sort();
+  if(sd.length){
+    const endP = PERIOD ? monthEndISO(PERIOD) : '9999-12-31';
+    const S = sd.filter(d => d <= endP).pop() || sd[sd.length-1];
+    const prevM = sd.filter(d => d.slice(0,7) < S.slice(0,7)).pop();
+    const pick = (d, pl, k) => D.soc.filter(r => r.snapshot_date === d && r.platform === pl).map(r => ({ domain: r.domain, v: r[k] }));
+    [['Instagram followers','instagram','followers'],['Facebook followers','facebook','followers'],['Instagram posts published','instagram','posts']].forEach(([lbl, pl, k]) => {
+      const r = rankOf(pick(S, pl, k), 'v'), q = prevM ? rankOf(pick(prevM, pl, k), 'v') : {};
+      rows.push([lbl, (r.me?.v ?? 0).toLocaleString('en-AU'), r, r.top && nm(r.top.domain), prevM ? move(r.rank, q.rank) : '<span class="chg flat">from Nov</span>', `public profiles · ${fmtAU(S)}`]);
+    });
+  }
+  el.innerHTML = `<thead><tr><th>Channel</th><th class="num">Manor</th><th class="num">Rank</th><th>Leader</th><th class="num">Movement</th><th>Measured on</th></tr></thead><tbody>`
+    + rows.map(([lbl, val, r, leader, mv, basis]) => `<tr><td>${lbl}</td><td class="num">${val}</td>
+        <td class="num"><span class="rankpill ${r.rank===1?'r1':''}">${r.rank ? ord(r.rank) : '—'}</span> <span class="muted">of ${r.of}</span></td>
+        <td>${r.rank === 1 ? '<b style="color:var(--manor-gold)">Manor on High</b>' : (leader || '—')}</td><td class="num">${mv}</td><td class="muted" style="font-size:12px">${basis}</td></tr>`).join('')
+    + '</tbody>';
+  const firsts = rows.filter(r => r[2].rank === 1).map(r => r[0]);
+  const list = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length-1];
+  $('qScoreNote').innerHTML = (firsts.length ? `<b>Manor leads the set on ${list(firsts)}.</b> ` : '')
+    + 'Each row ranks Manor against the same tracked venues. Movement compares with the previous reading on that channel — search monthly, social from the weekly captures once a second month exists, AI as new readings are added. Equal values share a rank.';
 }
 
 /* Named renderCompetitors, NOT renderBench — renderBench already exists for the
