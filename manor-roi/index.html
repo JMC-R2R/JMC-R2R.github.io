@@ -1034,15 +1034,7 @@
 <div class="modal-bg" id="socialModalBg">
   <div class="modal">
     <h2>Update social</h2>
-    <div class="msub">Add a competitor benchmark or this month's DMs. Enter the edit code once, then save each section. Insights are pinned straight onto the charts now — use <b>✎ Add insight</b> in the header.</div>
-
-    <div class="subhead">Competitor benchmark</div>
-    <div class="frow">
-      <div class="field full"><label>Competitor</label><input type="text" id="b_name" placeholder="e.g. Vogue Ballroom"></div>
-      <div class="field"><label>Followers</label><input type="number" id="b_followers" min="0" step="1"></div>
-      <div class="field"><label>Engagement / mo</label><input type="number" id="b_eng" min="0" step="1"></div>
-    </div>
-    <div class="modal-actions inline"><button class="btn primary" id="bBtn" onclick="saveBenchmark()">Save benchmark</button></div>
+    <div class="msub">Record the month’s Instagram + Facebook DMs. Competitor figures now update automatically every week, and insights are pinned straight onto the charts — use <b>✎ Add insight</b> in the header.</div>
 
     <div class="subhead">DMs this month</div>
     <div class="frow">
@@ -1051,7 +1043,6 @@
     </div>
     <div class="modal-actions inline"><button class="btn primary" id="dBtn" onclick="saveDms()">Save DMs</button></div>
 
-    <div class="field full" style="margin-top:16px"><label>Edit code</label><input type="password" id="s_code" placeholder="required to save" autocomplete="off"></div>
     <div class="msg" id="socialMsg"></div>
     <div class="modal-actions"><button class="btn ghost" onclick="closeSocialForm()">Close</button></div>
   </div>
@@ -1081,7 +1072,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-10-05-2100';
+const BUILD = '2026-10-06-1300';
 
 async function newerBuildAvailable(){
   try{
@@ -1685,7 +1676,6 @@ document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id
 function openUpdate(){ (document.body.dataset.theme==='social') ? openSocialForm() : openForm(); }
 function openSocialForm(focus){
   $('socialMsg').textContent=''; $('socialMsg').className='msg';
-  $('s_code').value = localStorage.getItem('manorEditCode') || '';
   // Default the month to the month being VIEWED, not today — someone editing while
   // looking at August means August, and silently writing it to September is the
   // kind of error nobody catches until the numbers disagree.
@@ -1705,7 +1695,6 @@ document.addEventListener('click', ev => {
   ev.preventDefault(); ev.stopPropagation();
   const what = b.dataset.edit;
   if(what === 'dms')   return openSocialForm('d_dms');
-  if(what === 'bench') return openSocialForm('b_name');
   openSocialForm();
 });
 function closeSocialForm(){ $('socialModalBg').classList.remove('show'); }
@@ -1716,21 +1705,17 @@ async function rpcCall(fn, args){
   if(!res.ok){ let e='HTTP '+res.status; try{ const j=await res.json(); e=j.message||j.hint||j.details||e; }catch{} throw new Error(/unauthor/i.test(e)?'Wrong edit code':e); }
   return res.json().catch(()=>null);
 }
-async function saveBenchmark(){
-  const code=$('s_code').value.trim(); if(!code) return socMsg('Enter the edit code.',false);
-  const name=$('b_name').value.trim(); if(!name) return socMsg('Enter a competitor name.',false);
-  const now=new Date(); const period=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
-  const b=$('bBtn'); b.disabled=true; b.textContent='Saving…';
-  try{ await rpcCall('manor_save_benchmark',{edit_code:code,p_period:period,p_competitor:name,p_followers:(+$('b_followers').value||null),p_engagement:(+$('b_eng').value||null)});
-    localStorage.setItem('manorEditCode',code); socMsg('Benchmark saved ✓',true); $('b_name').value=''; $('b_followers').value=''; $('b_eng').value=''; await loadSocial();
-  }catch(e){ socMsg(String(e.message||e),false); } finally{ b.disabled=false; b.textContent='Save benchmark'; }
-}
+/* Signed in and on the access list = allowed to save; no edit code since the magic-link gate. */
 async function saveDms(){
-  const code=$('s_code').value.trim(); if(!code) return socMsg('Enter the edit code.',false);
   const mv=$('d_month').value; if(!mv) return socMsg('Pick a month.',false);
+  const raw=$('d_dms').value; if(raw==='' || +raw<0) return socMsg('Enter the number of DMs.',false);
   const b=$('dBtn'); b.disabled=true; b.textContent='Saving…';
-  try{ await rpcCall('manor_save_dms',{edit_code:code,p_period:mv+'-01',p_dms:(+$('d_dms').value||0)});
-    localStorage.setItem('manorEditCode',code); socMsg('DMs saved ✓',true); await loadSocial();
+  try{
+    const res=await fetch(SUPA.rpc+'manor_save_dms_signed', { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' },
+      body:JSON.stringify({ p_period: mv+'-01', p_dms: +raw }) });
+    if(res.status===401 && await tryRefresh()) return saveDms();
+    if(!res.ok){ let e='HTTP '+res.status; try{ const j=await res.json(); e=j.message||e; }catch{} throw new Error(e); }
+    socMsg('DMs saved ✓',true); await loadSocial();
   }catch(e){ socMsg(String(e.message||e),false); } finally{ b.disabled=false; b.textContent='Save DMs'; }
 }
 document.getElementById('socialModalBg').addEventListener('click', e=>{ if(e.target.id==='socialModalBg') closeSocialForm(); });
