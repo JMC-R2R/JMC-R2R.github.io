@@ -1008,7 +1008,7 @@
 <div class="modal-bg" id="modalBg">
   <div class="modal">
     <h2>Update monthly data</h2>
-    <div class="msub">Enter the venue's figures for the month. Leads, ad spend &amp; Google Ads calls update automatically.</div>
+    <div class="msub">Enter the venue's figures for the month. Leads, ad spend &amp; Google Ads calls update automatically. You're signed in, so there's no code to enter.</div>
     <div class="field full">
       <label>Month</label>
       <input type="month" id="f_month">
@@ -1017,10 +1017,6 @@
       <div class="field"><label>Weddings booked</label><input type="number" id="f_bookings" min="0" step="1"></div>
       <div class="field"><label>Walkthroughs held</label><input type="number" id="f_tours" min="0" step="1"></div>
       <div class="field money full"><label>Booked wedding value</label><span class="pre">$</span><input type="number" id="f_signedVal" min="0" step="any"></div>
-    </div>
-    <div class="field full">
-      <label>Edit code</label>
-      <input type="password" id="f_code" placeholder="required to save" autocomplete="off">
     </div>
     <div class="msg" id="formMsg"></div>
     <div class="modal-actions">
@@ -1072,7 +1068,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-10-06-1300';
+const BUILD = '2026-10-06-1400';
 
 async function newerBuildAvailable(){
   try{
@@ -1624,7 +1620,6 @@ function openForm(){
   // default to the latest entered month, else current month
   const last = LOADED.length ? LOADED[LOADED.length-1] : null;
   $('f_month').value = last ? last.periodDate.slice(0,7) : '';
-  $('f_code').value = localStorage.getItem('manorEditCode') || '';
   prefillFromMonth();
   $('modalBg').classList.add('show');
 }
@@ -1642,23 +1637,15 @@ function prefillFromMonth(){
 async function saveForm(){
   const msg=$('formMsg'); msg.className='msg'; msg.textContent='';
   const mv=$('f_month').value;
-  const code=$('f_code').value.trim();
   if(!mv){ msg.className='msg err'; msg.textContent='Pick a month.'; return; }
-  if(!code){ msg.className='msg err'; msg.textContent='Enter the edit code to save.'; return; }
-  const [yr,mo]=mv.split('-');
-  const row={
-    period_date: mv+'-01',
-    period_label: MONTHS[parseInt(mo,10)-1]+' '+yr,
-    bookings:$('f_bookings').value||0,     // weddings booked
-    tours:$('f_tours').value||0,           // walkthroughs
-    signed_value:$('f_signedVal').value||0 // booked wedding value
-  };
+  // Signed in + on the access list = allowed to save (no edit code since the magic-link gate).
+  // The RPC writes only the three manual columns, never the routine's auto columns.
+  const args={ p_period: mv+'-01', p_bookings: +$('f_bookings').value||0, p_tours: +$('f_tours').value||0, p_signed_value: +$('f_signedVal').value||0 };
   const btn=$('saveBtn'); btn.disabled=true; btn.textContent='Saving…';
   try{
-    const res=await fetch(SUPA.fn,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({editCode:code,row}) });
-    const out=await res.json().catch(()=>({}));
-    if(!res.ok){ throw new Error(out.error||('HTTP '+res.status)); }
-    localStorage.setItem('manorEditCode', code);   // remember on this device for next time
+    let res=await fetch(SUPA.rpc+'manor_save_roi_signed',{ method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(args) });
+    if(res.status===401 && await tryRefresh()) res=await fetch(SUPA.rpc+'manor_save_roi_signed',{ method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(args) });
+    if(!res.ok){ const out=await res.json().catch(()=>({})); throw new Error(out.message||('HTTP '+res.status)); }
     msg.className='msg ok'; msg.textContent='Saved ✓';
     await loadData();
     setTimeout(closeForm, 700);
@@ -1699,6 +1686,13 @@ document.addEventListener('click', ev => {
 });
 function closeSocialForm(){ $('socialModalBg').classList.remove('show'); }
 function socMsg(t, ok){ const m=$('socialMsg'); m.className='msg '+(ok?'ok':'err'); m.textContent=t; }
+// Call an RPC as the signed-in user (the magic-link session is the permission).
+async function authRpc(fn, args){
+  let res = await fetch(SUPA.rpc+fn, { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(args) });
+  if(res.status === 401 && await tryRefresh()) res = await fetch(SUPA.rpc+fn, { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify(args) });
+  if(!res.ok){ let e='HTTP '+res.status; try{ const j=await res.json(); e=j.message||j.hint||e; }catch{} throw new Error(e); }
+  return res.json().catch(()=>null);
+}
 // Call a PostgREST RPC (edit-code gated, granted to anon) with the public key.
 async function rpcCall(fn, args){
   const res=await fetch(SUPA.rpc+fn, { method:'POST', headers:{'Content-Type':'application/json', apikey:SUPA.key, Authorization:'Bearer '+SUPA.key}, body:JSON.stringify(args) });
@@ -2976,8 +2970,8 @@ const TEAM_INFO  = {
 };
 const CHART_TITLE = { 'aChart':'AI presence over time', 'chart':'Leads & booked value', 'sDailyChart':'Instagram reach & views', 'gChart':'Google Business Profile views', 'scChart':'Search Console clicks & impressions' };
 
-const insCode    = () => localStorage.getItem('manorEditCode') || '';
-const insAuthor  = () => localStorage.getItem('manorInsightAuthor') || '';
+// Since the magic-link gate the author is whoever is signed in — no code, no name picker.
+const insAuthor  = () => (typeof sessionEmail === 'function' ? sessionEmail() : '') || '';
 const authorOf   = e => AUTHORS.find(a => (a.email||'').toLowerCase() === String(e||'').toLowerCase());
 const initialsOf = n => String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const avatarHTML = e => { const a = authorOf(e);
@@ -2985,7 +2979,7 @@ const avatarHTML = e => { const a = authorOf(e);
                             : `<span class="av-init">${esc(initialsOf(a ? a.name : e))}</span>`; };
 const roleOf = e => (authorOf(e)||{}).role_title || '';
 const currentView = () => document.body.dataset.theme || 'search';
-const canAuthorView = v => { const a = authorOf(insAuthor()); if(!a) return true;
+const canAuthorView = v => { const a = authorOf(insAuthor()); if(!a) return false;
   return a.is_admin || !VIEW_OWNER[v] || VIEW_OWNER[v] === a.team; };
 
 /* Registered by each chart's draw function so a click can be mapped back to a
@@ -3050,7 +3044,7 @@ function fmtPinDate(d){
 }
 async function signPlay(path){
   try{
-    const r = await fetch(SUPA.insFn, { method:'POST', headers:{'Content-Type':'application/json'},
+    const r = await fetch(SUPA.insFn, { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json'},
               body: JSON.stringify({ action:'sign-play', path }) });
     const j = await r.json(); return j.signedUrl || null;
   }catch(e){ return null; }
@@ -3083,22 +3077,14 @@ function openComposer(anchor, x, y){
   const where = anchor.kind === 'chart'
     ? `${CHART_TITLE[anchor.chart_id] || anchor.chart_id}${anchor.date ? ' · ' + fmtPinDate(anchor.date) : (anchor.label ? ' · ' + anchor.label : '')}`
     : 'On this page';
-  // First visit has no stored author, but the <select> still defaults to its first
-  // option — so resolve the same fallback here or the avatar shows "?" beside a name.
-  const sorted = AUTHORS.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name)));
-  const me = (authorOf(insAuthor()) || sorted[0] || {}).email || '';
-  const opts = sorted
-    .map(a => `<option value="${esc(a.email)}"${a.email===me?' selected':''}>${esc(a.name)} — ${esc(a.role_title||'')}</option>`).join('');
+  const me = insAuthor();
+  const mine = authorOf(me);
   const p = inspop();
   p.innerHTML =
     `<button class="ins-x" aria-label="Close">&times;</button>
      <div class="ins-head"><span class="ins-av" id="c-av">${avatarHTML(me)}</span>
-       <div><div class="ins-who">New insight</div><div class="ins-role">${esc(where)}</div></div></div>
+       <div><div class="ins-who">New insight · ${esc(mine ? mine.name : me)}</div><div class="ins-role">${esc(where)}</div></div></div>
      <div class="compose">
-       <label class="clab" for="c-who">Who's writing</label>
-       <select id="c-who">${opts || '<option value="">No authors set up</option>'}</select>
-       <label class="clab" for="c-code">Edit code</label>
-       <input id="c-code" type="password" placeholder="Edit code" value="${esc(insCode())}" autocomplete="off">
        <textarea id="c-text" placeholder="What happened here? Explain the spike, dip or campaign moment…"></textarea>
        <div class="crow">
          <button class="rec" id="c-rec"><span class="dotr"></span><span id="c-reclbl">Record</span></button>
@@ -3113,7 +3099,6 @@ function openComposer(anchor, x, y){
   p.querySelector('.ins-x').onclick = () => { stopRec(true); closePop(); };
   $('c-cancel').onclick = () => { stopRec(true); closePop(); };
   $('c-rec').onclick = toggleRec;
-  $('c-who').onchange = e => { localStorage.setItem('manorInsightAuthor', e.target.value); $('c-av').innerHTML = avatarHTML(e.target.value); };
   $('c-save').onclick = () => saveInsightPin(anchor);
 }
 async function toggleRec(){
@@ -3151,11 +3136,8 @@ function cmsg(t, ok){ const m = $('c-msg'); if(m){ m.className = 'cmsg ' + (ok ?
 async function saveInsightPin(anchor){
   const save = $('c-save');
   stopRec(false); await new Promise(r => setTimeout(r, 180));   // let onstop finalise the blob
-  const code = $('c-code').value.trim();
-  const who  = $('c-who').value;
   const body = $('c-text').value.trim();
-  if(!code) return cmsg('Enter the edit code.', false);
-  if(!who)  return cmsg('Pick who is writing.', false);
+  if(!authorOf(insAuthor())) return cmsg('Your email isn’t set up to write insights — ask Ready to Rank to add you.', false);
   if(!body && !recBlob) return cmsg('Add a note or a recording.', false);
 
   save.disabled = true; save.textContent = 'Saving…'; cmsg('', true);
@@ -3163,16 +3145,15 @@ async function saveInsightPin(anchor){
   try{
     if(recBlob){
       const ct = (recMime || 'audio/webm').split(';')[0];
-      const r  = await fetch(SUPA.insFn, { method:'POST', headers:{'Content-Type':'application/json'},
-                 body: JSON.stringify({ action:'sign-upload', editCode:code, contentType:ct }) });
+      const r  = await fetch(SUPA.insFn, { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json'},
+                 body: JSON.stringify({ action:'sign-upload', contentType:ct }) });
       const j  = await r.json();
       if(!r.ok || !j.signedUrl) throw new Error(j.error || 'Could not start the upload');
       const up = await fetch(j.signedUrl, { method:'PUT', headers:{'Content-Type':ct}, body:recBlob });
       if(!up.ok) throw new Error('Upload failed');
       audio_path = j.path;
     }
-    const args = { edit_code:code, p_tab:anchor.tab, p_body:body || null,
-                   p_audio_path:audio_path, p_author_email:who };
+    const args = { p_tab:anchor.tab, p_body:body || null, p_audio_path:audio_path };
     if(anchor.kind === 'chart'){
       Object.assign(args, { p_anchor_kind:'chart', p_chart_id:anchor.chart_id,
                             p_anchor_date:anchor.date || null, p_anchor_label:anchor.label || null });
@@ -3180,9 +3161,7 @@ async function saveInsightPin(anchor){
       Object.assign(args, { p_anchor_kind:'element', p_target_id:anchor.target_id,
                             p_x_frac:anchor.x, p_y_frac:anchor.y });
     }
-    await rpcCall('manor_add_insight', args);
-    localStorage.setItem('manorEditCode', code);
-    localStorage.setItem('manorInsightAuthor', who);
+    await authRpc('manor_add_insight_signed', args);
     setPinMode(false); closePop();
     await loadInsights();
   }catch(e){
@@ -3192,15 +3171,11 @@ async function saveInsightPin(anchor){
 }
 
 async function deleteInsight(o){
-  let code = insCode();
-  if(!code) code = (prompt('Enter the edit code to delete this insight:') || '').trim();
-  if(!code) return;
   const m = $('pop-msg'); if(m){ m.className = 'cmsg'; m.textContent = 'Deleting…'; }
   try{
-    const path = await rpcCall('manor_delete_insight', { edit_code:code, p_id:o.id });
-    localStorage.setItem('manorEditCode', code);
-    if(path) await fetch(SUPA.insFn, { method:'POST', headers:{'Content-Type':'application/json'},
-                     body: JSON.stringify({ action:'delete', editCode:code, path }) }).catch(()=>{});
+    const path = await authRpc('manor_delete_insight_signed', { p_id:o.id });
+    if(path) await fetch(SUPA.insFn, { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json'},
+                     body: JSON.stringify({ action:'delete', path }) }).catch(()=>{});
     closePop();
     await loadInsights();
   }catch(e){ if(m){ m.className = 'cmsg err'; m.textContent = String(e.message || e); } }
