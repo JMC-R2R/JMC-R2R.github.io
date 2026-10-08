@@ -15,6 +15,23 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CFG = window.DASHBOARD_CONFIG;
+/* One client, one URL: the content hub. The dashboard lives inside it (hub #reporting tab,
+   in an iframe). Opened directly, it forwards to the hub, keeping any section deep link
+   (e.g. /<slug>/#negatives -> /<slug>-hub/#reporting/negatives). Same origin and same
+   Supabase project, so the hub's sign-in session is this page's session too. */
+const EMBED = window.self !== window.top;
+/* Inside the hub the frame is as tall as the whole dashboard and the HUB scrolls, so
+   "fixed" means the middle of a very tall frame. Overlays are pinned to the part of the
+   frame that is actually on screen instead. */
+function onScreen(){
+  try { const r = window.frameElement.getBoundingClientRect();
+        return { top: Math.max(0, -r.top), height: window.parent.innerHeight }; }
+  catch (e) { return null; }
+}
+if (!EMBED && CFG.hubUrl && !/[?&]direct=1/.test(location.search)) {
+  const sub = (location.hash || '').replace(/^#/, '');
+  location.replace(CFG.hubUrl + '#reporting' + (sub ? '/' + sub : ''));
+}
 const sb  = createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
 const $   = (s, r = document) => r.querySelector(s);
 const $$  = (s, r = document) => [...r.querySelectorAll(s)];
@@ -268,21 +285,7 @@ function renderTabs(){
    The point is the upsell. Keyed off `enabled:false` ONLY: an enabled module with no
    data yet gets an empty state instead, so a client never reads "not in your package"
    about something they are paying for. */
-function showLock(mod){
-  const box = el(`<div class="lockwrap" role="dialog" aria-modal="true">
-    <div class="lockbox">
-      <div class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 10V7a6 6 0 1112 0v3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2h1zm2 0h8V7a4 4 0 10-8 0v3z"/></svg></div>
-      <span class="mlbl">Not in your current plan</span>
-      <h3>${LABEL[mod]}</h3>
-      <p>${SOLD_AS[mod] || LABEL[mod]} isn't part of your current package, so there's no
-         data to show here. If you'd like it added, have a word with your account manager.</p>
-      <button class="btn primary" data-close>Got it</button>
-    </div></div>`);
-  box.addEventListener('click', e => { if (e.target === box || e.target.hasAttribute('data-close')) box.remove(); });
-  document.addEventListener('keydown', function esc(e){
-    if (e.key === 'Escape'){ box.remove(); document.removeEventListener('keydown', esc); } });
-  document.body.appendChild(box);
-}
+function showLock(mod){ showOffer(mod); }
 
 function renderAll(){
   renderMonthChips(); renderTabs();
@@ -405,23 +408,114 @@ function momCard(label, cur, prev, vals){
 /* Accomplished tasks: what was delivered in the month, each item linked to the proof
    (the live page, the document). Rows are recorded with their source; never inferred. */
 function workDone(module){
-  const items = (RAW.wlog || []).filter(r => (r.module || 'seo') === module && monthOf(r.month) === state.month)
+  /* Links built have their own section (and only exist on the link-building package). */
+  const items = (RAW.wlog || []).filter(r => (r.module || 'seo') === module && monthOf(r.month) === state.month
+      && r.category !== 'Links built')
     .sort((a, b) => (a.sort || 0) - (b.sort || 0));
   if (!items.length) return '';
-  const cats = [...new Set(items.map(r => r.category))];
+  const ORDERED = ['Blogs published', 'Blogs written', 'Google Business Profile posts', 'LinkedIn articles', 'Social posts'];
+  const cats = [...new Set(items.map(r => r.category))]
+    .sort((a, b) => (ORDERED.indexOf(a) + 1 || 99) - (ORDERED.indexOf(b) + 1 || 99));
   const d = v => v ? new Date(v + 'T00:00:00').toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit' }) : '';
   const link = u => /^https?:/.test(u || '') ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''))}</a>` : '';
   return `<div class="card done"><div class="cardhead"><div><h3>Accomplished in ${monthName(state.month)}</h3>
       <p class="sub">${cats.map(c => `${fmt(items.filter(r => r.category === c).length)} ${c.toLowerCase()}`).join(' · ')}</p></div></div>
     <div class="donegrid">${cats.map(c => `<div class="donecol"><span class="mlbl">${esc(c)} · ${fmt(items.filter(r => r.category === c).length)}</span>
       <ul>${items.filter(r => r.category === c).map(r => `<li><span class="tick">✓</span><div><b>${esc(r.title)}</b>
-        ${r.url ? `<div class="dlink">${link(r.url)}</div>` : ''}${r.done_on ? `<div class="ddate">${/published/i.test(c) ? 'Live' : 'Done'} ${d(r.done_on)}</div>` : ''}</div></li>`).join('')}</ul></div>`).join('')}</div></div>`;
+        ${r.url ? `<div class="dlink">${link(r.url)}</div>` : ''}${r.done_on ? `<div class="ddate">${/published|posts|articles/i.test(c) ? 'Live' : 'Done'} ${d(r.done_on)}</div>` : ''}</div></li>`).join('')}</ul></div>`).join('')}</div></div>`;
+}
+
+/* Custom links built. Real rows for clients on custom link building (md_clients.modules.links,
+   set from so_client_lifecycle.link_building). Everyone else sees a quiet teaser: Jose
+   06/10/2026, "something that tries to sell but not sell a higher package". No price, no
+   package name, no pressure: it says it is optional and offers an honest answer. */
+function linksSection(){
+  const on = !!(RAW.client.modules || {}).links;
+  if (on){
+    const rows = (RAW.wlog || []).filter(r => r.category === 'Links built' && monthOf(r.month) === state.month)
+      .map(r => ({ ...r, dr: r.note ? Number(String(r.note).replace(/\D/g, '')) || null : null }));
+    const all = (RAW.wlog || []).filter(r => r.category === 'Links built');
+    return `<div class="card"><div class="cardhead"><div><h3>Custom links built</h3>
+        <p class="sub">${fmt(rows.length)} in ${monthName(state.month)} · ${fmt(all.length)} since we started. Each one is a live page on another website linking to yours</p></div></div>
+      ${rows.length ? dataTable('links', [{ k:'title', label:'Website' },
+          { k:'dr', label:'Authority', num:1, fmt:v => v == null ? '—' : `<span class="rankpill ${v >= 40 ? 'win' : v >= 20 ? 'mid' : 'out'}">DR ${v}</span>` },
+          { k:'url', label:'Live page', fmt:v => v ? `<a href="${esc(v)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(v.replace(/^https?:\/\/(www\.)?/, ''))}</a>` : '—' },
+          { k:'done_on', label:'Live since', fmt:v => v ? new Date(v + 'T00:00:00').toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—' }],
+          rows, { sort:{ k:'done_on', dir:-1 }, filter:false, maxH:380 })
+        : emptyState('No links live yet this month', 'Links are earned through outreach and go live through the month. Each one appears here once it is live and checked.')}</div>`;
+  }
+  return `<div class="card linktease" data-linktease><div class="lt-copy">
+      <span class="lt-pill">Optional extra</span>
+      <h3>Custom links built</h3>
+      <p>Links from trusted, relevant Australian websites pointing at yours. They are one of the strongest signals Google and AI assistants use to decide which business to trust and recommend.</p>
+      <button class="btn" type="button" data-linkinfo>How this works</button></div>
+    <div class="lt-art" aria-hidden="true">
+      <svg viewBox="0 0 160 110"><g fill="none" stroke="currentColor" stroke-width="2" opacity=".55">
+        <circle cx="80" cy="55" r="16"/><circle cx="24" cy="22" r="9"/><circle cx="136" cy="20" r="9"/><circle cx="20" cy="88" r="9"/><circle cx="140" cy="90" r="9"/>
+        <path d="M31 27l35 20M129 25l-35 22M27 84l38-21M133 85l-39-22"/></g></svg></div></div>`;
+}
+/* One soft pop-up for every service a client does not have (Jose 07/10/2026). Same shape
+   each time: optional, their plan works without it, an honest answer if they ask. No price,
+   no package name. "Ask us about it" records the request (md_service_interest) and an hourly
+   routine tells the account manager in the client's Slack channel. Nothing is emailed from
+   the page and nothing is sold here. */
+const OFFER = {
+  links:     { label:'Custom link building', kicker:'Only if you want to speed things up',
+    p:['Your current plan is building the foundations: your Google profile, your content and how you show up in AI search. That is the right order, and it works on its own.',
+       'Custom link building is for when you would like the results to come sooner. Each month we earn a handful of links from respected local and industry websites, which helps Google and AI assistants trust your site faster.'] },
+  social:    { label:'Organic social management', kicker:'Only if you want more from your socials',
+    p:['Your plan already turns every Google post into content your socials can reuse.',
+       'If you would like us to plan, write and post across Facebook, Instagram and LinkedIn for you, with reporting here on reach and enquiries, we can take it on alongside what we do now.'] },
+  leads_crm: { label:'Leads and CRM reporting', kicker:'Only if you want to see every enquiry in one place',
+    p:['Right now this dashboard shows where people find you and what they do next.',
+       'Leads reporting connects your enquiry form, calls and CRM, so every lead is counted against the channel that produced it, and you can see what each job actually cost to win.'] },
+  paid_ads:  { label:'Google and Meta Ads management', kicker:'Only if you want leads while SEO builds',
+    p:['SEO and your Google profile compound over time.',
+       'Paid ads put you at the top of Google from the first week, for the exact jobs you want, and every search term and dollar is reported here.'] },
+  geo:       { label:'AI visibility tracking', kicker:'Only if you want to know where AI search is going',
+    p:['More homeowners now ask ChatGPT, Gemini or Perplexity who to call.',
+       'AI visibility tracking checks every month whether those assistants name you, who they name instead and which pages they trust.'] },
+  map_grid:  { label:'Map pack grid tracking', kicker:'Only if you want to see your reach on Google Maps',
+    p:['A single ranking number hides how far your profile reaches.',
+       'The map grid searches from points right across your service area, so you can see suburb by suburb where you show up and who beats you.'] },
+  gbp:       { label:'Google Business Profile reporting', kicker:'Only if you want your profile measured',
+    p:['Your Google profile is often the first thing a customer sees.',
+       'Profile reporting shows views, calls, directions, the searches that found you and every review, month by month.'] },
+  seo:       { label:'SEO', kicker:'Only if you want to grow organic traffic',
+    p:['SEO reporting shows the searches you are found for, the keywords we target and how they move each month.'] },
+};
+function showOffer(mod){
+  const o = OFFER[mod] || { label: SOLD_AS[mod] || LABEL[mod] || mod, kicker:'Only if it would help', p:[] };
+  const box = el(`<div class="lockwrap" role="dialog" aria-modal="true"><div class="lockbox">
+      <span class="mlbl">${esc(o.kicker)}</span>
+      <h3>${esc(o.label)}</h3>
+      ${o.p.map(t => `<p>${esc(t)}</p>`).join('')}
+      <p>There is no need to add it. If you are curious whether it would make a real difference for you right now, ask us and we will give you an honest answer.</p>
+      <div class="lockbtns"><button class="btn primary" type="button" data-ask>Ask us about it</button>
+        <button class="btn" type="button" data-close>Maybe later</button></div>
+      <p class="askdone" hidden></p></div></div>`);
+  const v = EMBED && onScreen();
+  if (v) Object.assign(box.style, { position: 'absolute', top: v.top + 'px', height: v.height + 'px', bottom: 'auto' });
+  box.addEventListener('click', async e => {
+    if (e.target === box || e.target.hasAttribute('data-close')) return box.remove();
+    const ask = e.target.closest('[data-ask]'); if (!ask) return;
+    ask.disabled = true; ask.textContent = 'Sending…';
+    const { error } = await sb.from('md_service_interest')
+      .insert({ client_id: RAW.client.id, service: mod, service_label: o.label });
+    const done = box.querySelector('.askdone'); done.hidden = false;
+    if (error){ ask.disabled = false; ask.textContent = 'Ask us about it';
+      done.textContent = 'That did not send. Please try again, or reply to any of our emails.'; done.classList.add('bad'); return; }
+    box.querySelector('.lockbtns').remove();
+    done.textContent = `Thanks. We have let your account manager know, and they will be in touch about ${o.label.toLowerCase()} within one business day.`;
+  });
+  document.addEventListener('keydown', function escK(ev){ if (ev.key === 'Escape'){ box.remove(); document.removeEventListener('keydown', escK); } });
+  document.body.appendChild(box);
 }
 
 function viewSeo(){
   let out = head('SEO', 'Search performance',
     'Clicks, impressions and average position from Google Search Console, with the keywords we track.');
-  out += workDone('seo');
+  out += workDone('seo') + linksSection();
   if (!V.seo.length && !V.rankings.length)
     return out + emptyState('Nothing to report for this month',
       `${CFG.name}'s website is not live yet, so there is no search data. Tracking starts the day it publishes.`);
@@ -944,6 +1038,8 @@ async function setNegStatus(id, status){
 }
 function toast(msg, sev = 'good'){
   const t = el(`<div class="toast ${sev}">${esc(msg)}</div>`); document.body.appendChild(t);
+  const v = EMBED && onScreen();
+  if (v) Object.assign(t.style, { position: 'absolute', top: (v.top + v.height - 70) + 'px', bottom: 'auto' });
   setTimeout(() => t.remove(), 3200);
 }
 
@@ -1003,6 +1099,7 @@ function viewLeads(){
 /* ---------------------------------------------------------------- shell + boot */
 function renderShell(){
   document.documentElement.style.setProperty('--accent', CFG.accent || '#17B4F0');
+  if (EMBED) document.documentElement.classList.add('embed');
   document.title = `${CFG.name} — Marketing Dashboard`;
   document.body.innerHTML = `
   <header class="top"><div class="wrap topin">
@@ -1034,6 +1131,7 @@ function renderShell(){
     if (th){ const [id, k] = th.dataset.sort.split(':'), t = TABLES[id]; if (!t) return;
       t.sort = { k, dir: t.sort.k === k ? -t.sort.dir : (t.cols.find(c => c.k === k)?.num ? -1 : 1) }; dtRender(id); return; }
     const b = e.target.closest('[data-csv]'); if (b) dtCsv(b.dataset.csv);
+    if (e.target.closest('[data-linkinfo]')) { showOffer('links'); return; }
     const ns = e.target.closest('[data-negset]');
     if (ns){ const [id, st] = ns.dataset.negset.split(':'); setNegStatus(id, st); }
   });
@@ -1048,6 +1146,7 @@ function renderShell(){
     const m = b.dataset.tab;
     if (!enabled(m)) return showLock(m);      /* locked = upsell, not an error */
     state.tab = m; history.replaceState(null, '', '#' + m); renderAll();
+    if (EMBED) try { window.parent.postMessage({ r2rDashboardTab: m }, location.origin); } catch (e) {}
   });
   $('#monthchips').addEventListener('click', e => {
     const b = e.target.closest('.mchip'); if (!b) return;
@@ -1086,7 +1185,7 @@ function renderGate(msg){
   };
 
   const askCode = (email) => {
-    card(`<p>We’ve emailed a sign-in code to <b>${esc(email)}</b>. Enter it below, or tap the link in that email.</p>
+    card(`<p>We’ve emailed a sign-in code to <b>${esc(email)}</b>. Enter it below.</p>
       <input type="text" id="code" inputmode="numeric" autocomplete="one-time-code" placeholder="Sign-in code" required>
       <button type="submit">Sign in</button>
       <p class="gate-alt"><a href="#" id="back">Use a different email</a></p>`);

@@ -232,3 +232,28 @@ footer.foot{border-top:1px solid var(--bd);padding:22px 0 46px;color:var(--ink3)
 .gate-card .gate-alt a{color:var(--ink3);text-decoration:underline}
 .gate-card .gate-alt a:hover{color:var(--ink)}
 .gate-card p b{color:var(--ink)}
+
+/* ---------- inside the content hub (iframe) ---------- */
+/* The hub already carries both logos and sign-out, so the dashboard drops its own. */
+html.embed header.top, html.embed .team{display:none}
+html.embed nav.tabs{top:0}
+html.embed .monthbar{top:43px}
+html.embed footer.foot{padding-bottom:24px}
+/* The hub sizes the frame to the full dashboard, so nothing in here scrolls. */
+html.embed, html.embed body{overflow:hidden}
+html.embed nav.tabs, html.embed .monthbar{position:relative;top:auto}
+
+/* ---------- custom links: teaser for clients without link building ---------- */
+.linktease{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:14px;
+  border-style:dashed;border-color:color-mix(in srgb,var(--accent) 35%,var(--bd));
+  background:linear-gradient(120deg,var(--s2),color-mix(in srgb,var(--accent) 8%,var(--s2)))}
+.linktease h3{font-size:15px;font-weight:800;margin:8px 0 6px}
+.linktease p{color:var(--ink2);font-size:13.5px;max-width:640px;margin:0 0 12px}
+.lt-pill{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);
+  border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);border-radius:99px;padding:2px 9px}
+.lt-art{color:var(--accent);flex:none;width:150px}
+@media (max-width:640px){.lt-art{display:none}}
+.lockbox p + p{margin-top:-8px}
+.lockbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.lockbox .askdone{margin:14px 0 0;color:var(--good);font-weight:600}
+.lockbox .askdone.bad{color:var(--bad)}
