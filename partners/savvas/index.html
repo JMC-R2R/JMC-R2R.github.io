@@ -788,7 +788,7 @@ function diagnose(r,b,minSpend){
 function renderCreative(c,from,to){
   const minSpend=+$('cpMin').value, fmt=$('cpFmt').value;
   let rows=CP_ROWS.filter(r=>fmt==='all'||(fmt==='video'?r.video:!r.video));
-  if(!CP_ROWS.length){$('cpBody').innerHTML=`<div class="wait">No ads ran for <b>${esc(c.name)}</b> between ${auDate(isoDay(from))} and ${auDate(isoDay(to))}.</div>`;return;}
+  if(!CP_ROWS.length){$('cpBody').innerHTML=`<div class="wait">No results loaded for <b>${esc(c.name)}</b> between ${auDate(isoDay(from))} and ${auDate(isoDay(to))} yet.</div>`;return;}
   const judged=rows.filter(r=>r.spend>=minSpend);
   const b=benchmarks(judged.length?judged:rows);
   const ecom=b.purchases>0||b.roas!=null;
