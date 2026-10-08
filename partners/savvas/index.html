@@ -70,6 +70,20 @@ main{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
 .price{font-family:'Space Mono',monospace;font-size:26px;font-weight:700;color:var(--accent);line-height:1.1}
 .price .u{display:block;font-size:11px;color:var(--dim);font-weight:400;margin-top:5px;letter-spacing:.04em}
 .price.poa-v{color:var(--warn);font-size:20px}
+.comm{background:rgba(61,220,151,.08);border:1px solid rgba(61,220,151,.28);border-radius:9px;padding:9px 11px;margin-top:12px;font-size:12px;color:var(--ok);display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.comm .cv{font-family:'Space Mono',monospace;font-weight:700;white-space:nowrap}
+.cpay{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-top:6px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:12px;color:var(--ink);background:var(--panel2)}
+.cpay .cv{font-family:'Space Mono',monospace;font-weight:700;white-space:nowrap;color:var(--accent)}
+.admin{background:var(--panel);border:1px solid var(--warn);border-left:3px solid var(--warn);border-radius:var(--r);padding:18px 20px;margin-bottom:28px}
+.admin h2{font-size:15px;color:var(--warn)}
+.admin .arow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:14px}
+.admin input,.admin select{width:auto;min-width:112px}
+.pvtbl{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+.pvtbl th{text-align:left;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);padding:8px 10px;border-bottom:1px solid var(--line)}
+.pvtbl td{padding:8px 10px;border-bottom:1px solid var(--line)}
+.pvtbl .num{font-family:'Space Mono',monospace;text-align:right;white-space:nowrap}
+.pvtbl .up{color:var(--ok)}
+.pvtbl .dn{color:var(--bad)}
 .meta{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
 .chip{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;background:var(--panel2);border:1px solid var(--line);color:var(--muted);padding:4px 8px;border-radius:20px}
 .best{font-size:13px;color:var(--muted);margin-bottom:14px;flex:1}
@@ -135,6 +149,43 @@ footer{max-width:1180px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
 .tl td.tlwho{white-space:nowrap}
 .slow li{font-size:14px;color:var(--muted);margin-bottom:8px;max-width:78ch}
 .slow li b{color:var(--ink)}
+/* ---------- creative performance ---------- */
+.cp-ctl{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:22px}
+.cp-ctl>div{min-width:150px}
+.cp-ctl select,.cp-ctl input{width:auto;min-width:150px}
+.key{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:24px}
+.key div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--muted)}
+.key b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+.key .f{font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);display:block;margin-top:4px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:26px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.kpi .l{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.kpi .v{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--ink);margin-top:4px}
+.kpi .s{font-size:11.5px;color:var(--dim)}
+.tops{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:28px}
+.top{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--savvas);border-radius:var(--r);padding:14px 16px}
+.top h3{font-size:14px;margin-bottom:2px}
+.top .sub{font-size:12px;color:var(--dim);margin-bottom:10px}
+.top ol{margin:0;padding-left:18px}
+.top li{font-size:13px;color:var(--muted);margin-bottom:6px}
+.top li b{color:var(--ink);font-weight:600}
+.top li .mono{color:var(--accent);font-size:12px}
+.cpt td{vertical-align:middle;padding:10px 8px}
+.cpt th{padding:9px 8px;cursor:pointer;user-select:none;white-space:nowrap}
+.cpt th.sorted{color:var(--accent)}
+.cpt .num{font-family:'Space Mono',monospace;text-align:right;white-space:nowrap;font-size:12.5px}
+.cpt .hi{color:var(--ok)} .cpt .lo{color:var(--bad)}
+.thumb{width:44px;height:44px;border-radius:7px;object-fit:cover;background:var(--panel2);display:block}
+.adn{color:var(--ink);font-weight:600;font-size:13px;max-width:240px}
+.adn small{display:block;color:var(--dim);font-weight:400;font-size:11px}
+.curve{display:flex;align-items:flex-end;gap:2px;height:30px;width:74px}
+.curve i{flex:1;background:var(--accent);border-radius:2px 2px 0 0;min-height:1px;opacity:.85}
+.dx{font-size:12px;border-radius:7px;padding:5px 8px;display:inline-block;line-height:1.35;max-width:230px}
+.dx.win{background:rgba(61,220,151,.1);color:var(--ok);border:1px solid rgba(61,220,151,.3)}
+.dx.fix{background:rgba(255,180,84,.08);color:var(--warn);border:1px solid rgba(255,180,84,.3)}
+.dx.bad{background:rgba(255,107,107,.08);color:var(--bad);border:1px solid rgba(255,107,107,.3)}
+.dx.na{background:var(--panel2);color:var(--dim);border:1px solid var(--line)}
+.wait{background:var(--panel);border:1px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;color:var(--muted);font-size:14px}
 @media (max-width:600px){.logos img{height:20px}.logos img.sv{height:23px}.tl td.tlwho{white-space:normal}}
 @media print{header,nav,.addbtn,.btn,.btn-ghost{display:none!important}body{background:#fff;color:#000}}
 </style>
@@ -170,6 +221,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
     </div>
     <nav>
       <button class="tab on" data-p="meta">Launching Meta ads</button>
+      <button class="tab" data-p="creative">Creative performance</button>
       <button class="tab" data-p="pricing">Pricing &amp; deliverables</button>
       <button class="tab" data-p="bundle">Bundle builder</button>
       <button class="tab" data-p="saved">Saved bundles</button>
@@ -178,12 +230,45 @@ footer{max-width:1180px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
   </header>
 
   <main>
+    <section class="pane" id="p-creative">
+      <h1 style="font-size:24px">Creative performance</h1>
+      <p class="lede">Which ads are working, and which part of each ad is doing the work. Every number is a rate, so an ad that spent $10 is compared fairly with one that spent $300. Use it to plan the next shoot: make more of what wins, fix the part that's losing people.</p>
+      <div class="key">
+        <div><b>Hook rate</b>Is the opening stopping the scroll?<span class="f">3-second plays ÷ impressions</span></div>
+        <div><b>Hold rate</b>Does the story keep them watching?<span class="f">ThruPlays ÷ 3-second plays</span></div>
+        <div><b>Link CTR</b>Is the offer worth clicking?<span class="f">link clicks ÷ impressions</span></div>
+        <div><b>ROAS</b>Did it turn into sales? Online stores only<span class="f">website purchase value ÷ spend</span></div>
+      </div>
+      <div class="cp-ctl">
+        <div><label for="cpClient">Client</label><select id="cpClient"></select></div>
+        <div><label for="cpRange">Period</label><select id="cpRange"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></div>
+        <div><label for="cpMin">Judge ads that spent at least</label><select id="cpMin"><option value="10">$10</option><option value="20" selected>$20</option><option value="50">$50</option><option value="100">$100</option></select></div>
+        <div><label for="cpFmt">Show</label><select id="cpFmt"><option value="all">All ads</option><option value="video">Video only</option><option value="static">Static and carousel only</option></select></div>
+      </div>
+      <div id="cpBody"></div>
+      <p style="font-size:12px;color:var(--dim);margin-top:18px">ThruPlay is Meta's count of plays that reached 15 seconds, or the end of the video if it's shorter. Statics and carousels have no video data, so they're judged on link CTR and sales only. Leads and cost per lead stay on the client's main dashboard, where every lead type is counted once. Each ad is compared with this client's average for the period: green is at least 15% better, red at least 15% worse. <span id="cpPulled"></span></p>
+    </section>
+
     <section class="pane" id="p-pricing">
       <h1 style="font-size:24px">Pricing &amp; deliverables</h1>
-      <p class="lede">Everything Ready to Rank sells, what's included, and what it costs. These are <b>retail</b> prices — what we'd charge the end client. Price your own margin on top.</p>
+      <p class="lede">Everything Ready to Rank sells, what's included, and what it costs. These are <b>your</b> prices, ex GST, and what Ready to Rank invoices you. Your <b>20% margin goes on top</b>, so the client pays the figure shown plus your margin. Both are on every card.</p>
       <div class="note">
         All prices <b>AUD, ex GST</b>. Ad spend is <b>separate</b> where marked — the client pays the platform direct.
-        Minimum terms apply. <b>POA</b> means we haven't set that price yet — ask Jose, don't quote it.
+        Minimum terms apply. <b>POA</b> means we haven't set that price yet, so ask Jose rather than quoting it.
+        <br><br>Prices shown are <b>your cost</b>. Your <b>20% margin is added on top</b>, and the client price on each card already includes it.
+      </div>
+      <div class="admin" id="adminPricing" style="display:none">
+        <h2>Adjust prices site-wide</h2>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0 0">Ready to Rank only. Partners never see this panel. Applies to every active package that has a confirmed price. POA packages are left alone.</p>
+        <div class="arow">
+          <div><label for="incPct">Change by (%)</label><input id="incPct" type="number" step="0.5" value="10"></div>
+          <div><label for="incRound">Round to</label><select id="incRound"><option value="5">Nearest $5</option><option value="10">Nearest $10</option><option value="50">Nearest $50</option><option value="0">Exact</option></select></div>
+          <div style="flex:1;min-width:190px"><label for="incReason">Reason (optional)</label><input id="incReason" type="text" placeholder="e.g. FY27 price review"></div>
+          <button class="btn-ghost" id="incPreview">Preview</button>
+          <button class="btn" id="incApply" style="display:none">Apply</button>
+          <button class="btn-ghost" id="incRevert">Revert last change</button>
+        </div>
+        <div id="incOut"></div>
       </div>
       <div id="services"></div>
     </section>
@@ -200,7 +285,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
     <section class="pane" id="p-saved">
       <h1 style="font-size:24px">Saved bundles</h1>
       <p class="lede">Bundles you've built. Only you and Ready to Rank can see these.</p>
-      <div class="wrap-x"><table id="savedTbl"><thead><tr><th>Bundle</th><th>For</th><th>Monthly</th><th>One-off</th><th>Saved</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="wrap-x"><table id="savedTbl"><thead><tr><th>Bundle</th><th>For</th><th>Monthly</th><th>One-off</th><th>Your margin</th><th>Saved</th><th></th></tr></thead><tbody></tbody></table></div>
     </section>
 
     <section class="pane" id="p-how">
@@ -303,7 +388,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-
       </div>
     </section>
   </main>
-  <footer>Ready to Rank × Savvas Studio · Partner hub · Prices retail (ex GST, AUD) · <span id="stamp"></span></footer>
+  <footer>Ready to Rank × Savvas Studio · Partner hub · Prices retail (ex GST, AUD) · Partner margin 20% on top · <span id="stamp"></span></footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -315,6 +400,11 @@ const $=id=>document.getElementById(id);
 const money=n=>'$'+Number(n).toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:0});
 
 let SERVICES=[],PACKAGES=[],DELIVS=[],ME=null;
+// Partner margin: added ON TOP of our price. The price shown is what Ready to
+// Rank invoices the partner; the client pays that plus the partner's margin.
+const commPct=p=>p&&p.commission_pct!=null?Number(p.commission_pct):20;
+const commOf=(p,amt)=>Number(amt==null?(p&&p.retail_price)||0:amt)*commPct(p)/100;
+const clientOf=(p,amt)=>Number(amt==null?(p&&p.retail_price)||0:amt)+commOf(p,amt);
 const picked=new Map();          // package_id -> qty
 let discount=0;
 
@@ -367,7 +457,7 @@ async function boot(){
   let who=pu&&pu.active?pu:null;
   if(!who){
     const {data:staff}=await sb.from('tt_people').select('*').eq('id',session.user.id).maybeSingle();
-    if(staff&&staff.active) who={name:staff.name||staff.email||'Ready to Rank',org:'Ready to Rank'};
+    if(staff&&staff.active) who={name:staff.name||staff.email||'Ready to Rank',org:'Ready to Rank',internal:true};
   }
   if(!who){
     $('loginErr').textContent='This email has no partner access. Ask Ready to Rank to add you.';
@@ -377,6 +467,7 @@ async function boot(){
   const me=ME={...who,id:session.user.id};
   $('login').style.display='none'; $('app').style.display='block';
   $('whoami').textContent=me.name+' · '+me.org;
+  if(me.internal) $('adminPricing').style.display='block';
   $('stamp').textContent='Updated '+new Date().toLocaleDateString('en-AU');
   await load();
 }
@@ -389,6 +480,7 @@ async function load(){
   ]);
   SERVICES=s.data||[]; PACKAGES=p.data||[]; DELIVS=d.data||[];
   renderPricing(); renderPicker(); renderCart(); loadSaved();
+  loadCreative();
 }
 
 /* ---------------- pricing ---------------- */
@@ -415,7 +507,9 @@ function pkgCard(p){
   const items=DELIVS.filter(d=>d.package_id===p.id);
   return `<div class="pkg${pr.poa?' poa':''}">
     <h3>${esc(p.name)}</h3>
-    <div class="price${pr.poa?' poa-v':''}">${pr.txt}<span class="u">${pr.poa?'price not set — ask Jose':esc(p.unit)+' · ex GST'}</span></div>
+    <div class="price${pr.poa?' poa-v':''}">${pr.txt}<span class="u">${pr.poa?'price not set, ask Jose':esc(p.unit)+' · ex GST'}</span></div>
+    ${pr.poa?'':`<div class="comm"><span>Your margin (${commPct(p)}%)</span><span class="cv">+${money(commOf(p))}</span></div>
+    <div class="cpay"><span>Client pays</span><span class="cv">${money(clientOf(p))}${p.unit==='one-off'?'':' /mo'}</span></div>`}
     <div class="meta">
       ${p.min_term?`<span class="chip">Min ${esc(p.min_term)}</span>`:''}
       ${p.ad_spend_separate?`<span class="chip">Ad spend separate</span>`:''}
@@ -436,7 +530,7 @@ function renderPicker(){
       <label class="prow">
         <input type="checkbox" data-id="${p.id}" ${picked.has(p.id)?'checked':''}>
         <span class="nm">${esc(p.name)}<small>${esc(p.unit)}${p.min_term?' · min '+esc(p.min_term):''}</small></span>
-        <span class="pr">${money(p.retail_price)}</span>
+        <span class="pr">${money(p.retail_price)}<small style="display:block;color:var(--ok);font-size:10px">+${money(commOf(p))} → ${money(clientOf(p))}</small></span>
       </label>`).join('');
   }).join('');
   $('picker').querySelectorAll('input[type=checkbox]').forEach(c=>c.addEventListener('change',()=>{
@@ -447,15 +541,18 @@ function renderPicker(){
 }
 
 function totals(){
-  let monthly=0,oneoff=0,adSep=false,longest=null;
+  let monthly=0,oneoff=0,adSep=false,longest=null,commM=0,commO=0;
   picked.forEach((q,id)=>{
     const p=PACKAGES.find(x=>x.id===id); if(!p) return;
-    if(p.unit==='one-off') oneoff+=Number(p.retail_price)*q; else monthly+=Number(p.retail_price)*q;
+    const amt=Number(p.retail_price)*q;
+    if(p.unit==='one-off'){oneoff+=amt;commO+=commOf(p,amt);} else {monthly+=amt;commM+=commOf(p,amt);}
     if(p.ad_spend_separate) adSep=true;
     if(p.min_term){const m=parseInt(p.min_term); if(!longest||m>longest) longest=m;}
   });
   const disc=monthly*(discount/100);
-  return {monthly,oneoff,disc,monthlyNet:monthly-disc,adSep,longest};
+  // A bundle discount lowers what the client pays, so it lowers the commission with it.
+  const factor=monthly?(monthly-disc)/monthly:1;
+  return {monthly,oneoff,disc,monthlyNet:monthly-disc,adSep,longest,commMonthly:commM*factor,commOneoff:commO};
 }
 
 function renderCart(){
@@ -475,8 +572,10 @@ function renderCart(){
       <label for="disc">Bundle discount on monthly (%)</label>
       <input id="disc" type="number" min="0" max="40" step="1" value="${discount}">
     </div>
-    ${t.monthly?`<div class="tot"><span class="lbl">Monthly${discount?' (after '+discount+'%)':''}</span><span class="val">${money(t.monthlyNet)}</span></div>`:''}
-    ${t.oneoff?`<div class="tot"><span class="lbl">One-off</span><span class="val">${money(t.oneoff)}</span></div>`:''}
+    ${t.monthly?`<div class="tot"><span class="lbl">Your price${discount?' (after '+discount+'%)':''}</span><span class="val">${money(t.monthlyNet)}</span></div>`:''}
+    ${t.oneoff?`<div class="tot"><span class="lbl">Your price, one-off</span><span class="val">${money(t.oneoff)}</span></div>`:''}
+    ${(t.commMonthly||t.commOneoff)?`<div class="comm"><span>Your margin (20%)</span><span class="cv">${[t.commMonthly?'+'+money(t.commMonthly)+'/mo':'',t.commOneoff?'+'+money(t.commOneoff)+' one-off':''].filter(Boolean).join(' + ')}</span></div>`:''}
+    ${(t.commMonthly||t.commOneoff)?`<div class="cpay"><span>Client pays</span><span class="cv">${[t.monthly?money(t.monthlyNet+t.commMonthly)+'/mo':'',t.oneoff?money(t.oneoff+t.commOneoff)+' one-off':''].filter(Boolean).join(' + ')}</span></div>`:''}
     ${t.disc?`<div class="save">Bought separately ${money(t.monthly)}/mo → bundled <b>${money(t.monthlyNet)}/mo</b>. Saves ${money(t.disc)}/mo.</div>`:''}
     ${t.adSep?`<div class="warnbox">Ad spend is <b>not</b> included — the client pays the platform direct.</div>`:''}
     ${t.longest?`<div class="warnbox" style="background:rgba(23,180,240,.07);border-color:rgba(23,180,240,.3);color:var(--accent)">Minimum term follows the longest component: <b>${t.longest} months</b>.</div>`:''}
@@ -485,7 +584,9 @@ function renderCart(){
       <button class="btn-ghost" id="printB">Print</button>
     </div>
     <ul class="rules">
-      <li>Prices are retail, ex GST — your margin sits on top.</li>
+      <li>Prices shown are your cost, ex GST. Ready to Rank invoices you this.</li>
+      <li>Your 20% margin goes on top. The client pays your cost plus your margin.</li>
+      <li>A bundle discount lowers your cost, so your margin and the client's price fall with it.</li>
       <li>The bundle rate holds only while every component runs.</li>
       <li>Drop one service and each reverts to its standalone price.</li>
     </ul>`;
@@ -500,7 +601,12 @@ async function saveBundle(){
   const {data:b,error}=await sb.from('sv_bundles')
     .insert({name,for_client:forC,discount_pct:discount,built_by:ME.id}).select().single();
   if(error){alert('Could not save: '+error.message);return;}
-  const items=[...picked.entries()].map(([package_id,qty])=>({bundle_id:b.id,package_id,qty}));
+  // Snapshot the price and commission. A later site-wide change must never
+  // re-price a bundle that has already been quoted to a client.
+  const items=[...picked.entries()].map(([package_id,qty])=>{
+    const p=PACKAGES.find(x=>x.id===package_id);
+    return {bundle_id:b.id,package_id,qty,unit_price:p?p.retail_price:null,commission_pct:p?commPct(p):null};
+  });
   const {error:e2}=await sb.from('sv_bundle_items').insert(items);
   if(e2){alert('Bundle saved but items failed: '+e2.message);return;}
   alert('Saved. Ready to Rank can see it too.');
@@ -511,15 +617,22 @@ async function loadSaved(){
   const {data:bs}=await sb.from('sv_bundles').select('*').order('created_at',{ascending:false});
   const {data:its}=await sb.from('sv_bundle_items').select('*');
   const tb=$('savedTbl').querySelector('tbody');
-  if(!bs||!bs.length){tb.innerHTML='<tr><td colspan="6" style="color:var(--dim)">No saved bundles yet.</td></tr>';return;}
+  if(!bs||!bs.length){tb.innerHTML='<tr><td colspan="7" style="color:var(--dim)">No saved bundles yet.</td></tr>';return;}
   tb.innerHTML=bs.map(b=>{
     const mine=(its||[]).filter(i=>i.bundle_id===b.id);
-    let m=0,o=0;
+    let m=0,o=0,cm=0,co=0;
     mine.forEach(i=>{const p=PACKAGES.find(x=>x.id===i.package_id);if(!p)return;
-      if(p.unit==='one-off')o+=Number(p.retail_price)*i.qty;else m+=Number(p.retail_price)*i.qty;});
-    const net=m-m*(Number(b.discount_pct)/100);
+      // Use the snapshot taken when the bundle was saved, not today's price.
+      const unit=i.unit_price!=null?Number(i.unit_price):Number(p.retail_price);
+      const pc=i.commission_pct!=null?Number(i.commission_pct):commPct(p);
+      const amt=unit*i.qty;
+      if(p.unit==='one-off'){o+=amt;co+=amt*pc/100;}else{m+=amt;cm+=amt*pc/100;}});
+    const factor=Number(b.discount_pct)?(100-Number(b.discount_pct))/100:1;
+    const net=m*factor;
+    const comm=[cm?money(cm*factor)+'/mo':'',co?money(co)+' one-off':''].filter(Boolean).join(' + ');
     return `<tr><td><b>${esc(b.name)}</b></td><td>${esc(b.for_client||'—')}</td>
       <td>${m?money(net)+'/mo':'—'}</td><td>${o?money(o):'—'}</td>
+      <td style="color:var(--ok)">${comm||'—'}</td>
       <td>${new Date(b.created_at).toLocaleDateString('en-AU')}</td>
       <td><button class="btn-ghost" style="padding:5px 10px;font-size:12px" data-del="${b.id}">Delete</button></td></tr>`;
   }).join('');
@@ -528,6 +641,199 @@ async function loadSaved(){
     await sb.from('sv_bundles').delete().eq('id',+b.dataset.del); loadSaved();
   }));
 }
+
+/* ---------------- admin: site-wide price change ---------------- */
+let pendingRows=null;
+const roundTo=(v,step)=>step?Math.round(v/step)*step:Math.round(v*100)/100;
+const pricedPackages=()=>PACKAGES.filter(p=>p.price_confirmed&&p.retail_price!=null)
+  .slice().sort((a,b)=>a.service_id-b.service_id||a.sort-b.sort);
+
+function previewIncrease(){
+  const pct=Number($('incPct').value), step=Number($('incRound').value);
+  $('incApply').style.display='none'; pendingRows=null;
+  if(!isFinite(pct)||pct===0){$('incOut').innerHTML='<div class="warnbox">Enter a percentage other than zero.</div>';return;}
+  const rows=pricedPackages().map(p=>({p,oldP:Number(p.retail_price),newP:Math.max(0,roundTo(Number(p.retail_price)*(1+pct/100),step))}))
+    .filter(r=>r.newP!==r.oldP);
+  if(!rows.length){$('incOut').innerHTML='<div class="warnbox">Nothing changes at that percentage and rounding.</div>';return;}
+  const svc=id=>(SERVICES.find(s=>s.id===id)||{}).name||'';
+  $('incOut').innerHTML='<table class="pvtbl"><thead><tr><th>Package</th><th>Service</th><th class="num">Now</th><th class="num">After</th><th class="num">Change</th><th class="num">Client pays after</th></tr></thead><tbody>'+
+    rows.map(r=>{const d=r.newP-r.oldP;
+      return `<tr><td><b>${esc(r.p.name)}</b></td><td style="color:var(--dim)">${esc(svc(r.p.service_id))}</td>
+        <td class="num">${money(r.oldP)}</td><td class="num">${money(r.newP)}</td>
+        <td class="num ${d>0?'up':'dn'}">${d>0?'+':''}${money(d)}</td>
+        <td class="num" style="color:var(--ok)">${money(clientOf(r.p,r.newP))}</td></tr>`;}).join('')+
+    `</tbody></table><p style="font-size:12.5px;color:var(--muted);margin-top:12px">${rows.length} package${rows.length>1?'s':''} would change. POA packages are untouched, and bundles already saved keep the price they were quoted at.</p>`;
+  pendingRows=rows; $('incApply').style.display='inline-block';
+}
+
+async function applyIncrease(){
+  if(!pendingRows||!pendingRows.length) return;
+  const pct=Number($('incPct').value), step=Number($('incRound').value);
+  const reason=$('incReason').value.trim()||null;
+  if(!confirm('Change '+pendingRows.length+' prices by '+pct+'%?\n\nGeorge sees the new prices as soon as this is applied. You can put them back with Revert last change.')) return;
+  $('incApply').disabled=true;
+  const batch=crypto.randomUUID();
+  const {error:he}=await sb.from('sv_price_history').insert(pendingRows.map(r=>({
+    batch_id:batch,package_id:r.p.id,old_price:r.oldP,new_price:r.newP,pct,
+    rounding:step?('nearest '+step):'exact',reason})));
+  if(he){alert('Could not write the change log, so no price was touched: '+he.message);$('incApply').disabled=false;return;}
+  let failed=null;
+  for(const r of pendingRows){
+    const {error}=await sb.from('sv_packages').update({retail_price:r.newP}).eq('id',r.p.id);
+    if(error){failed=error.message;break;}
+  }
+  $('incApply').disabled=false; $('incApply').style.display='none'; pendingRows=null;
+  await load();
+  $('incOut').innerHTML=failed
+    ? '<div class="warnbox">Stopped partway: '+esc(failed)+'. Use Revert last change to put everything back.</div>'
+    : '<div class="save">Prices updated and logged as one batch, so Revert last change puts every one of them back.</div>';
+}
+
+async function revertLast(){
+  const {data:last}=await sb.from('sv_price_history').select('batch_id,changed_at')
+    .is('reverted_at',null).order('changed_at',{ascending:false}).limit(1);
+  if(!last||!last.length){alert('There is no price change left to revert.');return;}
+  const {data:rows}=await sb.from('sv_price_history').select('*').eq('batch_id',last[0].batch_id);
+  if(!rows||!rows.length){alert('That change has no rows to put back.');return;}
+  if(!confirm('Put '+rows.length+' price'+(rows.length>1?'s':'')+' back to what they were before '+new Date(last[0].changed_at).toLocaleString('en-AU')+'?')) return;
+  for(const r of rows){ await sb.from('sv_packages').update({retail_price:r.old_price}).eq('id',r.package_id); }
+  await sb.from('sv_price_history').update({reverted_at:new Date().toISOString()}).eq('batch_id',last[0].batch_id);
+  await load();
+  $('incOut').innerHTML='<div class="save">Reverted. Prices are back to what they were before that change.</div>';
+}
+
+$('incPreview').addEventListener('click',previewIncrease);
+$('incApply').addEventListener('click',applyIncrease);
+$('incRevert').addEventListener('click',revertLast);
+
+/* ---------------- creative performance ---------------- */
+// Rates, not counts: George's rule is that 99 plays on $10 beats 300 plays on $300.
+let CP_CLIENTS=[],CP_ROWS=[],cpSort={k:'spend',dir:-1};
+const pct=(a,b)=>b>0?a/b*100:null;
+const fmtPct=v=>v==null?'—':(v<10?v.toFixed(1):v.toFixed(0))+'%';
+const isoDay=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const auDate=s=>s?s.split('-').reverse().join('/'):'';
+
+async function loadCreative(){
+  const {data}=await sb.from('sv_creative_clients').select('*').eq('active',true).order('sort');
+  CP_CLIENTS=data||[];
+  $('cpClient').innerHTML=CP_CLIENTS.map(c=>`<option value="${esc(c.slug)}">${esc(c.name)}</option>`).join('')
+    ||'<option value="">No clients set up yet</option>';
+  const {data:lg}=await sb.from('sv_creative_pull_log').select('ran_at').order('ran_at',{ascending:false}).limit(1);
+  $('cpPulled').textContent=lg&&lg.length?'Data last refreshed '+new Date(lg[0].ran_at).toLocaleString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'numeric',minute:'2-digit'})+'.':'';
+  await fetchCreative();
+}
+
+async function fetchCreative(){
+  const c=CP_CLIENTS.find(x=>x.slug===$('cpClient').value);
+  if(!c){$('cpBody').innerHTML='<div class="wait">No clients set up yet.</div>';return;}
+  if(!c.meta_account_id){CP_ROWS=[];$('cpBody').innerHTML=`<div class="wait"><b>${esc(c.name)}</b>: the ad account is being connected. Results appear here the morning after it's done.</div>`;return;}
+  // Yesterday back: today's figures are still moving.
+  const to=new Date(); to.setDate(to.getDate()-1);
+  const from=new Date(to); from.setDate(from.getDate()-(+$('cpRange').value-1));
+  $('cpBody').innerHTML='<div class="wait">Loading…</div>';
+  const {data,error}=await sb.rpc('sv_creative_summary',{p_account:c.meta_account_id,p_from:isoDay(from),p_to:isoDay(to)});
+  if(error){$('cpBody').innerHTML='<div class="wait">Couldn\'t load results: '+esc(error.message)+'</div>';return;}
+  CP_ROWS=(data||[]).map(r=>{
+    const n=k=>Number(r[k]||0);
+    const video=n('video_3s')>0;
+    return {...r,spend:n('spend'),impressions:n('impressions'),video,
+      hook:video?pct(n('video_3s'),n('impressions')):null,
+      hold:video?pct(n('thruplay'),n('video_3s')):null,
+      ctr:pct(n('link_clicks'),n('impressions')),
+      roas:n('purchase_value')>0&&n('spend')>0?n('purchase_value')/n('spend'):null,
+      // On short videos Meta's 25% count can exceed 3-second plays, so the curve's base is whichever is larger.
+      curve:video?(base=>[100,pct(n('p25'),base),pct(n('p50'),base),pct(n('p75'),base),pct(n('p100'),base)])(Math.max(n('video_3s'),n('p25'))):null};
+  });
+  renderCreative(c,from,to);
+}
+
+// Client average for the period, weighted by volume (sum ÷ sum), over ads that cleared the spend floor.
+function benchmarks(rows){
+  const s=k=>rows.reduce((a,r)=>a+Number(r[k]||0),0);
+  const vid=rows.filter(r=>r.video), sv=k=>vid.reduce((a,r)=>a+Number(r[k]||0),0);
+  return {spend:s('spend'),impressions:s('impressions'),
+    hook:pct(sv('video_3s'),sv('impressions')),hold:pct(sv('thruplay'),sv('video_3s')),
+    ctr:pct(s('link_clicks'),s('impressions')),
+    roas:s('purchase_value')>0?s('purchase_value')/s('spend'):null,
+    purchases:s('purchases'),clicks:s('link_clicks')};
+}
+const vs=(v,avg)=>v==null||avg==null||avg===0?0:(v>=avg*1.15?1:v<=avg*0.85?-1:0);
+
+function diagnose(r,b,minSpend){
+  if(r.spend<minSpend) return {c:'na',t:'Not enough spend yet to judge'};
+  const ctr=vs(r.ctr,b.ctr);
+  // Clicks without sales points past the creative, at the landing page.
+  if(b.purchases>0||r.purchase_value>0||b.roas!=null){
+    if(ctr>=0&&Number(r.link_clicks)>=30&&Number(r.purchases)===0) return {c:'bad',t:'People click but nobody buys. Check the landing page matches the offer'};
+  }
+  if(!r.video){
+    if(ctr>0) return {c:'win',t:'Strong offer. Make more statics like this'};
+    if(ctr<0) return {c:'fix',t:'Offer or visual isn\'t landing. Try a new angle'};
+    return {c:'na',t:'Around average'};
+  }
+  const hk=vs(r.hook,b.hook), hd=vs(r.hold,b.hold);
+  if(hk>=0&&hd>=0&&ctr>=0){
+    if(hk+hd+ctr>=2) return {c:'win',t:'Winner. Make more like this'};
+    if(ctr>0) return {c:'win',t:'Strong offer, and the hook and story hold up. Make more like this'};
+  }
+  if(hk<0) return {c:'fix',t:'Weak hook. Test a new opening 3 seconds'};
+  if(hd<0) return {c:'fix',t:'Hook works, the story loses them. Re-cut the body'};
+  if(ctr<0) return {c:'fix',t:'They watch but don\'t click. Sharpen the offer or CTA'};
+  if(hk>0) return {c:'win',t:'Great hook. Reuse this opening'};
+  if(hd>0) return {c:'win',t:'Strong story. Keep this structure'};
+  return {c:'na',t:'Around average'};
+}
+
+function renderCreative(c,from,to){
+  const minSpend=+$('cpMin').value, fmt=$('cpFmt').value;
+  let rows=CP_ROWS.filter(r=>fmt==='all'||(fmt==='video'?r.video:!r.video));
+  if(!CP_ROWS.length){$('cpBody').innerHTML=`<div class="wait">No ads ran for <b>${esc(c.name)}</b> between ${auDate(isoDay(from))} and ${auDate(isoDay(to))}.</div>`;return;}
+  const judged=rows.filter(r=>r.spend>=minSpend);
+  const b=benchmarks(judged.length?judged:rows);
+  const ecom=b.purchases>0||b.roas!=null;
+  const kp=(l,v,s)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`;
+  const kpis=`<div class="kpis">
+    ${kp('Ad spend',money(b.spend),rows.length+' ads, '+judged.length+' judged')}
+    ${kp('Hook rate',fmtPct(b.hook),'client average')}
+    ${kp('Hold rate',fmtPct(b.hold),'client average')}
+    ${kp('Link CTR',fmtPct(b.ctr),'client average')}
+    ${ecom?kp('ROAS',b.roas!=null?b.roas.toFixed(2)+'×':'—',Math.round(b.purchases)+' website purchases'):''}
+  </div>`;
+  const best=(k,lbl)=>{
+    const l=judged.filter(r=>r[k]!=null).sort((a,z)=>z[k]-a[k]).slice(0,3);
+    return l.length?l.map(r=>`<li><b>${esc(r.ad_name||r.ad_id)}</b> <span class="mono">${fmtPct(r[k])}</span></li>`).join(''):'<li>No ad has spent enough yet.</li>';
+  };
+  const tops=`<div class="tops">
+    <div class="top"><h3>Best hooks</h3><div class="sub">Openings to copy on the next shoot</div><ol>${best('hook')}</ol></div>
+    <div class="top"><h3>Best stories</h3><div class="sub">Structure and pacing that held attention</div><ol>${best('hold')}</ol></div>
+    <div class="top"><h3>Best offers</h3><div class="sub">What made people click</div><ol>${best('ctr')}</ol></div>
+  </div>`;
+  // Ads under the spend floor aren't judged, so they aren't coloured either.
+  const cell=(v,avg,f,r)=>{const d=r.spend<minSpend?0:vs(v,avg);return `<td class="num ${d>0?'hi':d<0?'lo':''}">${f(v)}</td>`;};
+  const col=(k,l)=>`<th class="${cpSort.k===k?'sorted':''}" data-k="${k}">${l}${cpSort.k===k?(cpSort.dir<0?' ↓':' ↑'):''}</th>`;
+  rows=rows.slice().sort((a,z)=>{const x=a[cpSort.k],y=z[cpSort.k];
+    if(x==null&&y==null)return 0; if(x==null)return 1; if(y==null)return -1;
+    return (typeof x==='string'?x.localeCompare(y):x-y)*cpSort.dir;});
+  const table=`<div class="wrap-x"><table class="cpt"><thead><tr><th></th>${col('ad_name','Ad')}${col('spend','Spend')}${col('hook','Hook')}${col('hold','Hold')}${col('ctr','Link CTR')}${ecom?col('roas','ROAS'):''}<th title="Share of 3-second viewers still watching at 25, 50, 75 and 100%">Drop-off</th><th>What it tells us</th></tr></thead><tbody>
+    ${rows.map(r=>{const d=diagnose(r,b,minSpend);return `<tr>
+      <td>${r.thumbnail_url?`<img class="thumb" src="${esc(r.thumbnail_url)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`:'<div class="thumb"></div>'}</td>
+      <td><div class="adn">${esc(r.ad_name||r.ad_id)}<small>${r.video?'Video':'Static / carousel'} · ${esc(r.campaign_name||'')}</small></div></td>
+      <td class="num">${money(r.spend)}</td>
+      ${cell(r.hook,b.hook,fmtPct,r)}${cell(r.hold,b.hold,fmtPct,r)}${cell(r.ctr,b.ctr,fmtPct,r)}
+      ${ecom?`<td class="num">${r.roas!=null?r.roas.toFixed(2)+'×':'—'}</td>`:''}
+      <td>${r.curve?`<div class="curve" title="${r.curve.slice(1).map((v,i)=>[25,50,75,100][i]+'%: '+fmtPct(v)).join(' · ')}">${r.curve.map(v=>`<i style="height:${Math.max(1,Math.min(100,v||0))}%"></i>`).join('')}</div>`:'<span style="color:var(--dim)">—</span>'}</td>
+      <td><span class="dx ${d.c}">${esc(d.t)}</span></td></tr>`;}).join('')}
+  </tbody></table></div>`;
+  $('cpBody').innerHTML=`<p style="font-size:13px;color:var(--dim);margin:0 0 14px">${esc(c.name)} · ${auDate(isoDay(from))} to ${auDate(isoDay(to))}</p>`+kpis+tops+table;
+  $('cpBody').querySelectorAll('th[data-k]').forEach(th=>th.addEventListener('click',()=>{
+    const k=th.dataset.k; cpSort=cpSort.k===k?{k,dir:-cpSort.dir}:{k,dir:k==='ad_name'?1:-1}; renderCreative(c,from,to);}));
+}
+['cpClient','cpRange'].forEach(id=>$(id).addEventListener('change',fetchCreative));
+['cpMin','cpFmt'].forEach(id=>$(id).addEventListener('change',()=>{
+  const c=CP_CLIENTS.find(x=>x.slug===$('cpClient').value); if(!c||!c.meta_account_id||!CP_ROWS.length) return fetchCreative();
+  const to=new Date(); to.setDate(to.getDate()-1); const from=new Date(to); from.setDate(from.getDate()-(+$('cpRange').value-1));
+  renderCreative(c,from,to);}));
 
 /* ---------------- tabs ---------------- */
 function go(p){
