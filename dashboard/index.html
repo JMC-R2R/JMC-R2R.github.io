@@ -80,6 +80,7 @@ section[hidden]{display:none}
 .sub{color:var(--ink3);font-size:13px;max-width:64ch;margin:0 0 14px}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px}
+.card+.kpis{margin-top:14px}
 .kpi{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:15px 16px;display:flex;flex-direction:column;gap:7px;min-height:104px}
 .kpi .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
 .kpi .val{font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1}
@@ -100,9 +101,9 @@ section[hidden]{display:none}
 .cardhead{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap}
 .cardhead h3{font-size:14.5px}
 .ch3sub{font-size:12px;color:var(--ink3);margin:2px 0 0}
-.legend{display:flex;gap:13px;font-size:11.5px;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 13px;font-size:11.5px;color:var(--ink2);min-width:0;max-width:100%}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
-.legend span{white-space:nowrap}
+.legend span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;vertical-align:baseline}
 .tbl tr.total td{border-bottom:none;border-top:1px solid var(--bd2);color:var(--ink);font-weight:800}
 .tbl tr.total td:first-child{font-weight:800}
@@ -298,8 +299,22 @@ const SLUG_Q=(new URLSearchParams(location.search).get('c')||'').toLowerCase();
 const num=n=>Number(n||0).toLocaleString('en-AU',{maximumFractionDigits:0});
 const aud=n=>'$'+Number(n||0).toLocaleString('en-AU',{maximumFractionDigits:0});
 const has=v=>v!=null&&Number(v)>0;
+/* Cost per result: cents under $10 so a 45c click never reads as $0. */
+const cost=v=>'$'+Number(v||0).toLocaleString('en-AU',Number(v)<10?{minimumFractionDigits:2,maximumFractionDigits:2}:{maximumFractionDigits:0});
 const NAV='<span class="val na">N/A</span>';
-let D=null,TAB='overview',MONTH=null,DUMMY=false,booted=false;
+/* N/A only means "not measured": before any spend, or a figure the pull did not collect.
+   Once ads are spending, nothing recorded is a real 0 and a cost per result reads —. */
+const cnt=(v,live)=>!live||v==null?'N/A':num(v);
+const per=(spend,n,live)=>!live||n==null?'N/A':has(n)?cost(Number(spend)/Number(n)):'—';
+let D=null,TAB='overview',VIEW=null,DUMMY=false,booted=false;
+const SHOP=()=>D&&D.store_type==='ecommerce';
+/* Figures for the chosen period. Early in a month the month is a day or two old, so the
+   page opens on "since launch" until the month has a week of spend behind it. */
+function P(){
+  const launch=VIEW==='launch'&&D.launch_totals;
+  return {t:(launch?D.launch_totals:D.totals)||{}, camps:(launch?D.by_campaign_launch:D.by_campaign)||[],
+          label:launch?'Since launch':'This month'};
+}
 
 const TABS=[['overview','Overview',null],['meta','Meta Ads','meta'],['google','Google Ads','google'],
             ['seo','SEO','seo'],['social','Social','social'],['ai','AI Search','ai'],['updates','Updates',null]];
@@ -383,6 +398,14 @@ function fillDummy(){
   days.forEach((d,n)=>camps.forEach((c,i)=>D.daily_by_campaign.push(
       {day:d.day,campaign:c.name,spend:Math.round(d.spend*share[i]*((n+i)%5===0?1.25:0.95)*100)/100})));
   D.actions=[{on:days[days.length-6].day,what:'Sample: paused the weakest ad set',why:'Sample entry so you can see how changes are reported'}];
+  if(SHOP()){                       // a store's sample shows the shopping funnel too
+    days.forEach((d,i)=>{ d.add_to_carts=(i*3)%4; });
+    Object.assign(D.totals,{link_clicks:940,landing_page_views:860,add_to_carts:sum('add_to_carts'),checkouts:4,messages:6});
+    Object.assign(D.prev,{add_to_carts:Math.round(sum('add_to_carts')*0.7),messages:4});
+    D.by_campaign.forEach((c,i)=>Object.assign(c,{link_clicks:Math.round(940*share[i]),landing_page_views:Math.round(860*share[i]),
+      add_to_carts:Math.round(D.totals.add_to_carts*share[i]),checkouts:i===0?4:0,messages:i===0?4:2}));
+  }
+  D.launch_totals=D.totals; D.by_campaign_launch=D.by_campaign; D.days_this_month=30;
 }
 
 /* The R2R frame never changes: same layout, same rhythm, same components, same mono
@@ -442,12 +465,14 @@ function renderTabs(){
 }
 function showTab(){ TABS.forEach(([k])=>{ const s=$('sec-'+k); if(s) s.hidden = k!==TAB; }); }
 function renderMonths(){
-  const now=new Date(D.month+'T00:00:00'); const out=[];
-  for(let i=3;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); out.push(d); }
-  MONTH=MONTH||out[out.length-1].toISOString().slice(0,7);
-  $('months').innerHTML=out.map(d=>{const key=d.toISOString().slice(0,7);
-    return `<button class="mchip" aria-pressed="${key===MONTH}" data-m="${key}">${d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'})}</button>`;}).join('');
-  document.querySelectorAll('.mchip').forEach(b=>b.addEventListener('click',()=>{MONTH=b.dataset.m;renderMonths();renderAll();}));
+  const canLaunch=!!(D.launch_totals&&D.launch_date);
+  VIEW=VIEW||(canLaunch&&Number(D.days_this_month||0)<7?'launch':'month');
+  const mName=new Date(D.month+'T00:00:00').toLocaleDateString('en-AU',{month:'long'});
+  const chips=[];
+  if(canLaunch) chips.push(['launch','Since launch '+new Date(D.launch_date+'T00:00:00').toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit'})]);
+  chips.push(['month',mName]);
+  $('months').innerHTML=chips.map(([k,l])=>`<button class="mchip" aria-pressed="${k===VIEW}" data-v="${k}">${esc(l)}</button>`).join('');
+  document.querySelectorAll('.mchip').forEach(b=>b.addEventListener('click',()=>{VIEW=b.dataset.v;renderMonths();renderAll();}));
 }
 
 /* ---------- locked service dialog ---------- */
@@ -480,31 +505,72 @@ function renderAll(){
   drawAll();
 }
 function callout(){
-  const t=D.totals||{}, tgt=D.target;
+  const {t,label}=P(), tgt=D.target;
   if(DUMMY) return `<div class="callout warn"><span class="bar"></span><h4>Sample view <span class="sig">Dummy data</span></h4>
     <p>This is what your dashboard looks like with a month of campaigns behind it. Your own numbers replace it once the ads have been running.</p></div>`;
   if(!has(t.spend)) return `<div class="callout"><span class="bar"></span><h4>Not started <span class="sig">Waiting</span></h4>
     <p>Your campaigns have not started spending. Nothing is estimated here, so every figure reads N/A until they do.</p></div>`;
+  if(SHOP()){
+    /* A short read for the owner, built only from the figures on this page. Every
+       sentence is conditional on its number existing, so nothing here is estimated. */
+    const pl=(n,one,many)=>`${num(n)} ${Number(n)==1?one:many}`;
+    const when=VIEW==='launch'&&D.launch_date
+      ?`Since your ads started on ${new Date(D.launch_date+'T00:00:00').toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit'})}`
+      :`So far in ${new Date(D.month+'T00:00:00').toLocaleDateString('en-AU',{month:'long'})}`;
+    const s=[];
+    s.push(t.landing_page_views!=null
+      ?`${when}, we have spent ${aud(t.spend)} and brought ${pl(t.landing_page_views,'person','people')} to your website.`
+      :`${when}, we have spent ${aud(t.spend)} on your ads.`);
+    if(t.add_to_carts!=null){
+      if(has(t.add_to_carts)) s.push(`${pl(t.add_to_carts,'visitor','visitors')} added a piece to their cart, at ${cost(t.spend/t.add_to_carts)} of ad spend each`
+        +(has(t.checkouts)?`, and ${pl(t.checkouts,'went','went')} on to start checkout.`:'.'));
+      else s.push('Nobody has added to cart yet.');
+    }
+    if(has(t.purchases)) s.push(`${pl(t.purchases,'online sale','online sales')} came through`
+      +(has(t.revenue)?` worth ${aud(t.revenue)}, a return of ${(Number(t.revenue)/Number(t.spend)).toFixed(1)}x on ad spend.`:'.'));
+    else s.push('No online sales have come through yet. Higher value pieces are a considered purchase, so add to carts and checkouts are the early signs we watch while sales build.');
+    const talk=[];
+    if(has(t.messages)) talk.push(`${pl(t.messages,'person','people')} messaged you directly from the ads`);
+    if(has(t.leads)) talk.push(`${pl(t.leads,'enquiry','enquiries')} came through the form`);
+    if(talk.length) s.push(talk.join(' and ')+'.');
+    return `<div class="callout"><span class="bar"></span><h4>Your ads at a glance <span class="sig">${esc(label)}</span></h4>
+      <p>${esc(s.join(' '))}</p></div>`;
+  }
   const cpl=has(t.leads)?Number(t.spend)/Number(t.leads):null;
   if(tgt&&tgt.value&&cpl){
     const good=cpl<=Number(tgt.value);
     return `<div class="callout ${good?'good':'warn'}"><span class="bar"></span><h4>${good?'On target':'Above target'} <span class="sig">${good?'Good':'Watch'}</span></h4>
       <p>${num(t.leads)} ${t.leads==1?'enquiry':'enquiries'} for ${aud(t.spend)}, which is ${aud(cpl)} each against a target of ${aud(tgt.value)}.</p></div>`;
   }
-  return `<div class="callout"><span class="bar"></span><h4>This month so far <span class="sig">Update</span></h4>
+  return `<div class="callout"><span class="bar"></span><h4>${esc(label)} <span class="sig">Update</span></h4>
     <p>${aud(t.spend)} spent, ${num(t.leads)} ${t.leads==1?'enquiry':'enquiries'} and ${num(t.purchases)} ${t.purchases==1?'purchase':'purchases'}.</p></div>`;
 }
 function kpiRow(){
-  const t=D.totals||{},p=D.prev||{},l7=D.last7||{},tgt=D.target;
-  const cpl=has(t.leads)?aud(Number(t.spend)/Number(t.leads)):NAV;
-  const roas=has(t.spend)&&has(t.revenue)?(Number(t.revenue)/Number(t.spend)).toFixed(1)+'x':'N/A';
+  const {t,label}=P(),p=D.prev||{},l7=D.last7||{},tgt=D.target;
+  const live=has(t.spend);
+  /* Month on month only makes sense when the tile is showing a month. */
+  const dl=(a,b)=>VIEW==='month'&&!(Number(D.days_this_month)<7)?delta(a,b):'';
+  const v=(n)=>{ const s=cnt(n,live); return s==='N/A'?NAV:s; };
+  const c=(n)=>{ const s=per(t.spend,n,live); return s==='N/A'?NAV:s; };
+  const roas=live&&has(t.revenue)?(Number(t.revenue)/Number(t.spend)).toFixed(1)+'x':'—';
+  const foot=(a,b)=>dl(a,b)||(live?label.toLowerCase():'not started');
+  const spendTile=kpi('Spend',live?aud(t.spend):NAV,foot(t.spend,p.spend));
+  const dmTile=t.messages!=null?kpi('DMs from ads',v(t.messages),foot(t.messages,p.messages)):'';
+  if(SHOP()) return `<div class="kpis">
+    ${spendTile}
+    ${kpi('Add to carts',v(t.add_to_carts),foot(t.add_to_carts,p.add_to_carts))}
+    ${kpi('Cost per add to cart',c(t.add_to_carts),t.checkouts!=null&&live?`${num(t.checkouts)} ${t.checkouts==1?'checkout':'checkouts'} started`:'')}
+    ${kpi('Purchases',v(t.purchases),foot(t.purchases,p.purchases))}
+    ${kpi('Revenue',live?aud(t.revenue):NAV,'Return on ad spend '+roas)}
+    ${dmTile}
+  </div>`;
   return `<div class="kpis">
-    ${kpi('Spend',has(t.spend)?aud(t.spend):NAV,delta(t.spend,p.spend)||'not started')}
-    ${kpi('Enquiries',has(t.leads)?num(t.leads):NAV,delta(t.leads,p.leads)||'not started')}
-    ${kpi('Cost per enquiry',cpl,tgt&&tgt.value?('Target '+aud(tgt.value)):'')}
-    ${kpi('Purchases',has(t.purchases)?num(t.purchases):NAV,delta(t.purchases,p.purchases)||'not started')}
-    ${kpi('Revenue',has(t.revenue)?aud(t.revenue):NAV,'Return on ad spend '+roas)}
-    ${kpi('Last 7 days',has(l7.spend)?aud(l7.spend):NAV,has(l7.spend)?`${num(l7.leads)} ${l7.leads==1?'enquiry':'enquiries'}, ${num(l7.purchases)} ${l7.purchases==1?'purchase':'purchases'}`:'nothing yet')}
+    ${spendTile}
+    ${kpi('Enquiries',v(t.leads),foot(t.leads,p.leads))}
+    ${kpi('Cost per enquiry',c(t.leads),tgt&&tgt.value?('Target '+aud(tgt.value)):'')}
+    ${kpi('Purchases',v(t.purchases),foot(t.purchases,p.purchases))}
+    ${kpi('Revenue',live?aud(t.revenue):NAV,'Return on ad spend '+roas)}
+    ${dmTile||kpi('Last 7 days',has(l7.spend)?aud(l7.spend):NAV,has(l7.spend)?`${num(l7.leads)} ${l7.leads==1?'enquiry':'enquiries'}, ${num(l7.purchases)} ${l7.purchases==1?'purchase':'purchases'}`:'nothing yet')}
   </div>`;
 }
 function campSeries(){
@@ -516,26 +582,51 @@ function campSeries(){
   return {names,colour:m};
 }
 function dash(v){ return has(v)?null:'—'; }
+/* The bird's eye table. Columns follow what the client sells: the shopping funnel for a
+   store, enquiries for everyone else. A column the pull has never collected for this
+   client is left off rather than shown as a row of N/As. */
+function tableCols(camps){
+  const got=k=>camps.some(c=>c[k]!=null);
+  const cols=[['spend','Spend',c=>aud(c.spend)]];
+  if(SHOP()){
+    if(got('link_clicks')) cols.push(['link_clicks','Link clicks',c=>cnt(c.link_clicks,has(c.spend))]);
+    else cols.push(['clicks','Clicks',c=>num(c.clicks)]);
+    if(got('landing_page_views')) cols.push(['landing_page_views','Landing page views',c=>cnt(c.landing_page_views,has(c.spend))]);
+    if(got('add_to_carts')){ cols.push(['add_to_carts','Add to carts',c=>cnt(c.add_to_carts,has(c.spend))]);
+      cols.push(['cpatc','Cost per add to cart',c=>per(c.spend,c.add_to_carts,has(c.spend))]); }
+    if(got('checkouts')) cols.push(['checkouts','Checkouts',c=>cnt(c.checkouts,has(c.spend))]);
+    cols.push(['purchases','Purchases',c=>num(c.purchases)]);
+    if(got('messages')) cols.push(['messages','DMs',c=>cnt(c.messages,has(c.spend))]);
+    cols.push(['leads','Enquiries',c=>num(c.leads)]);
+  }else{
+    cols.unshift(['impressions','Impressions',c=>num(c.impressions)],['clicks','Clicks',c=>num(c.clicks)]);
+    cols.push(['cpc','Cost per click',c=>per(c.spend,c.clicks,has(c.spend))]);
+    cols.push(['leads','Enquiries',c=>num(c.leads)]);
+    cols.push(['cpl','Cost per enquiry',c=>per(c.spend,c.leads,has(c.spend))]);
+    if(got('messages')) cols.push(['messages','DMs',c=>cnt(c.messages,has(c.spend))]);
+  }
+  return cols;
+}
 function campaignTable(){
   const {colour}=campSeries();
-  const live=(D.by_campaign||[]).length;
-  const rows=live?D.by_campaign.map(c=>{
-      const cpc=has(c.clicks)?aud(Number(c.spend)/Number(c.clicks)):'—';
-      const cpl=has(c.leads)?aud(Number(c.spend)/Number(c.leads)):'—';
-      return `<tr><td><i class="dot" style="background:${colour[c.campaign]||'var(--ink3)'}"></i><b>${esc(c.campaign)}</b></td>
-        <td class="tnum">${num(c.impressions)}</td><td class="tnum">${num(c.clicks)}</td><td class="tnum">${aud(c.spend)}</td>
-        <td class="tnum">${cpc}</td><td class="tnum">${num(c.leads)}</td><td class="tnum">${cpl}</td></tr>`;}).join('')
+  const {camps,label}=P();
+  const live=camps.length;
+  const cols=tableCols(camps);
+  const rows=live?camps.map(c=>`<tr><td><i class="dot" style="background:${colour[c.campaign]||'var(--ink3)'}"></i><b>${esc(c.campaign)}</b></td>
+        ${cols.map(([,,f])=>`<td class="tnum">${f(c)}</td>`).join('')}</tr>`).join('')
     :(D.campaigns||[]).map(c=>`<tr><td><i class="dot" style="background:${colour[c.name]||'var(--ink3)'}"></i><b>${esc(c.name)}</b><div class="ch3sub">${esc(c.goal||'')}</div></td>
-        <td class="tnum">N/A</td><td class="tnum">N/A</td><td class="tnum">N/A</td><td class="tnum">N/A</td><td class="tnum">N/A</td><td class="tnum">N/A</td></tr>`).join('')
-    ||'<tr><td colspan="7">No campaigns yet.</td></tr>';
+        ${cols.map(()=>'<td class="tnum">N/A</td>').join('')}</tr>`).join('')
+    ||`<tr><td colspan="${cols.length+1}">No campaigns yet.</td></tr>`;
   let total='';
-  if(live){ const t=D.by_campaign.reduce((a,c)=>({spend:a.spend+Number(c.spend||0),clicks:a.clicks+Number(c.clicks||0),
-      impressions:a.impressions+Number(c.impressions||0),leads:a.leads+Number(c.leads||0)}),{spend:0,clicks:0,impressions:0,leads:0});
-    total=`<tr class="total"><td>Total</td><td class="tnum">${num(t.impressions)}</td><td class="tnum">${num(t.clicks)}</td>
-      <td class="tnum">${aud(t.spend)}</td><td class="tnum">${has(t.clicks)?aud(t.spend/t.clicks):'—'}</td>
-      <td class="tnum">${num(t.leads)}</td><td class="tnum">${has(t.leads)?aud(t.spend/t.leads):'—'}</td></tr>`; }
-  return `<div class="card"><div class="cardhead"><div><h3>By campaign</h3><p class="ch3sub">${live?'This month, every campaign running':'Built and ready to start'}</p></div></div>
-    <div class="tscroll"><table class="tbl"><thead><tr><th>Campaign</th><th class="tnum">Impressions</th><th class="tnum">Clicks</th><th class="tnum">Spend</th><th class="tnum">Cost per click</th><th class="tnum">Enquiries</th><th class="tnum">Cost per enquiry</th></tr></thead><tbody>${rows}${total}</tbody></table></div><p class="scrollhint">Swipe the table sideways to see every column.</p></div>`;
+  if(live){
+    /* Sum each column; a column stays NULL only if no campaign reported it. */
+    const t={};
+    ['spend','clicks','impressions','leads','purchases','revenue','link_clicks','landing_page_views','add_to_carts','checkouts','messages']
+      .forEach(k=>{ const v=camps.filter(c=>c[k]!=null); t[k]=v.length?v.reduce((s,c)=>s+Number(c[k]),0):null; });
+    total=`<tr class="total"><td>Total</td>${cols.map(([,,f])=>`<td class="tnum">${f(t)}</td>`).join('')}</tr>`;
+  }
+  return `<div class="card"><div class="cardhead"><div><h3>By campaign</h3><p class="ch3sub">${live?esc(label)+', every campaign running':'Built and ready to start'}</p></div></div>
+    <div class="tscroll"><table class="tbl"><thead><tr><th>Campaign</th>${cols.map(([,h])=>`<th class="tnum">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows}${total}</tbody></table></div><p class="scrollhint">Swipe the table sideways to see every column.</p></div>`;
 }
 function stackCard(id){
   const {names,colour}=campSeries();
@@ -545,23 +636,29 @@ function stackCard(id){
 }
 function momBand(){
   const t=D.totals||{},p=D.prev||{};
-  const cards=[['Spend',t.spend,p.spend,aud],['Enquiries',t.leads,p.leads,num],['Purchases',t.purchases,p.purchases,num]];
-  return `<h2 class="h2">Month on month</h2><p class="sub">This month against last month.</p>
+  const cards=SHOP()&&t.add_to_carts!=null
+    ?[['Spend',t.spend,p.spend,aud],['Add to carts',t.add_to_carts,p.add_to_carts,num],['Purchases',t.purchases,p.purchases,num]]
+    :[['Spend',t.spend,p.spend,aud],['Enquiries',t.leads,p.leads,num],['Purchases',t.purchases,p.purchases,num]];
+  /* A month a few days old against a full one reads as a collapse, so hold the % back
+     until this month has a week of spend. */
+  const early=Number(D.days_this_month)<7;
+  const liveNow=has(t.spend), livePrev=has(p.spend);
+  return `<h2 class="h2">Month on month</h2><p class="sub">This month against last month.${early?' The comparison starts once this month has a week of data.':''}</p>
     <div class="momgrid">${cards.map(([lab,a,b,f])=>`<div class="momcard"><div class="lab">${lab}</div>
-      <div class="big">${has(a)?f(a):'<span style="color:var(--ink3);font-size:17px">N/A</span>'} ${delta(a,b)}</div>
-      <div class="cap">${has(b)?'Last month '+f(b):'no month to compare with yet'}</div></div>`).join('')}</div>`;
+      <div class="big">${liveNow&&a!=null?f(a):'<span style="color:var(--ink3);font-size:17px">N/A</span>'} ${early?'':delta(a,b)}</div>
+      <div class="cap">${livePrev&&b!=null?'Last month '+f(b):'no month to compare with yet'}</div></div>`).join('')}</div>`;
 }
 function renderOverview(){
   $('sec-overview').innerHTML=`<div class="eyebrow">Overview</div>
     <h2 class="h2">How your ads are going</h2>
     <p class="sub">Everything on one page, updated from the ad platforms themselves.</p>
-    ${kpiRow()}${callout()}
+    ${callout()}${campaignTable()}${kpiRow()}
     <div class="grid g2">
       <div class="card" style="margin-top:0"><div class="cardhead"><div><h3>Daily spend</h3><p class="ch3sub">Last 30 days · AUD</p></div></div><div class="chart" id="ch-ov-spend"></div></div>
-      <div class="card" style="margin-top:0"><div class="cardhead"><div><h3>Daily enquiries</h3><p class="ch3sub">Last 30 days · one bar per day</p></div></div><div class="chart" id="ch-ov-leads"></div></div>
+      <div class="card" style="margin-top:0"><div class="cardhead"><div><h3>${SHOP()?'Daily add to carts':'Daily enquiries'}</h3><p class="ch3sub">Last 30 days · one bar per day</p></div></div><div class="chart" id="ch-ov-leads"></div></div>
     </div>
     ${stackCard('ch-ov-stack')}
-    ${campaignTable()}${momBand()}`;
+    ${momBand()}`;
 }
 function renderAds(kind){
   const el=$('sec-'+kind); if(!el) return;
@@ -569,10 +666,10 @@ function renderAds(kind){
   const label=kind==='meta'?'Meta Ads':'Google Ads';
   el.innerHTML=`<div class="eyebrow">${label}</div>
     <h2 class="h2">${label}</h2><p class="sub">Spend and results for your ${kind==='meta'?'Facebook and Instagram':'Google'} campaigns.</p>
-    ${kpiRow()}${callout()}
+    ${callout()}${campaignTable()}${kpiRow()}
     <div class="card"><div class="cardhead"><div><h3>Daily spend</h3><p class="ch3sub">Last 30 days · AUD</p></div></div><div class="chart" id="ch-${kind}-spend"></div></div>
     ${stackCard('ch-'+kind+'-stack')}
-    ${campaignTable()}${momBand()}`;
+    ${momBand()}`;
 }
 function renderPlaceholder(kind){
   const el=$('sec-'+kind); if(!el) return; el.innerHTML='';
@@ -594,7 +691,9 @@ function drawAll(){
     const m=$(id); if(!m) return;
     if(!days.length){ m.innerHTML='<div class="empty-note">No daily figures yet. The chart appears once your campaigns start spending.</div>'; return; }
     if(kind==='line') lineChart(m,days,d=>Number(d.spend||0),'var(--c1)',aud,'Spend');
-    else if(kind==='bar') barChart(m,days,d=>Number(d.leads||0),'var(--c2)',num,'Enquiries');
+    else if(kind==='bar') SHOP()
+      ? barChart(m,days,d=>Number(d.add_to_carts||0),'var(--c2)',num,'Add to carts')
+      : barChart(m,days,d=>Number(d.leads||0),'var(--c2)',num,'Enquiries');
     else stackChart(m);
   });
 }
