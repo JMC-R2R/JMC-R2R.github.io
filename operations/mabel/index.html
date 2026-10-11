@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Mabel - Ready to Rank</title>
+<!--
+  Mabel control page - LIVE. Published to update.readytorank.com.au/operations/mabel/
+  Source: Ready-to-Rank/r2r-operations  operations-apps/mabel/index.html
+  The page holds no data. After sign-in it talks only to the mabel-admin edge function
+  (Supabase tjgrtrazyepvbcmmdhet), which lets in the people in mabel_admins (Jose = owner,
+  Jhen = admin) and logs every change in mabel_admin_log.
+  Edge function source: my-first-project/mabel/admin.ts.
+-->
+<style>
+@font-face{font-family:"Archivo";src:url("/operations/assets/Archivo-var.ttf") format("truetype");font-weight:100 900;font-style:normal;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("/operations/assets/SpaceMono-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("/operations/assets/SpaceMono-Bold.ttf") format("truetype");font-weight:700;font-style:normal;font-display:swap;}
+:root{
+  --bg:#0F0F12; --surface:#17171C; --card:#1B1B21; --card2:#202028;
+  --line:#2A2A32; --line-soft:#22222A;
+  --white:#fff; --text:#D8D8E0; --muted:#9B9BA6; --faint:#6E6E7A;
+  --accent:#17B4F0; --green:#2BD9A6; --amber:#F5B02E; --red:#E04B4B;
+  --mono:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Archivo",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);}
+body{color:var(--text);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;padding:0 0 90px;overflow-x:hidden;}
+button,input,select,textarea{font:inherit;color:inherit;}
+.hide{display:none!important;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+.eyebrow{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);}
+a{color:var(--accent);}
+
+/* gate */
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.gate .box{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:28px;}
+.gate h1{font-size:30px;font-weight:900;color:var(--white);letter-spacing:-.02em;margin-bottom:6px;}
+.gate h1 em,h1.big em{font-style:normal;color:var(--accent);}
+.gate p{font-size:13.5px;color:var(--muted);margin-bottom:16px;}
+.fl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:12px 0 5px;}
+.in{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--white);padding:10px 12px;font-size:14px;font-family:var(--sans);}
+.in:focus{outline:none;border-color:var(--accent);}
+textarea.in{min-height:120px;resize:vertical;line-height:1.45;}
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#04121A;border:0;border-radius:7px;padding:9px 14px;font-weight:800;font-size:13.5px;cursor:pointer;}
+.gate .btn{margin-top:16px;width:100%;justify-content:center;}
+.btn:disabled{opacity:.5;cursor:default;}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line);font-weight:600;}
+.btn.ghost:hover{border-color:var(--accent);color:var(--white);}
+.btn.danger{background:transparent;color:var(--red);border:1px solid rgba(224,75,75,.45);font-weight:600;}
+.btn.small{padding:5px 10px;font-size:12px;}
+.linkbtn{background:none;border:0;color:var(--muted);font-size:12.5px;margin-top:12px;cursor:pointer;text-decoration:underline;}
+.msg{font-size:13px;margin-bottom:10px;}
+.msg.bad{color:var(--red);} .msg.ok{color:var(--green);}
+
+/* header */
+.top{border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(23,180,240,.09),rgba(23,180,240,0));}
+.top .wrap{padding:26px 24px;}
+.crumb{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--faint);}
+.crumb a{color:var(--faint);text-decoration:none;} .crumb a:hover{color:var(--accent);}
+.crumb .sp{flex:1;}
+.crumb button{background:none;border:0;color:var(--faint);cursor:pointer;font-family:var(--mono);font-size:11px;}
+.crumb button:hover{color:var(--accent);}
+.head{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap;margin-top:22px;}
+.head .t{flex:1;min-width:240px;}
+h1.big{font-size:clamp(34px,5vw,54px);font-weight:900;letter-spacing:-.03em;line-height:1;color:var(--white);margin-top:10px;}
+.lede{font-size:14.5px;color:var(--muted);max-width:64ch;margin-top:10px;}
+.switchbox{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:250px;display:grid;gap:9px;}
+.switchbox .row{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);}
+.switchbox b{color:var(--white);}
+
+.dot{width:9px;height:9px;border-radius:50%;background:var(--faint);display:inline-block;flex:none;}
+.dot.on{background:var(--green);box-shadow:0 0 0 3px rgba(43,217,166,.15);}
+.dot.off{background:var(--red);}
+.dot.warn{background:var(--amber);}
+
+/* toggle */
+.tog{position:relative;width:40px;height:22px;border-radius:11px;background:var(--line);border:0;cursor:pointer;flex:none;}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--white);transition:left .15s;}
+.tog.on{background:var(--green);} .tog.on::after{left:21px;}
+.tog:disabled{opacity:.45;cursor:default;}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:5;background:rgba(15,15,18,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);}
+.nav .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;}
+.nav .wrap::-webkit-scrollbar{display:none;}
+.nav a{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:13px 10px;white-space:nowrap;border-bottom:2px solid transparent;}
+.nav a:hover{color:var(--white);}
+.nav a.on{color:var(--accent);border-bottom-color:var(--accent);}
+
+section{padding-top:38px;scroll-margin-top:50px;}
+section > h2{font-size:clamp(20px,2.6vw,26px);font-weight:900;color:var(--white);letter-spacing:-.02em;}
+section > p.sub{font-size:13.5px;color:var(--muted);margin:4px 0 16px;max-width:72ch;}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;}
+.panel + .panel{margin-top:12px;}
+.grid2 > .panel,.grid3 > .panel{margin-top:0;}
+.panel h3{font-size:14.5px;font-weight:800;color:var(--white);margin-bottom:3px;}
+.panel p.hint{font-size:12.6px;color:var(--muted);}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;}
+
+/* does */
+.does{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;}
+.does .c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+.does .c h3{font-size:14.5px;font-weight:800;color:var(--white);margin-bottom:4px;}
+.does .c p{font-size:13px;color:var(--muted);}
+.does .c .tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px;}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+.stat b{display:block;font-size:28px;font-weight:900;color:var(--white);letter-spacing:-.02em;line-height:1.1;}
+.stat span{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);}
+.stat small{display:block;font-size:12px;color:var(--muted);margin-top:3px;}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:10px;position:relative;}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:4px;}
+.bar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--amber);}
+.chart{display:flex;align-items:flex-end;gap:3px;height:130px;margin-top:14px;border-bottom:1px solid var(--line);}
+.chart .col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative;}
+.chart .col i{display:block;background:var(--accent);border-radius:3px 3px 0 0;min-height:1px;opacity:.85;}
+.chart .col.today i{background:var(--green);}
+.chart .col:hover i{opacity:1;}
+.chart .col .tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:4px 7px;font-size:11px;white-space:nowrap;color:var(--white);display:none;z-index:2;}
+.chart .col:hover .tip{display:block;}
+.axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:5px;}
+table.t{width:100%;border-collapse:collapse;font-size:13px;}
+table.t th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:left;font-weight:700;padding:6px 8px;border-bottom:1px solid var(--line);}
+table.t td{padding:8px;border-bottom:1px solid var(--line-soft);vertical-align:top;}
+table.t td.n{text-align:right;font-family:var(--mono);font-size:12px;white-space:nowrap;}
+table.t th.n{text-align:right;}
+.tablewrap{overflow-x:auto;}
+
+/* people chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 12px;font-size:13px;color:var(--white);}
+.chip button{background:var(--line);border:0;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;}
+.chip button:hover{background:var(--red);color:var(--white);}
+.addrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.addrow select{flex:1 1 200px;min-width:0;}
+.lock{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--amber);text-transform:uppercase;}
+
+/* lists */
+.rows{display:grid;gap:8px;margin-top:10px;}
+.rowc{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;}
+.rowc .main{flex:1 1 260px;min-width:0;}
+.rowc h4{font-size:14.5px;font-weight:800;color:var(--white);overflow-wrap:anywhere;}
+.rowc p{font-size:12.8px;color:var(--muted);overflow-wrap:anywhere;}
+.rowc .meta{font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.04em;margin-top:5px;}
+.rowc .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.pill{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;}
+.pill.live,.pill.connected{color:var(--green);border-color:rgba(43,217,166,.4);}
+.pill.paused,.pill.draft,.pill.planned{color:var(--amber);border-color:rgba(245,176,46,.4);}
+.pill.error,.pill.missing{color:var(--red);border-color:rgba(224,75,75,.45);}
+.pill.kind{color:var(--accent);border-color:rgba(23,180,240,.4);}
+.grouphead{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:20px 0 2px;}
+
+/* output log */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.filters .in{width:auto;flex:1 1 220px;padding:8px 11px;font-size:13px;}
+.log{display:grid;gap:8px;}
+.lg{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:11px 14px;}
+.lg.err{border-color:rgba(224,75,75,.45);}
+.lg .hd{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;font-size:12px;color:var(--muted);}
+.lg .hd b{color:var(--white);font-size:13px;}
+.lg .hd .cost{margin-left:auto;font-family:var(--mono);color:var(--text);}
+.lg .q{font-size:13.5px;color:var(--white);margin-top:5px;overflow-wrap:anywhere;}
+.lg details{margin-top:6px;}
+.lg summary{font-size:12px;color:var(--accent);cursor:pointer;}
+.lg pre{white-space:pre-wrap;font-family:var(--sans);font-size:13px;color:var(--text);background:var(--bg);border:1px solid var(--line-soft);border-radius:7px;padding:10px 12px;margin-top:6px;overflow-wrap:anywhere;}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
+.modal .box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;width:100%;max-width:620px;}
+.modal h3{font-size:19px;font-weight:900;color:var(--white);}
+.modal .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.modal .foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
+.modal .note{font-size:12.5px;color:var(--muted);margin-top:6px;}
+
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--card2);border:1px solid var(--accent);color:var(--white);padding:10px 16px;border-radius:8px;font-size:13.5px;z-index:30;max-width:calc(100vw - 32px);}
+#toast:empty{display:none;}
+#toast.bad{border-color:var(--red);}
+
+@media (max-width:640px){
+  .wrap{padding:0 16px;}
+  .top .wrap{padding:22px 16px;}
+  .modal .two{grid-template-columns:1fr;}
+  .switchbox{min-width:0;width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate hide">
+  <div class="box">
+    <h1>Ma<em>bel</em></h1>
+    <p>Ready to Rank internal. Jose and Jhen sign in here to manage Mabel.</p>
+    <div id="gateMsg" class="msg hide"></div>
+    <form id="loginForm">
+      <label class="fl" for="email">Email</label>
+      <input class="in" id="email" type="email" autocomplete="username" required>
+      <label class="fl" for="pw">Password</label>
+      <input class="in" id="pw" type="password" autocomplete="current-password">
+      <button class="btn" id="loginBtn" type="submit">Sign in</button>
+    </form>
+    <button class="linkbtn" id="magicBtn" type="button">No password? Email me a sign-in link</button>
+  </div>
+</div>
+
+<div id="app" class="hide">
+  <div class="top"><div class="wrap">
+    <div class="crumb">
+      <a href="/operations/">&larr;&nbsp; Operations</a>
+      <span class="sp"></span>
+      <span id="whoami"></span>
+      <button id="reload" type="button">Refresh</button>
+      <button id="signout" type="button">Sign out</button>
+    </div>
+    <div class="head">
+      <div class="t">
+        <span class="eyebrow">Internal &middot; Team agent</span>
+        <h1 class="big">Ma<em>bel</em></h1>
+        <p class="lede">Ready to Rank's assistant in Slack. The team tags her or DMs her, and she answers from live data. This page shows what she does, who can use her, where she works, what she costs and everything she has said.</p>
+      </div>
+      <div class="switchbox">
+        <div class="row"><button class="tog" id="enabledTog" type="button" aria-label="Mabel on or off"></button><span id="enabledLine"></span></div>
+        <div class="row"><span class="dot" id="testDot"></span><span id="testLine"></span></div>
+        <div class="row"><span class="dot" id="capDot"></span><span id="capLine"></span></div>
+      </div>
+    </div>
+  </div></div>
+
+  <nav class="nav"><div class="wrap" id="navlinks">
+    <a href="#does">What she does</a>
+    <a href="#spend">Spend &amp; models</a>
+    <a href="#access">Access</a>
+    <a href="#routines">Routines</a>
+    <a href="#channels">Channels</a>
+    <a href="#platforms">Platforms</a>
+    <a href="#output">Output</a>
+    <a href="#changes">Changes</a>
+  </div></nav>
+
+  <div class="wrap">
+
+    <section id="does">
+      <h2>What she does</h2>
+      <p class="sub">Everything below is live today. She can read but not change anything, apart from the one email flow, which needs two confirmations.</p>
+      <div class="does">
+        <div class="c"><span class="tag">Ask her</span><h3>Answers questions from live data</h3><p>Tag <b>@Mabel</b> in a channel or DM her. Client status, content progress, onboarding, dashboards. She reads the agency database and never invents a number.</p></div>
+        <div class="c"><span class="tag">Threads</span><h3>Follows a conversation</h3><p>Once she's in a thread she replies without being tagged. She stays quiet on "thanks", emoji and messages aimed at someone else.</p></div>
+        <div class="c"><span class="tag">Client email</span><h3>Sends blogs for approval</h3><p>Jose or Jhen ask, she previews, "send", then type <code>confirm send &lt;Client&gt;</code>. Each contact gets their own branded email. Asking counts as QC sign-off.</p></div>
+        <div class="c"><span class="tag">Routines</span><h3>Posts on a schedule</h3><p>Reports and checks she runs on her own, set up in <a href="#routines">Routines</a>. She also posts for the content routines (QC requests, client comments, approvals).</p></div>
+        <div class="c"><span class="tag">Guardrails</span><h3>What she never does</h3><p>Shows Ready to Rank's fees or budgets, mentions one client in another client's channel, tags Aljim, or edits anything. Ad spend and cost per lead appear only in ads channels.</p></div>
+        <div class="c"><span class="tag">Brain</span><h3>Picks a model per request</h3><p>Quick questions go to Haiku, normal ones to Sonnet, hard ones to Opus. Say "deep dive" or "use opus" to force Opus. Near the cap she steps down a level.</p></div>
+      </div>
+    </section>
+
+    <section id="spend">
+      <h2>Spend &amp; models</h2>
+      <p class="sub">What Mabel has cost in Claude usage, in US dollars as Anthropic bills it. Melbourne days; the week starts Monday. Every question and routine run is counted.</p>
+      <div class="stats" id="spendStats"></div>
+      <div class="panel" style="margin-top:12px">
+        <h3>Last 30 days</h3>
+        <p class="hint">Hover a bar for the day's spend and number of requests. Today is green.</p>
+        <div class="chart" id="chart"></div>
+        <div class="axis" id="axis"></div>
+      </div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="panel"><h3>Models she uses</h3><p class="hint">Set in her brain. Price per million tokens in / out, US$.</p><div class="tablewrap"><table class="t" id="modelsTbl"></table></div></div>
+        <div class="panel"><h3>This month by model</h3><div class="tablewrap"><table class="t" id="byModelTbl"></table></div>
+          <h3 style="margin-top:16px">This month by person</h3><div class="tablewrap"><table class="t" id="byPersonTbl"></table></div></div>
+      </div>
+      <div class="panel" style="margin-top:12px" id="capPanel">
+        <h3>Monthly cap <span class="lock" id="capLock"></span></h3>
+        <p class="hint">At the cap she stops answering until the 1st. From the step-down point she uses a cheaper model for each request.</p>
+        <div class="addrow" style="max-width:520px">
+          <label style="flex:1 1 140px"><span class="fl" style="margin-top:0">Cap (US$ / month)</span><input class="in" id="capIn" type="number" min="0" max="5000" step="10"></label>
+          <label style="flex:1 1 140px"><span class="fl" style="margin-top:0">Step down at (%)</span><input class="in" id="dgIn" type="number" min="10" max="100" step="5"></label>
+          <button class="btn" id="capSave" type="button" style="align-self:flex-end">Save</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="access">
+      <h2>Access</h2>
+      <p class="sub">Who Mabel works for. Anyone else who asks her something gets a polite "I've let Jose and Jhen know", and shows up under requests below.</p>
+      <div class="grid3">
+        <div class="panel"><h3>Can talk to her</h3><p class="hint">She answers these people in channels and DMs.</p><div class="chips" id="list_pilot_user_ids"></div><div class="addrow" id="add_pilot_user_ids"></div></div>
+        <div class="panel"><h3>Can send client emails <span class="lock" id="sendLock"></span></h3><p class="hint">Can ask her to email blogs to a client for approval.</p><div class="chips" id="list_can_send_user_ids"></div><div class="addrow" id="add_can_send_user_ids"></div></div>
+        <div class="panel"><h3>Hears about requests</h3><p class="hint">Gets a DM from Mabel when someone new asks for her.</p><div class="chips" id="list_notify_user_ids"></div><div class="addrow" id="add_notify_user_ids"></div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <h3>People asking for access</h3>
+        <div class="rows" id="requests"></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <h3>Who can manage this page</h3>
+        <p class="hint" id="adminsLine"></p>
+      </div>
+    </section>
+
+    <section id="routines">
+      <h2>Routines</h2>
+      <p class="sub">Everything that runs on a schedule and posts as Mabel. Add your own: describe the report or check in plain English, pick a channel and a time, run a test to your DM, then switch it on.</p>
+      <button class="btn" id="newRoutine" type="button">+ New routine</button>
+      <div id="routineList"></div>
+    </section>
+
+    <section id="channels">
+      <h2>Channels</h2>
+      <p class="sub" id="chanSub">Live from Slack. To add her to a channel, type <code>/invite @Mabel</code> in it.</p>
+      <div class="grouphead">She's in</div>
+      <div class="rows" id="chanList"></div>
+      <div class="grouphead">She's not in</div>
+      <div class="rows" id="notInList"></div>
+    </section>
+
+    <section id="platforms">
+      <h2>Platforms</h2>
+      <p class="sub">What she can reach. Planned ones need their own key added in Supabase, one batch at a time.</p>
+      <div class="rows" id="connList"></div>
+    </section>
+
+    <section id="output">
+      <h2>Output</h2>
+      <p class="sub">The last 80 things she was asked or ran, with what she said, the model and the cost.</p>
+      <div class="filters">
+        <input class="in" id="logQ" type="search" placeholder="Search questions and replies">
+        <select class="in" id="logWho" style="flex:0 1 200px"></select>
+      </div>
+      <div class="log" id="logList"></div>
+    </section>
+
+    <section id="changes">
+      <h2>Changes</h2>
+      <p class="sub">Every change made on this page, newest first.</p>
+      <div class="panel"><div class="tablewrap"><table class="t" id="changeTbl"></table></div></div>
+    </section>
+  </div>
+</div>
+
+<div id="routineModal" class="modal hide" role="dialog" aria-modal="true" aria-labelledby="rmTitle">
+  <div class="box">
+    <h3 id="rmTitle">New routine</h3>
+    <p class="note">It starts as a draft. Nothing posts until you switch it on. Use <b>Test to my DM</b> first to see what she'd say.</p>
+    <label class="fl" for="rmName">Name</label>
+    <input class="in" id="rmName" maxlength="80" placeholder="e.g. Weekly ads health check: Unleash">
+    <label class="fl" for="rmWhat">One line for the team (optional)</label>
+    <input class="in" id="rmWhat" maxlength="200" placeholder="What it's for">
+    <label class="fl" for="rmInstr">What should she do?</label>
+    <textarea class="in" id="rmInstr" placeholder="Write it like you'd brief a person. e.g. Check Polarity's content for this month: what's written, what's waiting on QC, what the client hasn't approved yet. Keep it to five lines. Tag Jhen only if something is overdue."></textarea>
+    <p class="note">She reads the agency database. She can't reach SE Ranking, ad accounts or Google yet (see Platforms), so ask only for what's there.</p>
+    <label class="fl" for="rmChan">Post in</label>
+    <select class="in" id="rmChan"></select>
+    <div class="two">
+      <div><label class="fl" for="rmFreq">How often</label>
+        <select class="in" id="rmFreq"><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+      <div><label class="fl" for="rmTime">Time (Melbourne)</label><input class="in" id="rmTime" type="time" value="09:00" step="300"></div>
+    </div>
+    <div class="two">
+      <div id="rmWdWrap"><label class="fl" for="rmWd">Day</label>
+        <select class="in" id="rmWd"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select></div>
+      <div id="rmMdWrap"><label class="fl" for="rmMd">Day of the month</label><input class="in" id="rmMd" type="number" min="1" max="28" value="1"></div>
+      <div><label class="fl" for="rmTier">How hard to think</label>
+        <select class="in" id="rmTier"><option value="quick">Quick (Haiku, cheapest)</option><option value="standard" selected>Standard (Sonnet)</option><option value="deep">Deep (Opus, dearest)</option></select></div>
+    </div>
+    <div class="foot">
+      <button class="btn ghost" id="rmCancel" type="button">Cancel</button>
+      <button class="btn" id="rmSave" type="button">Save as draft</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = "https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY = "sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
+const FN = SB_URL + "/functions/v1/mabel-admin";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const $ = id => document.getElementById(id);
+const TZ = "Australia/Melbourne";
+let D = null, OWNER = false, EDIT_ID = null;
+
+function toast(msg, bad) { const t = $("toast"); t.textContent = msg; t.className = bad ? "bad" : ""; clearTimeout(toast.h); toast.h = setTimeout(() => t.textContent = "", 5000); }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function gateMsg(m, bad) { const g = $("gateMsg"); g.textContent = m; g.className = "msg " + (bad ? "bad" : "ok"); }
+const usd = v => "US$" + Number(v || 0).toFixed(Number(v || 0) < 10 ? 2 : 0);
+const usd4 = v => "US$" + Number(v || 0).toFixed(Number(v || 0) < 0.1 ? 4 : 2);
+function when(iso) {
+  if (!iso) return "";
+  return new Intl.DateTimeFormat("en-AU", { timeZone: TZ, weekday: "short", day: "2-digit", month: "2-digit", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(iso)).replace(",", "");
+}
+function ago(iso) {
+  if (!iso) return "never";
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  if (m < 1) return "just now"; if (m < 60) return m + " min ago";
+  const h = Math.round(m / 60); if (h < 36) return h + " h ago";
+  return Math.round(h / 24) + " days ago";
+}
+const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+function clock(t) { if (!t) return ""; const [h, m] = t.split(":").map(Number); const ap = h < 12 ? "am" : "pm"; const h12 = h % 12 || 12; return m ? `${h12}:${String(m).padStart(2,"0")}${ap}` : `${h12}${ap}`; }
+function ordinal(n) { const s = (n % 100 >= 11 && n % 100 <= 13) ? "th" : ({1:"st",2:"nd",3:"rd"}[n % 10] || "th"); return n + s; }
+function schedText(r) {
+  if (r.kind !== "mabel") return r.schedule_text || "";
+  const t = clock(r.run_time);
+  return { daily: `Every day ${t}`, weekdays: `Weekdays ${t}`, weekly: `${DOW[r.weekday]}s ${t}`, monthly: `${ordinal(r.monthday)} of each month ${t}` }[r.frequency] || "";
+}
+
+// ---------------------------------------------------------------- api
+async function api(action, body = {}) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { location.reload(); return; }
+  const r = await fetch(FN, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token }, body: JSON.stringify({ action, ...body }) });
+  const j = await r.json().catch(() => ({ error: "Unexpected reply from the server." }));
+  if (!r.ok) throw new Error(j.error || ("Error " + r.status));
+  return j;
+}
+async function act(action, body, okMsg) {
+  try { await api(action, body); if (okMsg) toast(okMsg); await load(); }
+  catch (e) { toast(e.message, true); }
+}
+
+// ---------------------------------------------------------------- auth
+$("loginForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const pw = $("pw").value;
+  if (!pw) { gateMsg("Type your password, or use the sign-in link below.", true); return; }
+  $("loginBtn").disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: pw });
+  $("loginBtn").disabled = false;
+  if (error) gateMsg(error.message, true);
+});
+$("magicBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim();
+  if (!email) { gateMsg("Type your email first.", true); return; }
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
+  gateMsg(error ? error.message : "Check your email for the sign-in link.", !!error);
+});
+$("signout").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
+$("reload").addEventListener("click", () => load().then(() => toast("Up to date.")));
+
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $("gate").classList.remove("hide"); $("app").classList.add("hide"); return; }
+  try { await load(); }
+  catch (e) {
+    gateMsg(e.message, true); $("gate").classList.remove("hide"); $("app").classList.add("hide");
+    if (/Only Jose and Jhen/.test(e.message)) await sb.auth.signOut();
+    return;
+  }
+  $("gate").classList.add("hide"); $("app").classList.remove("hide");
+  if (!boot.timer) boot.timer = setInterval(() => load().catch(() => {}), 120000);
+}
+
+async function load() {
+  D = await api("overview");
+  OWNER = D.me.role === "owner";
+  render();
+}
+
+// ---------------------------------------------------------------- render
+const nameOf = id => (D.people.find(p => p.slack_user_id === id)?.display_name) || id;
+const chanName = id => { const c = D.channels.find(c => c.id === id); return c ? "#" + c.name : (id?.startsWith("U") ? "DM" : id || ""); };
+
+function render() {
+  const s = D.settings, sp = D.spend;
+  $("whoami").textContent = D.me.email + (OWNER ? " (owner)" : " (admin)");
+  const tog = $("enabledTog"); tog.classList.toggle("on", !!s.enabled);
+  $("enabledLine").innerHTML = s.enabled ? "<b>On</b>: answering the team" : "<b>Off</b>: not answering anyone";
+  $("testDot").className = "dot " + (s.email_test_mode ? "warn" : "on");
+  $("testLine").innerHTML = s.email_test_mode ? "Client emails: <b>test mode</b> (Jose only)" : "Client emails: <b>live</b>";
+  const pct = sp.cap ? (sp.month / sp.cap) * 100 : 0;
+  $("capDot").className = "dot " + (pct >= 100 ? "off" : pct >= sp.downgrade_at_pct ? "warn" : "on");
+  $("capLine").innerHTML = `<b>${usd(sp.month)}</b> of ${usd(sp.cap)} this month`;
+  renderSpend(); renderAccess(); renderRoutines(); renderChannels(); renderNotIn(); renderPlatforms(); renderLog(); renderChanges();
+}
+
+function renderSpend() {
+  const sp = D.spend, s = D.settings;
+  const pct = sp.cap ? Math.min(100, (sp.month / sp.cap) * 100) : 0;
+  $("spendStats").innerHTML = `
+    <div class="stat"><span>Today</span><b>${usd(sp.today)}</b></div>
+    <div class="stat"><span>This week</span><b>${usd(sp.week)}</b></div>
+    <div class="stat"><span>This month</span><b>${usd(sp.month)}</b><small>${pct.toFixed(0)}% of the ${usd(sp.cap)} cap</small>
+      <div class="bar"><i style="width:${pct}%"></i><u style="left:${sp.downgrade_at_pct}%" title="Step-down point"></u></div></div>
+    <div class="stat"><span>Requests this month</span><b>${sp.requests_month}</b><small>${sp.errors_month ? sp.errors_month + " failed" : "none failed"}</small></div>`;
+  const days = sp.days || [];
+  const max = Math.max(0.01, ...days.map(d => +d.usd));
+  const today = days.length ? days[days.length - 1].d : "";
+  $("chart").innerHTML = days.map(d => {
+    const dt = new Date(d.d + "T00:00:00");
+    const lbl = dt.toLocaleDateString("en-AU", { weekday: "short", day: "2-digit", month: "2-digit" });
+    return `<div class="col${d.d === today ? " today" : ""}"><span class="tip">${lbl}: ${usd4(d.usd)} &middot; ${d.n} req</span><i style="height:${(+d.usd / max) * 100}%"></i></div>`;
+  }).join("");
+  const f = d => d ? new Date(d + "T00:00:00").toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit" }) : "";
+  $("axis").innerHTML = `<span>${f(days[0]?.d)}</span><span>${f(days[15]?.d)}</span><span>Today</span>`;
+
+  const m = s.models || {};
+  const tiers = [["quick","Quick"],["standard","Standard"],["deep","Deep"],["max","Max (only on request)"],["router","Picks the tier"]];
+  $("modelsTbl").innerHTML = "<tr><th>Tier</th><th>Model</th><th>Effort</th><th class='n'>In / out</th></tr>" + tiers.filter(([k]) => m[k]).map(([k, l]) => {
+    const x = m[k], price = x.in != null ? `$${x.in} / $${x.out}` : (m.quick ? `$${m.quick.in} / $${m.quick.out}` : "");
+    return `<tr><td>${l}</td><td><code>${esc(x.model)}</code></td><td>${esc(x.effort || "low")}</td><td class="n">${price}</td></tr>`;
+  }).join("");
+  const bm = sp.by_model || [];
+  $("byModelTbl").innerHTML = bm.length ? "<tr><th>Model</th><th class='n'>Requests</th><th class='n'>Spend</th></tr>" + bm.map(r => `<tr><td><code>${esc(r.model)}</code></td><td class="n">${r.n}</td><td class="n">${usd4(r.usd)}</td></tr>`).join("") : "<tr><td>No requests yet this month.</td></tr>";
+  const bp = sp.by_person || [];
+  $("byPersonTbl").innerHTML = bp.length ? "<tr><th>Who</th><th class='n'>Requests</th><th class='n'>Spend</th></tr>" + bp.map(r => `<tr><td>${esc(r.who?.startsWith("U") ? nameOf(r.who) : r.who)}</td><td class="n">${r.n}</td><td class="n">${usd4(r.usd)}</td></tr>`).join("") : "<tr><td>No requests yet this month.</td></tr>";
+
+  $("capIn").value = sp.cap; $("dgIn").value = sp.downgrade_at_pct;
+  $("capIn").disabled = $("dgIn").disabled = $("capSave").disabled = !OWNER;
+  $("capLock").textContent = OWNER ? "" : "Jose only";
+}
+
+function renderAccess() {
+  const s = D.settings;
+  for (const f of ["pilot_user_ids", "can_send_user_ids", "notify_user_ids"]) {
+    const ids = s[f] || [];
+    const locked = f === "can_send_user_ids" && !OWNER;
+    $("list_" + f).innerHTML = ids.length ? ids.map(id => `<span class="chip">${esc(nameOf(id))}${locked ? "" : `<button type="button" data-f="${f}" data-rm="${id}" aria-label="Remove ${esc(nameOf(id))}">&times;</button>`}</span>`).join("") : `<span class="hint" style="font-size:12.5px;color:var(--faint)">Nobody</span>`;
+    const options = D.people.filter(p => !ids.includes(p.slack_user_id) && p.display_name !== "Aljim Bernal");
+    $("add_" + f).innerHTML = locked ? "" : `<select class="in" id="sel_${f}"><option value="">Add a person&hellip;</option>${options.map(p => `<option value="${p.slack_user_id}">${esc(p.display_name)}</option>`).join("")}</select><button class="btn small" type="button" data-add="${f}">Add</button>`;
+  }
+  $("sendLock").textContent = OWNER ? "" : "Jose only";
+  const req = D.requests || [];
+  $("requests").innerHTML = req.length ? req.map(r => `<div class="rowc"><div class="main"><h4>${esc(nameOf(r.user_id))}</h4><p>&ldquo;${esc(r.question)}&rdquo;</p><div class="meta">Asked in ${esc(chanName(r.channel))} &middot; ${when(r.first_asked_at)}</div></div>
+    <div class="acts"><button class="btn small" type="button" data-approve="${r.user_id}">Give access</button><button class="btn small ghost" type="button" data-dismiss="${r.user_id}">Dismiss</button></div></div>`).join("") : `<p class="hint">Nobody waiting.</p>`;
+  $("adminsLine").textContent = D.admins.map(a => nameOf(a.slack_user_id) + (a.role === "owner" ? " (owner: everything)" : " (admin: access, routines, on/off)")).join(" · ") + ". Only Jose can change who sends client emails, the cap and email test mode.";
+}
+
+function routineCard(r) {
+  const mine = r.kind === "mabel";
+  const kindLbl = { mabel: "Mabel", cloud: "Claude routine", database: "Database" }[r.kind];
+  const last = mine && r.last_run_at ? `Last run ${ago(r.last_run_at)}${r.last_run_ok === false ? " (failed)" : ""}` : "";
+  const next = mine && r.status === "live" && r.next_run_at ? `Next ${when(r.next_run_at)}` : "";
+  const where = r.channel_id ? chanName(r.channel_id) : "";
+  const acts = mine ? `
+      <button class="tog ${r.status === "live" ? "on" : ""}" type="button" data-live="${r.id}" data-state="${r.status}" aria-label="Switch ${esc(r.name)} on or off" title="${r.status === "live" ? "Switch off" : "Switch on"}"></button>
+      <button class="btn small ghost" type="button" data-test="${r.id}">Test to my DM</button>
+      <button class="btn small ghost" type="button" data-edit="${r.id}">Edit</button>
+      <button class="btn small danger" type="button" data-retire="${r.id}">Remove</button>` : "";
+  return `<div class="rowc"><div class="main">
+      <h4>${esc(r.name)} <span class="pill ${esc(r.status)}">${esc(r.status)}</span> <span class="pill kind">${kindLbl}</span></h4>
+      ${r.what ? `<p>${esc(r.what)}</p>` : ""}
+      ${mine ? `<details><summary style="font-size:12px;color:var(--accent);cursor:pointer;margin-top:4px">Instructions</summary><pre style="white-space:pre-wrap;font-family:var(--sans);font-size:12.8px;color:var(--text);margin-top:5px">${esc(r.instructions)}</pre></details>` : ""}
+      <div class="meta">${[schedText(r), where, next, last, mine ? "" : esc(r.source_ref || "")].filter(Boolean).join(" · ")}</div>
+      ${mine && r.last_run_ok === false && r.last_output ? `<p style="color:var(--red);margin-top:4px">${esc(r.last_output)}</p>` : ""}
+    </div><div class="acts">${acts}</div></div>`;
+}
+function renderRoutines() {
+  const rs = D.routines || [];
+  const g = k => rs.filter(r => r.kind === k);
+  const mine = g("mabel");
+  $("routineList").innerHTML =
+    `<div class="grouphead">Mabel's own routines &middot; ${mine.length}</div><div class="rows">${mine.length ? mine.map(routineCard).join("") : `<p class="hint">None yet. Add the first one with <b>+ New routine</b>.</p>`}</div>` +
+    `<div class="grouphead">Claude routines that post as Mabel &middot; ${g("cloud").length}</div><p class="hint" style="font-size:12.5px;color:var(--muted)">These run in Jose's Claude account. Switch them on the <a href="/operations/routines/">Routines</a> page.</p><div class="rows">${g("cloud").map(routineCard).join("")}</div>` +
+    `<div class="grouphead">Database jobs that post as Mabel &middot; ${g("database").length}</div><div class="rows">${g("database").map(routineCard).join("")}</div>`;
+}
+function renderChannels() {
+  const cs = D.channels || [];
+  $("chanSub").innerHTML = D.channels_error ? `Couldn't reach Slack: ${esc(D.channels_error)}` : `She's in <b>${cs.length}</b> channel${cs.length === 1 ? "" : "s"}, live from Slack. To add her to another, type <code>/invite @Mabel</code> in it. She also answers DMs from anyone on the access list.`;
+  const ads = new RegExp(D.settings.ads_channel_pattern || "^$", "i");
+  $("chanList").innerHTML = cs.map(c => `<div class="rowc"><div class="main"><h4>#${esc(c.name)} ${c.private ? `<span class="pill">private</span>` : ""} ${ads.test(c.name) ? `<span class="pill kind">ads: spend allowed</span>` : ""}</h4>${c.topic ? `<p>${esc(c.topic)}</p>` : ""}<div class="meta">${c.members != null ? c.members + " members" : ""}</div></div></div>`).join("");
+}
+function renderNotIn() {
+  const n = D.not_in;
+  if (!n) { $("notInList").innerHTML = `<p class="hint">Couldn't check.</p>`; return; }
+  const cl = n.clients || [], pub = n.public || [];
+  const clientRows = cl.map(c => `<div class="rowc"><div class="main"><h4>${esc(c.client)} <span class="pill error">content posts can't reach it</span></h4>
+      <p>${c.channel_id ? "Her content routines post to this client's channel, but she isn't a member, so those posts fail. Type <code>/invite @Mabel</code> in the channel." : "No Slack channel is on file for this client, so content posts have nowhere to go."}</p>
+      ${c.channel_id ? `<div class="meta">${esc(c.channel_id)}</div>` : ""}</div></div>`).join("");
+  const pubRows = pub.map(c => `<div class="rowc"><div class="main"><h4>#${esc(c.name)} <span class="pill">public</span></h4><div class="meta">${c.members != null ? c.members + " members" : ""}</div></div></div>`).join("");
+  $("notInList").innerHTML = (clientRows || `<p class="hint">Every client with a content plan has her in their channel.</p>`) + pubRows +
+    `<p class="hint" style="margin-top:6px">Slack doesn't show a bot the private channels it isn't in, so other private channels can't be listed here.</p>`;
+}
+function renderPlatforms() {
+  const lbl = { connected: "Connected", planned: "Not yet", missing: "Key missing", error: "Not responding" };
+  $("connList").innerHTML = D.connectors.map(c => `<div class="rowc"><div class="main"><h4>${esc(c.name)} <span class="pill ${c.status}">${lbl[c.status] || c.status}</span>${c.batch ? ` <span class="pill">batch ${c.batch}</span>` : ""}</h4><p>${esc(c.use)}</p></div></div>`).join("");
+}
+function renderLog() {
+  const sel = $("logWho"), cur = sel.value;
+  const whos = [...new Set(D.log.map(l => l.user_name || nameOf(l.user_id)))].sort();
+  sel.innerHTML = `<option value="">Everyone</option>` + whos.map(w => `<option${w === cur ? " selected" : ""}>${esc(w)}</option>`).join("");
+  const q = $("logQ").value.trim().toLowerCase();
+  const rows = D.log.filter(l => (!cur || (l.user_name || nameOf(l.user_id)) === cur) && (!q || (l.question + " " + (l.reply || "") + " " + (l.error || "")).toLowerCase().includes(q)));
+  $("logList").innerHTML = rows.length ? rows.map(l => `<div class="lg${l.error ? " err" : ""}">
+      <div class="hd"><b>${esc(l.user_name || nameOf(l.user_id))}</b><span>${esc(chanName(l.channel))}</span><span>${when(l.created_at)}</span>${l.model ? `<span class="pill">${esc(l.tier)} &middot; ${esc(l.model.replace("claude-", ""))}</span>` : ""}<span class="cost">${l.cost_usd != null ? usd4(l.cost_usd) : ""}</span></div>
+      <div class="q">${esc((l.question || "").slice(0, 300))}${(l.question || "").length > 300 ? "&hellip;" : ""}</div>
+      ${l.error ? `<p style="color:var(--red);font-size:12.5px;margin-top:4px">${esc(l.error)}</p>` : ""}
+      ${l.reply ? `<details><summary>Her reply${l.ms ? ` &middot; ${(l.ms / 1000).toFixed(0)}s` : ""}${l.tool_calls ? ` &middot; ${l.tool_calls} lookups` : ""}</summary><pre>${esc(l.reply)}</pre></details>` : ""}
+    </div>`).join("") : `<p class="hint">Nothing matches.</p>`;
+}
+function renderChanges() {
+  const lbl = { set_access: "Changed access", set_enabled: "Switched Mabel", set_settings: "Changed settings", request_dismiss: "Dismissed a request", routine_save: "Saved a routine", routine_status: "Switched a routine", routine_test: "Test-ran a routine" };
+  const det = c => {
+    const d = c.detail || {};
+    if (c.action === "set_access") return ({ pilot_user_ids: "Can talk to her", can_send_user_ids: "Can send client emails", notify_user_ids: "Hears about requests" }[d.field] || d.field) + ": " + (d.ids || []).map(nameOf).join(", ");
+    if (c.action === "set_enabled") return d.enabled ? "On" : "Off";
+    if (c.action === "routine_status") return `${d.name}: ${d.status}`;
+    if (c.action === "routine_save") return d.name || "";
+    if (c.action === "request_dismiss") return nameOf(d.user_id);
+    if (c.action === "set_settings") return Object.entries(d).map(([k, v]) => `${k.replace(/_/g, " ")} ${v}`).join(", ");
+    if (c.action === "routine_test") { const r = D.routines.find(r => r.id === d.id); return r ? r.name : ""; }
+    return "";
+  };
+  $("changeTbl").innerHTML = D.changes.length ? "<tr><th>When</th><th>Who</th><th>What</th></tr>" + D.changes.map(c => `<tr><td style="white-space:nowrap">${when(c.at)}</td><td>${esc(c.user_email.split("@")[0])}</td><td>${esc(lbl[c.action] || c.action)}: ${esc(det(c))}</td></tr>`).join("") : "<tr><td>No changes yet.</td></tr>";
+}
+
+// ---------------------------------------------------------------- actions
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const d = b.dataset;
+  if (d.rm) { const ids = (D.settings[d.f] || []).filter(x => x !== d.rm); act("set_access", { field: d.f, ids }, `Removed ${nameOf(d.rm)}.`); }
+  else if (d.add) { const v = $("sel_" + d.add).value; if (!v) return toast("Pick a person first.", true); act("set_access", { field: d.add, ids: [...(D.settings[d.add] || []), v] }, `Added ${nameOf(v)}.`); }
+  else if (d.approve) act("set_access", { field: "pilot_user_ids", ids: [...(D.settings.pilot_user_ids || []), d.approve] }, `${nameOf(d.approve)} can now talk to Mabel.`);
+  else if (d.dismiss) act("request_dismiss", { user_id: d.dismiss }, "Dismissed.");
+  else if (d.live) {
+    const on = d.state !== "live";
+    if (on && !confirm("Switch this routine on? From its next time slot it will post in its channel.")) return;
+    act("routine_status", { id: d.live, status: on ? "live" : "paused" }, on ? "Switched on." : "Paused.");
+  }
+  else if (d.retire) { if (confirm("Remove this routine? It stops for good.")) act("routine_status", { id: d.retire, status: "retired" }, "Removed."); }
+  else if (d.test) act("routine_test", { id: d.test }, "Running. The result lands in your Slack DMs from Mabel in about a minute.");
+  else if (d.edit) openRoutine(D.routines.find(r => r.id === d.edit));
+});
+$("enabledTog").addEventListener("click", () => {
+  const on = !D.settings.enabled;
+  if (!on && !confirm("Switch Mabel off? She'll stop answering everyone, and her routines won't run.")) return;
+  act("set_enabled", { enabled: on }, on ? "Mabel is on." : "Mabel is off.");
+});
+$("capSave").addEventListener("click", () => act("set_settings", { monthly_cap_usd: $("capIn").value, downgrade_at_pct: $("dgIn").value }, "Cap saved."));
+$("logQ").addEventListener("input", renderLog);
+$("logWho").addEventListener("change", renderLog);
+
+// nav highlight
+const secs = [...document.querySelectorAll("section")];
+addEventListener("scroll", () => {
+  let cur = secs[0]?.id;
+  for (const s of secs) if (s.getBoundingClientRect().top < 120) cur = s.id;
+  document.querySelectorAll("#navlinks a").forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + cur));
+}, { passive: true });
+
+// ---------------------------------------------------------------- routine form
+function syncFreq() { const f = $("rmFreq").value; $("rmWdWrap").classList.toggle("hide", f !== "weekly"); $("rmMdWrap").classList.toggle("hide", f !== "monthly"); }
+$("rmFreq").addEventListener("change", syncFreq);
+function openRoutine(r) {
+  EDIT_ID = r?.id || null;
+  $("rmTitle").textContent = r ? "Edit routine" : "New routine";
+  $("rmSave").textContent = r ? "Save" : "Save as draft";
+  $("rmName").value = r?.name || ""; $("rmWhat").value = r?.what || ""; $("rmInstr").value = r?.instructions || "";
+  $("rmChan").innerHTML = `<option value="">Pick a channel&hellip;</option>` + D.channels.map(c => `<option value="${c.id}">#${esc(c.name)}</option>`).join("");
+  $("rmChan").value = r?.channel_id || "";
+  $("rmFreq").value = r?.frequency || "weekly"; $("rmTime").value = (r?.run_time || "09:00").slice(0, 5);
+  $("rmWd").value = String(r?.weekday ?? 1); $("rmMd").value = r?.monthday || 1; $("rmTier").value = r?.tier || "standard";
+  syncFreq(); $("routineModal").classList.remove("hide"); $("rmName").focus();
+}
+$("newRoutine").addEventListener("click", () => openRoutine(null));
+$("rmCancel").addEventListener("click", () => $("routineModal").classList.add("hide"));
+$("routineModal").addEventListener("click", e => { if (e.target.id === "routineModal") $("routineModal").classList.add("hide"); });
+addEventListener("keydown", e => { if (e.key === "Escape") $("routineModal").classList.add("hide"); });
+$("rmSave").addEventListener("click", async () => {
+  const routine = {
+    id: EDIT_ID, name: $("rmName").value, what: $("rmWhat").value, instructions: $("rmInstr").value,
+    channel_id: $("rmChan").value, frequency: $("rmFreq").value, run_time: $("rmTime").value,
+    weekday: Number($("rmWd").value), monthday: Number($("rmMd").value), tier: $("rmTier").value,
+  };
+  $("rmSave").disabled = true;
+  try { await api("routine_save", { routine }); $("routineModal").classList.add("hide"); toast(EDIT_ID ? "Saved." : "Saved as a draft. Test it, then switch it on."); await load(); }
+  catch (e) { toast(e.message, true); }
+  $("rmSave").disabled = false;
+});
+
+sb.auth.onAuthStateChange(evt => { if (evt === "SIGNED_IN" && !D) boot(); });
+boot();
+</script>
+</body>
+</html>
