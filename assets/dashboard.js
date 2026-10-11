@@ -118,8 +118,16 @@ async function loadData(){
     if (dateCol) b = b.gte(dateCol, from); return b; };
   /* PostgREST caps a response at 1,000 rows, silently. Page anything that can exceed it
      (a busy account's search terms do) or the table under-reports with no error. */
+  /* ...and page in primary-key order. Unordered pages can repeat some rows and skip others:
+     on 11/10/2026 Polarity's 1,455 map grid squares came back as 1,121 distinct ones and a
+     whole scan vanished. */
+  const PK = { md_rankings: 'checked_at,keyword,search_engine', md_paid_search_terms: 'month,campaign,ad_group,search_term,match_type',
+    md_paid_keywords: 'month,campaign,ad_group,keyword,match_type', md_paid_segments: 'month,dimension,label',
+    md_geo_share: 'checked_at,engine,brand', md_negative_requests: 'id', md_seo_queries: 'month,query',
+    md_gbp_search_keywords: 'month,keyword', md_gbp_review_list: 'review_id', md_work_log: 'id' };
+  const ordered = (b, cols) => (cols || '').split(',').filter(Boolean).reduce((x, c) => x.order(c), b);
   const qAll = async (t, dateCol) => { let out = [], i = 0;
-    for (;;) { const { data, error } = await q(t, dateCol).range(i, i + 999);
+    for (;;) { const { data, error } = await ordered(q(t, dateCol), PK[t]).range(i, i + 999);
       if (error || !data) return { data: out, error }; out = out.concat(data);
       if (data.length < 1000) return { data: out }; i += 1000; } };
 
@@ -144,7 +152,7 @@ async function loadData(){
     const ids = RAW.scans.map(s => s.id);
     RAW.points = [];
     for (let i = 0; ; i += 1000) {
-      const { data } = await sb.from('md_mapgrid_points').select('*').in('scan_id', ids).range(i, i + 999);
+      const { data } = await sb.from('md_mapgrid_points').select('*').in('scan_id', ids).order('scan_id').order('idx').range(i, i + 999);
       RAW.points = RAW.points.concat(data || []);
       if (!data || data.length < 1000) break;
     }
