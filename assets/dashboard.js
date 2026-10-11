@@ -192,14 +192,16 @@ function applyMonth(){
   V.pkw  = RAW.pkw.filter(r => inM(r,'month'));
   V.pseg = RAW.pseg.filter(r => inM(r,'month'));
   V.pconv= RAW.pconv.filter(r => inM(r,'month'));
-  /* AI visibility is a snapshot: latest check on or before the month, plus the one
-     before it for the trend. Same rule as rankings. */
+  /* AI visibility is a snapshot: latest check on or before the month. The comparison is
+     the LAST check of an earlier month (the month-end reading), never a second check in
+     the same month, so the trend reads month on month. */
   const geoDates = [...new Set(RAW.geo.map(r => r.checked_at))].filter(d => monthOf(d) <= m).sort();
   V.geoAsOf = geoDates[geoDates.length - 1] || null;
-  V.geoPrevAsOf = geoDates[geoDates.length - 2] || null;
+  V.geoPrevAsOf = V.geoAsOf ? geoDates.filter(d => monthOf(d) < monthOf(V.geoAsOf)).pop() || null : null;
   V.geoSnap = V.geoAsOf ? RAW.geo.filter(r => r.checked_at === V.geoAsOf) : [];
   V.geoPrevSnap = V.geoPrevAsOf ? RAW.geo.filter(r => r.checked_at === V.geoPrevAsOf) : [];
   V.gshare = V.geoAsOf ? RAW.gshare.filter(r => r.checked_at === V.geoAsOf) : [];
+  V.gsharePrev = V.geoPrevAsOf ? RAW.gshare.filter(r => r.checked_at === V.geoPrevAsOf) : [];
 
   /* Rankings and scans are snapshots: take the latest ON OR BEFORE the selected month,
      so a month with no scan shows the standing position rather than going blank. */
@@ -220,6 +222,16 @@ function applyMonth(){
     const k = r.keyword.toLowerCase(), t = r.scanned_at || r.checked_at;
     if (!latest[k] || String(t) > String(latest[k].scanned_at || latest[k].checked_at)) latest[k] = r; });
   V.scans = Object.values(latest);
+  /* Last month's grid, per keyword: the latest scan of the latest earlier month. Only scans
+     at the same zoom compare — the 15z scans before 11/10/2026 measured a street-level view. */
+  const prevM2 = V.scanAsOf ? sc.filter(r => monthOf(r.checked_at) < V.scanAsOf).map(r => monthOf(r.checked_at)).pop() : null;
+  const zooms = new Set(V.scans.map(s => s.zoom));
+  const prevLatest = {};
+  (prevM2 ? sc.filter(r => monthOf(r.checked_at) === prevM2 && zooms.has(r.zoom)) : []).forEach(r => {
+    const k = r.keyword.toLowerCase(), t = r.scanned_at || r.checked_at;
+    if (!prevLatest[k] || String(t) > String(prevLatest[k].scanned_at || prevLatest[k].checked_at)) prevLatest[k] = r; });
+  V.scansPrev = prevLatest;
+  V.scanPrevMonth = Object.keys(prevLatest).length ? prevM2 : null;
   /* Reviews are a running total, not a series — latest reading on or before the month. */
   const rv = upto(RAW.reviews,'as_of');
   V.reviews = rv.length ? rv[rv.length-1] : null;
@@ -260,6 +272,19 @@ function kpi(label, value, foot){
 function chipFor(cur, prev){
   const d = delta(cur, prev);
   return `<span class="chip ${d.cls}">${d.txt}</span>`;
+}
+/* Month-on-month change as an absolute number ("+3 vs Sep"). Small counts like "named in 4
+   answers" move from 0, where a percentage is meaningless. lowerIsBetter for positions. */
+/* True when a's month is the calendar month straight before b's. */
+function isPrevMonth(a, b){
+  const d = new Date(monthOf(b) + '-01T00:00:00'); d.setMonth(d.getMonth() - 1);
+  return monthOf(a) === `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function stepChip(cur, prev, label, { dp = 0, lowerIsBetter = false } = {}){
+  if (cur == null || prev == null) return '';
+  const d = Number(cur) - Number(prev), good = lowerIsBetter ? d < 0 : d > 0;
+  const cls = Math.abs(d) < (dp ? 0.05 : 0.5) ? 'flat' : good ? 'up' : 'dn';
+  return `<span class="chip ${cls}">${d > 0 ? '+' : ''}${fmt(d, dp)} vs ${label}</span>`;
 }
 /* Callouts are derived from live values. Never hardcode one, and never leave a sentence
    sitting beside a number it no longer describes. */
@@ -578,21 +603,33 @@ function viewMapGrid(){
 
   const scans = V.scans.slice().sort((a,b) => (a.avg_rank ?? 999) - (b.avg_rank ?? 999));
   const total = sum(scans,'total_points'), found = sum(scans,'found_points');
+  /* Points in the top 3 = share of voice x points. Month on month only over keywords
+     scanned in both months, so adding a keyword never reads as growth. */
+  const top3 = s => s.solv != null ? Math.round(Number(s.solv) * s.total_points / 100) : 0;
+  const prevOf = s => V.scansPrev[s.keyword.toLowerCase()];
+  const both = scans.filter(prevOf);
+  const pm = V.scanPrevMonth ? monthName(V.scanPrevMonth).split(' ')[0] : null;
+  const t3 = scans.reduce((t, s) => t + top3(s), 0);
+  const t3Both = both.reduce((t, s) => t + top3(s), 0), t3Prev = both.reduce((t, s) => t + top3(prevOf(s)), 0);
+  const fBoth = sum(both,'found_points'), fPrev = both.reduce((t, s) => t + prevOf(s).found_points, 0);
   out += `<div class="kpis">
-    ${kpi('Keywords scanned', fmt(scans.length))}
-    ${kpi('Points ranking', `${fmt(found)} / ${fmt(total)}`, found === 0 ? 'Not yet in the pack' : '')}
+    ${kpi('Points in the top 3', `${fmt(t3)} / ${fmt(total)}`, both.length ? stepChip(t3Both, t3Prev, pm) : 'First month measured')}
+    ${kpi('Points ranking', `${fmt(found)} / ${fmt(total)}`, (found === 0 ? 'Not yet in the pack ' : '') + (both.length ? stepChip(fBoth, fPrev, pm) : ''))}
     ${kpi('Best average', scans[0]?.avg_rank != null ? fmt(scans[0].avg_rank,1) : '—', scans[0]?.keyword || '')}
     ${kpi('Grid', scans[0] ? `${scans[0].grid_size}×${scans[0].grid_size}` : '—',
         scans[0] ? `${scans[0].spacing_km} km spacing · ${scans[0].centre_label || ''}` : '')}</div>`;
 
+  const vs = s => { const p = prevOf(s); if (!p) return '<span class="sub">New this month</span>';
+    return [p.avg_rank != null && s.avg_rank != null ? stepChip(s.avg_rank, p.avg_rank, 'avg', { dp: 1, lowerIsBetter: true }).replace(' vs avg', ' avg') : '',
+      stepChip(top3(s), top3(p), 'top 3').replace(' vs top 3', ' top 3')].filter(Boolean).join(' '); };
   out += `<div class="card"><div class="cardhead"><div><h3>By keyword</h3>
-    <p class="sub">Scanned ${V.scanAsOf ? monthName(V.scanAsOf) : ''}</p></div></div>
+    <p class="sub">Scanned ${V.scanAsOf ? monthName(V.scanAsOf) : ''}${pm ? `, compared with the end of ${monthName(V.scanPrevMonth)}` : ''}</p></div></div>
     <div class="tscroll"><table class="tbl"><thead><tr>
-      <th>Keyword</th><th>Avg position</th><th>Points ranking</th><th>Share of voice</th></tr></thead><tbody>
+      <th>Keyword</th><th>Avg position</th><th>Points ranking</th><th>Share of voice</th>${pm ? `<th>vs ${pm}</th>` : ''}</tr></thead><tbody>
     ${scans.map(s => `<tr><td>${s.keyword}</td>
       <td>${s.avg_rank != null ? `<span class="rankpill ${s.avg_rank<=3?'win':s.avg_rank<=10?'mid':'out'}">${fmt(s.avg_rank,1)}</span>` : '<span class="rankpill out">Not ranking</span>'}</td>
       <td class="tnum">${fmt(s.found_points)} / ${fmt(s.total_points)}</td>
-      <td class="tnum">${s.solv != null ? pct1(s.solv) : '—'}</td></tr>`).join('')}
+      <td class="tnum">${s.solv != null ? pct1(s.solv) : '—'}</td>${pm ? `<td>${vs(s)}</td>` : ''}</tr>`).join('')}
     </tbody></table></div></div>`;
 
   /* The grid itself, drawn from md_mapgrid_points — one cell per measured point. */
@@ -748,15 +785,25 @@ function viewGeo(){
   const brandTot = sum(V.gshare,'mentions'), mine = sum(V.gshare.filter(r => r.is_client),'mentions');
   const sov = brandTot ? mine / brandTot * 100 : null;
   const asOf = d => new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' });
+  /* Month on month: last month's final check. Compare rates, not raw counts, because the
+     question set can grow between months. */
+  const pm = V.geoPrevAsOf ? monthName(monthOf(V.geoPrevAsOf)).split(' ')[0] : null;
+  const rate = named / snap.length * 100, prevRate = V.geoPrevSnap.length ? prevNamed / V.geoPrevSnap.length * 100 : null;
+  const pTot = sum(V.gsharePrev,'mentions'), pMine = sum(V.gsharePrev.filter(r => r.is_client),'mentions');
+  const prevSov = pTot ? pMine / pTot * 100 : null;
 
   out += `<p class="lede">On ${asOf(V.geoAsOf)} we asked ${engines.length} AI assistant${engines.length === 1 ? '' : 's'} (${engines.join(', ')})
     ${fmt(new Set(snap.map(r => r.prompt)).size)} questions a homeowner might ask. ${CFG.name} was named in ${fmt(named)} of ${fmt(snap.length)} answers${V.geoPrevAsOf
-      ? `, against ${fmt(prevNamed)} of ${fmt(V.geoPrevSnap.length)} on ${asOf(V.geoPrevAsOf)}` : ''}.${sov != null
-      ? ` Across every business the assistants recommended, ${CFG.name} took ${pct1(sov)} of the mentions.` : ''}</p>`;
+      ? `, against ${fmt(prevNamed)} of ${fmt(V.geoPrevSnap.length)} on ${asOf(V.geoPrevAsOf)}, the ${isPrevMonth(V.geoPrevAsOf, V.geoAsOf) ? 'end of last month' : 'last earlier check'}` : ''}.${sov != null
+      ? ` Across every business the assistants recommended, ${CFG.name} took ${pct1(sov)} of the mentions${prevSov != null ? `, from ${pct1(prevSov)} the month before` : ''}.` : ''}</p>`;
   out += `<div class="kpis">
-    ${kpi('Named in answers', `${fmt(named)} / ${fmt(snap.length)}`, pct1(named / snap.length * 100) + ' of answers')}
-    ${kpi('AI share of voice', sov != null ? pct1(sov) : '—', brandTot ? `${fmt(mine)} of ${fmt(brandTot)} business mentions` : '')}
-    ${V.geoPrevAsOf ? kpi('Previous check', `${fmt(prevNamed)} / ${fmt(V.geoPrevSnap.length)}`, asOf(V.geoPrevAsOf)) : ''}
+    ${kpi('Named in answers', `${fmt(named)} / ${fmt(snap.length)}`, pct1(rate) + ' of answers' +
+        (prevRate != null ? ` ${stepChip(rate, prevRate, pm, { dp: 1 }).replace(/vs/, 'pts vs')}` : ''))}
+    ${kpi('AI share of voice', sov != null ? pct1(sov) : '—', (brandTot ? `${fmt(mine)} of ${fmt(brandTot)} business mentions` : '') +
+        (sov != null && prevSov != null ? ` ${stepChip(sov, prevSov, pm, { dp: 1 }).replace(/vs/, 'pts vs')}` : ''))}
+    ${V.geoPrevAsOf ? kpi(`${isPrevMonth(V.geoPrevAsOf, V.geoAsOf) ? 'Last month' : 'Earlier check'} (${pm})`, `${fmt(prevNamed)} / ${fmt(V.geoPrevSnap.length)}`,
+        `${prevRate != null ? pct1(prevRate) + ' of answers' : ''}${prevSov != null ? ` · ${pct1(prevSov)} share` : ''} · ${asOf(V.geoPrevAsOf)}`)
+      : kpi('Last month', '—', 'First month measured: next month shows the change')}
     ${kpi('Assistants checked', fmt(engines.length), engines.join(' · '))}</div>`;
 
   /* Per engine */
