@@ -1109,9 +1109,10 @@ function renderShell(){
   document.documentElement.style.setProperty('--accent', CFG.accent || '#17B4F0');
   if (EMBED) document.documentElement.classList.add('embed');
   document.title = `${CFG.name} — Marketing Dashboard`;
+  const logoSrc = CFG.logo && (CFG.logo.includes('/') ? CFG.logo : '../../assets/' + CFG.logo);
   document.body.innerHTML = `
   <header class="top"><div class="wrap topin">
-    ${CFG.logo ? `<span class="${CFG.logoChip ? 'logochip' : ''}"><img class="logo" src="${CFG.logo.includes('/') ? CFG.logo : '../../assets/' + CFG.logo}" alt="${CFG.name}"></span>` : ''}
+    ${logoSrc ? `<span class="${CFG.logoChip ? 'logochip' : ''}"><img class="logo" src="${logoSrc}" alt="${CFG.name}"></span>` : ''}
     <span class="name">${CFG.name}</span>
     <span class="spacer"></span>
     <span class="stamp" id="stamp"></span>
@@ -1123,7 +1124,8 @@ function renderShell(){
       : '<span style="font-weight:700;font-size:13px">Ready to Rank</span>'}
     <span class="spacer"></span><span class="mlbl" id="monthlabel"></span>
   </div></div>
-  <nav class="tabs"><div class="wrap tabsin" id="tabs" role="tablist"></div></nav>
+  <nav class="tabs"><div class="wrap navrow"><div class="tabsin" id="tabs" role="tablist"></div>
+    ${logoSrc ? `<span class="navlogo${CFG.logoChip ? ' logochip' : ''}"><img class="logo" src="${logoSrc}" alt="${CFG.name}"></span>` : ''}</div></nav>
   <div class="monthbar"><div class="wrap monthin" id="monthchips"></div></div>
   <main><div class="wrap" id="panel"></div></main>
   <footer class="foot"><div class="wrap footin">

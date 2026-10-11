@@ -69,6 +69,15 @@ header.top{position:sticky;top:0;z-index:40;background:rgba(15,15,18,.94);
 nav.tabs{position:sticky;top:56px;z-index:39;background:rgba(15,15,18,.94);
   backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
 .tabsin{display:flex;gap:4px;overflow-x:auto;padding:0}
+/* Client logo, top right on every dashboard (Jose 11/10/2026): inside the hub the header is
+   hidden, so this is the only place the client's own brand shows. */
+.navrow{display:flex;align-items:center;gap:14px}
+.navrow .tabsin{flex:1;min-width:0}
+.navlogo{flex:none;display:inline-flex;align-items:center;padding:6px 0}
+.navlogo .logo{height:28px;width:auto;max-width:150px;object-fit:contain;display:block}
+.navlogo.logochip{padding:4px 8px}
+.navlogo.logochip .logo{height:22px}
+@media (max-width:640px){.navlogo .logo{height:20px;max-width:90px}}
 .tab{white-space:nowrap;background:transparent;border:0;border-bottom:2px solid transparent;
   color:var(--ink3);font-weight:700;font-size:13px;padding:13px 15px;cursor:pointer}
 .tab:hover{color:var(--ink)}
