@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="96" viewBox="0 0 360 96">
+  <rect x="2" y="8" width="80" height="80" rx="18" fill="#E8431C"/>
+  <path d="M42 22c10 12 20 20 20 36a20 20 0 0 1-40 0c0-9 5-15 9-20 1 7 4 11 8 12-2-9 0-19 3-28z" fill="#FFC53D"/>
+  <text x="98" y="50" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="34" fill="#E8431C">HOT CHICKEN</text>
+  <text x="100" y="78" font-family="Arial,sans-serif" font-weight="700" font-size="15" letter-spacing="4" fill="#9aa3b2">TEST HUB · SAMPLE DATA</text>
+</svg>
