@@ -1402,7 +1402,7 @@ function viewSocialManor(){
   }
   out += soSec('Organic performance · this month') + `<div class="so-grid so-g3">
     ${soHero('Organic engagement', fmt(last.t.engagement), split(last.ig.engagement, last.fb.engagement), prev ? soDelta(last.t.engagement, prev.t.engagement) : '', true)}
-    ${soHero('DMs', dms != null ? fmt(dms) : '—', dms != null ? 'this month' : 'add via ✎ Edit', dms != null && dmsP != null ? soDelta(dms, dmsP) : '', false, '<button class="so-edit" id="so-dms-edit" type="button" ${state.role === 'admin' ? 'title="Enter this month’s DM count"' : 'disabled title="Ready to Rank enters DMs each month"'}>✎ Edit</button>')}
+    ${soHero('DMs', dms != null ? fmt(dms) : '—', dms != null ? 'this month' : 'add via ✎ Edit', dms != null && dmsP != null ? soDelta(dms, dmsP) : '', false, '<button class="so-edit" id="so-dms-edit" type="button" ' + (state.role === 'admin' ? 'title="Enter this month’s DM count"' : 'disabled title="Ready to Rank enters DMs each month"') + '>✎ Edit</button>')}
     ${soHero('Followers', fmt(last.t.followers), split(last.ig.followers, last.fb.followers), fDelta)}</div>`;
 
   out += soMoM(groups, SO.posts || [], partial);
