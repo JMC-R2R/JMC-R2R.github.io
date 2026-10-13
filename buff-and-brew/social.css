@@ -138,3 +138,21 @@ table.so-kw tr.best td{background:rgba(63,208,127,.07)}
 .partnerlogo{height:15px;width:auto;opacity:.92}
 /* Manor's card edit button (DMs). Display only in the preview. */
 .so-edit{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:10.5px;color:var(--ink3);background:transparent;border:1px solid var(--bd);border-radius:999px;padding:4px 10px;cursor:not-allowed}
+
+/* Sign-in: the client hubs' layout (both logos, email code only), in dark mode */
+.bb-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0f0f12;font-family:'Archivo',system-ui,sans-serif}
+.bb-loginbox{width:100%;max-width:390px;box-sizing:border-box;background:#1c1c21;border:1px solid #2c2c33;border-radius:16px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.35);color:#f2f2f4}
+.bb-loginbox h1{font-size:20px;font-weight:900;margin:18px 0 6px;color:#f2f2f4}
+.bb-loginbox p{margin:0 0 22px;color:#9a9ca6;font-size:13.5px}
+.bb-loginbox label{display:block;font-size:12px;color:#9a9ca6;margin:0 0 6px;font-weight:600}
+.bb-loginbox input{width:100%;box-sizing:border-box;padding:11px 13px;border-radius:9px;border:1px solid #2c2c33;background:#111114;color:#f2f2f4;font-size:14px;margin-bottom:14px;font-family:inherit}
+.bb-loginbox input:focus{outline:none;border-color:#17B4F0;box-shadow:0 0 0 3px rgba(23,180,240,.15)}
+.bb-loginbox button{width:100%;font-family:inherit;font-size:13px;font-weight:800;padding:11px 20px;border-radius:8px;border:1px solid #17B4F0;background:#17B4F0;color:#06222e;cursor:pointer}
+.bb-loginbox button[disabled]{opacity:.5;cursor:default}
+.bb-loginbox .gate-err{color:#b3261e;font-size:13px;min-height:19px;margin-top:4px}
+.bb-loginbox .gate-alt{margin:14px 0 0;text-align:center}
+.bb-loginbox .gate-alt a{color:#9a9ca6}
+.bb-lockup{display:flex;align-items:center;gap:14px}
+.bb-lockup img.cl{height:44px;width:auto;display:block}
+.bb-lockup .rule{width:1px;height:26px;background:#3a3a42}
+.bb-lockup img.r2r{height:22px;width:auto;display:block}
