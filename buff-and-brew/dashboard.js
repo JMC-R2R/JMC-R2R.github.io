@@ -1400,10 +1400,9 @@ function viewSocialManor(){
     fDelta = `<div class="so-delta ${d > 0 ? 'up' : d < 0 ? 'down' : 'flat'}">${d > 0 ? '▲' : d < 0 ? '▼' : '→'} ${d > 0 ? '+' : ''}${fmt(d)} vs prev month</div>
       <div class="so-small" style="margin-top:6px">IG ${dIg >= 0 ? '+' : ''}${fmt(dIg)} · FB ${dFb >= 0 ? '+' : ''}${fmt(dFb)}</div>`;
   }
-  out += soSec('Organic performance · this month') + `<div class="so-grid so-g4">
+  out += soSec('Organic performance · this month') + `<div class="so-grid so-g3">
     ${soHero('Organic engagement', fmt(last.t.engagement), split(last.ig.engagement, last.fb.engagement), prev ? soDelta(last.t.engagement, prev.t.engagement) : '', true)}
-    ${soHero('Website clicks', clk.t ? fmt(clk.t) : '—', clk.t ? split(clk.ig, clk.fb) : 'no data yet', clkP && clkP.t ? soDelta(clk.t, clkP.t) : '')}
-    ${soHero('DMs', dms != null ? fmt(dms) : '—', dms != null ? 'this month' : 'add via ✎ Edit', dms != null && dmsP != null ? soDelta(dms, dmsP) : '', false, '<button class="so-edit" type="button" disabled title="The team enters DMs here each month on the live page">✎ Edit</button>')}
+    ${soHero('DMs', dms != null ? fmt(dms) : '—', dms != null ? 'this month' : 'add via ✎ Edit', dms != null && dmsP != null ? soDelta(dms, dmsP) : '', false, '<button class="so-edit" id="so-dms-edit" type="button" ${state.role === 'admin' ? 'title="Enter this month’s DM count"' : 'disabled title="Ready to Rank enters DMs each month"'}>✎ Edit</button>')}
     ${soHero('Followers', fmt(last.t.followers), split(last.ig.followers, last.fb.followers), fDelta)}</div>`;
 
   out += soMoM(groups, SO.posts || [], partial);
@@ -1605,7 +1604,7 @@ function soCompetitors(snaps, comps, name){
 function soTopPosts(all){
   const P = state.month + '-01';
   const pick = pl => all.filter(p => p.period_date === P && (pl === 'facebook' ? p.platform === 'facebook' : p.platform !== 'facebook'))
-    .sort((a, b) => (+b.engagement || 0) - (+a.engagement || 0)).slice(0, 3);
+    .sort((a, b) => pl === 'facebook' ? (+b.reach || 0) - (+a.reach || 0) : (+b.engagement || 0) - (+a.engagement || 0)).slice(0, 3);
   const icon = t => /REEL/i.test(t) ? '▶' : /CAROUSEL/i.test(t) ? '▦' : '◳';
   const type = t => /REEL/i.test(t) ? 'Reel' : /CAROUSEL/i.test(t) ? 'Carousel' : /VIDEO/i.test(t) ? 'Video' : 'Post';
   const cards = ps => ps.length ? `<div class="so-posts">${ps.map(p => {
@@ -1682,6 +1681,21 @@ async function loadSocialRpt(){
   state.months = [...set].sort();
   state.month = state.months[state.months.length - 1];
 }
+
+/* DMs card: an admin types the month's count, saved through rpt_save_dms (which checks the
+   caller is an admin on this client), then the page redraws with it. */
+document.addEventListener('click', async e => {
+  if (!e.target.closest('#so-dms-edit') || state.role !== 'admin') return;
+  const cur = ((RAW.so.meta || []).find(r => monthOf(r.period_date) === state.month) || {}).dms;
+  const v = prompt(`DMs received in ${monthName(state.month)}`, cur ?? '');
+  if (v == null || v.trim() === '') return;
+  const n = Number(v.trim());
+  if (!Number.isInteger(n) || n < 0) return alert('Enter a whole number of DMs, for example 24.');
+  const { error } = await sb.rpc('rpt_save_dms', { p_client: RAW.client.id, p_period: state.month + '-01', p_dms: n });
+  if (error) return alert('Could not save: ' + error.message);
+  RAW.so.meta = (RAW.so.meta || []).filter(r => monthOf(r.period_date) !== state.month).concat([{ period_date: state.month + '-01', dms: n }]);
+  renderAll();
+});
 
 async function start(){
   const { data: client } = await sb.from('md_clients').select('*').eq('slug', CFG.slug).single();
