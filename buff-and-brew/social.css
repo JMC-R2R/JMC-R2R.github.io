@@ -139,6 +139,10 @@ table.so-kw tr.best td{background:rgba(63,208,127,.07)}
 /* Manor's card edit button (DMs). Display only in the preview. */
 .so-edit{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:10.5px;color:var(--ink3);background:transparent;border:1px solid var(--bd);border-radius:999px;padding:4px 10px;cursor:not-allowed}
 
+/* Cards side by side in a grid line up at the top (the stacking gap is only for cards on top of each other) */
+.so-grid > .so-card + .so-card,.so-g2x > .so-card + .so-card{margin-top:0}
+.so-edit:not([disabled]){cursor:pointer}
+.so-edit:not([disabled]):hover{color:var(--accent);border-color:var(--accent)}
 /* Sign-in: the client hubs' layout (both logos, email code only), in dark mode */
 .bb-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0f0f12;font-family:'Archivo',system-ui,sans-serif}
 .bb-loginbox{width:100%;max-width:390px;box-sizing:border-box;background:#1c1c21;border:1px solid #2c2c33;border-radius:16px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.35);color:#f2f2f4}
