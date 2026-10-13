@@ -1260,7 +1260,7 @@ function renderGate(msg){
   const err = t => $('.gate-err').textContent = t;
 
   const askEmail = () => {
-    card(`<p>Sign in to see your marketing results.</p>
+    card(`<p>This is a private dashboard. Enter your email and we’ll send you a sign-in code.</p>
       <label for="email">Email</label>
       <input type="email" id="email" autocomplete="username" required>
       <button type="submit">Email me a code</button>`);
