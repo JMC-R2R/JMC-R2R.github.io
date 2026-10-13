@@ -1254,16 +1254,16 @@ function renderShell(){
    still use it. shouldCreateUser:false — a code is only ever sent to an existing login. */
 function renderGate(msg){
   document.documentElement.style.setProperty('--accent', CFG.accent || '#17B4F0');
-  const card = (inner) => { document.body.innerHTML = `<div class="gate"><form class="gate-card" id="gf">
-    <h1>${CFG.name}</h1>${inner}<div class="gate-err">${msg || ''}</div></form></div>`; msg = ''; };
+  const card = (inner) => { document.body.innerHTML = `<div class="bb-login"><form class="bb-loginbox" id="gf">
+    <div class="bb-lockup"><img class="cl" src="${CFG.logo}" alt="${CFG.name}"><span class="rule"></span><img class="r2r" src="${CFG.r2rLogo}" alt="Ready to Rank"></div>
+    <h1>${CFG.name} Marketing Dashboard</h1>${inner}<div class="gate-err">${msg || ''}</div></form></div>`; msg = ''; };
   const err = t => $('.gate-err').textContent = t;
 
   const askEmail = () => {
-    card(`<p>Marketing dashboard. Enter your email and we’ll send you a sign-in code.</p>
-      <input type="email" id="email" placeholder="Email" autocomplete="username" required>
-      <button type="submit">Email me a code</button>
-      <p class="gate-alt"><a href="#" id="usepw">Sign in with a password instead</a></p>`);
-    $('#usepw').addEventListener('click', e => { e.preventDefault(); askPassword(); });
+    card(`<p>Sign in to see your marketing results.</p>
+      <label for="email">Email</label>
+      <input type="email" id="email" autocomplete="username" required>
+      <button type="submit">Email me a code</button>`);
     $('#gf').addEventListener('submit', async e => {
       e.preventDefault();
       const email = $('#email').value.trim(), b = $('#gf button'); b.disabled = true; b.textContent = 'Sending…';
