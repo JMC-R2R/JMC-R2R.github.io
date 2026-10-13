@@ -1609,7 +1609,7 @@ function soTopPosts(all){
   const type = t => /REEL/i.test(t) ? 'Reel' : /CAROUSEL/i.test(t) ? 'Carousel' : /VIDEO/i.test(t) ? 'Video' : 'Post';
   const cards = ps => ps.length ? `<div class="so-posts">${ps.map(p => {
       const ph = `<div class="ph">${icon(p.media_type)}<small>No cover</small></div>`, tag = `<span class="badge">${icon(p.media_type)} ${type(p.media_type)}</span>`;
-      const img = p.image_path && /^https?:\/\//i.test(p.image_path) ? `<img src="${esc(p.image_path)}" alt="" loading="lazy" onerror="this.remove()">` : '';
+      const img = p.image_path && /^(https?:\/\/|covers\/)/i.test(p.image_path) ? `<img src="${esc(p.image_path)}" alt="" loading="lazy" onerror="this.remove()">` : '';
       return `<a class="so-post" href="${soSafeUrl(p.permalink)}" target="_blank" rel="noopener"><div class="thumb">${ph}${img}${tag}</div>
         <div class="body"><div class="cap">${esc((p.caption || '').slice(0, 90))}</div>
         <div class="stats"><span>Reach <b>${fmt(+p.reach || 0)}</b></span><span>Eng <b>${fmt(+p.engagement || 0)}</b></span></div></div></a>`; }).join('')}</div>`
