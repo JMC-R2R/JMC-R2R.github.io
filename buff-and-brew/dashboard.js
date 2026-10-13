@@ -1701,8 +1701,9 @@ async function start(){
   const { data: client } = await sb.from('md_clients').select('*').eq('slug', CFG.slug).single();
   if (!client) return renderGate('This account cannot see this dashboard.');
   RAW.client = client;
+  const { data: { session } } = await sb.auth.getSession();
   const { data: access } = await sb.from('md_client_access').select('role, modules')
-    .eq('client_id', client.id).maybeSingle();
+    .eq('client_id', client.id).eq('user_id', session?.user?.id).maybeSingle();
   state.role = access?.role || 'viewer';
 
   await loadData();
