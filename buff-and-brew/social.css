@@ -141,6 +141,21 @@ table.so-kw tr.best td{background:rgba(63,208,127,.07)}
 
 /* Cards side by side in a grid line up at the top (the stacking gap is only for cards on top of each other) */
 .so-grid > .so-card + .so-card,.so-g2x > .so-card + .so-card{margin-top:0}
+/* Insights form and notes */
+.so-insform{display:grid;gap:8px;margin:0 0 14px}
+.so-insform input,.so-insform textarea{width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--bd);background:rgba(0,0,0,.25);color:var(--ink);font:inherit;font-size:13px}
+.so-insform textarea{resize:vertical;min-height:70px}
+.so-insform button{justify-self:start;font:inherit;font-size:12.5px;font-weight:800;padding:8px 16px;border-radius:8px;border:1px solid #D0531E;background:#D0531E;color:#fff;cursor:pointer}
+.so-insform button[disabled]{opacity:.6;cursor:default}
+.so-inslist{display:grid;gap:10px}
+.so-insn{border:1px solid var(--bd);border-radius:10px;padding:11px 13px;background:rgba(0,0,0,.18)}
+.so-insn.cur{border-color:rgba(208,83,30,.55)}
+.so-insn .nhead{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+.so-insn .nmon{font-family:var(--mono);font-size:10.5px;color:#D0531E;text-transform:uppercase;letter-spacing:.04em}
+.so-insn .ntext{font-size:13px;color:var(--ink);margin:6px 0;line-height:1.5}
+.so-insn .nby{font-size:11px;color:var(--ink3)}
+.so-insdel{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink3);background:transparent;border:1px solid var(--bd);border-radius:999px;padding:3px 9px;cursor:pointer}
+.so-insdel:hover{color:#ff6b6b;border-color:#ff6b6b}
 .so-edit:not([disabled]){cursor:pointer}
 .so-edit:not([disabled]):hover{color:var(--accent);border-color:var(--accent)}
 /* Sign-in: the client hubs' layout (both logos, email code only), in dark mode */

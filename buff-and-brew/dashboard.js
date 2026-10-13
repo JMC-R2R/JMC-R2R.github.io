@@ -1412,7 +1412,7 @@ function viewSocialManor(){
   out += soAudience(SO.aud || [], name);
   out += soCompetitors(SO.comp || [], SO.comps || [], name);
   out += soTopPosts(SO.top || []);
-  out += soInsights();
+  out += soInsightsLive();
   return out + '</div>';
 }
 
@@ -1669,18 +1669,61 @@ async function loadSocialRpt(){
     const { data, error } = await sb.from(name).select('*').eq('client_id', id).order(order).range(0, 4999);
     if (error) console.warn(name, error.message);
     return data || []; };
-  const [monthly, daily, meta, posts, top, aud, comp] = await Promise.all([
+  const [monthly, daily, meta, posts, top, aud, comp, notes] = await Promise.all([
     t('rpt_social_monthly', 'period_date'), t('rpt_social_daily', 'metric_date'), t('rpt_social_meta', 'period_date'),
     t('rpt_social_posts', 'posted_at'), t('rpt_social_top_posts', 'period_date'), t('rpt_social_audience', 'snapshot_date'),
-    t('rpt_social_competitor_snapshots', 'snapshot_date')]);
+    t('rpt_social_competitor_snapshots', 'snapshot_date'), t('rpt_social_annotations', 'created_at')]);
   const comps = [...new Set(comp.map(r => r.domain))].map(d => ({ domain: d, label: d, colour: null, is_client: false }));
-  RAW.so = { monthly, daily, meta, posts, top, aud, comp, comps };
+  RAW.so = { monthly, daily, meta, posts, top, aud, comp, comps, notes };
   /* Social months join the month chips, so a month with social but no ads still shows. */
   const set = new Set(state.months);
   monthly.forEach(r => r.period_date && set.add(monthOf(r.period_date)));
   state.months = [...set].sort();
   state.month = state.months[state.months.length - 1];
 }
+
+/* Insights: anyone with access (Savvas and Ready to Rank) adds a note for the selected month.
+   rpt_add_insight checks access and records who wrote it; rpt_delete_insight lets the author
+   or an admin remove it. Newest first; this month's notes are highlighted. */
+function soInsightsLive(){
+  const p = CFG.partner || { name: 'Savvas Studio' };
+  const notes = (RAW.so.notes || []).slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  const canDel = n => state.role === 'admin' || (n.author_user && n.author_user === state.uid);
+  const list = notes.length ? notes.map(n => `<div class="so-insn${monthOf(n.ann_date) === state.month ? ' cur' : ''}">
+      <div class="nhead"><span class="nmon">${esc(soMon(n.ann_date))}</span>${n.label ? `<b>${esc(n.label)}</b>` : ''}
+        ${canDel(n) ? `<button class="so-insdel" type="button" data-id="${n.id}">Delete</button>` : ''}</div>
+      <div class="ntext">${esc(n.note).replace(/\n/g, '<br>')}</div>
+      <div class="nby">${esc(n.author || '')} · ${soAU(n.created_at)}</div></div>`).join('')
+    : '<div class="empty">No insights yet.</div>';
+  return `<div class="so-ins"><h3>${p.mark ? `<img src="${esc(p.mark)}" alt="">` : ''}${esc(p.name)} and Ready to Rank: insights</h3>
+    <p>Notes on what’s moving the numbers. Each note is filed under the month it’s about, so pick a month above first.</p>
+    <form class="so-insform" id="so-insform">
+      <input id="so-inslabel" maxlength="80" placeholder="Short title (optional)">
+      <textarea id="so-insnote" rows="3" maxlength="2000" placeholder="Add an insight for ${esc(monthName(state.month))}" required></textarea>
+      <button type="submit">Add insight</button></form>
+    <div class="so-inslist">${list}</div></div>`;
+}
+
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'so-insform') return;
+  e.preventDefault();
+  const note = $('#so-insnote').value.trim(), label = $('#so-inslabel').value.trim(), b = e.target.querySelector('button');
+  if (!note) return;
+  b.disabled = true; b.textContent = 'Saving…';
+  const { data, error } = await sb.rpc('rpt_add_insight', { p_client: RAW.client.id, p_month: state.month + '-01', p_label: label || null, p_note: note });
+  if (error){ b.disabled = false; b.textContent = 'Add insight'; return alert('Could not save: ' + error.message); }
+  RAW.so.notes = (RAW.so.notes || []).concat([data]);
+  renderAll();
+});
+
+document.addEventListener('click', async e => {
+  const d = e.target.closest('.so-insdel'); if (!d) return;
+  if (!confirm('Delete this insight? This can’t be undone.')) return;
+  const id = +d.dataset.id, { error } = await sb.rpc('rpt_delete_insight', { p_id: id });
+  if (error) return alert('Could not delete: ' + error.message);
+  RAW.so.notes = (RAW.so.notes || []).filter(n => n.id !== id);
+  renderAll();
+});
 
 /* DMs card: an admin types the month's count, saved through rpt_save_dms (which checks the
    caller is an admin on this client), then the page redraws with it. */
@@ -1701,8 +1744,10 @@ async function start(){
   const { data: client } = await sb.from('md_clients').select('*').eq('slug', CFG.slug).single();
   if (!client) return renderGate('This account cannot see this dashboard.');
   RAW.client = client;
+  const { data: { session } } = await sb.auth.getSession();
   const { data: access } = await sb.from('md_client_access').select('role, modules')
-    .eq('client_id', client.id).maybeSingle();
+    .eq('client_id', client.id).eq('user_id', session?.user?.id).maybeSingle();
+  state.uid = session?.user?.id;
   state.role = access?.role || 'viewer';
 
   await loadData();
