@@ -177,12 +177,12 @@
       <a href="../">Monthly reporting</a>
     </nav>
     <h1>Blog Content Calendar</h1>
-    <p class="sub">August to October 2026. Thirty-nine search-led articles built around the six hero flours and mixes, every keyword validated against live Ahrefs data for Australia. Tick to approve, assign a writer and track status. Changes save automatically.</p>
+    <p class="sub">August to December 2026. Sixty-five search-led articles built around the Gluten Free World flours and mixes, every keyword validated against live Ahrefs data for Australia. Tick to approve, assign a writer and track status. Changes save automatically.</p>
     <div class="stats">
-      <div class="stat"><span class="micro">Articles</span><b>39</b></div>
-      <div class="stat"><span class="micro">Months</span><b>3</b></div>
-      <div class="stat"><span class="micro">Combined AU volume</span><b id="totalvol">30,670</b></div>
-      <div class="stat"><span class="micro">Approved</span><b id="approvedcount">0/39</b></div>
+      <div class="stat"><span class="micro">Articles</span><b>65</b></div>
+      <div class="stat"><span class="micro">Months</span><b>5</b></div>
+      <div class="stat"><span class="micro">Combined AU volume</span><b id="totalvol">45,020</b></div>
+      <div class="stat"><span class="micro">Approved</span><b id="approvedcount">0/65</b></div>
     </div>
   </div>
 </header>
@@ -192,7 +192,9 @@
     <button class="tab" role="tab" data-month="2026-08" aria-selected="true">August 2026</button>
     <button class="tab" role="tab" data-month="2026-09" aria-selected="false">September 2026</button>
     <button class="tab" role="tab" data-month="2026-10" aria-selected="false">October 2026</button>
-    <button class="tab" role="tab" data-month="all" aria-selected="false">All three</button>
+    <button class="tab" role="tab" data-month="2026-11" aria-selected="false">November 2026</button>
+    <button class="tab" role="tab" data-month="2026-12" aria-selected="false">December 2026</button>
+    <button class="tab" role="tab" data-month="all" aria-selected="false">All months</button>
     <span class="savebadge" id="savebadge">Connecting</span>
   </div>
 </div>
@@ -239,7 +241,7 @@
 
       <div class="foot-col foot-note">
         <h4>Notes on this calendar</h4>
-        <p><b>Keyword data.</b> Ahrefs Keywords Explorer, location Australia, pulled 10/07/2026. Volume is average monthly AU searches. KD is Ahrefs Keyword Difficulty, 0 to 100.</p>
+        <p><b>Keyword data.</b> Ahrefs Keywords Explorer, location Australia, pulled 10/07/2026 (August to October) and 28/09/2026 (November and December). Volume is average monthly AU searches. KD is Ahrefs Keyword Difficulty, 0 to 100.</p>
         <p><b>Seasonal keywords.</b> "fathers day cake", "halloween cupcakes" and "halloween biscuits" target the broad term rather than a gluten-free variant, because the gluten-free versions have negligible AU search volume. The titles remain gluten-free.</p>
         <p><b>17 August.</b> Coeliac Australia advises that oats are not suitable for people with coeliac disease. This article should take that position. Angle to be confirmed before writing.</p>
       </div>
@@ -263,7 +265,7 @@ const SUPABASE_KEY = "sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
 const TABLE = "gfw_content_calendar";
 const TEAM = ["Rishikesh","Hannah","Janice"];
 const STATUSES = ["Not Started","Started","For Approval","Published"];
-const MONTHS = {"2026-08":"August 2026","2026-09":"September 2026","2026-10":"October 2026"};
+const MONTHS = {"2026-08":"August 2026","2026-09":"September 2026","2026-10":"October 2026","2026-11":"November 2026","2026-12":"December 2026"};
 
 /* Embedded fallback: the page still renders the calendar if Supabase is unreachable.
    Live approve/assign/status values always come from Supabase when it responds. */
@@ -306,7 +308,33 @@ const SEED = [
 {id:36,publish_date:"2026-10-23",month_key:"2026-10",main_keyword:"gluten free shortbread",search_volume:1100,difficulty:1,title:"Gluten-Free Shortbread with a Proper Snap",notes:null},
 {id:37,publish_date:"2026-10-26",month_key:"2026-10",main_keyword:"halloween biscuits",search_volume:150,difficulty:0,title:"Gluten-Free Halloween Biscuits Kids Can Decorate",notes:"Halloween"},
 {id:38,publish_date:"2026-10-28",month_key:"2026-10",main_keyword:"gluten free cookies",search_volume:2400,difficulty:2,title:"Gluten-Free Cookies for Halloween: 9 Ideas from One Dough",notes:"Halloween"},
-{id:39,publish_date:"2026-10-30",month_key:"2026-10",main_keyword:"halloween cupcakes",search_volume:900,difficulty:7,title:"Gluten-Free Halloween Cupcakes from a Vanilla Cake Mix",notes:"Halloween"}
+{id:39,publish_date:"2026-10-30",month_key:"2026-10",main_keyword:"halloween cupcakes",search_volume:900,difficulty:7,title:"Gluten-Free Halloween Cupcakes from a Vanilla Cake Mix",notes:"Halloween"},
+{id:40,publish_date:"2026-11-02",month_key:"2026-11",main_keyword:"gluten free quiche",search_volume:600,difficulty:0,title:"Gluten-Free Quiche with a Crust That Doesn't Go Soggy",notes:"Race day and picnics"},
+{id:41,publish_date:"2026-11-04",month_key:"2026-11",main_keyword:"is soy sauce gluten free",search_volume:700,difficulty:1,title:"Is Soy Sauce Gluten-Free? What to Look For on the Label",notes:null},
+{id:42,publish_date:"2026-11-06",month_key:"2026-11",main_keyword:"gluten free burger buns",search_volume:600,difficulty:0,title:"Gluten-Free Burger Buns That Hold Up on the Barbecue",notes:"BBQ season"},
+{id:43,publish_date:"2026-11-09",month_key:"2026-11",main_keyword:"gluten free crackers",search_volume:1800,difficulty:2,title:"Homemade Gluten-Free Crackers for the Cheese Board",notes:null},
+{id:44,publish_date:"2026-11-11",month_key:"2026-11",main_keyword:"is polenta gluten free",search_volume:1100,difficulty:0,title:"Is Polenta Gluten-Free? Yes, With One Thing to Check",notes:null},
+{id:45,publish_date:"2026-11-13",month_key:"2026-11",main_keyword:"gluten free lemon slice",search_volume:500,difficulty:0,title:"Gluten-Free Lemon Slice with a Shortbread Base",notes:null},
+{id:46,publish_date:"2026-11-16",month_key:"2026-11",main_keyword:"gluten free christmas pudding",search_volume:300,difficulty:1,title:"Gluten-Free Christmas Pudding to Make Ahead",notes:"Stir-up Sunday is 22 Nov"},
+{id:47,publish_date:"2026-11-18",month_key:"2026-11",main_keyword:"is buckwheat gluten free",search_volume:1500,difficulty:0,title:"Is Buckwheat Gluten-Free? Despite the Name, Yes",notes:null},
+{id:48,publish_date:"2026-11-20",month_key:"2026-11",main_keyword:"gluten free christmas cake",search_volume:250,difficulty:0,title:"Gluten-Free Christmas Cake That Slices Cleanly",notes:"Christmas, bake weeks ahead"},
+{id:49,publish_date:"2026-11-23",month_key:"2026-11",main_keyword:"gluten free crepes",search_volume:500,difficulty:4,title:"Gluten-Free Crepes: Thin, Soft and Easy to Flip",notes:null},
+{id:50,publish_date:"2026-11-25",month_key:"2026-11",main_keyword:"is maize flour gluten free",search_volume:500,difficulty:0,title:"Is Maize Flour Gluten-Free? Maize vs Cornflour Explained",notes:null},
+{id:51,publish_date:"2026-11-27",month_key:"2026-11",main_keyword:"gluten free rum balls",search_volume:250,difficulty:0,title:"Gluten-Free Rum Balls from a Chocolate Cake Mix",notes:"Christmas gift"},
+{id:52,publish_date:"2026-11-30",month_key:"2026-11",main_keyword:"gluten free apple crumble",search_volume:1600,difficulty:3,title:"Gluten-Free Apple Crumble (and a Summer Fruit Version)",notes:null},
+{id:53,publish_date:"2026-12-02",month_key:"2026-12",main_keyword:"is ham gluten free",search_volume:300,difficulty:2,title:"Is Ham Gluten-Free? Checking the Christmas Ham and Glaze",notes:"Christmas"},
+{id:54,publish_date:"2026-12-04",month_key:"2026-12",main_keyword:"gluten free mince pies",search_volume:90,difficulty:0,title:"Gluten-Free Fruit Mince Pies You Can Freeze Unbaked",notes:"Christmas"},
+{id:55,publish_date:"2026-12-07",month_key:"2026-12",main_keyword:"gluten free christmas desserts",search_volume:250,difficulty:0,title:"10 Gluten-Free Christmas Desserts Beyond the Pavlova",notes:"Christmas"},
+{id:56,publish_date:"2026-12-09",month_key:"2026-12",main_keyword:"is chocolate gluten free",search_volume:1200,difficulty:5,title:"Is Chocolate Gluten-Free? Which Bars and Baking Chocolate Are Safe",notes:null},
+{id:57,publish_date:"2026-12-11",month_key:"2026-12",main_keyword:"gluten free jam drops",search_volume:200,difficulty:0,title:"Gluten-Free Jam Drops for the Christmas Biscuit Tin",notes:"Christmas"},
+{id:58,publish_date:"2026-12-14",month_key:"2026-12",main_keyword:"gluten free stuffing",search_volume:150,difficulty:0,title:"Gluten-Free Stuffing for the Christmas Roast",notes:"Christmas"},
+{id:59,publish_date:"2026-12-16",month_key:"2026-12",main_keyword:"is custard powder gluten free",search_volume:150,difficulty:0,title:"Is Custard Powder Gluten-Free? Checking Before the Trifle",notes:"Christmas"},
+{id:60,publish_date:"2026-12-18",month_key:"2026-12",main_keyword:"gluten free biscotti",search_volume:100,difficulty:1,title:"Gluten-Free Biscotti: A Last-Minute Gift That Keeps",notes:"Christmas gift"},
+{id:61,publish_date:"2026-12-21",month_key:"2026-12",main_keyword:"gluten free profiteroles",search_volume:90,difficulty:0,title:"Gluten-Free Profiteroles for a Christmas Showpiece",notes:"Christmas"},
+{id:62,publish_date:"2026-12-23",month_key:"2026-12",main_keyword:"gluten free batter",search_volume:100,difficulty:1,title:"Gluten-Free Batter for Christmas Seafood",notes:"Christmas"},
+{id:63,publish_date:"2026-12-25",month_key:"2026-12",main_keyword:"gluten free hot dog buns",search_volume:350,difficulty:0,title:"Gluten-Free Hot Dog Buns for Boxing Day",notes:"Boxing Day"},
+{id:64,publish_date:"2026-12-28",month_key:"2026-12",main_keyword:"gluten free gnocchi",search_volume:1100,difficulty:0,title:"Gluten-Free Gnocchi: Light, Not Gluey",notes:null},
+{id:65,publish_date:"2026-12-30",month_key:"2026-12",main_keyword:"gluten free pizza scrolls",search_volume:70,difficulty:0,title:"Gluten-Free Pizza Scrolls for New Year's Eve",notes:"New Year's Eve"}
 ];
 
 let DATA = SEED.map(r => ({...r, approved:false, assigned_to:null, status:"Not Started", client_notes:null}));
@@ -454,7 +482,7 @@ function progress(){
 
 function render(){
   const rows = current==="all" ? DATA : DATA.filter(r=>r.month_key===current);
-  $("monthtitle").textContent = current==="all" ? "All three months" : MONTHS[current];
+  $("monthtitle").textContent = current==="all" ? "All months" : MONTHS[current];
   const v = rows.reduce((a,r)=>a+(r.search_volume||0),0);
   $("monthmeta").textContent = `${rows.length} articles · ${v.toLocaleString("en-AU")} combined AU searches/mo`;
 
