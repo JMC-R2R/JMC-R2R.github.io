@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Ready to Rank × Savvas Studio · Creative performance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0c0e; --panel:#141619; --panel2:#1b1e23; --line:#272b31;
+  --ink:#eef1f4; --muted:#9aa4b0; --dim:#6f7883;
+  --accent:#17B4F0; --accent-dim:#0e7ba6; --savvas:#a53023;
+  --ok:#3ddc97; --warn:#ffb454; --bad:#ff6b6b;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:Archivo,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:'Space Mono',ui-monospace,monospace}
+a{color:var(--accent)}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
+
+/* ---------- login ---------- */
+#login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.card-login{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:32px}
+.brandmark{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
+.field{margin-bottom:14px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;letter-spacing:.03em}
+input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:11px 12px;font-family:inherit;font-size:14px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+button{font-family:inherit;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid transparent;padding:11px 16px;font-size:14px}
+.btn{background:var(--accent);color:#04222f}
+.btn:hover{background:#37c4f8}
+.btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+
+/* ---------- shell ---------- */
+#app{display:none}
+header{position:sticky;top:0;z-index:20;background:rgba(11,12,14,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:1180px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.logo{font-weight:800;font-size:17px;letter-spacing:-.03em}
+.logo span{color:var(--accent)}
+.who{margin-left:auto;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:12px}
+nav{max-width:1180px;margin:0 auto;padding:0 22px;display:flex;gap:4px;overflow-x:auto}
+.tab{background:none;border:none;color:var(--muted);padding:12px 14px;font-size:14px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+main{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
+.pane{display:none}
+.pane.on{display:block}
+
+.lede{color:var(--muted);font-size:14px;max-width:70ch;margin:6px 0 26px}
+.note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--muted);margin-bottom:26px}
+.note b{color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);padding:9px 10px;border-bottom:1px solid var(--line);font-weight:600}
+td{padding:11px 10px;border-bottom:1px solid var(--line);color:var(--muted)}
+td b{color:var(--ink);font-weight:600}
+.wrap-x{overflow-x:auto}
+footer{max-width:1180px;margin:0 auto;padding:0 22px 50px;color:var(--dim);font-size:12px}
+
+/* ---------- co-brand ---------- */
+.logos{display:flex;align-items:center;gap:12px}
+.logos img{display:block;height:26px;width:auto}
+.logos .x{color:var(--dim);font-size:13px}
+.logos img.sv{height:30px}
+
+/* ---------- launching meta ads ---------- */
+.rule{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--savvas);border-radius:10px;padding:16px 18px;font-size:14px;color:var(--muted);margin-bottom:34px;max-width:78ch}
+.rule b{color:var(--ink)}
+.sec{margin:0 0 38px}
+.sec h2{font-size:17px;margin-bottom:4px}
+.sec .sub{color:var(--dim);font-size:13px;margin:0 0 14px;max-width:70ch}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:8px;max-width:78ch}
+.checks li{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px 11px 40px;position:relative;font-size:14px;color:var(--ink)}
+.checks li::before{content:'';position:absolute;left:14px;top:14px;width:13px;height:13px;border:2px solid var(--accent);border-radius:3px}
+.checks li small{display:block;color:var(--dim);font-size:12.5px;margin-top:2px}
+.tl td:first-child{font-family:'Space Mono',monospace;font-size:12px;color:var(--accent);white-space:nowrap;vertical-align:top}
+.tl td{vertical-align:top}
+.tl td.tlwho{white-space:nowrap}
+.slow li{font-size:14px;color:var(--muted);margin-bottom:8px;max-width:78ch}
+.slow li b{color:var(--ink)}
+/* ---------- creative performance ---------- */
+.cp-ctl{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:22px}
+.cp-ctl>div{min-width:150px}
+.cp-ctl select,.cp-ctl input{width:auto;min-width:150px}
+.key{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:24px}
+.key div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--muted)}
+.key b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+.key .f{font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);display:block;margin-top:4px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:26px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.kpi .l{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.kpi .v{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--ink);margin-top:4px}
+.kpi .s{font-size:11.5px;color:var(--dim)}
+.tops{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:28px}
+.top{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--savvas);border-radius:var(--r);padding:14px 16px}
+.top h3{font-size:14px;margin-bottom:2px}
+.top .sub{font-size:12px;color:var(--dim);margin-bottom:10px}
+.top ol{margin:0;padding-left:18px}
+.top li{font-size:13px;color:var(--muted);margin-bottom:6px}
+.top li b{color:var(--ink);font-weight:600}
+.top li .mono{color:var(--accent);font-size:12px}
+.cpt td{vertical-align:middle;padding:10px 8px}
+.cpt th{padding:9px 8px;cursor:pointer;user-select:none;white-space:nowrap}
+.cpt th.sorted{color:var(--accent)}
+.cpt .num{font-family:'Space Mono',monospace;text-align:right;white-space:nowrap;font-size:12.5px}
+.cpt .hi{color:var(--ok)} .cpt .lo{color:var(--bad)}
+.thumb{width:44px;height:44px;border-radius:7px;object-fit:cover;background:var(--panel2);display:block}
+.adn{color:var(--ink);font-weight:600;font-size:13px;max-width:240px}
+.adn small{display:block;color:var(--dim);font-weight:400;font-size:11px}
+.curve{display:flex;align-items:flex-end;gap:2px;height:30px;width:74px}
+.curve i{flex:1;background:var(--accent);border-radius:2px 2px 0 0;min-height:1px;opacity:.85}
+.dx{font-size:12px;border-radius:7px;padding:5px 8px;display:inline-block;line-height:1.35;max-width:230px}
+.dx.win{background:rgba(61,220,151,.1);color:var(--ok);border:1px solid rgba(61,220,151,.3)}
+.dx.fix{background:rgba(255,180,84,.08);color:var(--warn);border:1px solid rgba(255,180,84,.3)}
+.dx.bad{background:rgba(255,107,107,.08);color:var(--bad);border:1px solid rgba(255,107,107,.3)}
+.dx.na{background:var(--panel2);color:var(--dim);border:1px solid var(--line)}
+.wait{background:var(--panel);border:1px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;color:var(--muted);font-size:14px}
+@media (max-width:600px){.logos img{height:20px}.logos img.sv{height:23px}.tl td.tlwho{white-space:normal}}
+@media print{header,nav,.addbtn,.btn,.btn-ghost{display:none!important}body{background:#fff;color:#000}}
+</style>
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="card-login" id="loginForm">
+    <div class="logos" style="margin-bottom:22px"><img src="../assets/r2r-logo-white.png" alt="Ready to Rank"><span class="x">×</span><img class="sv" src="../assets/savvas-wordmark-light.png" alt="Savvas Studio"></div>
+    <h1 style="font-size:22px;margin-bottom:6px">Creative performance</h1>
+    <p style="color:var(--muted);font-size:13.5px;margin:0 0 22px" id="loginLede">Sign in with your email. We'll email you a sign-in link and code, no password needed.</p>
+    <div id="step1">
+      <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required /></div>
+      <button class="btn" style="width:100%" type="submit" id="sendBtn">Email me a sign-in link</button>
+    </div>
+    <div id="step2" style="display:none">
+      <div class="field"><label for="code">Code from the email</label><input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" /></div>
+      <button class="btn" style="width:100%" type="submit" id="verifyBtn">Sign in</button>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12.5px">
+        <a href="#" id="resend">Send a new email</a><a href="#" id="restart">Use a different email</a>
+      </div>
+    </div>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="app">
+  <header>
+    <div class="hwrap">
+      <div class="logos"><img src="../assets/r2r-logo-white.png" alt="Ready to Rank"><span class="x">×</span><img class="sv" src="../assets/savvas-wordmark-light.png" alt="Savvas Studio"></div>
+      <div class="mono" style="font-size:11px;color:var(--dim);letter-spacing:.14em">CREATIVE PERFORMANCE · VIEW ONLY</div>
+      <div class="who"><span id="whoami"></span><button class="btn-ghost" id="out" style="padding:7px 12px;font-size:12px">Sign out</button></div>
+    </div>
+  </header>
+  <main>
+    <section id="p-creative">
+      <h1 style="font-size:24px">Creative performance</h1>
+      <p class="lede">Which ads are working, and which part of each ad is doing the work. Every number is a rate, so an ad that spent $10 is compared fairly with one that spent $300. Use it to plan the next shoot: make more of what wins, fix the part that's losing people.</p>
+      <div class="key">
+        <div><b>Hook rate</b>Is the opening stopping the scroll?<span class="f">3-second plays ÷ impressions</span></div>
+        <div><b>Hold rate</b>Does the story keep them watching?<span class="f">ThruPlays ÷ 3-second plays</span></div>
+        <div><b>Link CTR</b>Is the offer worth clicking?<span class="f">link clicks ÷ impressions</span></div>
+        <div><b>ROAS</b>Did it turn into sales? Online stores only<span class="f">website purchase value ÷ spend</span></div>
+      </div>
+      <div class="cp-ctl">
+        <div><label for="cpClient">Client</label><select id="cpClient"></select></div>
+        <div><label for="cpRange">Period</label><select id="cpRange"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></div>
+        <div><label for="cpMin">Judge ads that spent at least</label><select id="cpMin"><option value="10">$10</option><option value="20" selected>$20</option><option value="50">$50</option><option value="100">$100</option></select></div>
+        <div><label for="cpFmt">Show</label><select id="cpFmt"><option value="all">All ads</option><option value="video">Video only</option><option value="static">Static and carousel only</option></select></div>
+      </div>
+      <div id="cpBody"></div>
+      <p style="font-size:12px;color:var(--dim);margin-top:18px">ThruPlay is Meta's count of plays that reached 15 seconds, or the end of the video if it's shorter. Statics and carousels have no video data, so they're judged on link CTR and sales only. Leads and cost per lead stay on the client's main dashboard, where every lead type is counted once. Each ad is compared with this client's average for the period: green is at least 15% better, red at least 15% worse. <span id="cpPulled"></span></p>
+    </section>
+  </main>
+  <footer>Ready to Rank × Savvas Studio · Creative performance · Figures from Meta, refreshed every morning</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL="https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZ3J0cmF6eWVwdmJjbW1kaGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTM0MTEsImV4cCI6MjA4NzkyOTQxMX0.0nYnlrLC3pfDPpcQ9k5XsAMU8fu-ZhV543W8TMAoiUU";
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const $=id=>document.getElementById(id);
+const money=n=>'$'+Number(n).toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:0});
+let ME=null;
+
+/* ---------------- auth: emailed code (or the link in the same email) ---------------- */
+let otpEmail='',booted=false;
+function showStep(n){
+  $('step1').style.display=n===1?'block':'none';
+  $('step2').style.display=n===2?'block':'none';
+  $('loginLede').innerHTML=n===1?"Sign in with your email. We'll email you a sign-in link and code, no password needed."
+    :'We emailed <b>'+esc(otpEmail)+'</b>. Click the link in that email, or type the code from it here. It can take a minute to arrive, so check spam too.';
+  (n===1?$('email'):$('code')).focus();
+}
+async function sendCode(){
+  $('loginErr').textContent='';
+  const {error}=await sb.auth.signInWithOtp({email:otpEmail,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
+  if(error){
+    $('loginErr').textContent=error.status===429?'Too many codes requested. Wait a minute, then try again.'
+      :"We couldn't send a code to that email. Use the address Ready to Rank set up for you.";
+    return false;
+  }
+  return true;
+}
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault(); $('loginErr').textContent='';
+  if($('step1').style.display!=='none'){
+    otpEmail=$('email').value.trim().toLowerCase(); if(!otpEmail) return;
+    $('sendBtn').disabled=true;
+    if(await sendCode()) showStep(2);
+    $('sendBtn').disabled=false;
+  }else{
+    const token=$('code').value.replace(/\D/g,''); if(!token) return;
+    $('verifyBtn').disabled=true;
+    const {error}=await sb.auth.verifyOtp({email:otpEmail,token,type:'email'});
+    $('verifyBtn').disabled=false;
+    if(error){$('loginErr').textContent="That code didn't work. Use the newest email, or send a new code.";return;}
+    boot();
+  }
+});
+$('resend').addEventListener('click',async e=>{e.preventDefault(); if(await sendCode()) $('loginErr').textContent='New email sent.';});
+$('restart').addEventListener('click',e=>{e.preventDefault(); $('code').value=''; $('loginErr').textContent=''; showStep(1);});
+$('out').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
+sb.auth.onAuthStateChange(ev=>{ if(ev==='SIGNED_IN') setTimeout(boot,0); });
+
+async function boot(){
+  if(booted) return;
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) return;
+  const email=(session.user.email||'').toLowerCase();
+  // Who may view: creative viewers, Savvas partners, or R2R staff. Each table only returns the signed-in person's own row.
+  const [v,pu,st]=await Promise.all([
+    sb.from('sv_creative_viewers').select('*').eq('email',email).maybeSingle(),
+    sb.from('sv_partner_users').select('*').eq('id',session.user.id).maybeSingle(),
+    sb.from('tt_people').select('*').eq('id',session.user.id).maybeSingle()]);
+  let who=null;
+  if(v.data&&v.data.active) who={name:v.data.name||email,org:v.data.org||'Savvas Studio'};
+  else if(pu.data&&pu.data.active) who=pu.data;
+  else if(st.data&&st.data.active) who={name:st.data.name||email,org:'Ready to Rank'};
+  if(!who){
+    $('loginErr').textContent='This email has no access to this page. Ask Ready to Rank to add you.';
+    await sb.auth.signOut(); showStep(1); return;
+  }
+  booted=true;
+  $('login').style.display='none'; $('app').style.display='block';
+  $('whoami').textContent=who.name+' · '+who.org;
+  await loadCreative();
+}
+
+/* ---------------- creative performance ---------------- */
+// Rates, not counts: George's rule is that 99 plays on $10 beats 300 plays on $300.
+let CP_CLIENTS=[],CP_ROWS=[],cpSort={k:'spend',dir:-1};
+const pct=(a,b)=>b>0?a/b*100:null;
+const fmtPct=v=>v==null?'—':(v<10?v.toFixed(1):v.toFixed(0))+'%';
+const isoDay=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const auDate=s=>s?s.split('-').reverse().join('/'):'';
+
+async function loadCreative(){
+  const {data}=await sb.from('sv_creative_clients').select('*').eq('active',true).order('sort');
+  CP_CLIENTS=data||[];
+  $('cpClient').innerHTML=CP_CLIENTS.map(c=>`<option value="${esc(c.slug)}">${esc(c.name)}</option>`).join('')
+    ||'<option value="">No clients set up yet</option>';
+  const {data:lg}=await sb.from('sv_creative_pull_log').select('ran_at').order('ran_at',{ascending:false}).limit(1);
+  $('cpPulled').textContent=lg&&lg.length?'Data last refreshed '+new Date(lg[0].ran_at).toLocaleString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'numeric',minute:'2-digit'})+'.':'';
+  await fetchCreative();
+}
+
+async function fetchCreative(){
+  const c=CP_CLIENTS.find(x=>x.slug===$('cpClient').value);
+  if(!c){$('cpBody').innerHTML='<div class="wait">No clients set up yet.</div>';return;}
+  if(!c.meta_account_id){CP_ROWS=[];$('cpBody').innerHTML=`<div class="wait"><b>${esc(c.name)}</b>: the ad account is being connected. Results appear here the morning after it's done.</div>`;return;}
+  // Yesterday back: today's figures are still moving.
+  const to=new Date(); to.setDate(to.getDate()-1);
+  const from=new Date(to); from.setDate(from.getDate()-(+$('cpRange').value-1));
+  $('cpBody').innerHTML='<div class="wait">Loading…</div>';
+  const {data,error}=await sb.rpc('sv_creative_summary',{p_account:c.meta_account_id,p_from:isoDay(from),p_to:isoDay(to)});
+  if(error){$('cpBody').innerHTML='<div class="wait">Couldn\'t load results: '+esc(error.message)+'</div>';return;}
+  CP_ROWS=(data||[]).map(r=>{
+    const n=k=>Number(r[k]||0);
+    const video=n('video_3s')>0;
+    return {...r,spend:n('spend'),impressions:n('impressions'),video,
+      hook:video?pct(n('video_3s'),n('impressions')):null,
+      hold:video?pct(n('thruplay'),n('video_3s')):null,
+      ctr:pct(n('link_clicks'),n('impressions')),
+      roas:n('purchase_value')>0&&n('spend')>0?n('purchase_value')/n('spend'):null,
+      // On short videos Meta's 25% count can exceed 3-second plays, so the curve's base is whichever is larger.
+      curve:video?(base=>[100,pct(n('p25'),base),pct(n('p50'),base),pct(n('p75'),base),pct(n('p100'),base)])(Math.max(n('video_3s'),n('p25'))):null};
+  });
+  renderCreative(c,from,to);
+}
+
+// Client average for the period, weighted by volume (sum ÷ sum), over ads that cleared the spend floor.
+function benchmarks(rows){
+  const s=k=>rows.reduce((a,r)=>a+Number(r[k]||0),0);
+  const vid=rows.filter(r=>r.video), sv=k=>vid.reduce((a,r)=>a+Number(r[k]||0),0);
+  return {spend:s('spend'),impressions:s('impressions'),
+    hook:pct(sv('video_3s'),sv('impressions')),hold:pct(sv('thruplay'),sv('video_3s')),
+    ctr:pct(s('link_clicks'),s('impressions')),
+    roas:s('purchase_value')>0?s('purchase_value')/s('spend'):null,
+    purchases:s('purchases'),clicks:s('link_clicks')};
+}
+const vs=(v,avg)=>v==null||avg==null||avg===0?0:(v>=avg*1.15?1:v<=avg*0.85?-1:0);
+
+function diagnose(r,b,minSpend){
+  if(r.spend<minSpend) return {c:'na',t:'Not enough spend yet to judge'};
+  const ctr=vs(r.ctr,b.ctr);
+  // Clicks without sales points past the creative, at the landing page.
+  if(b.purchases>0||r.purchase_value>0||b.roas!=null){
+    if(ctr>=0&&Number(r.link_clicks)>=30&&Number(r.purchases)===0) return {c:'bad',t:'People click but nobody buys. Check the landing page matches the offer'};
+  }
+  if(!r.video){
+    if(ctr>0) return {c:'win',t:'Strong offer. Make more statics like this'};
+    if(ctr<0) return {c:'fix',t:'Offer or visual isn\'t landing. Try a new angle'};
+    return {c:'na',t:'Around average'};
+  }
+  const hk=vs(r.hook,b.hook), hd=vs(r.hold,b.hold);
+  if(hk>=0&&hd>=0&&ctr>=0){
+    if(hk+hd+ctr>=2) return {c:'win',t:'Winner. Make more like this'};
+    if(ctr>0) return {c:'win',t:'Strong offer, and the hook and story hold up. Make more like this'};
+  }
+  if(hk<0) return {c:'fix',t:'Weak hook. Test a new opening 3 seconds'};
+  if(hd<0) return {c:'fix',t:'Hook works, the story loses them. Re-cut the body'};
+  if(ctr<0) return {c:'fix',t:'They watch but don\'t click. Sharpen the offer or CTA'};
+  if(hk>0) return {c:'win',t:'Great hook. Reuse this opening'};
+  if(hd>0) return {c:'win',t:'Strong story. Keep this structure'};
+  return {c:'na',t:'Around average'};
+}
+
+function renderCreative(c,from,to){
+  const minSpend=+$('cpMin').value, fmt=$('cpFmt').value;
+  let rows=CP_ROWS.filter(r=>fmt==='all'||(fmt==='video'?r.video:!r.video));
+  if(!CP_ROWS.length){$('cpBody').innerHTML=`<div class="wait">No results loaded for <b>${esc(c.name)}</b> between ${auDate(isoDay(from))} and ${auDate(isoDay(to))} yet.</div>`;return;}
+  const judged=rows.filter(r=>r.spend>=minSpend);
+  const b=benchmarks(judged.length?judged:rows);
+  const ecom=b.purchases>0||b.roas!=null;
+  const kp=(l,v,s)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`;
+  const kpis=`<div class="kpis">
+    ${kp('Ad spend',money(b.spend),rows.length+' ads, '+judged.length+' judged')}
+    ${kp('Hook rate',fmtPct(b.hook),'client average')}
+    ${kp('Hold rate',fmtPct(b.hold),'client average')}
+    ${kp('Link CTR',fmtPct(b.ctr),'client average')}
+    ${ecom?kp('ROAS',b.roas!=null?b.roas.toFixed(2)+'×':'—',Math.round(b.purchases)+' website purchases'):''}
+  </div>`;
+  const best=(k,lbl)=>{
+    const l=judged.filter(r=>r[k]!=null).sort((a,z)=>z[k]-a[k]).slice(0,3);
+    return l.length?l.map(r=>`<li><b>${esc(r.ad_name||r.ad_id)}</b> <span class="mono">${fmtPct(r[k])}</span></li>`).join(''):'<li>No ad has spent enough yet.</li>';
+  };
+  const tops=`<div class="tops">
+    <div class="top"><h3>Best hooks</h3><div class="sub">Openings to copy on the next shoot</div><ol>${best('hook')}</ol></div>
+    <div class="top"><h3>Best stories</h3><div class="sub">Structure and pacing that held attention</div><ol>${best('hold')}</ol></div>
+    <div class="top"><h3>Best offers</h3><div class="sub">What made people click</div><ol>${best('ctr')}</ol></div>
+  </div>`;
+  // Ads under the spend floor aren't judged, so they aren't coloured either.
+  const cell=(v,avg,f,r)=>{const d=r.spend<minSpend?0:vs(v,avg);return `<td class="num ${d>0?'hi':d<0?'lo':''}">${f(v)}</td>`;};
+  const col=(k,l)=>`<th class="${cpSort.k===k?'sorted':''}" data-k="${k}">${l}${cpSort.k===k?(cpSort.dir<0?' ↓':' ↑'):''}</th>`;
+  rows=rows.slice().sort((a,z)=>{const x=a[cpSort.k],y=z[cpSort.k];
+    if(x==null&&y==null)return 0; if(x==null)return 1; if(y==null)return -1;
+    return (typeof x==='string'?x.localeCompare(y):x-y)*cpSort.dir;});
+  const table=`<div class="wrap-x"><table class="cpt"><thead><tr><th></th>${col('ad_name','Ad')}${col('spend','Spend')}${col('hook','Hook')}${col('hold','Hold')}${col('ctr','Link CTR')}${ecom?col('roas','ROAS'):''}<th title="Share of 3-second viewers still watching at 25, 50, 75 and 100%">Drop-off</th><th>What it tells us</th></tr></thead><tbody>
+    ${rows.map(r=>{const d=diagnose(r,b,minSpend);return `<tr>
+      <td>${r.thumbnail_url?`<img class="thumb" src="${esc(r.thumbnail_url)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`:'<div class="thumb"></div>'}</td>
+      <td><div class="adn">${esc(r.ad_name||r.ad_id)}<small>${r.video?'Video':'Static / carousel'} · ${esc(r.campaign_name||'')}</small></div></td>
+      <td class="num">${money(r.spend)}</td>
+      ${cell(r.hook,b.hook,fmtPct,r)}${cell(r.hold,b.hold,fmtPct,r)}${cell(r.ctr,b.ctr,fmtPct,r)}
+      ${ecom?`<td class="num">${r.roas!=null?r.roas.toFixed(2)+'×':'—'}</td>`:''}
+      <td>${r.curve?`<div class="curve" title="${r.curve.slice(1).map((v,i)=>[25,50,75,100][i]+'%: '+fmtPct(v)).join(' · ')}">${r.curve.map(v=>`<i style="height:${Math.max(1,Math.min(100,v||0))}%"></i>`).join('')}</div>`:'<span style="color:var(--dim)">—</span>'}</td>
+      <td><span class="dx ${d.c}">${esc(d.t)}</span></td></tr>`;}).join('')}
+  </tbody></table></div>`;
+  $('cpBody').innerHTML=`<p style="font-size:13px;color:var(--dim);margin:0 0 14px">${esc(c.name)} · ${auDate(isoDay(from))} to ${auDate(isoDay(to))}</p>`+kpis+tops+table;
+  $('cpBody').querySelectorAll('th[data-k]').forEach(th=>th.addEventListener('click',()=>{
+    const k=th.dataset.k; cpSort=cpSort.k===k?{k,dir:-cpSort.dir}:{k,dir:k==='ad_name'?1:-1}; renderCreative(c,from,to);}));
+}
+['cpClient','cpRange'].forEach(id=>$(id).addEventListener('change',fetchCreative));
+['cpMin','cpFmt'].forEach(id=>$(id).addEventListener('change',()=>{
+  const c=CP_CLIENTS.find(x=>x.slug===$('cpClient').value); if(!c||!c.meta_account_id||!CP_ROWS.length) return fetchCreative();
+  const to=new Date(); to.setDate(to.getDate()-1); const from=new Date(to); from.setDate(from.getDate()-(+$('cpRange').value-1));
+  renderCreative(c,from,to);}));
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+boot();
+</script>
+</body>
+</html>
