@@ -262,8 +262,8 @@ function applyMonth(){
 /* ---------------------------------------------------------------- render */
 /* `negatives` is part of the paid ads contract, so it shares paid_ads' switch. */
 const modOf = m => m === 'negatives' ? 'paid_ads' : m;
-const enabled = m => m === 'overview' || !!CFG.modules[modOf(m)]?.enabled;
-const visible = () => ORDER.filter(m => m === 'overview' || CFG.modules[modOf(m)]);
+const enabled = m => m === 'overview' || isAdm(m) || !!CFG.modules[modOf(m)]?.enabled;
+const visible = () => ORDER.filter(m => m === 'overview' || CFG.modules[modOf(m)]).concat(adminOn() ? ADMIN_ORDER : []);
 
 function kpi(label, value, foot){
   return `<div class="kpi"><span class="mlbl">${label}</span>
@@ -306,11 +306,18 @@ function renderMonthChips(){
 
 function renderTabs(){
   const bar = $('#tabs');
-  bar.innerHTML = visible().map(m => {
-    const lock = !enabled(m);
-    return `<button class="tab${lock ? ' locked' : ''}" data-tab="${m}" role="tab"
-      aria-selected="${state.tab === m}">${LABEL[m]}${m === 'negatives' ? `<span class="tcount">${negOpen() || ''}</span>` : ''}</button>`;
-  }).join('');
+  const btn = m => { const lock = !enabled(m);
+    return `<button class="tab${lock ? ' locked' : ''}${isAdm(m) ? ' adm' : ''}" data-tab="${m}" role="tab"
+      aria-selected="${state.tab === m}">${LABEL[m]}${m === 'negatives' ? `<span class="tcount">${negOpen() || ''}</span>` : ''}${isAdm(m) ? admCount(m) : ''}</button>`; };
+  const v = visible(), client = v.filter(m => !isAdm(m)), adm = v.filter(isAdm);
+  /* Admin tabs get their own row (each row scrolls on its own), so none hide off the edge. */
+  bar.classList.toggle('stack', adm.length > 0);
+  bar.innerHTML = adm.length
+    ? `<div class="trow">${client.map(btn).join('')}</div><div class="trow admrow"><span class="tabsep" aria-hidden="true">Admin</span>${adm.map(btn).join('')}</div>`
+    : client.map(btn).join('');
+  /* The month bar sticks under the tab bar, whose height now depends on the rows. */
+  const nav = $('nav.tabs'), mb = $('.monthbar');
+  if (!EMBED && nav && mb) mb.style.top = ((parseFloat(getComputedStyle(nav).top) || 0) + nav.offsetHeight) + 'px';
 }
 
 /* A module the client has not bought stays VISIBLE and explains itself when clicked.
@@ -327,7 +334,11 @@ function renderAll(){
   host.innerHTML = ({
     overview: viewOverview, seo: viewSeo, map_grid: viewMapGrid, gbp: viewGbp,
     geo: viewGeo, paid_ads: viewPaid, negatives: viewNegatives, social: viewSocial, leads_crm: viewLeads,
+    adm_onboarding: viewAdmOnboarding, adm_call: viewAdmCall, adm_discovery: viewAdmDiscovery,
+    adm_brief: viewAdmBrief, adm_launch: viewAdmLaunch, adm_plan: viewAdmPlan,
   }[state.tab] || (() => emptyState('Unknown tab', 'Nothing to render.')))();
+  /* The admin tabs are not month-scoped, so the month bar would only mislead there. */
+  const mb = $('.monthbar'); if (mb) mb.style.display = isAdm(state.tab) ? 'none' : '';
   $('#monthlabel').textContent = monthName(state.month);
   drawCharts(); wireTables();
   /* The refresh log is admin-only, so a client falls back to the newest dated row. */
@@ -352,6 +363,11 @@ function head(eyebrow, h2, sub){
   return `<p class="eyebrow">${eyebrow}</p><h2 class="h2">${h2}</h2><p class="sub">${sub}</p>`;
 }
 
+/* CFG.launchDate (YYYY-MM-DD) is the planned ads launch, from the client's YAML. */
+function paidLaunchNote(){
+  return CFG.launchDate ? 'Campaigns launch ' + new Date(CFG.launchDate + 'T00:00:00').toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' })
+    : 'Figures start when the campaigns go live';
+}
 function viewOverview(){
   const a = V.agg, p = V.aggPrev, on = m => enabled(m);
   let out = head('Overview', `${monthName(state.month)}`,
@@ -370,7 +386,11 @@ function viewOverview(){
     cards.push(kpi('Map pack, best term', best?.avg_rank != null ? fmt(best.avg_rank,1) : 'Not ranking',
       best ? best.keyword : ''));
   }
-  if (on('paid_ads')){ const l = sum(V.paid,'leads');
+  /* Never a $0 before launch: no ads row ever recorded means the campaigns are not live,
+     and a zero there reads as "spent nothing, got nothing" (the Cobalt 0-leads bug). */
+  if (on('paid_ads') && !RAW.paid.length) cards.push(kpi('Google Ads', 'Not live yet', paidLaunchNote()));
+  else if (on('paid_ads') && !V.paid.length) cards.push(kpi('Ad spend', '—', 'No ad data for this month'));
+  else if (on('paid_ads')){ const l = sum(V.paid,'leads');
     cards.push(kpi('Ad spend', money(a.spend)), kpi('Ad leads', fmt(l), l ? money(a.spend / l) + ' per lead' : '')); }
   if (on('leads_crm')) cards.push(kpi('Leads', fmt(a.leads)));
   out += cards.length ? `<div class="kpis">${cards.join('')}</div>`
@@ -907,7 +927,8 @@ function viewPaid(){
   let out = head('Paid Ads', 'Google Ads — every dollar, accounted for',
     'Exactly what was spent, what it bought, and what people typed into Google before they clicked. Every figure comes straight from the Google Ads account; nothing here is estimated.');
   if (!V.paid.length && !V.pcm.length)
-    return out + emptyState('No ad data for this month', 'Nothing has been spent in this period.');
+    return out + (RAW.paid.length ? emptyState('No ad data for this month', 'Nothing has been spent in this period.')
+      : emptyState('The campaigns are not live yet', `${paidLaunchNote()}. Spend, clicks, leads and every search term appear here from the first day the ads run. Nothing is estimated before then.`));
 
   /* Daily table is the source for spend/clicks/leads — it is refreshed daily, the
      monthly detail tables are refreshed with the full pull. */
@@ -1151,6 +1172,239 @@ function viewLeads(){
   return out;
 }
 
+/* ---------------------------------------------------------------- admin view
+   One dashboard per client (Jose 19/10/2026): the client view above, and an admin view on
+   the SAME URL for the team and the client's partners: onboarding, call brief, discovery
+   call, ads brief, launch checklist and the campaign plan imported from the partner's Excel.
+   Switched on per client by CFG.adminView. Shown only to an md_client_access admin/editor,
+   and every byte of it comes from ONE security-definer function, md_admin_pack(), which
+   refuses everyone else: a viewer (the client) never receives the data, not just the tab.
+   Ticks and budgets stay with the register writers (Jose, Jhen, Janice), as on /clients/. */
+const ADMIN_ORDER = ['adm_onboarding','adm_call','adm_discovery','adm_brief','adm_launch','adm_plan'];
+Object.assign(LABEL, { adm_onboarding:'Onboarding', adm_call:'Call brief', adm_discovery:'Discovery call',
+  adm_brief:'Ads brief', adm_launch:'Launch checklist', adm_plan:'Campaign plan' });
+let ADM = null;
+function isAdm(m){ return String(m).startsWith('adm_'); }
+function adminOn(){ return !!(CFG.adminView && ADM); }
+async function loadAdmin(){
+  ADM = null;
+  if (!CFG.adminView || !['admin','editor'].includes(state.role)) return;
+  const { data, error } = await sb.rpc('md_admin_pack', { p_slug: CFG.slug });
+  if (error) console.warn('admin view:', error.message); else ADM = data;
+}
+function admCount(m){
+  if (!ADM) return '';
+  if (m === 'adm_launch'){ const n = (ADM.items || []).length, d = (ADM.items || []).filter(i => i.done).length;
+    return n ? `<span class="acount">${d}/${n}</span>` : ''; }
+  if (m === 'adm_onboarding'){ const o = (ADM.onboarding || [])[0]; return o ? `<span class="acount">${o.met}/${o.applicable}</span>` : ''; }
+  return '';
+}
+const dmy = d => d ? new Date(String(d).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-AU') : '';
+const tbcV = v => !v || /^to confirm/i.test(String(v).trim());
+const openQ = a => tbcV(a) || /not covered|ask on friday|to confirm/i.test(a || '');
+function admHead(eyebrow, h2, sub){
+  return head(eyebrow, h2, sub) + `<p class="admflag">Admin view: the Ready to Rank team and ${esc(CFG.partnerName || 'partners')} only. ${esc(CFG.name)} never sees this tab.</p>`;
+}
+function kvRows(rows){
+  return `<table class="tbl kvt"><tbody>${rows.map(([label, value]) => {
+    const empty = value == null || value === '' || (Array.isArray(value) && !value.length);
+    const v = empty ? 'To confirm' : Array.isArray(value) ? value.map(x => `<span class="pill">${esc(x)}</span>`).join('') : esc(value);
+    return `<tr><th>${esc(label)}</th><td class="${empty || openQ(String(value)) && !Array.isArray(value) ? 'tbc' : ''}">${v}</td></tr>`; }).join('')}</tbody></table>`;
+}
+
+function viewAdmOnboarding(){
+  let out = admHead('Onboarding', 'Where onboarding stands', 'Computed from the records, never ticked by hand.');
+  const o = ADM.onboarding || [];
+  if (!o.length) return out + emptyState('No onboarding record yet', 'Run onboard for this client first.');
+  out += o.map(x => { const pct = x.applicable ? Math.round(x.met / x.applicable * 100) : 0;
+    return `<div class="card"><div class="cardhead"><div><h3>${esc((x.chain || '').toUpperCase())} engagement</h3>
+      <p class="sub">${x.onboarding_complete_at ? 'Onboarding complete ' + dmy(x.onboarding_complete_at) : `${x.met} of ${x.applicable} done`}${x.start_date ? ' · started ' + dmy(x.start_date) : ''}</p></div>
+      <span class="chip ${pct === 100 ? 'up' : 'warnc'}">${pct}%</span></div>
+      <div class="pbar"><i style="width:${pct}%"></i></div>
+      <ul class="checks">${(x.conditions || []).map(c => `<li class="${c.done ? 'ok' : 'no'}"><span>${c.done ? '✓' : '✗'}</span>${esc(c.label)}</li>`).join('')}</ul></div>`; }).join('');
+  const jobs = ADM.jobs || [];
+  if (jobs.length){
+    const L = { zoom_review:'Review the Zoom onboarding call', connections:'Add to Pipeboard and Windsor', folder:'Client folder', drive:'Google Drive folder',
+      memory:'Client memory notes', repo:'GitHub repo', xero_check:'Check the invoice in Xero', slack_channel:'Private Slack channel', brief_post:'Post the brief, pin the checklist', custom:'Extra job' };
+    out += `<div class="card"><div class="cardhead"><div><h3>Set-up jobs</h3><p class="sub">Created when the client was set up</p></div></div>
+      <table class="tbl"><thead><tr><th>Job</th><th>Status</th><th></th></tr></thead><tbody>${jobs.map(j => `<tr>
+        <td><b>${esc(L[j.job] || j.job)}</b>${j.result ? `<div class="dtnote">${esc(j.result)}</div>` : ''}</td>
+        <td>${j.status === 'done' ? '✓' : '✗'} ${esc(j.status)}</td>
+        <td>${ADM.can_write && j.status !== 'done' ? `<button class="btn mini" data-admjob="${j.id}">Mark done</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  return out;
+}
+
+function viewAdmCall(){
+  let out = admHead('Call brief', 'What the onboarding call settled', 'Taken from the call recording. The call is the evidence.');
+  const c = ADM.call;
+  if (!c) return out + emptyState('No call brief yet', `Ask Claude: “review the onboarding call for ${esc(CFG.slug)}”.`);
+  const d = c.discrepancies || [];
+  if (d.length) out += callout('bad', `${d.length} difference${d.length > 1 ? 's' : ''} between the call and the form`,
+    d.map(x => `<b>${esc(x.field || '')}</b>: form says “${esc(x.form || '')}”, the call said “${esc(x.call || '')}”`).join('<br>'));
+  out += `<p class="lede">${[c.meeting_on && `Call on <b>${dmy(c.meeting_on)}</b>`, c.attendees && esc(c.attendees), c.created_by && `written by ${esc(c.created_by)}`].filter(Boolean).join(' · ')}</p>`;
+  out += `<div class="card"><div class="cardhead"><div><h3>What we covered</h3></div></div><p class="prose">${c.covered ? esc(c.covered) : '<span class="tbc">Not written yet.</span>'}</p></div>`;
+  out += `<div class="card"><div class="cardhead"><div><h3>Confirmed on the call</h3></div></div>${kvRows([
+    ['Services bought', c.services_confirmed], ['Services, in their words', c.services_list], ['Locations', c.locations],
+    ['Priority locations', c.priority_locations], ['Target keywords', c.keywords], ['Competitors', c.competitors], ['Promised on the call', c.promised]])}</div>`;
+  const acc = Object.entries(c.access_confirmed || {});
+  out += `<div class="card"><div class="cardhead"><div><h3>Access, as agreed on the call</h3></div></div>${acc.length
+    ? kvRows(acc.map(([k, v]) => [k.toUpperCase(), v])) : '<p class="sub">Nothing recorded from the call.</p>'}</div>`;
+  return out;
+}
+
+function viewAdmDiscovery(){
+  let out = admHead('Discovery call', 'Every question asked, and the answer given', 'Answers as given on the call. Amber still needs confirming.');
+  const rows = (ADM.call && Array.isArray(ADM.call.discovery)) ? ADM.call.discovery : [];
+  if (!rows.length) return out + emptyState('No discovery answers yet', `Ask Claude: “load the discovery call for ${esc(CFG.slug)}”.`);
+  const open = rows.filter(r => openQ(r.a)).length, groups = [];
+  rows.forEach(r => { const s = r.section || 'Questions'; let g = groups.find(x => x.s === s); if (!g) groups.push(g = { s, rows: [] }); g.rows.push(r); });
+  out += `<div class="kpis">${kpi('Questions', fmt(rows.length))}${kpi('Answered', fmt(rows.length - open))}${kpi('Still to confirm', fmt(open), open ? 'Shown in amber' : 'All answered')}</div>`;
+  out += groups.map(g => `<div class="card"><div class="cardhead"><div><h3>${esc(g.s)}</h3></div></div>${kvRows(g.rows.map(r => [r.q, r.a]))}</div>`).join('');
+  return out;
+}
+
+function viewAdmBrief(){
+  const b = ADM.brief;
+  let out = admHead('Ads brief', 'What we are building, campaign by campaign', 'The brief the team builds from.');
+  if (!b) return out + emptyState('No ads brief yet', 'The launch checklist has not been seeded for this client.');
+  const camps = b.campaigns || [];
+  out += `<p class="lede">${b.summary ? esc(b.summary) : '<span class="tbc">No summary yet.</span>'}</p>`;
+  if (ADM.can_write){
+    const get = n => (ADM.budgets || []).find(x => x.campaign_no === n) || {};
+    const rows = [[0, 'Total, all campaigns'], ...camps.map((x, k) => [k + 1, `Campaign ${k + 1}: ${x.name}`])];
+    out += `<div class="card moneycard"><div class="cardhead"><div><h3>Ad budget</h3><p class="sub">Only Jose, Jhen and Janice see this card</p></div></div>
+      <table class="tbl kvt"><tbody>${rows.map(([n, l]) => { const x = get(n);
+        return `<tr><th>${esc(l)}</th><td class="${x.monthly_amount == null ? 'tbc' : ''}">${x.monthly_amount == null ? 'Not confirmed' : `<b>${money(x.monthly_amount)}</b> a month`}${x.note ? `<div class="dtnote">${esc(x.note)}</div>` : ''}</td></tr>`; }).join('')}</tbody></table></div>`;
+  }
+  const F = [['goal','Goal'],['sends_to','Sends to'],['locations','Locations'],['age','Age'],['gender','Gender'],['interests','Interests'],
+             ['placements','Placements'],['offer','Offer'],['creative','Creative'],['conversion_event','Conversion event'],['notes','Notes']];
+  out += camps.map((x, k) => `<div class="card"><div class="cardhead"><div><h3>Campaign ${k + 1}: ${esc(x.name)}</h3><p class="sub">${esc(x.platform || b.platform || '')}</p></div></div>
+    ${kvRows(F.map(([f, l]) => [l, x[f]]))}</div>`).join('') || emptyState('No campaigns in the brief yet', '');
+  return out;
+}
+
+function viewAdmLaunch(){
+  const b = ADM.brief || {}, items = ADM.items || [];
+  let out = admHead('Launch checklist', 'Nothing launches until every row is ticked', 'Tick a row only when you have seen it working yourself, not when someone says it is done.');
+  if (!items.length) return out + emptyState('No checklist yet', 'Seed it with pa_seed_launch during onboarding.');
+  const done = items.filter(i => i.done).length, pct = Math.round(done / items.length * 100);
+  out += `<div class="kpis">${kpi('Launch date', b.launch_date ? new Date(b.launch_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday:'short', day:'2-digit', month:'2-digit' }) : 'Not set')}
+    ${kpi('Done', `${done} of ${items.length}`, pct + '%')}${kpi('Checklist owner', esc(b.brief_owner || 'Not set'))}</div>
+    <div class="pbar"><i style="width:${pct}%"></i></div>
+    <p class="dtnote">${ADM.can_write ? (b.slack_ts ? 'Every tick updates the pinned checklist in Slack.' : 'Ticks save here. The checklist is not pinned in Slack yet.') : 'View only. Jose, Jhen or Janice tick the rows.'}</p>`;
+  const ST = [['day0','Day 0 · onboarding call'],['brief','Day 7 · brief'],['copy','Day 14 · copy approved'],['build','Day 21 · build ready'],['campaign','Campaigns'],['launch','Day 28 · launch']];
+  out += `<div class="card"><table class="tbl launch"><thead><tr><th class="tick"></th><th>Item</th><th>Owner</th><th>Note</th></tr></thead><tbody>${ST.map(([s, l]) => {
+    const rows = items.filter(i => (i.stage || 'campaign') === s); if (!rows.length) return '';
+    return `<tr class="stage"><td colspan="4">${esc(l)} · ${rows.filter(r => r.done).length}/${rows.length}</td></tr>` + rows.map(i => `<tr class="${i.done ? 'done' : ''}">
+      <td class="tick"><input type="checkbox" data-admtick="${i.id}" ${i.done ? 'checked' : ''} ${ADM.can_write ? '' : 'disabled'} aria-label="${esc(i.item)}"></td>
+      <td>${esc(i.item)}${i.owner_name ? `<span class="osm">${esc(i.owner_name)}</span>` : ''}</td><td class="nowrap">${esc(i.owner_name || '')}</td><td class="dtnote">${esc(i.note || '')}</td></tr>`).join(''); }).join('')}</tbody></table></div>`;
+  return out;
+}
+
+/* Campaign plan: whatever the partner's spreadsheet holds, sheet by sheet, as spreadsheet
+   tables. Imported in the browser (SheetJS), stored by md_campaign_plan_import(). Every
+   figure is a cell from their file: totals are summed from it, never typed. */
+const PLAN_TEMPLATE = {
+  'Campaigns': ['Campaign', 'Type', 'Goal', 'Locations', 'Daily budget (AUD)', 'Monthly budget (AUD)', 'Bid strategy', 'Landing page', 'Notes'],
+  'Keywords': ['Campaign', 'Ad group', 'Keyword', 'Match type', 'Monthly searches (local)', 'CPC low (AUD)', 'CPC high (AUD)', 'Landing page', 'Notes'],
+  'Ads': ['Campaign', 'Ad group', ...Array.from({ length: 15 }, (_, i) => `Headline ${i + 1}`), ...Array.from({ length: 4 }, (_, i) => `Description ${i + 1}`), 'Final URL', 'Path 1', 'Path 2'],
+  'Negative keywords': ['Campaign', 'Negative keyword', 'Match type', 'Why'],
+  'Assets': ['Campaign', 'Type (sitelink, callout, call, snippet)', 'Text', 'Description line 1', 'Description line 2', 'URL'],
+};
+let XLSX_P = null;
+function loadXlsx(){
+  return XLSX_P || (XLSX_P = new Promise((ok, no) => { const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => ok(window.XLSX); s.onerror = () => { XLSX_P = null; no(new Error('Could not load the spreadsheet reader.')); };
+    document.head.appendChild(s); }));
+}
+async function admTemplate(){
+  const X = await loadXlsx(), wb = X.utils.book_new();
+  X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([
+    [`${CFG.name}: Google Ads campaign plan`], [],
+    ['Fill in one row per line on each tab. Keep the column headings as they are; add columns at the end if you need more.'],
+    ['Monthly searches are LOCAL to the client\'s area, never Australia-wide.'],
+    ['Leave a cell empty if it is not decided yet. Do not guess a number.'],
+    ['Health advertising rules apply: no testimonials, no “best” or guaranteed results, nothing that pushes people into treatment.'],
+    ['When it is ready: open the dashboard, Campaign plan tab, Import spreadsheet. Importing again replaces the plan.'],
+  ]), 'How to fill this in');
+  Object.entries(PLAN_TEMPLATE).forEach(([n, cols]) => X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([cols]), n));
+  X.writeFile(wb, `${CFG.slug}-campaign-plan-template.xlsx`);
+}
+function sheetOf(X, name, ws){
+  const cell = v => v instanceof Date ? ymd(v).split('-').reverse().join('/') : typeof v === 'string' ? (v.trim() || null) : v;
+  const grid = X.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: false })
+    .map(r => r.map(cell)).filter(r => r.some(v => v != null));
+  if (grid.length < 2) return null;
+  const head = grid[0].map((h, i) => h == null ? `Column ${i + 1}` : String(h));
+  const width = Math.max(...grid.map(r => r.length));
+  while (head.length < width) head.push(`Column ${head.length + 1}`);
+  const body = grid.slice(1).map(r => head.map((_, i) => r[i] ?? null));
+  const keep = head.map((h, i) => !/^Column \d+$/.test(h) || body.some(r => r[i] != null));
+  return { name, columns: head.filter((_, i) => keep[i]), rows: body.map(r => r.filter((_, i) => keep[i])) };
+}
+/* Local QA only: lets the headless check drive the real parser (never exposed on the live site). */
+if (/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) window.__mdAdm = { sheetOf, loadXlsx, PLAN_TEMPLATE };
+async function admImport(input){
+  const f = input.files && input.files[0]; input.value = ''; if (!f) return;
+  if (!/\.(xlsx|xlsm|xls|csv)$/i.test(f.name)) return toast('That is not a spreadsheet. Save it as .xlsx and try again.', 'bad');
+  try {
+    const X = await loadXlsx(), wb = X.read(await f.arrayBuffer(), { cellDates: true });
+    const sheets = wb.SheetNames.filter(n => !/^(how to|read ?me|instructions)/i.test(n)).map(n => sheetOf(X, n, wb.Sheets[n])).filter(Boolean);
+    if (!sheets.length) return toast('No rows found in that file. The first row of each tab should be the headings.', 'bad');
+    const n = sheets.reduce((t, s) => t + s.rows.length, 0);
+    if (ADM.plan && !confirm(`Replace the current campaign plan with “${f.name}” (${sheets.length} tab${sheets.length > 1 ? 's' : ''}, ${n} rows)?`)) return;
+    const { error } = await sb.rpc('md_campaign_plan_import', { p_slug: CFG.slug, p_file_name: f.name, p_sheets: sheets });
+    if (error) return toast('Not imported: ' + error.message, 'bad');
+    await loadAdmin(); renderAll(); toast(`Imported ${n} rows from ${sheets.length} tab${sheets.length > 1 ? 's' : ''}.`);
+  } catch (e) { toast('Could not read that file: ' + e.message, 'bad'); }
+}
+function viewAdmPlan(){
+  const p = ADM.plan;
+  let out = admHead('Campaign plan', 'The Google Ads campaign plan', 'Imported from the planning spreadsheet. Every figure here is a cell from that file.');
+  out += `<div class="planbar"><label class="btn primary">Import spreadsheet<input type="file" id="planfile" accept=".xlsx,.xlsm,.xls,.csv" hidden></label>
+    <button class="btn" data-admtemplate="1">Download the template</button>
+    ${p ? `<span class="dtnote">From <b>${esc(p.file_name || 'spreadsheet')}</b>, imported by ${esc(p.imported_by_name || 'unknown')} on ${dmy(p.imported_at)}</span>` : ''}</div>`;
+  if (!p || !(p.sheets || []).length) return out + emptyState('No campaign plan imported yet',
+    'Download the template, fill it in (or use your own sheet with headings in the first row), then Import spreadsheet. Each tab of the file becomes a table here.');
+  const sheets = p.sheets, col = (s, re) => s.columns.findIndex(c => re.test(c));
+  const numCol = (s, i) => i >= 0 && s.rows.some(r => r[i] != null) && s.rows.every(r => r[i] == null || typeof r[i] === 'number');
+  const total = (re, sheetRe) => { let t = null; sheets.filter(s => !sheetRe || sheetRe.test(s.name)).forEach(s => { const i = col(s, re);
+    if (numCol(s, i)) t = (t || 0) + s.rows.reduce((a, r) => a + (Number(r[i]) || 0), 0); }); return t; };
+  const camps = new Set(); sheets.forEach(s => { const i = col(s, /^campaign( name)?$/i); if (i >= 0) s.rows.forEach(r => r[i] && camps.add(String(r[i]))); });
+  const kwS = sheets.find(s => /keyword/i.test(s.name) && !/negative/i.test(s.name)), kwI = kwS ? col(kwS, /^keyword/i) : -1;
+  const kws = kwI >= 0 ? kwS.rows.filter(r => r[kwI]).length : null;
+  const budget = total(/monthly budget/i), searches = total(/monthly searches|search volume|^volume/i, /keyword/i);
+  out += `<div class="kpis">${camps.size ? kpi('Campaigns', fmt(camps.size)) : ''}${kws != null ? kpi('Keywords', fmt(kws)) : ''}
+    ${searches != null ? kpi('Monthly searches', fmt(searches), 'Summed from the plan') : ''}${budget != null ? kpi('Monthly budget', money(budget), 'Summed from the plan') : ''}
+    ${kpi('Tabs imported', fmt(sheets.length))}</div>`;
+  out += sheets.map((s, si) => {
+    const cols = s.columns.map((c, i) => { const n = numCol(s, i);
+      return { k: 'c' + i, label: esc(c), num: n, fmt: n ? (/cpc|cost per/i.test(c) ? money2 : /budget|cost|aud|\$/i.test(c) ? money : (v => fmt(v))) : null }; });
+    const rows = s.rows.map((r, ri) => Object.assign({ _i: ri }, ...r.map((v, i) => ({ ['c' + i]: v }))));
+    return `<div class="card"><div class="cardhead"><div><h3>${esc(s.name)}</h3><p class="sub">${fmt(s.rows.length)} row${s.rows.length === 1 ? '' : 's'}</p></div></div>
+      ${dataTable('plan' + si, cols, rows, { sort: { k: '_i', dir: 1 }, maxH: 560, filter: s.rows.length > 8 })}</div>`; }).join('');
+  return out;
+}
+async function admTick(box){
+  const want = box.checked; box.disabled = true;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const r = await fetch(CFG.supabaseUrl + '/functions/v1/paid-ads-launch', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token, apikey: CFG.supabaseAnonKey },
+      body: JSON.stringify({ action: 'tick', item_id: box.dataset.admtick, done: want }) });
+    const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'request failed (' + r.status + ')');
+    await loadAdmin(); renderAll();
+    toast(j.slack === 'updated' ? 'Saved. Slack checklist updated.' : j.slack === 'failed' ? 'Saved here, but Slack did not update. Tell Jose.' : 'Saved.');
+  } catch (e) { box.checked = !want; box.disabled = false; toast('Not saved: ' + e.message, 'bad'); }
+}
+async function admJobDone(id){
+  const { error } = await sb.rpc('so_job_update', { p_id: Number(id), p_status: 'done', p_result: 'Marked done on the dashboard' });
+  if (error) return toast('Not saved: ' + error.message, 'bad');
+  await loadAdmin(); renderAll(); toast('Job marked done.');
+}
+
 /* ---------------------------------------------------------------- shell + boot */
 function renderShell(){
   document.documentElement.style.setProperty('--accent', CFG.accent || '#17B4F0');
@@ -1191,8 +1445,12 @@ function renderShell(){
     if (e.target.closest('[data-linkinfo]')) { showOffer('links'); return; }
     const ns = e.target.closest('[data-negset]');
     if (ns){ const [id, st] = ns.dataset.negset.split(':'); setNegStatus(id, st); }
+    if (e.target.closest('[data-admtemplate]')) admTemplate().catch(err => toast(err.message, 'bad'));
+    const jb = e.target.closest('[data-admjob]'); if (jb){ jb.disabled = true; admJobDone(jb.dataset.admjob); }
   });
-  panel.addEventListener('change', e => { const b = e.target.closest('input[data-neg]'); if (b) toggleNeg(b); });
+  panel.addEventListener('change', e => { const b = e.target.closest('input[data-neg]'); if (b) toggleNeg(b);
+    const t = e.target.closest('input[data-admtick]'); if (t) admTick(t);
+    if (e.target.id === 'planfile') admImport(e.target); });
   panel.addEventListener('input', e => {
     const i = e.target.closest('[data-tfilter]'); if (!i) return;
     const t = TABLES[i.dataset.tfilter]; if (t){ t.q = i.value; dtRender(i.dataset.tfilter); }
@@ -1281,7 +1539,7 @@ async function start(){
     .eq('client_id', client.id).maybeSingle();
   state.role = access?.role || 'viewer';
 
-  await loadData();
+  await Promise.all([loadData(), loadAdmin()]);
   applyMonth();
   renderShell();
   const h = (location.hash || '').replace('#','');
