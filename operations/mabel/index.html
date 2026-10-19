@@ -140,6 +140,7 @@ table.t th.n{text-align:right;}
 .chip button:hover{background:var(--red);color:var(--white);}
 .addrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 .addrow select{flex:1 1 200px;min-width:0;}
+.cnt{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-align:right;margin-top:4px;}
 .lock{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--amber);text-transform:uppercase;}
 
 /* lists */
@@ -234,6 +235,8 @@ table.t th.n{text-align:right;}
 
   <nav class="nav"><div class="wrap" id="navlinks">
     <a href="#does">What she does</a>
+    <a href="#brief">Instructions</a>
+    <a href="#style">How she replies</a>
     <a href="#spend">Spend &amp; models</a>
     <a href="#access">Access</a>
     <a href="#routines">Routines</a>
@@ -258,6 +261,66 @@ table.t th.n{text-align:right;}
       </div>
     </section>
 
+    <section id="brief">
+      <h2>Instructions</h2>
+      <p class="sub">How Mabel talks and what she knows about the team and clients, in plain English. Edit a draft, test it to your DM, then make it live. Every version is kept, so you can always go back.</p>
+      <div class="panel" id="briefStatus"></div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="panel"><h3>Personality and tone</h3><p class="hint">How she sounds. e.g. Warm but brief. Sign off with nothing. Use "we" for Ready to Rank.</p>
+          <textarea class="in" id="insTone" data-max="4000" style="margin-top:8px"></textarea><div class="meta cnt" data-for="insTone"></div></div>
+        <div class="panel"><h3>Team facts</h3><p class="hint">Who does what, who to send things to. e.g. Janice and Hannah each look after 7 SEO clients. Preet owns GoHighLevel.</p>
+          <textarea class="in" id="insTeam" data-max="8000" style="margin-top:8px"></textarea><div class="meta cnt" data-for="insTeam"></div></div>
+        <div class="panel"><h3>Client notes</h3><p class="hint">One paragraph per client, starting with the client's name. She uses a client's notes only in that client's channel or when asked about them.</p>
+          <textarea class="in" id="insClients" data-max="12000" style="margin-top:8px;min-height:180px"></textarea><div class="meta cnt" data-for="insClients"></div></div>
+        <div class="panel"><h3>House rules</h3><p class="hint">Habits to always or never do. e.g. When someone asks about a blog, always give its live link.</p>
+          <textarea class="in" id="insRules" data-max="4000" style="margin-top:8px"></textarea><div class="meta cnt" data-for="insRules"></div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <label class="fl" for="insNote" style="margin-top:0">What changed (optional, shows in the history)</label>
+        <input class="in" id="insNote" maxlength="200" placeholder="e.g. Added Polarity's new contact">
+        <div class="addrow">
+          <button class="btn" id="insSave" type="button">Save draft</button>
+          <button class="btn ghost" id="insPublish" type="button">Make draft live</button>
+          <button class="btn danger" id="insDiscard" type="button">Discard draft</button>
+        </div>
+        <label class="fl" for="insQ">Test the draft</label>
+        <div class="addrow" style="margin-top:0">
+          <input class="in" id="insQ" maxlength="500" placeholder="Ask her something, e.g. What's waiting on QC for Polarity?" style="flex:1 1 260px">
+          <button class="btn small ghost" id="insTest" type="button">Test to my DM</button>
+        </div>
+        <p class="hint" style="margin-top:6px">The test saves your draft first, then she answers in your Slack DMs using the draft. Nobody else sees it.</p>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <h3>What you can't change here <span class="lock">Locked in her code</span></h3>
+        <p class="hint">These always come first. If anything above conflicts with them, she follows these and says so: never invent a number, date or status · never show Ready to Rank's fees, prices or budgets · ad spend only in ads channels · in a client's channel, only that client · the two confirmations before any client email or hub invite · never tag Aljim · Australian English and Slack formatting.</p>
+      </div>
+      <div class="grouphead">History</div>
+      <div class="rows" id="insHistory"></div>
+    </section>
+
+    <section id="style">
+      <h2>How she replies</h2>
+      <p class="sub">Where her answers go and how long they usually are. Changes apply to the next question.</p>
+      <div class="panel">
+        <div class="addrow" style="max-width:720px">
+          <label style="flex:1 1 260px"><span class="fl" style="margin-top:0">When she's tagged in a channel</span>
+            <select class="in" id="styMode">
+              <option value="channel">Reply in the channel</option>
+              <option value="thread">Reply in a thread</option>
+              <option value="broadcast">Reply in a thread and show it in the channel</option>
+            </select></label>
+          <label style="flex:1 1 200px"><span class="fl" style="margin-top:0">Answer length</span>
+            <select class="in" id="styLen">
+              <option value="short">Short (under 80 words)</option>
+              <option value="normal">Normal (under 150 words)</option>
+              <option value="detailed">Detailed (up to 300 words)</option>
+            </select></label>
+          <button class="btn" id="stySave" type="button" style="align-self:flex-end">Save</button>
+        </div>
+        <p class="hint" style="margin-top:8px">A question asked inside a thread is always answered in that thread. Anyone can still ask for a longer breakdown.</p>
+      </div>
+    </section>
+
     <section id="spend">
       <h2>Spend &amp; models</h2>
       <p class="sub">What Mabel has cost in Claude usage, in US dollars as Anthropic bills it. Melbourne days; the week starts Monday. Every question and routine run is counted.</p>
@@ -269,7 +332,11 @@ table.t th.n{text-align:right;}
         <div class="axis" id="axis"></div>
       </div>
       <div class="grid2" style="margin-top:12px">
-        <div class="panel"><h3>Models she uses</h3><p class="hint">Set in her brain. Price per million tokens in / out, US$.</p><div class="tablewrap"><table class="t" id="modelsTbl"></table></div></div>
+        <div class="panel"><h3>Models she uses</h3><p class="hint">Pick the model and effort for each tier. Price per million tokens in / out, US$, comes with the model. Higher effort thinks longer and costs more.</p><div class="tablewrap"><table class="t" id="modelsTbl"></table></div>
+          <label class="fl" for="routeRules">How she picks a tier</label>
+          <textarea class="in" id="routeRules" style="min-height:140px"></textarea>
+          <p class="hint" style="margin-top:6px">Keep a line each for quick:, standard: and deep:. She only uses max when someone asks for it.</p>
+          <div class="addrow"><button class="btn" id="modelsSave" type="button">Save models</button></div></div>
         <div class="panel"><h3>This month by model</h3><div class="tablewrap"><table class="t" id="byModelTbl"></table></div>
           <h3 style="margin-top:16px">This month by person</h3><div class="tablewrap"><table class="t" id="byPersonTbl"></table></div></div>
       </div>
@@ -477,7 +544,57 @@ function render() {
   const pct = sp.cap ? (sp.month / sp.cap) * 100 : 0;
   $("capDot").className = "dot " + (pct >= 100 ? "off" : pct >= sp.downgrade_at_pct ? "warn" : "on");
   $("capLine").innerHTML = `<b>${usd(sp.month)}</b> of ${usd(sp.cap)} this month`;
-  renderSpend(); renderAccess(); renderRoutines(); renderChannels(); renderNotIn(); renderPlatforms(); renderLog(); renderChanges();
+  renderBrief(); renderStyle(); renderSpend(); renderAccess(); renderRoutines(); renderChannels(); renderNotIn(); renderPlatforms(); renderLog(); renderChanges();
+}
+
+// The page refreshes itself every 2 minutes. Anything being edited is left alone until
+// it's saved, so a refresh never wipes someone's typing.
+const DIRTY = { brief: false, style: false, models: false };
+const INS = [["insTone", "tone"], ["insTeam", "team"], ["insClients", "clients"], ["insRules", "rules"]];
+const byWho = e => esc((e || "").split("@")[0]);
+
+function renderBrief() {
+  const all = D.instructions || [];
+  const live = all.find(v => v.status === "live"), draft = all.find(v => v.status === "draft");
+  const lines = [];
+  lines.push(live ? `<div class="row" style="display:flex;gap:9px;align-items:center"><span class="dot on"></span><span><b>Live:</b> version ${live.id}, made live by ${byWho(live.live_by)} ${when(live.live_at)}</span></div>`
+                  : `<div class="row" style="display:flex;gap:9px;align-items:center"><span class="dot"></span><span><b>Nothing live yet.</b> She's using only her built-in brief.</span></div>`);
+  if (draft) lines.push(`<div class="row" style="display:flex;gap:9px;align-items:center;margin-top:6px"><span class="dot warn"></span><span><b>Draft</b> saved by ${byWho(draft.created_by)} ${when(draft.created_at)}. Not live yet.</span></div>`);
+  $("briefStatus").innerHTML = lines.join("");
+  if (!DIRTY.brief) {
+    const src = draft || live || {};
+    for (const [id, k] of INS) $(id).value = src[k] || "";
+    $("insNote").value = draft?.note || "";
+  }
+  counts();
+  $("insPublish").disabled = !draft; $("insDiscard").disabled = !draft;
+  $("insHistory").innerHTML = all.length ? all.map(v => `<div class="rowc"><div class="main">
+      <h4>Version ${v.id} <span class="pill ${v.status === "old" ? "" : v.status}">${v.status === "old" ? "earlier" : v.status}</span></h4>
+      ${v.note ? `<p>${esc(v.note)}</p>` : ""}
+      <div class="meta">Written by ${byWho(v.created_by)} ${when(v.created_at)}${v.live_at ? ` · live from ${when(v.live_at)} (${byWho(v.live_by)})` : ""}</div>
+      <details><summary style="font-size:12px;color:var(--accent);cursor:pointer;margin-top:4px">What it says</summary><pre style="white-space:pre-wrap;font-family:var(--sans);font-size:12.8px;color:var(--text);margin-top:5px">${INS.map(([, k]) => v[k] ? `${k.toUpperCase()}\n${esc(v[k])}` : "").filter(Boolean).join("\n\n") || "Empty"}</pre></details>
+    </div><div class="acts">${v.status === "old" ? `<button class="btn small ghost" type="button" data-restore="${v.id}">Make this live again</button>` : ""}</div></div>`).join("")
+    : `<p class="hint">No versions yet. Write something above and save a draft.</p>`;
+}
+function counts() {
+  document.querySelectorAll(".cnt").forEach(c => { const t = $(c.dataset.for), n = t.value.length, max = +t.dataset.max; c.textContent = `${n.toLocaleString()} / ${max.toLocaleString()}`; c.style.color = n > max ? "var(--red)" : ""; });
+}
+function renderStyle() {
+  if (DIRTY.style) return;
+  $("styMode").value = D.settings.reply_mode || "channel";
+  $("styLen").value = D.settings.answer_length || "normal";
+}
+function briefBody() {
+  const b = { note: $("insNote").value };
+  for (const [id, k] of INS) b[k] = $(id).value;
+  return b;
+}
+async function saveDraft(quiet) {
+  const r = await api("instructions_save", briefBody());
+  DIRTY.brief = false;
+  if (!quiet) toast("Draft saved. Test it, then make it live.");
+  await load();
+  return r.id;
 }
 
 function renderSpend() {
@@ -500,12 +617,21 @@ function renderSpend() {
   const f = d => d ? new Date(d + "T00:00:00").toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit" }) : "";
   $("axis").innerHTML = `<span>${f(days[0]?.d)}</span><span>${f(days[15]?.d)}</span><span>Today</span>`;
 
-  const m = s.models || {};
+  if (DIRTY.models) return renderSpendRest();
+  const m = s.models || {}, cat = s.model_catalog || {};
+  const price = id => cat[id] ? `$${cat[id].in} / $${cat[id].out}` : "";
+  const modelSel = (k, cur) => `<select class="in" data-model="${k}" style="padding:6px 8px;font-size:12.5px">${Object.keys(cat).map(id => `<option value="${esc(id)}"${id === cur ? " selected" : ""}>${esc(id.replace("claude-", ""))}</option>`).join("")}</select>`;
+  const effSel = (k, cur) => `<select class="in" data-effort="${k}" style="padding:6px 8px;font-size:12.5px">${["low","medium","high"].map(e => `<option${e === cur ? " selected" : ""}>${e}</option>`).join("")}</select>`;
   const tiers = [["quick","Quick"],["standard","Standard"],["deep","Deep"],["max","Max (only on request)"],["router","Picks the tier"]];
   $("modelsTbl").innerHTML = "<tr><th>Tier</th><th>Model</th><th>Effort</th><th class='n'>In / out</th></tr>" + tiers.filter(([k]) => m[k]).map(([k, l]) => {
-    const x = m[k], price = x.in != null ? `$${x.in} / $${x.out}` : (m.quick ? `$${m.quick.in} / $${m.quick.out}` : "");
-    return `<tr><td>${l}</td><td><code>${esc(x.model)}</code></td><td>${esc(x.effort || "low")}</td><td class="n">${price}</td></tr>`;
+    const x = m[k];
+    return `<tr><td>${l}</td><td>${modelSel(k, x.model)}</td><td>${k === "router" ? "low" : effSel(k, x.effort || "low")}</td><td class="n" data-price="${k}">${price(x.model)}</td></tr>`;
   }).join("");
+  $("routeRules").value = s.routing_rules || "";
+  renderSpendRest();
+}
+function renderSpendRest() {
+  const sp = D.spend;
   const bm = sp.by_model || [];
   $("byModelTbl").innerHTML = bm.length ? "<tr><th>Model</th><th class='n'>Requests</th><th class='n'>Spend</th></tr>" + bm.map(r => `<tr><td><code>${esc(r.model)}</code></td><td class="n">${r.n}</td><td class="n">${usd4(r.usd)}</td></tr>`).join("") : "<tr><td>No requests yet this month.</td></tr>";
   const bp = sp.by_person || [];
@@ -529,7 +655,7 @@ function renderAccess() {
   const req = D.requests || [];
   $("requests").innerHTML = req.length ? req.map(r => `<div class="rowc"><div class="main"><h4>${esc(nameOf(r.user_id))}</h4><p>&ldquo;${esc(r.question)}&rdquo;</p><div class="meta">Asked in ${esc(chanName(r.channel))} &middot; ${when(r.first_asked_at)}</div></div>
     <div class="acts"><button class="btn small" type="button" data-approve="${r.user_id}">Give access</button><button class="btn small ghost" type="button" data-dismiss="${r.user_id}">Dismiss</button></div></div>`).join("") : `<p class="hint">Nobody waiting.</p>`;
-  $("adminsLine").textContent = D.admins.map(a => nameOf(a.slack_user_id) + (a.role === "owner" ? " (owner: everything)" : " (admin: access, routines, on/off)")).join(" · ") + ". Only Jose can change who sends client emails, the cap and email test mode.";
+  $("adminsLine").textContent = D.admins.map(a => nameOf(a.slack_user_id) + (a.role === "owner" ? " (owner: everything)" : " (admin: instructions, replies, models, access, routines, on/off)")).join(" · ") + ". Only Jose can change who sends client emails, the cap, the step-down point and email test mode.";
 }
 
 function routineCard(r) {
@@ -595,7 +721,8 @@ function renderLog() {
     </div>`).join("") : `<p class="hint">Nothing matches.</p>`;
 }
 function renderChanges() {
-  const lbl = { set_access: "Changed access", set_enabled: "Switched Mabel", set_settings: "Changed settings", request_dismiss: "Dismissed a request", routine_save: "Saved a routine", routine_status: "Switched a routine", routine_test: "Test-ran a routine" };
+  const lbl = { set_access: "Changed access", set_enabled: "Switched Mabel", set_settings: "Changed settings", request_dismiss: "Dismissed a request", routine_save: "Saved a routine", routine_status: "Switched a routine", routine_test: "Test-ran a routine",
+    set_style: "Changed how she replies", set_models: "Changed models", instructions_save: "Saved draft instructions", instructions_discard: "Discarded the draft", instructions_publish: "Made instructions live", instructions_test: "Tested draft instructions" };
   const det = c => {
     const d = c.detail || {};
     if (c.action === "set_access") return ({ pilot_user_ids: "Can talk to her", can_send_user_ids: "Can send client emails", notify_user_ids: "Hears about requests" }[d.field] || d.field) + ": " + (d.ids || []).map(nameOf).join(", ");
@@ -605,6 +732,10 @@ function renderChanges() {
     if (c.action === "request_dismiss") return nameOf(d.user_id);
     if (c.action === "set_settings") return Object.entries(d).map(([k, v]) => `${k.replace(/_/g, " ")} ${v}`).join(", ");
     if (c.action === "routine_test") { const r = D.routines.find(r => r.id === d.id); return r ? r.name : ""; }
+    if (c.action === "set_style" || c.action === "set_models") return Object.entries(d).map(([k, v]) => `${k.replace(/_/g, " ")} ${v}`).join(", ");
+    if (c.action === "instructions_save") return `version ${d.id}`;
+    if (c.action === "instructions_publish") return d.from === d.live ? `version ${d.live}` : `version ${d.from} (now version ${d.live})`;
+    if (c.action === "instructions_test") return `version ${d.id}: "${d.question || ""}"`;
     return "";
   };
   $("changeTbl").innerHTML = D.changes.length ? "<tr><th>When</th><th>Who</th><th>What</th></tr>" + D.changes.map(c => `<tr><td style="white-space:nowrap">${when(c.at)}</td><td>${esc(c.user_email.split("@")[0])}</td><td>${esc(lbl[c.action] || c.action)}: ${esc(det(c))}</td></tr>`).join("") : "<tr><td>No changes yet.</td></tr>";
@@ -626,6 +757,62 @@ document.addEventListener("click", e => {
   else if (d.retire) { if (confirm("Remove this routine? It stops for good.")) act("routine_status", { id: d.retire, status: "retired" }, "Removed."); }
   else if (d.test) act("routine_test", { id: d.test }, "Running. The result lands in your Slack DMs from Mabel in about a minute.");
   else if (d.edit) openRoutine(D.routines.find(r => r.id === d.edit));
+  else if (d.restore) {
+    if (!confirm(`Make version ${d.restore} live again? It replaces what's live now. The current version stays in the history.`)) return;
+    act("instructions_publish", { id: Number(d.restore) }, `Version ${d.restore} is live again.`);
+  }
+});
+
+// ---------------------------------------------------------------- instructions + style + models
+for (const [id] of INS) $(id).addEventListener("input", () => { DIRTY.brief = true; counts(); });
+$("insNote").addEventListener("input", () => DIRTY.brief = true);
+$("insSave").addEventListener("click", async () => {
+  $("insSave").disabled = true;
+  try { await saveDraft(false); } catch (e) { toast(e.message, true); }
+  $("insSave").disabled = false;
+});
+$("insPublish").addEventListener("click", async () => {
+  if (!confirm("Make the draft live? Mabel uses it from her next answer, for everyone.")) return;
+  try {
+    const id = DIRTY.brief ? await saveDraft(true) : D.instructions.find(v => v.status === "draft")?.id;
+    if (!id) return toast("Save a draft first.", true);
+    await api("instructions_publish", { id }); toast("Live. She uses it from her next answer."); await load();
+  } catch (e) { toast(e.message, true); }
+});
+$("insDiscard").addEventListener("click", () => {
+  if (!confirm("Throw the draft away? What's live stays as it is.")) return;
+  DIRTY.brief = false;
+  act("instructions_discard", {}, "Draft discarded.");
+});
+$("insTest").addEventListener("click", async () => {
+  const question = $("insQ").value.trim();
+  if (!question) return toast("Type a question to test with.", true);
+  $("insTest").disabled = true;
+  try {
+    const id = await saveDraft(true);
+    await api("instructions_test", { id, question });
+    toast("Draft saved and sent. Her answer lands in your Slack DMs from Mabel in about a minute.");
+  } catch (e) { toast(e.message, true); }
+  $("insTest").disabled = false;
+});
+["styMode", "styLen"].forEach(id => $(id).addEventListener("change", () => DIRTY.style = true));
+$("stySave").addEventListener("click", async () => {
+  try { await api("set_style", { reply_mode: $("styMode").value, answer_length: $("styLen").value }); DIRTY.style = false; toast("Saved. Applies to her next answer."); await load(); }
+  catch (e) { toast(e.message, true); }
+});
+$("modelsTbl").addEventListener("change", e => {
+  DIRTY.models = true;
+  const k = e.target.dataset.model;
+  if (k) { const c = D.settings.model_catalog?.[e.target.value]; document.querySelector(`[data-price="${k}"]`).textContent = c ? `$${c.in} / $${c.out}` : ""; }
+});
+$("routeRules").addEventListener("input", () => DIRTY.models = true);
+$("modelsSave").addEventListener("click", async () => {
+  const models = {};
+  document.querySelectorAll("[data-model]").forEach(s => { const k = s.dataset.model; models[k] = { model: s.value }; });
+  document.querySelectorAll("[data-effort]").forEach(s => { models[s.dataset.effort].effort = s.value; });
+  if (!confirm("Save these models? Dearer models raise what each answer costs.")) return;
+  try { await api("set_models", { models, routing_rules: $("routeRules").value }); DIRTY.models = false; toast("Models saved."); await load(); }
+  catch (e) { toast(e.message, true); }
 });
 $("enabledTog").addEventListener("click", () => {
   const on = !D.settings.enabled;
