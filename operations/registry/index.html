@@ -825,5 +825,223 @@ document.addEventListener("visibilitychange", () => {
 
 boot();
 </script>
+<!-- HUB-SEARCH:START -->
+<style>
+/* Hub search (build_search.py). Scoped to #hs-*, so it can't restyle the page it sits on. */
+#hs-btn{position:fixed;right:18px;bottom:18px;z-index:9000;display:inline-flex;align-items:center;gap:8px;background:#17B4F0;color:#04121A;border:0;border-radius:999px;padding:11px 16px;font:800 13.5px "Archivo",system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.45);}
+#hs-btn kbd{font:700 10.5px "Space Mono",ui-monospace,monospace;background:rgba(4,18,26,.18);border-radius:4px;padding:1px 5px;}
+#hs-ov{position:fixed;inset:0;z-index:9001;background:rgba(5,5,8,.72);display:none;align-items:flex-start;justify-content:center;padding:60px 16px 16px;}
+#hs-ov.on{display:flex;}
+#hs-box{width:100%;max-width:720px;max-height:calc(100vh - 80px);display:flex;flex-direction:column;background:#17171C;border:1px solid #2A2A32;border-radius:12px;overflow:hidden;font-family:"Archivo",system-ui,sans-serif;color:#D8D8E0;}
+#hs-top{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #2A2A32;}
+#hs-q{flex:1;min-width:0;background:#0F0F12;border:1px solid #2A2A32;border-radius:8px;color:#fff;padding:11px 13px;font:500 16px "Archivo",system-ui,sans-serif;}
+#hs-q:focus{outline:none;border-color:#17B4F0;}
+#hs-x{background:none;border:1px solid #2A2A32;color:#9B9BA6;border-radius:8px;padding:9px 11px;cursor:pointer;font:600 12px "Archivo",system-ui,sans-serif;}
+#hs-res{overflow-y:auto;padding:6px 0 12px;}
+#hs-res .hs-g{font:700 10.5px "Space Mono",ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:#17B4F0;padding:14px 16px 6px;}
+#hs-res a.hs-r{display:block;padding:9px 16px;text-decoration:none;color:#D8D8E0;border-left:2px solid transparent;}
+#hs-res a.hs-r:hover,#hs-res a.hs-r.sel{background:#1B1B21;border-left-color:#17B4F0;}
+#hs-res .hs-s{display:block;font:700 13.5px "Archivo",system-ui,sans-serif;color:#fff;}
+#hs-res .hs-t{display:block;font-size:13px;color:#9B9BA6;margin-top:2px;overflow-wrap:anywhere;}
+#hs-res mark{background:rgba(23,180,240,.25);color:#fff;border-radius:2px;padding:0 1px;}
+#hs-res .hs-m{display:flex;flex-wrap:wrap;gap:6px 12px;font:400 11px "Space Mono",ui-monospace,monospace;color:#6E6E7A;margin-top:5px;}
+#hs-res .hs-on{color:#2BD9A6;} #hs-res .hs-off{color:#F5B02E;} #hs-res .hs-bad{color:#E04B4B;}
+#hs-res .hs-note{padding:12px 16px;font-size:13px;color:#9B9BA6;}
+#hs-res .hs-note a{color:#17B4F0;}
+.hs-flash{animation:hsflash 2.4s ease-out 1;}
+@keyframes hsflash{0%,30%{background:rgba(23,180,240,.28);box-shadow:0 0 0 6px rgba(23,180,240,.28);}100%{background:transparent;box-shadow:none;}}
+@media (max-width:640px){#hs-ov{padding:0;}#hs-box{max-height:100vh;height:100vh;border-radius:0;border:0;}#hs-btn{right:12px;bottom:12px;}}
+@media print{#hs-btn,#hs-ov{display:none!important;}}
+</style>
+<button id="hs-btn" type="button" aria-label="Search the hub">Search the hub <kbd>/</kbd></button>
+<div id="hs-ov" role="dialog" aria-modal="true" aria-label="Search the hub">
+  <div id="hs-box">
+    <div id="hs-top">
+      <input id="hs-q" type="search" placeholder="Search everything: a client, a routine, a person, a process" autocomplete="off" aria-label="Search the hub">
+      <button id="hs-x" type="button">Close</button>
+    </div>
+    <div id="hs-res" aria-live="polite"></div>
+  </div>
+</div>
+<script>
+(() => {
+  const INDEX = null;       // null on the signed-in apps: they aren't gated
+  const LABELS = {"": "Operations home", "claude-code": "Working in Claude Code", "clients": "Client Standing", "links": "Link Ledger", "onboarding": "Onboarding", "pipeline": "Pipeline", "sops": "Process sheets", "team": "Who does what", "routines": "Routines", "mabel": "Mabel", "registry": "Client Registry"};
+  const PAGE = "registry";
+  const SB_URL = "https://tjgrtrazyepvbcmmdhet.supabase.co";
+  const SB_KEY = "sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
+  const TZ = "Australia/Melbourne";
+  const STOP = new Set("where is are the a an this that what who how does do which find show me for of to in on at it its my our".split(" "));
+  const $ = id => document.getElementById(id);
+  const ov = $("hs-ov"), q = $("hs-q"), res = $("hs-res");
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const norm = s => String(s ?? "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9@.#]+/g, " ");
+  const href = (p, a) => "/operations/" + (p ? p + "/" : "") + (a ? "#" + a : "");
+
+  // ---- routines, live from the database (internal staff only, read-only)
+  let routines = null, routinesWhy = "";
+  async function loadRoutines() {
+    if (routines || routinesWhy === "loading") return;
+    routinesWhy = "loading";
+    try {
+      if (!window.supabase) await new Promise((ok, bad) => {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js";
+        s.onload = ok; s.onerror = bad; document.head.appendChild(s);
+      });
+      const sb = window.supabase.createClient(SB_URL, SB_KEY);
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { routinesWhy = "signin"; return render(); }
+      const { data, error } = await sb.rpc("hub_routines");
+      if (error) throw error;
+      routines = data || []; routinesWhy = "";
+    } catch (e) { routinesWhy = "error"; }
+    render();
+  }
+
+  // ---- cron (UTC) to plain Melbourne time
+  const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  function when(cron) {
+    const f = String(cron || "").trim().split(/\s+/);
+    if (f.length !== 5) return "";
+    const [mi, hr, dom, , dow] = f;
+    if (!/^\d+$/.test(mi)) return `cron ${cron} (UTC)`;
+    if (!/^\d+$/.test(hr)) return hr === "*" ? `Every hour at :${mi.padStart(2, "0")}` : `cron ${cron} (UTC)`;
+    const now = new Date();
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), +hr, +mi));
+    const t = new Intl.DateTimeFormat("en-AU", { timeZone: TZ, hour: "numeric", minute: "2-digit", hour12: true }).format(d).replace(" ", "").toLowerCase();
+    const melDay = +new Intl.DateTimeFormat("en-AU", { timeZone: TZ, day: "numeric" }).format(d);
+    const shift = melDay === d.getUTCDate() ? 0 : 1; // Melbourne is ahead of UTC
+    const list = (v, fn) => v.split(",").map(x => /^\d+-\d+$/.test(x) ? x.split("-").map(fn).join("-") : fn(x)).join(", ");
+    if (dow !== "*" && dom === "*") return `${list(dow, x => DOW[(+x + shift) % 7])} ${t}`;
+    if (dom !== "*") return `Day ${list(dom, x => String(+x + shift))} of the month, ${t}`;
+    return `Daily ${t}`;
+  }
+  const whereRuns = r => r.source === "cloud" ? "Claude routine (Jose's account)" : r.source === "database" ? "Database job" : "Mabel";
+  const ago = iso => { if (!iso) return ""; const h = (Date.now() - new Date(iso)) / 36e5; return h < 1 ? "under an hour ago" : h < 36 ? Math.round(h) + " h ago" : Math.round(h / 24) + " days ago"; };
+
+  // ---- matching: every word must appear (prefix match), headings and names count more
+  function terms(s) { return norm(s).split(" ").filter(w => w.length > 1 && !STOP.has(w)); }
+  function score(words, fields) {
+    let total = 0;
+    for (const w of words) {
+      const stem = w.length > 4 ? w.replace(/s$/, "") : w;
+      let best = 0;
+      for (const [text, weight] of fields) {
+        const t = " " + norm(text);
+        if (t.includes(" " + stem)) best = Math.max(best, weight * 2);
+        else if (t.includes(stem)) best = Math.max(best, weight);
+      }
+      if (!best) return 0;
+      total += best;
+    }
+    return total;
+  }
+  function mark(text, words) {
+    let out = esc(text);
+    for (const w of words.sort((a, b) => b.length - a.length)) {
+      const re = new RegExp("(" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
+      out = out.replace(re, "<mark>$1</mark>");
+    }
+    return out;
+  }
+
+  let sel = -1;
+  function render() {
+    const raw = q.value.trim();
+    // "where is the Kate bill chase routine": "routine" says which group, it isn't a search word.
+    const all = terms(raw), named = all.filter(w => !/^routines?$/.test(w));
+    const words = named.length ? named : all;
+    sel = -1;
+    if (!raw) { res.innerHTML = `<div class="hs-note">Type a client, routine, person or process. e.g. <i>Polarity</i>, <i>Kate bill chase</i>, <i>who sends welcome emails</i>.</div>`; return; }
+    if (!words.length) { res.innerHTML = `<div class="hs-note">Add a word or two more.</div>`; return; }
+    const groups = [];
+
+    // Routines first when the search mentions them, otherwise after the pages.
+    const rt = [];
+    if (routines) {
+      for (const r of routines) {
+        const s = score(words, [[r.name, 4], [r.client, 3], [r.what, 1], [r.output, 1], [r.category, 1]]);
+        if (s) rt.push([s, r]);
+      }
+      rt.sort((a, b) => b[0] - a[0]);
+    }
+    const rtHtml = rt.slice(0, 8).map(([, r]) => {
+      const on = r.enabled ? `<span class="hs-on">On</span>` : `<span class="hs-off">Off</span>`;
+      const last = r.last_ok === false ? `<span class="hs-bad">Last run failed ${ago(r.last_run_at)}</span>` : r.last_run_at ? `Last ran ${ago(r.last_run_at)}` : "";
+      const link = r.source === "cloud" ? "/operations/routines/" : "/operations/mabel/#routines";
+      return `<a class="hs-r" href="${link}"><span class="hs-s">${mark(r.name, words)}</span>
+        <span class="hs-t">${mark(r.what || "", words)}</span>
+        <span class="hs-m">${on}<span>Runs in: ${whereRuns(r)}</span>${r.cron_utc ? `<span>${esc(when(r.cron_utc))}</span>` : r.schedule_text ? `<span>${esc(r.schedule_text)}</span>` : ""}${r.output ? `<span>${esc(r.output)}</span>` : ""}${r.client ? `<span>${esc(r.client)}</span>` : ""}${last ? `<span>${last}</span>` : ""}</span></a>`;
+    }).join("");
+    const rtNote = routinesWhy === "signin" ? `<div class="hs-note">Routines search needs your email sign-in. <a href="/operations/">Sign in on the hub home</a> with your R2R email.</div>`
+      : routinesWhy === "error" ? `<div class="hs-note">Couldn't load routines just now. Try again in a minute.</div>`
+      : routinesWhy === "loading" ? `<div class="hs-note">Loading routines&hellip;</div>` : "";
+    const routineGroup = (rtHtml || rtNote) ? `<div class="hs-g">Routines${rt.length ? " · " + rt.length : ""}</div>${rtHtml || rtNote}` : "";
+
+    if (INDEX) {
+      const byPage = new Map();
+      for (const e of INDEX) {
+        const s = score(words, [[e.t, e.h ? 4 : 1], [e.s, 2], [LABELS[e.p] || "", 1]]);
+        if (!s) continue;
+        if (!byPage.has(e.p)) byPage.set(e.p, []);
+        byPage.get(e.p).push([s + (e.h ? 2 : 0), e]);
+      }
+      const pages = [...byPage.entries()].map(([p, xs]) => [p, xs.sort((a, b) => b[0] - a[0])]).sort((a, b) => b[1][0][0] - a[1][0][0]);
+      for (const [p, xs] of pages) {
+        groups.push(`<div class="hs-g">${esc(LABELS[p] || p)} · ${xs.length}</div>` + xs.slice(0, 6).map(([, e]) =>
+          `<a class="hs-r" href="${href(e.p, e.a)}" data-p="${esc(e.p)}" data-a="${esc(e.a)}"><span class="hs-s">${mark(e.s, words)}</span>${e.h ? "" : `<span class="hs-t">${mark(e.t, words)}</span>`}</a>`).join(""));
+      }
+    } else {
+      groups.push(`<div class="hs-note"><a href="/operations/?q=${encodeURIComponent(raw)}">Search every hub page for &ldquo;${esc(raw)}&rdquo; &rarr;</a> (opens the hub home; the page content is behind its password).</div>`);
+    }
+    const wantsRoutines = /routine|cron|schedul|runs?\b/i.test(raw);
+    const html = wantsRoutines ? routineGroup + groups.join("") : groups.join("") + routineGroup;
+    res.innerHTML = html || `<div class="hs-note">Nothing on the hub matches &ldquo;${esc(raw)}&rdquo;. Try fewer words or a different spelling.</div>`;
+  }
+
+  function open(text) {
+    ov.classList.add("on"); document.documentElement.style.overflow = "hidden";
+    if (text != null) q.value = text;
+    q.focus(); q.select(); render(); loadRoutines();
+  }
+  function close() { ov.classList.remove("on"); document.documentElement.style.overflow = ""; }
+  function flash(id) {
+    const el = id && document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ block: "start" });
+    el.classList.remove("hs-flash"); void el.offsetWidth; el.classList.add("hs-flash");
+  }
+
+  $("hs-btn").addEventListener("click", () => open());
+  $("hs-x").addEventListener("click", close);
+  ov.addEventListener("click", e => { if (e.target === ov) close(); });
+  q.addEventListener("input", render);
+  res.addEventListener("click", e => {
+    const a = e.target.closest("a.hs-r");
+    if (a && a.dataset.p === PAGE && a.dataset.a) { e.preventDefault(); close(); history.replaceState(null, "", "#" + a.dataset.a); flash(a.dataset.a); }
+  });
+  addEventListener("keydown", e => {
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable;
+    if ((e.key === "/" && !typing) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) { e.preventDefault(); open(); return; }
+    if (!ov.classList.contains("on")) return;
+    if (e.key === "Escape") return close();
+    const items = [...res.querySelectorAll("a.hs-r")];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      sel = Math.max(0, Math.min(items.length - 1, sel + (e.key === "ArrowDown" ? 1 : -1)));
+      items.forEach((x, i) => x.classList.toggle("sel", i === sel)); items[sel]?.scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter" && document.activeElement === q) {
+      (items[sel] || items[0])?.click();
+    }
+  });
+  // Arriving from a result on another page: light up the section. ?q= opens the search.
+  const want = new URLSearchParams(location.search).get("q");
+  if (location.hash.startsWith("#hs-")) setTimeout(() => flash(location.hash.slice(1)), 60);
+  if (want && INDEX) setTimeout(() => open(want), 60);
+})();
+</script>
+
+<!-- HUB-SEARCH:END -->
 </body>
 </html>
