@@ -1,0 +1,89 @@
+/* S Dental Care: client theme, loaded after ../assets/dashboard.css (Jose 23/10/2026).
+   Matches sdentalcare.com.au: light surfaces, navy #0F4992 / deep navy #03246B, gold #C98A3E,
+   Fraunces headings + Inter body. Tokens come from the site's own theme stylesheet
+   (wp-content/themes/s-dental-care/style.css), not guessed from page CSS.
+   Only this client loads this file; every other dashboard keeps the R2R dark frame. */
+
+:root{
+  /* surfaces, page -> raised */
+  --ground:#F3F6FA; --s1:#FFFFFF; --s2:#FFFFFF; --s3:#E7EDF4;
+  --bd:#D4DEEB; --bd2:#BCCADC;
+  /* text */
+  --ink:#182534; --ink2:#3A4A5E; --ink3:#5B6B7E;
+  --navy:#0F4992; --navy-deep:#03246B; --gold:#C98A3E; --gold-ink:#8A5A1F;
+  /* status colours darkened so they stay readable on white */
+  --good:#047857; --warn:#B45309; --bad:#B91C1C;
+  --sans:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
+  --mono:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
+  --serif:'Fraunces',Georgia,serif;
+  --radius:18px;
+  --shadow:0 20px 45px -22px rgba(3,36,107,.35);
+}
+
+/* ---------- type: Fraunces for display, Inter for everything else ---------- */
+h1,h2,h3,.h2,.gate-card h1,.lockbox h3,.topin .name,.kpi .v,.momcard .v,.linktease h3{
+  font-family:var(--serif);font-weight:600;letter-spacing:-.01em;color:var(--navy-deep)}
+.cardhead h3,.callout h4{font-family:var(--serif);font-weight:600;color:var(--navy-deep)}
+.eyebrow,.mlbl,.mchip,.tbl th,.legend,.stamp,.sig,.chip,.axis,.dtcount,.tabsep,.lt-pill,
+.acount,.donecol .ddate,.launch tr.stage td{letter-spacing:.08em;font-weight:600}
+.eyebrow,.tabsep,.launch tr.stage td,.lt-pill{color:var(--gold-ink)}
+svg text{font-family:var(--sans)}
+
+/* ---------- surfaces: white cards on the pale page, the site's soft shadow ---------- */
+.card,.kpi,.momcard,.callout,.gate-card,.lockbox{border-radius:var(--radius);box-shadow:var(--shadow)}
+.card,.kpi,.momcard{border-color:var(--bd)}
+.empty{border-radius:var(--radius);background:var(--s1)}
+.gate{background:linear-gradient(160deg,var(--s3),var(--ground) 55%)}
+.gate-card input,.dtq{background:var(--s1)}
+
+/* ---------- header, delivered-by strip, tabs ---------- */
+header.top,nav.tabs{background:rgba(255,255,255,.96)}
+header.top{border-bottom:1px solid var(--bd)}
+.team{background:var(--s3)}
+.monthbar{background:var(--ground)}
+.tab{color:var(--ink3)}
+.tab:hover{color:var(--navy)}
+.tab[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--gold)}
+.tab.locked{color:var(--ink3)}
+.tab.adm{color:var(--ink2)}
+.logochip{background:transparent;padding:0}
+
+/* ---------- actions: navy with white text, gold on focus ---------- */
+:root{--accent:#0F4992}
+.btn{border-color:var(--bd);color:var(--navy)}
+.btn:hover{border-color:var(--navy);color:var(--navy-deep);background:var(--s3)}
+.btn.primary,.gate-card button,.mchip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.primary:hover,.gate-card button:hover{background:var(--navy-deep);border-color:var(--navy-deep);color:#fff}
+.mchip{color:var(--ink2)}
+.mchip:hover{border-color:var(--navy)}
+.gate-card input:focus,.dtq:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,138,62,.18)}
+
+/* ---------- status chips: tinted fills that work on white ---------- */
+.chip.up,.sig.good,.rankpill.win{background:#D1FAE5}
+.chip.dn,.sig.bad{background:#FEE2E2}
+.chip.warnc,.sig.warn,.rankpill.mid{background:#FEF3C7}
+.moneycard{border-color:#F2D9A8;background:#FFF8EC}
+
+/* ---------- overlays ---------- */
+.lockwrap{background:rgba(3,36,107,.45)}
+.toast{background:var(--s1);box-shadow:var(--shadow)}
+.dtt thead th{background:var(--s3);color:var(--navy-deep)}
+
+/* .topin/.teamin/.monthin set padding:…0 and cancel the .wrap side gutter, so the logo sat
+   flush on the window edge. Restore the 22px gutter on this client's light frame. */
+.topin,.teamin,.monthin{padding-left:22px;padding-right:22px}
+.kvt th{letter-spacing:0}
+
+/* ---------- co-delivery: Ready to Rank + Savvas Studio (Jose 23/10/2026) ----------
+   The delivered-by strip carries both agencies at a readable size, with a Ready to Rank
+   blue rule so the agency stays visible inside the clinic's colours. */
+.team{background:var(--s1);border-top:3px solid var(--r2r)}
+.teamin{padding-top:12px;padding-bottom:12px;gap:16px}
+.teamin .r2rlogo{height:28px}
+.teamin .intrologo{height:30px}
+.teamin .introsep{padding-left:16px;border-left:1px solid var(--bd)}
+.gateby{background:var(--ground)}
+.gateby .r2rlogo{height:22px}
+.gateby .intrologo{height:24px}
+.gate-card.branded{max-width:400px}
+@media (max-width:640px){.teamin .r2rlogo{height:22px}.teamin .intrologo{height:24px}.teamin .introsep{padding-left:0;border-left:0}}
