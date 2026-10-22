@@ -45,7 +45,7 @@ const SOLD_AS = { seo:'SEO reporting', map_grid:'Map pack grid tracking', gbp:'G
                   geo:'AI visibility tracking', paid_ads:'Paid advertising management', negatives:'Paid advertising management',
                   social:'Organic social management', leads_crm:'Leads and CRM reporting' };
 
-const state = { role:null, tab:'overview', month:null, months:[] };
+const state = { role:null, realRole:null, view:'admin', tab:'overview', month:null, months:[] };
 let RAW = {}, V = {};
 
 /* ---------------------------------------------------------------- helpers */
@@ -262,8 +262,9 @@ function applyMonth(){
 /* ---------------------------------------------------------------- render */
 /* `negatives` is part of the paid ads contract, so it shares paid_ads' switch. */
 const modOf = m => m === 'negatives' ? 'paid_ads' : m;
-const enabled = m => m === 'overview' || isAdm(m) || !!CFG.modules[modOf(m)]?.enabled;
-const visible = () => ORDER.filter(m => m === 'overview' || CFG.modules[modOf(m)]).concat(adminOn() ? ADMIN_ORDER : []);
+const enabled = m => m === 'overview' || m === 'review' || isAdm(m) || !!CFG.modules[modOf(m)]?.enabled;
+const visible = () => ORDER.filter(m => m === 'overview' || CFG.modules[modOf(m)])
+  .flatMap(m => m === 'paid_ads' && reviewOn() ? [m, 'review'] : [m]).concat(adminOn() ? ADMIN_ORDER : []);
 
 function kpi(label, value, foot){
   return `<div class="kpi"><span class="mlbl">${label}</span>
@@ -335,7 +336,7 @@ function renderAll(){
     overview: viewOverview, seo: viewSeo, map_grid: viewMapGrid, gbp: viewGbp,
     geo: viewGeo, paid_ads: viewPaid, negatives: viewNegatives, social: viewSocial, leads_crm: viewLeads,
     adm_onboarding: viewAdmOnboarding, adm_call: viewAdmCall, adm_discovery: viewAdmDiscovery,
-    adm_brief: viewAdmBrief, adm_launch: viewAdmLaunch, adm_plan: viewAdmPlan,
+    adm_brief: viewAdmBrief, adm_launch: viewAdmLaunch, adm_plan: viewAdmPlan, review: viewReview,
   }[state.tab] || (() => emptyState('Unknown tab', 'Nothing to render.')))();
   /* The admin tabs are not month-scoped, so the month bar would only mislead there. */
   const mb = $('.monthbar'); if (mb) mb.style.display = isAdm(state.tab) ? 'none' : '';
@@ -1089,6 +1090,7 @@ function negBox(r, kind = 'keyword'){
       ${n ? 'checked' : ''} ${locked ? 'disabled' : ''}></label>`;
 }
 async function toggleNeg(box){
+  if (previewOnly()) { box.checked = !box.checked; return toast('Client view is a preview. Switch to Admin view to change anything.', 'bad'); }
   const term = box.dataset.neg, kind = box.dataset.kind || 'keyword', have = negFor(term, kind);
   box.disabled = true;
   if (box.checked && !have){
@@ -1182,10 +1184,10 @@ function viewLeads(){
    Ticks and budgets stay with the register writers (Jose, Jhen, Janice), as on /clients/. */
 const ADMIN_ORDER = ['adm_onboarding','adm_call','adm_discovery','adm_brief','adm_launch','adm_plan'];
 Object.assign(LABEL, { adm_onboarding:'Onboarding', adm_call:'Call brief', adm_discovery:'Discovery call',
-  adm_brief:'Ads brief', adm_launch:'Launch checklist', adm_plan:'Campaign plan' });
+  adm_brief:'Ads brief', adm_launch:'Launch checklist', adm_plan:'Campaign plan', review:'Review your ads' });
 let ADM = null;
 function isAdm(m){ return String(m).startsWith('adm_'); }
-function adminOn(){ return !!(CFG.adminView && ADM); }
+function adminOn(){ return !!(CFG.adminView && ADM) && state.view !== 'client'; }
 async function loadAdmin(){
   ADM = null;
   if (!CFG.adminView || !['admin','editor'].includes(state.role)) return;
@@ -1366,6 +1368,7 @@ function viewAdmPlan(){
   out += `<div class="planbar"><label class="btn primary">Import spreadsheet<input type="file" id="planfile" accept=".xlsx,.xlsm,.xls,.csv" hidden></label>
     <button class="btn" data-admtemplate="1">Download the template</button>
     ${p ? `<span class="dtnote">From <b>${esc(p.file_name || 'spreadsheet')}</b>, imported by ${esc(p.imported_by_name || 'unknown')} on ${dmy(p.imported_at)}</span>` : ''}</div>`;
+  if (reviewOn()) out += reviewSummary();
   if (!p || !(p.sheets || []).length) return out + emptyState('No campaign plan imported yet',
     'Download the template, fill it in (or use your own sheet with headings in the first row), then Import spreadsheet. Each tab of the file becomes a table here.');
   const sheets = p.sheets, col = (s, re) => s.columns.findIndex(c => re.test(c));
@@ -1432,6 +1435,7 @@ function renderShell(){
     <span class="name">${CFG.name}</span>
     <span class="spacer"></span>
     <span class="stamp" id="stamp"></span>
+    ${isStaff() ? `<span class="viewsw" role="group" aria-label="Preview as"><button class="vsbtn" data-view="admin" aria-pressed="${state.view !== 'client'}">Admin view</button><button class="vsbtn" data-view="client" aria-pressed="${state.view === 'client'}">Client view</button></span>` : ''}
     <button class="btn" id="signout">Sign out</button>
   </div></header>
   <div class="team"><div class="wrap teamin">
@@ -1483,6 +1487,16 @@ function renderShell(){
     state.month = b.dataset.m; applyMonth(); renderAll();
   });
   $('#signout').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+  /* Admin / Client view: staff see the dashboard exactly as the client does (no Admin row,
+     client role, nothing writable). Remembered per browser. */
+  $$('.vsbtn').forEach(b => b.addEventListener('click', () => {
+    state.view = b.dataset.view; try { localStorage.setItem('md-view-' + CFG.slug, state.view); } catch (e) {}
+    state.role = state.view === 'client' ? 'viewer' : state.realRole;
+    $$('.vsbtn').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.view === state.view)));
+    document.documentElement.classList.toggle('clientview', state.view === 'client');
+    if (!visible().includes(state.tab)) state.tab = 'overview';
+    renderAll();
+  }));
 
   let t; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(drawCharts, 180); });
 }
@@ -1555,9 +1569,11 @@ async function start(){
   const { data: { session } } = await sb.auth.getSession();
   const { data: access } = await sb.from('md_client_access').select('role, modules')
     .eq('client_id', client.id).eq('user_id', session?.user?.id).maybeSingle();
-  state.role = access?.role || 'viewer';
+  state.role = state.realRole = access?.role || 'viewer';
 
-  await Promise.all([loadData(), loadAdmin()]);
+  await Promise.all([loadData(), loadAdmin(), loadReview()]);
+  if (isStaff()) { try { state.view = localStorage.getItem('md-view-' + CFG.slug) === 'client' ? 'client' : 'admin'; } catch (e) {}
+    if (state.view === 'client') { state.role = 'viewer'; document.documentElement.classList.add('clientview'); } }
   applyMonth();
   renderShell();
   const h = (location.hash || '').replace('#','');
@@ -1570,3 +1586,153 @@ async function start(){
   if (data?.session) { try { await start(); } catch (e) { console.error(e); renderGate('Could not load this dashboard — check the console.'); } }
   else renderGate();
 })();
+
+
+/* ================================================================ ad review (client)
+   The client reads and approves the keywords and ad copy from the imported campaign plan
+   (Jose 23/10/2026, S Dental Care). md_ad_review_pack() hands over ONLY the keyword and ad
+   sheets, with every budget / bid / CPC column removed server-side, so the browser never
+   holds a number the client should not see. Opt-in per client: CFG.adReview. */
+let REV = null;
+function isStaff(){ return !!CFG.adminView && ['admin','editor'].includes(state.realRole); }
+function previewOnly(){ return isStaff() && state.view === 'client'; }
+function reviewOn(){ return !!(CFG.adReview && REV && REV.plan && reviewUnits().length); }
+async function loadReview(){
+  REV = null; if (!CFG.adReview) return;
+  const { data, error } = await sb.rpc('md_ad_review_pack', { p_slug: CFG.slug });
+  if (error) console.warn('ad review:', error.message); else REV = data;
+}
+const normKey = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+/* {KeyWord:Default text} is Google's keyword insertion: the preview shows the default text. */
+const dki = s => String(s ?? '').replace(/\{\s*keyword\s*:\s*([^}]*)\}/gi, '$1').trim();
+function reviewUnits(){
+  if (REV?._units) return REV._units;
+  const sheets = REV?.plan?.sheets || [], at = (s, re) => s.columns.findIndex(c => re.test(String(c)));
+  const cell = (r, i) => i >= 0 && r[i] != null && String(r[i]).trim() !== '' ? String(r[i]).trim() : null;
+  const units = new Map(), unit = (key, campaign, group) => {
+    if (!units.has(key)) units.set(key, { key, campaign, group, ads: [], keywords: [] }); return units.get(key); };
+  let lastCamp = null;
+  sheets.filter(s => s.kind === 'ads').forEach(s => {
+    const iC = at(s, /campaign/i), iG = at(s, /ad.?group/i), iU = at(s, /final url|^url$|landing/i),
+          iP1 = at(s, /path\s*1/i), iP2 = at(s, /path\s*2/i);
+    const hs = s.columns.map((c, i) => /headline/i.test(c) ? i : -1).filter(i => i >= 0);
+    const ds = s.columns.map((c, i) => /description/i.test(c) ? i : -1).filter(i => i >= 0);
+    s.rows.forEach(r => {
+      const H = hs.map(i => cell(r, i)).filter(Boolean), D = ds.map(i => cell(r, i)).filter(Boolean);
+      if (!H.length && !D.length) return;
+      const camp = cell(r, iC) || lastCamp || 'Campaign'; lastCamp = camp;
+      const grp = cell(r, iG) || camp;
+      unit(camp + ' › ' + grp, camp, grp).ads.push({ H, D, url: cell(r, iU), p1: cell(r, iP1), p2: cell(r, iP2) });
+    });
+  });
+  const byGroup = new Map([...units.values()].map(u => [normKey(u.group), u]));
+  sheets.filter(s => s.kind === 'keywords').forEach(s => {
+    const iK = at(s, /keyword/i), iG = at(s, /ad.?group/i), iV = at(s, /search|volume/i);
+    let section = null;
+    s.rows.forEach(r => {
+      const k = cell(r, iK); if (!k) return;
+      const rest = r.some((v, i) => i !== iK && v != null && String(v).trim() !== '');
+      if (iG < 0 && !rest) { section = k; return; }          /* a heading row: "Dentist Near Me" */
+      const g = cell(r, iG) || section || 'Keywords';
+      const u = byGroup.get(normKey(g)) || unit('Keywords › ' + g, null, g);
+      byGroup.set(normKey(g), u);
+      u.keywords.push({ k, vol: iV >= 0 ? r[iV] : null });
+    });
+  });
+  REV._units = [...units.values()];
+  return REV._units;
+}
+function reviewFor(key){ return (REV?.reviews || []).find(r => r.group_key === key); }
+function reviewCounts(){
+  const u = reviewUnits(), r = u.map(x => reviewFor(x.key));
+  return { total: u.length, approved: r.filter(x => x?.status === 'approved').length, changes: r.filter(x => x?.status === 'changes').length };
+}
+function reviewSummary(){
+  const c = reviewCounts(), u = reviewUnits();
+  const line = c.approved === c.total ? `<b>All ${c.total} approved</b> by the client.`
+    : `${c.approved} of ${c.total} approved${c.changes ? `, <b>${c.changes} with changes requested</b>` : ''}.`;
+  return `<div class="card rvsum"><div class="cardhead"><div><h3>Client review of keywords and ads</h3>
+      <p class="sub">${line} The client sees keywords and ad copy only, never budgets or bids. Re-importing the plan starts a fresh review.</p></div>
+      <button class="btn primary" data-rvopen="1">Open the preview</button></div>
+    ${u.filter(x => reviewFor(x.key)?.status === 'changes').map(x => { const r = reviewFor(x.key);
+      return `<div class="callout warn"><h4>${esc(x.group)}</h4><p>${esc(r.comment || '')} <span class="dtnote">${esc(r.reviewer_name || '')}, ${dmy(r.reviewed_at)}</span></p></div>`; }).join('')}</div>`;
+}
+function viewReview(){
+  const c = reviewCounts(), done = c.total && c.approved === c.total;
+  let out = head('Your ads', 'Review your keywords and ads',
+    'Before anything goes live, check the searches your ads will show for and exactly what the ads say. Approve each group, or tell us what to change.');
+  out += `<div class="kpis">${kpi('Ad groups to review', fmt(c.total))}${kpi('Approved', fmt(c.approved))}${kpi('Changes requested', fmt(c.changes))}</div>`;
+  out += `<div class="card rvcta"><div><h3>${done ? 'Everything is approved. Thank you.' : 'Open the preview to review'}</h3>
+      <p class="sub">${done ? 'We will build the campaigns exactly as you approved them. You can still open the preview to look again.' : 'Each group shows the keywords and how the ad will look on Google.'}</p></div>
+    <button class="btn primary" data-rvopen="1">${done ? 'Look again' : 'Open the preview'}</button></div>`;
+  return out;
+}
+function siteHost(){ try { return new URL(REV.plan.site_url || CFG.siteUrl || location.href).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
+function adPreview(a){
+  const host = (() => { try { return new URL(a.url).hostname.replace(/^www\./, ''); } catch (e) { return siteHost(); } })();
+  const path = [a.p1, a.p2].filter(Boolean).map(x => dki(x).replace(/\s+/g, '-').toLowerCase()).join('/');
+  return `<div class="gad"><div class="gad-top"><span class="gad-sp">Sponsored</span></div>
+    <div class="gad-site"><span class="gad-fav">${esc(CFG.name.slice(0, 1))}</span><div><b>${esc(CFG.name)}</b><span>${esc(host)}${path ? ' › ' + esc(path) : ''}</span></div></div>
+    <div class="gad-h">${a.H.slice(0, 3).map(h => esc(dki(h))).join(' | ')}</div>
+    <div class="gad-d">${a.D.slice(0, 2).map(d => esc(dki(d))).join(' ')}</div></div>`;
+}
+function rvUnitHtml(u, i){
+  const r = reviewFor(u.key), staff = isStaff(), ro = staff;   /* staff look, the client approves */
+  const lim = (t, n) => staff && dki(t).length > n ? ` <span class="rvover" title="Google allows ${n} characters">${dki(t).length}/${n}</span>` : '';
+  const ads = u.ads.map((a, ai) => `
+    <div class="rvad">${adPreview(a)}
+      <p class="rvnote">Google mixes these headlines and descriptions, so people may see any combination of them.</p>
+      <div class="rvlists"><div><span class="mlbl">Headlines (${a.H.length})</span><ol>${a.H.map(h => `<li>${esc(dki(h))}${lim(h, 30)}</li>`).join('')}</ol></div>
+      <div><span class="mlbl">Descriptions (${a.D.length})</span><ol>${a.D.map(d => `<li>${esc(dki(d))}${lim(d, 90)}</li>`).join('')}</ol></div></div></div>`).join('');
+  const kws = u.keywords.length ? `<div class="rvkw"><span class="mlbl">Searches this ad shows for (${u.keywords.length})</span>
+      <div>${u.keywords.map(k => `<span class="pill">${esc(k.k)}${staff && typeof k.vol === 'number' ? ` <small>${fmt(k.vol)}/mo</small>` : ''}</span>`).join('')}</div>
+      ${staff && u.keywords.some(k => typeof k.vol === 'number') ? '<p class="rvnote">Staff only: monthly searches as given in the plan. The client does not see these numbers.</p>' : ''}</div>` : '';
+  const status = r ? `<span class="rvstat ${r.status}">${r.status === 'approved' ? 'Approved' : 'Changes requested'} by ${esc(r.reviewer_name || '')} on ${dmy(r.reviewed_at)}</span>
+      ${r.comment ? `<p class="rvcomment">“${esc(r.comment)}”</p>` : ''}` : '<span class="rvstat open">Waiting for your review</span>';
+  const act = ro ? `<p class="rvnote">${previewOnly() ? 'Client view preview: the client approves from their own login.' : 'Staff can look here; the client approves from their own login.'}</p>`
+    : `<div class="rvact" data-rvunit="${i}">
+        <button class="btn primary" data-rvdo="approved">Approve</button>
+        <button class="btn" data-rvdo="changes">Request changes</button>
+        <div class="rvask" hidden><textarea rows="3" placeholder="What would you like changed?"></textarea>
+          <button class="btn primary" data-rvdo="send">Send to the team</button></div></div>`;
+  return `<section class="rvunit" id="rvu${i}"><div class="rvhead"><div><span class="mlbl">${staff && u.campaign ? esc(u.campaign) : u.ads.length ? 'Ad group' : 'Keywords'}</span><h3>${esc(u.group)}</h3></div>${status}</div>
+    ${kws}${ads || '<p class="rvnote">No ads in the plan for this group yet.</p>'}${act}</section>`;
+}
+function openReview(from){
+  closeReview();
+  const u = reviewUnits(), c = reviewCounts();
+  const wrap = document.createElement('div'); wrap.className = 'rvwrap'; wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-modal', 'true');
+  wrap.innerHTML = `<div class="rvbox"><div class="rvtop"><div><span class="mlbl">Preview</span><h2>Your keywords and ads</h2>
+      <p class="sub">${c.approved} of ${c.total} approved</p></div><button class="btn" data-rvclose="1" aria-label="Close">Close</button></div>
+    <nav class="rvnav">${u.map((x, i) => { const r = reviewFor(x.key);
+      return `<a href="#rvu${i}" data-rvjump="${i}" class="${r ? r.status : ''}">${esc(x.group)}</a>`; }).join('')}</nav>
+    <div class="rvbody">${u.map(rvUnitHtml).join('')}</div></div>`;
+  document.body.appendChild(wrap); document.documentElement.classList.add('rvopen');
+  /* Inside the hub the dashboard is an iframe sized to its content, so a fixed overlay would sit
+     at the top of a very tall frame. Pin it beside the button instead and scroll to it. */
+  if (EMBED && from) { wrap.classList.add('inline'); wrap.style.top = Math.max(0, from.getBoundingClientRect().top + scrollY - 40) + 'px'; wrap.scrollIntoView({ block: 'start' }); }
+  wrap.querySelector('[data-rvclose]').focus();
+}
+function closeReview(){ $('.rvwrap')?.remove(); document.documentElement.classList.remove('rvopen'); }
+async function sendReview(box, status){
+  if (previewOnly() || isStaff()) return toast('The client approves from their own login.', 'bad');
+  const u = reviewUnits()[Number(box.dataset.rvunit)], ta = box.querySelector('textarea');
+  if (status === 'changes' && !ta.value.trim()) { ta.focus(); return toast('Say what you would like changed.', 'bad'); }
+  box.querySelectorAll('button').forEach(b => b.disabled = true);
+  const { data, error } = await sb.rpc('md_ad_review_submit', { p_slug: CFG.slug, p_group: u.key, p_status: status,
+    p_comment: status === 'changes' ? ta.value : null, p_all_groups: reviewUnits().map(x => x.key) });
+  if (error) { box.querySelectorAll('button').forEach(b => b.disabled = false); return toast('Not saved: ' + error.message, 'bad'); }
+  const at = u.key; await loadReview(); renderAll();
+  const i = reviewUnits().findIndex(x => x.key === at); openReview(); $('#rvu' + i)?.scrollIntoView({ block: 'start' });
+  toast(data?.all_approved ? 'Everything is approved. Thank you, we will build it exactly like this.' : status === 'approved' ? 'Approved.' : 'Sent. The team will make the changes and come back to you.');
+}
+document.addEventListener('click', e => {
+  const o = e.target.closest('[data-rvopen]'); if (o) return openReview(o);
+  if (e.target.closest('[data-rvclose]') || e.target.classList.contains('rvwrap')) return closeReview();
+  const j = e.target.closest('[data-rvjump]'); if (j) { e.preventDefault(); return $('#rvu' + j.dataset.rvjump)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+  const d = e.target.closest('[data-rvdo]'); if (!d) return;
+  const box = d.closest('.rvact');
+  if (d.dataset.rvdo === 'changes') { const a = box.querySelector('.rvask'); a.hidden = false; return a.querySelector('textarea').focus(); }
+  sendReview(box, d.dataset.rvdo === 'send' ? 'changes' : 'approved');
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeReview(); });

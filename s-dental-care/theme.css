@@ -87,3 +87,12 @@ header.top{border-bottom:1px solid var(--bd)}
 .gateby .intrologo{height:24px}
 .gate-card.branded{max-width:400px}
 @media (max-width:640px){.teamin .r2rlogo{height:22px}.teamin .intrologo{height:24px}.teamin .introsep{padding-left:0;border-left:0}}
+
+/* Admin / Client view switch + client ad review (23/10/2026) */
+.vsbtn[aria-pressed="true"]{color:#fff}
+.rvbox,.rvtop{background:var(--s1)}
+.rvtop h2,.rvhead h3,.rvcta h3{font-family:var(--serif);font-weight:600;color:var(--navy-deep)}
+.rvwrap{background:rgba(3,36,107,.45)}
+.rvbox{box-shadow:var(--shadow);border-radius:var(--radius)}
+.rvstat.approved{background:#D1FAE5}
+.rvstat.changes{background:#FEF3C7}

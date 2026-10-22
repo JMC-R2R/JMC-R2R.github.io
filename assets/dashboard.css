@@ -326,3 +326,61 @@ html.embed nav.tabs, html.embed .monthbar{position:relative;top:auto}
 .gateby .r2rlogo{height:18px;width:auto}
 .gateby .intrologo{height:18px;width:auto}
 .gate-card.branded h1,.gate-card.branded > p:first-of-type{text-align:center}
+
+/* ---------- Admin / Client view switch (staff only, 23/10/2026) ---------- */
+.viewsw{display:inline-flex;border:1px solid var(--bd);border-radius:99px;padding:2px;gap:2px}
+.vsbtn{background:transparent;border:0;color:var(--ink3);border-radius:99px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.vsbtn[aria-pressed="true"]{background:var(--accent);color:#06212e}
+html.clientview header.top{box-shadow:inset 0 -3px 0 var(--warn)}
+@media (max-width:640px){.vsbtn{padding:5px 9px;font-size:11px}.topin .stamp{display:none}}
+
+/* ---------- client ad review: tab card, summary, pop-up ---------- */
+.rvcta{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.rvcta h3{font-size:16px;font-weight:800;margin:0 0 4px}
+.rvcta .sub{margin:0}
+.rvsum{margin-bottom:16px}
+.rvsum .callout{margin:10px 0 0}
+html.rvopen{overflow:hidden}
+.rvwrap{position:fixed;inset:0;z-index:95;background:rgba(10,10,13,.6);display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;overflow:auto}
+.rvwrap.inline{position:absolute;inset:auto 0 auto 0;background:transparent;padding:0 0 40px}
+.rvbox{background:var(--s1);border:1px solid var(--bd);border-radius:16px;width:100%;max-width:1000px;box-shadow:0 30px 70px rgba(0,0,0,.35)}
+.rvtop{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:20px 22px 12px;position:sticky;top:-28px;background:var(--s1);border-radius:16px 16px 0 0;z-index:2}
+.rvtop h2{font-size:21px;font-weight:800;margin:2px 0}
+.rvtop .sub{margin:0}
+.rvnav{display:flex;gap:6px;flex-wrap:wrap;padding:0 22px 14px;border-bottom:1px solid var(--bd)}
+.rvnav a{font-size:12.5px;padding:4px 11px;border:1px solid var(--bd);border-radius:99px;color:var(--ink2);cursor:pointer}
+.rvnav a.approved{border-color:var(--good);color:var(--good)}
+.rvnav a.changes{border-color:var(--warn);color:var(--warn)}
+.rvbody{padding:6px 22px 24px}
+.rvunit{padding:20px 0;border-bottom:1px solid var(--bd);scroll-margin-top:120px}
+.rvunit:last-child{border-bottom:0}
+.rvhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.rvhead h3{font-size:17px;font-weight:800;margin:2px 0 0}
+.rvstat{font-size:12px;font-weight:700;border-radius:99px;padding:3px 10px;background:var(--s3);color:var(--ink3)}
+.rvstat.approved{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+.rvstat.changes{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.rvcomment{font-size:13.5px;color:var(--ink2);margin:6px 0 0;width:100%}
+.rvkw{margin:0 0 14px}
+.rvkw .mlbl{display:block;margin-bottom:8px;font-size:9.5px}
+.rvkw .pill small{color:var(--ink3);font-size:11px}
+.rvad{display:grid;gap:12px;margin-bottom:14px}
+.rvnote{font-size:12px;color:var(--ink3);margin:6px 0 0}
+.rvlists{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.rvlists .mlbl{display:block;margin-bottom:6px;font-size:9.5px}
+.rvlists ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:13.5px;color:var(--ink2)}
+.rvover{font-size:10.5px;font-weight:700;color:var(--bad)}
+.rvact{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;margin-top:4px}
+.rvask{flex-basis:100%;display:grid;gap:8px}
+.rvask[hidden]{display:none}
+.rvask .btn{justify-self:start}
+.rvask textarea{width:100%;background:var(--ground);border:1px solid var(--bd);color:var(--ink);border-radius:9px;padding:10px 12px;font:inherit;font-size:14px}
+@media (max-width:640px){.rvlists{grid-template-columns:1fr}.rvbox{border-radius:12px}.rvwrap{padding:10px 8px}}
+/* Google search ad mock-up: always white, as it is on Google, whatever the dashboard theme */
+.gad{background:#fff;color:#202124;border:1px solid #dadce0;border-radius:12px;padding:14px 16px;max-width:640px;font-family:Arial,Helvetica,sans-serif}
+.gad-sp{font-size:12px;font-weight:700;color:#202124}
+.gad-site{display:flex;align-items:center;gap:10px;margin:8px 0 6px}
+.gad-site b{display:block;font-size:14px;font-weight:400;color:#202124}
+.gad-site span{display:block;font-size:12px;color:#4d5156}
+.gad-fav{width:26px;height:26px;border-radius:50%;background:#e8f0fe;color:#1a0dab;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none}
+.gad-h{font-size:20px;line-height:1.3;color:#1a0dab;margin:2px 0 4px}
+.gad-d{font-size:14px;line-height:1.58;color:#4d5156}
