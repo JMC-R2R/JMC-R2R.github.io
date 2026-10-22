@@ -312,3 +312,17 @@ html.embed nav.tabs, html.embed .monthbar{position:relative;top:auto}
   .kvt td,.kvt th{word-break:break-word}
   .admflag{border-radius:10px}
 }
+
+/* Introducing partner + sign-in logos (opt-in via CFG.introducer / CFG.gateLogos, 23/10/2026) */
+.teamin .introsep{margin-left:4px}
+.teamin .intrologo{height:20px;width:auto;display:block}
+.introname{font-weight:700;font-size:13px}
+.gatebrand{display:flex;justify-content:center;margin:0 0 18px}
+.gatebrand .gclient{height:56px;width:auto;max-width:220px;object-fit:contain}
+.gateby{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+  margin:24px -32px -36px;padding:14px 20px;border-top:1px solid var(--bd);background:var(--s1);
+  border-radius:0 0 16px 16px}
+.gateby .mlbl{font-size:9px}
+.gateby .r2rlogo{height:18px;width:auto}
+.gateby .intrologo{height:18px;width:auto}
+.gate-card.branded h1,.gate-card.branded > p:first-of-type{text-align:center}

@@ -1406,6 +1406,21 @@ async function admJobDone(id){
 }
 
 /* ---------------------------------------------------------------- shell + boot */
+/* Introducing partner (CFG.introducer, opt-in): the agency that brought us the client, shown
+   beside Ready to Rank in the delivered-by strip, the footer and the sign-in card.
+   S Dental Care / Savvas Studio first, 23/10/2026. */
+function introHtml(){
+  const p = CFG.introducer; if (!p) return '';
+  return `<span class="mlbl introsep">${esc(p.label || 'In partnership with')}</span>` + (p.logo
+    ? `<img class="intrologo" src="${esc(p.logo)}" alt="${esc(p.name)}">` : `<span class="introname">${esc(p.name)}</span>`);
+}
+function gateBrand(){
+  const logoSrc = CFG.logo && (CFG.logo.includes('/') ? CFG.logo : '../../assets/' + CFG.logo);
+  return `<div class="gatebrand">${logoSrc ? `<img class="gclient" src="${logoSrc}" alt="${esc(CFG.name)}">` : ''}</div>`;
+}
+function gateBy(){
+  return `<div class="gateby"><span class="mlbl">Delivered by</span>${CFG.r2rLogo ? `<img class="r2rlogo" src="${CFG.r2rLogo}" alt="Ready to Rank">` : 'Ready to Rank'}${introHtml()}</div>`;
+}
 function renderShell(){
   document.documentElement.style.setProperty('--accent', CFG.accent || '#17B4F0');
   if (EMBED) document.documentElement.classList.add('embed');
@@ -1422,7 +1437,7 @@ function renderShell(){
   <div class="team"><div class="wrap teamin">
     <span class="mlbl">Delivered by</span>${CFG.r2rLogo
       ? `<img class="r2rlogo" src="${CFG.r2rLogo}" alt="Ready to Rank">`
-      : '<span style="font-weight:700;font-size:13px">Ready to Rank</span>'}
+      : '<span style="font-weight:700;font-size:13px">Ready to Rank</span>'}${introHtml()}
     <span class="spacer"></span><span class="mlbl" id="monthlabel"></span>
   </div></div>
   <nav class="tabs"><div class="wrap navrow"><div class="tabsin" id="tabs" role="tablist"></div>
@@ -1430,7 +1445,7 @@ function renderShell(){
   <div class="monthbar"><div class="wrap monthin" id="monthchips"></div></div>
   <main><div class="wrap" id="panel"></div></main>
   <footer class="foot"><div class="wrap footin">
-    <span>${CFG.name} · prepared by Ready to Rank</span>
+    <span>${CFG.name} · prepared by Ready to Rank${CFG.introducer ? ` in partnership with ${esc(CFG.introducer.name)}` : ''}</span>
     <span>Sources: ${[enabled('seo') && 'SE Ranking · Google Search Console · GA4', enabled('gbp') && 'Google Business Profile',
       enabled('paid_ads') && 'Google Ads', (enabled('map_grid') || enabled('geo')) && 'DataForSEO'].filter(Boolean).join(' · ')}</span>
   </div></footer>`;
@@ -1477,8 +1492,8 @@ function renderShell(){
    still use it. shouldCreateUser:false — a code is only ever sent to an existing login. */
 function renderGate(msg){
   document.documentElement.style.setProperty('--accent', CFG.accent || '#17B4F0');
-  const card = (inner) => { document.body.innerHTML = `<div class="gate"><form class="gate-card" id="gf">
-    <h1>${CFG.name}</h1>${inner}<div class="gate-err">${msg || ''}</div></form></div>`; msg = ''; };
+  const card = (inner) => { document.body.innerHTML = `<div class="gate"><form class="gate-card${CFG.gateLogos ? ' branded' : ''}" id="gf">
+    ${CFG.gateLogos ? gateBrand() : ''}<h1>${CFG.name}</h1>${inner}<div class="gate-err">${msg || ''}</div>${CFG.gateLogos ? gateBy() : ''}</form></div>`; msg = ''; };
   const err = t => $('.gate-err').textContent = t;
 
   const askEmail = () => {

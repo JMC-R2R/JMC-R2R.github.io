@@ -73,3 +73,17 @@ header.top{border-bottom:1px solid var(--bd)}
    flush on the window edge. Restore the 22px gutter on this client's light frame. */
 .topin,.teamin,.monthin{padding-left:22px;padding-right:22px}
 .kvt th{letter-spacing:0}
+
+/* ---------- co-delivery: Ready to Rank + Savvas Studio (Jose 23/10/2026) ----------
+   The delivered-by strip carries both agencies at a readable size, with a Ready to Rank
+   blue rule so the agency stays visible inside the clinic's colours. */
+.team{background:var(--s1);border-top:3px solid var(--r2r)}
+.teamin{padding-top:12px;padding-bottom:12px;gap:16px}
+.teamin .r2rlogo{height:28px}
+.teamin .intrologo{height:30px}
+.teamin .introsep{padding-left:16px;border-left:1px solid var(--bd)}
+.gateby{background:var(--ground)}
+.gateby .r2rlogo{height:22px}
+.gateby .intrologo{height:24px}
+.gate-card.branded{max-width:400px}
+@media (max-width:640px){.teamin .r2rlogo{height:22px}.teamin .intrologo{height:24px}.teamin .introsep{padding-left:0;border-left:0}}
