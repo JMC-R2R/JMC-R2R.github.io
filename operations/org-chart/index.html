@@ -72,7 +72,7 @@ main{padding-top:28px;}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0;}
 .panel h2{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
 .panel.cs{margin-top:14px;}
-.cs-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:14px;margin-top:14px;}
+.ops-cols{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-top:14px;}
 .col h3{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
   margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line-soft);}
 .col .sub{font-size:11.5px;color:var(--faint);margin:-4px 0 10px;}
@@ -90,8 +90,6 @@ main{padding-top:28px;}
 .seat .meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
 .chip{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-radius:3px;padding:2px 6px;
   border:1px solid var(--line);color:var(--faint);}
-.chip.spreadme{color:var(--violet);border-color:rgba(169,139,255,.4);}
-.chip.contractor{color:var(--muted);}
 .chip.starting{color:var(--green);border-color:rgba(43,217,166,.45);}
 .chip.vacant{color:var(--amber);border-color:rgba(245,176,46,.45);}
 .chip.planned{color:var(--accent);border-color:rgba(23,180,240,.45);}
@@ -127,7 +125,8 @@ dd{color:var(--text);}
   border-radius:7px;padding:11px 17px;font-size:13px;z-index:30;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:92vw;}
 
 @media (max-width:1100px){.fn-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
-@media (max-width:820px){.cs-cols{grid-template-columns:1fr;}}
+@media (max-width:1100px){.ops-cols{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media (max-width:820px){.ops-cols{grid-template-columns:1fr;}}
 @media (max-width:620px){
   .wrap{padding:0 16px;} .mast .wrap{padding:24px 16px 18px;}
   .fn-grid{grid-template-columns:1fr;} .pods{grid-template-columns:1fr;}
@@ -204,7 +203,6 @@ const auDate = d => { if (!d) return ""; const [y,m,dd] = String(d).slice(0,10).
 // Fixed keys: the database checks these values.
 const FUNCTIONS = ["CEO","Finance","HR","IT / Systems","Sales","Marketing","Client Services"];
 const STATUSES  = ["filled","starting","vacant","planned"];
-const TEAMS     = ["R2R","SpreadMe","Contractor"];
 const OFFSHORE_HINT = "Location is blank where it is not known. Never guess it.";
 
 let ROWS = [], VIEW = "today", CAN_EDIT = false, OPEN_ID = null;
@@ -218,7 +216,6 @@ const byId    = id => ROWS.find(r => r.seat_id === id);
 function seatCard(r) {
   const name = r.person_name || (r.status === "planned" ? "Planned" : "Vacant");
   const chips = [];
-  if (r.team !== "R2R") chips.push(`<span class="chip ${r.team.toLowerCase()}">${esc(r.team)}</span>`);
   if (r.status !== "filled") chips.push(`<span class="chip ${r.status}">${esc(r.status)}</span>`);
   if (r.location) chips.push(`<span class="chip">${esc(r.location)}</span>`);
   return `<button type="button" class="seat ${r.status}" data-seat="${esc(r.seat_id)}">
@@ -242,26 +239,14 @@ function render() {
   html += `<div class="fn-grid">` + fns.map(r =>
     `<section class="panel"><h2>${esc(r.function)}</h2>${tree(r)}</section>`).join("") + `</div>`;
 
+  // Operations: the COO on top, one column per department (the seat's unit), like the agency board.
   cs.forEach(head => {
-    const kids = kidsOf(head.seat_id);
-    const am  = kids.filter(k => (k.unit || "").startsWith("Account"));
-    const del = kids.filter(k => !(k.unit || "").startsWith("Account"));
-    // Delivery: a seat with its own reports is a pod; seats without are single-person pods.
-    const pods = del.map(d => {
-      const team = kidsOf(d.seat_id);
-      if (!team.length) return `<div class="pod"><h4>${esc(podName(d))}</h4>${seatCard(d)}</div>`;
-      const groups = {};
-      team.forEach(t => (groups[podName(t)] ||= []).push(t));
-      return `<div class="pod" style="grid-column:1/-1"><h4>${esc(d.role_title)}</h4>${seatCard(d)}
-        <div class="pods" style="margin-top:10px">${Object.entries(groups).map(([g, ts]) =>
-          `<div class="pod"><h4>${esc(g)}</h4><div class="stack">${ts.map(tree).join("")}</div></div>`).join("")}</div></div>`;
-    }).join("");
-    html += `<section class="panel cs"><h2>Client Services</h2>
+    const groups = {};
+    kidsOf(head.seat_id).forEach(k => (groups[k.unit || "Operations"] ||= []).push(k));
+    html += `<section class="panel cs"><h2>Operations</h2>
       <div style="max-width:320px">${seatCard(head)}</div>
-      <div class="cs-cols">
-        <div class="col"><h3>Account management</h3><p class="sub">Every client conversation</p><div class="stack">${am.map(tree).join("")}</div></div>
-        <div class="col"><h3>Delivery</h3><p class="sub">Behind the scenes, never client-facing</p><div class="pods">${pods}</div></div>
-      </div></section>`;
+      <div class="ops-cols">${Object.entries(groups).map(([g, ks]) =>
+        `<div class="col"><h3>${esc(g)}</h3><div class="stack">${ks.map(tree).join("")}</div></div>`).join("")}</div></section>`;
   });
   $("chart").innerHTML = html;
 
@@ -281,7 +266,6 @@ function render() {
   document.querySelectorAll(".seat").forEach(b => b.addEventListener("click", () => openSeat(b.dataset.seat)));
 }
 
-function podName(r) { const u = r.unit || ""; return u.includes("·") ? u.split("·").pop().trim() : (u || r.role_title); }
 
 // ------------------------------------------------------------------ drawer
 
@@ -303,7 +287,6 @@ function openSeat(id) {
     <dt>Status</dt><dd>${esc(r.status)}${r.target_date ? " · target " + auDate(r.target_date) : ""}</dd>
     <dt>Reports to</dt><dd>${boss ? esc(boss.person_name || boss.role_title) : "—"}</dd>
     <dt>Direct reports</dt><dd>${reports.length ? reports.map(k => esc(k.person_name || k.role_title + " (" + k.status + ")")).join("<br>") : "—"}</dd>
-    <dt>Team</dt><dd>${esc(r.team)}</dd>
     <dt>Location</dt><dd>${esc(r.location || "Not recorded")}</dd>
     ${r.notes ? `<dt>Notes</dt><dd>${esc(r.notes)}</dd>` : ""}
   </dl>`;
@@ -326,11 +309,11 @@ function editForm(r) {
     <label class="fl">Role</label><input class="in" name="role_title" required value="${v("role_title")}">
     <div class="row2">
       <div><label class="fl">Status</label><select class="in" name="status">${opts(STATUSES, r ? r.status : "planned")}</select></div>
-      <div><label class="fl">Team</label><select class="in" name="team">${opts(TEAMS, r ? r.team : "R2R")}</select></div>
+      <div></div>
     </div>
     <div class="row2">
       <div><label class="fl">Function</label><select class="in" name="function">${opts(FUNCTIONS, r ? r.function : "Client Services")}</select></div>
-      <div><label class="fl">Unit</label><input class="in" name="unit" value="${v("unit")}" placeholder="e.g. Delivery · SEO pod"></div>
+      <div><label class="fl">Unit</label><input class="in" name="unit" value="${v("unit")}" placeholder="e.g. SEO, Paid Media"></div>
     </div>
     <label class="fl">Reports to</label><select class="in" name="reports_to"><option value="">— nobody (CEO only)</option>${bosses}</select>
     <div class="row2">
@@ -347,7 +330,7 @@ function toast(t) { const el = $("toast"); el.textContent = t; el.classList.remo
 
 async function save(r, f) {
   const g = k => { const x = f.elements[k].value.trim(); return x === "" ? null : x; };
-  const row = { person_name:g("person_name"), role_title:g("role_title"), status:g("status"), team:g("team"),
+  const row = { person_name:g("person_name"), role_title:g("role_title"), status:g("status"), team:"R2R",
     function:g("function"), unit:g("unit"), reports_to:g("reports_to"), location:g("location"),
     target_date:g("target_date"), notes:g("notes") };
   const hasPerson = !!row.person_name, needsPerson = ["filled","starting"].includes(row.status);
