@@ -72,6 +72,9 @@ main{padding-top:28px;}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0;}
 .panel h2{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
 .panel.cs{margin-top:14px;}
+.ops-top{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;}
+.ops-top>.seat{flex:1 1 260px;max-width:360px;}
+.hub-note{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);}
 .ops-cols{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-top:14px;}
 .col h3{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
   margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line-soft);}
@@ -161,7 +164,7 @@ dd{color:var(--text);}
         <span class="who"><span id="whoName"></span><button id="signout" type="button">Sign out</button></span>
       </div>
       <h1>Who reports <em>to whom</em></h1>
-      <p class="lede">One CEO, functions underneath. Account managers own every client conversation; delivery works behind them and never talks to clients. Click any seat for detail.</p>
+      <p class="lede">One CEO, functions underneath. Account management sits in the middle: clients, delivery and content all go through it, so nobody talks past each other. Click any seat for detail.</p>
       <div class="bar">
         <div class="seg" role="tablist">
           <button type="button" data-view="today" class="on">Today</button>
@@ -239,14 +242,23 @@ function render() {
   html += `<div class="fn-grid">` + fns.map(r =>
     `<section class="panel"><h2>${esc(r.function)}</h2>${tree(r)}</section>`).join("") + `</div>`;
 
-  // Operations: the COO on top, one column per department (the seat's unit), like the agency board.
-  cs.forEach(head => {
+  // Operations: the COO on top. The hub (the seat whose reports span several departments) sits in the
+  // middle, and every department under it gets a column, like the agency board.
+  const cols = ks => {
     const groups = {};
-    kidsOf(head.seat_id).forEach(k => (groups[k.unit || "Operations"] ||= []).push(k));
+    ks.forEach(k => (groups[k.unit || "Operations"] ||= []).push(k));
+    return `<div class="ops-cols">${Object.entries(groups).map(([g, gs]) =>
+      `<div class="col"><h3>${esc(g)}</h3><div class="stack">${gs.map(tree).join("")}</div></div>`).join("")}</div>`;
+  };
+  cs.forEach(head => {
+    const kids = kidsOf(head.seat_id);
+    const hub = kids.find(k => new Set(kidsOf(k.seat_id).map(x => x.unit || "")).size > 1);
+    const beside = kids.filter(k => k !== hub);
     html += `<section class="panel cs"><h2>Operations</h2>
       <div style="max-width:320px">${seatCard(head)}</div>
-      <div class="ops-cols">${Object.entries(groups).map(([g, ks]) =>
-        `<div class="col"><h3>${esc(g)}</h3><div class="stack">${ks.map(tree).join("")}</div></div>`).join("")}</div></section>`;
+      <div class="ops-top">${beside.map(seatCard).join("")}${hub ? seatCard(hub) : ""}</div>
+      ${hub ? `<p class="hub-note">Clients, delivery and content all go through ${esc(hub.person_name || hub.role_title)}</p>${cols(kidsOf(hub.seat_id))}` : cols(beside)}
+    </section>`;
   });
   $("chart").innerHTML = html;
 
