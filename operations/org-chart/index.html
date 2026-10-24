@@ -73,7 +73,7 @@ main{padding-top:28px;}
 .panel h2{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
 .panel.cs{margin-top:14px;}
 .ops-top{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;}
-.ops-top>.seat{flex:1 1 260px;max-width:360px;}
+.ops-top>.seat,.ops-top>div{flex:1 1 260px;max-width:360px;}
 .hub-note{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);}
 .ops-cols{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-top:14px;}
 .col h3{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
@@ -239,32 +239,49 @@ function render() {
   const fns = top.filter(r => r.function !== "Client Services");
 
   let html = `<div class="ceo-row">${seatCard(ceo)}</div><div class="stem"></div>`;
-  html += `<div class="fn-grid">` + fns.map(r =>
-    `<section class="panel"><h2>${esc(r.function)}</h2>${tree(r)}</section>`).join("") + `</div>`;
+  // One panel per function, even when several seats in it report straight to the CEO.
+  const byFn = {};
+  fns.forEach(r => (byFn[r.function] ||= []).push(r));
+  html += `<div class="fn-grid">` + Object.entries(byFn).map(([f, rs]) =>
+    `<section class="panel"><h2>${esc(f)}</h2><div class="stack">${rs.map(tree).join("")}</div></section>`).join("") + `</div>`;
 
-  // Operations: the COO on top. The hub (the seat whose reports span several departments) sits in the
-  // middle, and every department under it gets a column, like the agency board.
+  // Operations: the COO on top, then the chain down to the hub (the first seat whose reports span
+  // several departments), then one column per department under the hub, like the agency board.
   const cols = ks => {
     const groups = {};
     ks.forEach(k => (groups[k.unit || "Operations"] ||= []).push(k));
     return `<div class="ops-cols">${Object.entries(groups).map(([g, gs]) =>
       `<div class="col"><h3>${esc(g)}</h3><div class="stack">${gs.map(tree).join("")}</div></div>`).join("")}</div>`;
   };
+  const isHub = r => new Set(kidsOf(r.seat_id).map(x => x.unit || "")).size > 1;
+  const pathToHub = r => {
+    for (const k of kidsOf(r.seat_id)) {
+      if (isHub(k)) return [k];
+      const p = pathToHub(k);
+      if (p) return [k, ...p];
+    }
+    return null;
+  };
   cs.forEach(head => {
-    const kids = kidsOf(head.seat_id);
-    const hub = kids.find(k => new Set(kidsOf(k.seat_id).map(x => x.unit || "")).size > 1);
-    const beside = kids.filter(k => k !== hub);
+    const path = pathToHub(head) || [];
+    const hub = path[path.length - 1];
+    let chain = "", parent = head;
+    path.forEach(node => {
+      const sibs = kidsOf(parent.seat_id).filter(k => k !== node);
+      chain += `<div class="ops-top">${sibs.map(tree).join("")}${seatCard(node)}</div>`;
+      parent = node;
+    });
     html += `<section class="panel cs"><h2>Operations</h2>
-      <div style="max-width:320px">${seatCard(head)}</div>
-      <div class="ops-top">${beside.map(seatCard).join("")}${hub ? seatCard(hub) : ""}</div>
-      ${hub ? `<p class="hub-note">Clients, delivery and content all go through ${esc(hub.person_name || hub.role_title)}</p>${cols(kidsOf(hub.seat_id))}` : cols(beside)}
+      <div style="max-width:320px">${seatCard(head)}</div>${chain}
+      ${hub ? `<p class="hub-note">Clients, delivery and content all go through ${esc(hub.person_name || hub.role_title)}</p>${cols(kidsOf(hub.seat_id))}` : cols(kidsOf(head.seat_id))}
     </section>`;
   });
   $("chart").innerHTML = html;
 
   const shown = ROWS.filter(visible);
   const n = s => shown.filter(r => r.status === s).length;
-  const people = shown.filter(r => r.person_name);
+  // One person can hold two seats; count people, not seats.
+  const people = [...new Map(shown.filter(r => r.person_name).map(r => [r.person_name, r])).values()];
   const onshore = people.filter(r => r.location === "Melbourne").length;
   $("stats").innerHTML = [
     [n("filled"), "filled"], [n("starting"), "starting"], [n("vacant"), "vacant"],
