@@ -143,6 +143,14 @@ td input[type=number]{width:74px;font-size:13px;padding:4px 6px}
 .ov-row{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line-soft);font-size:14px}
 .ov-row:last-child{border-bottom:0}
 .ov-row .m{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);text-align:right}
+.csv-up{border-top:1px solid var(--line);padding-top:10px;margin-top:auto}
+.csv-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.csv-head span{display:flex;flex-direction:column;gap:2px;font-size:14px;min-width:0}
+.csv-head small{font-size:12px;color:var(--ink-2)}
+.csv-head .btn{white-space:nowrap;flex:none}
+.csv-msg{font-size:13px;color:var(--ink-2);margin-top:8px}
+.csv-msg:empty{display:none}
+.csv-msg .btn{margin:8px 8px 0 0}
 .ov-row .ovb{font-family:var(--sans);font-weight:800;font-size:15px;text-align:left}
 .ov-row small{grid-column:1/-1;color:var(--ink-3);font-size:12px}
 .ov-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;grid-column:1/-1}
@@ -385,7 +393,12 @@ table.cr{min-width:1180px}
 <section aria-label="Detail at a glance" style="margin-top:22px">
   <div class="ov-grid">
     <div class="ov-card"><h3>Closest postcodes to launch<button type="button" data-go="launch">All postcodes →</button></h3><div id="ovPc"></div></div>
-    <div class="ov-card"><h3>Where enquiries come from<button type="button" data-go="launch">Detail →</button></h3><div id="ovSrc"></div></div>
+    <div class="ov-card"><h3>Where enquiries come from<button type="button" data-go="launch">Detail →</button></h3><div id="ovSrc"></div>
+      <div class="csv-up" id="csvUp">
+        <div class="csv-head"><span><b>Website form CSV</b><small id="csvLast">No uploads yet.</small></span>
+          <label class="btn" for="csvFile">Upload CSV</label><input type="file" id="csvFile" accept=".csv,text/csv" hidden></div>
+        <div id="csvMsg" class="csv-msg" role="status" aria-live="polite"></div>
+      </div></div>
     <div class="ov-card"><h3>What's working in the ads<button type="button" data-go="ads">Ads detail →</button></h3><div id="ovWin"></div></div>
     <div class="ov-card"><h3>Enquiries per day, last 14 days<button type="button" data-go="launch">Detail →</button></h3><div id="ovTrend"></div></div>
   </div>
@@ -503,7 +516,7 @@ const ADS={"Video Ads 1":["Who's coming when your home needs help?","Response ga
 function adMeta(n){const m=String(n).match(/\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*$/);if(ADS[n])return{hook:ADS[n][0],concept:ADS[n][1],meta:n};if(m)return{hook:m[2],concept:m[1],meta:n};return{hook:n,concept:"Unlabelled",meta:""}}
 const DEF={tNew:300,tNb:200,cost:null,price:null,conv:20,pace:1};
 const $=id=>document.getElementById(id);
-let settings={...DEF}, scen={conv:DEF.conv,pace:DEF.pace}, leadsDoc=null, pcs={}, db=null, canWrite=true, sortK="prog", sortDir=-1;
+let settings={...DEF}, scen={conv:DEF.conv,pace:DEF.pace}, leadsDoc=null, pcs={}, db=null, canWrite=true, sortK="prog", sortDir=-1, webCsv=null;
 
 function fmtDate(d){return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();}
 function isVic(p){return /^3\d{3}$/.test(p);}
@@ -711,6 +724,7 @@ function renderOverview(){
   const cnt={};rowsL.forEach(r=>cnt[r.s]=(cnt[r.s]||0)+1);
   Object.entries(cnt).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{const d=document.createElement("div");d.className="ov-row";d.innerHTML='<span></span><span class="m"></span><div class="ov-bar"><i style="background:var(--r2r)"></i></div>';
     d.children[0].textContent=SN[k]||k;d.children[1].textContent=v+" · "+Math.round(v/total*100)+"%";d.children[2].firstChild.style.width=(v/total*100)+"%";src.appendChild(d)});
+  csvLastLine();
   // what's working
   const W=$("ovWin");W.innerHTML="";
   const win=(lab,val,sub)=>{const d=document.createElement("div");d.className="ov-row";d.innerHTML='<span class="ovb"></span><span class="m"></span><small></small>';d.children[0].textContent=lab;d.children[1].textContent=val;d.children[2].textContent=sub;W.appendChild(d)};
@@ -856,7 +870,11 @@ function makeDb(){
   let cache=null; const subs=[];
   const snap=v=>({exists:v!=null,data:()=>v});
   const fire=()=>subs.forEach(f=>{try{f()}catch(e){}});
-  async function load(){ const {data,error}=await sb.rpc("stc_launch_load"); if(error) throw error; cache=data||{docs:{},postcodes:{}}; cache.docs=cache.docs||{}; cache.postcodes=cache.postcodes||{}; fire(); }
+  async function load(){ const {data,error}=await sb.rpc("stc_launch_load"); if(error) throw error; cache=data||{docs:{},postcodes:{}}; cache.docs=cache.docs||{}; cache.postcodes=cache.postcodes||{};
+    /* Website form CSV uploads count everywhere a lead counts, so fold them into the leads doc here. */
+    const w=cache.docs.webcsv; webCsv=w||null;
+    if(w&&w.rows&&w.rows.length){ const L=cache.docs.leads||{asOf:null,rows:[]}; cache.docs.leads={...L,rows:(L.rows||[]).concat(w.rows.map(({d,p,s})=>({d,p,s})))}; }
+    fire(); }
   function get(p){ const [c,id]=p.split("/"); return c==="config"?cache.docs[id]:c==="postcodes"?cache.postcodes[id]:undefined; }
   return { load,
     doc:p=>({ onSnapshot:(cb)=>{ const f=()=>cb(snap(get(p))); subs.push(f); if(cache) f(); return()=>{}; },
@@ -920,6 +938,67 @@ async function boot(){
   /* Pick up the 7am refresh without a reload. */
   setInterval(()=>{ if(!document.hidden) db.load().catch(()=>setState("Lost connection. Reload the page.")); },10*60*1000);
 }
+/* ---- Website form CSV upload ----
+   Read in the browser. Only date, postcode and a short SHA-256 of the email leave the page,
+   so no personal details are stored. Entries on or before 14/10/2026 are already counted from
+   the first export and are skipped. */
+const CSV_CUTOFF="2026-10-14";
+function csvLastLine(){ const el=$("csvLast"); if(!el) return; const u=webCsv&&webCsv.lastUpload;
+  const n=webCsv&&webCsv.rows?webCsv.rows.length:0;
+  el.textContent=u?n+" enquir"+(n===1?"y":"ies")+" from uploads. Last upload "+dmy(String(u.at).slice(0,10))+" by "+u.by+" (+"+u.added+")":"No uploads yet. Entries to 14/10 are already counted."; }
+function parseCsv(t){ const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){ if(c==='"'){ if(t[i+1]==='"'){f+='"';i++} else q=false } else f+=c; }
+    else if(c==='"') q=true; else if(c===","){row.push(f);f=""} else if(c==="\n"||c==="\r"){ if(c==="\r"&&t[i+1]==="\n") i++; row.push(f);f=""; if(row.some(x=>x.trim()!=="")) rows.push(row); row=[] }
+    else f+=c; }
+  row.push(f); if(row.some(x=>x.trim()!=="")) rows.push(row); return rows; }
+/* Webflow exports "10/14/2026 2:31:30 am" in UTC, month first. A file where any first part is
+   over 12 must be day first. ISO dates are accepted too. Returns the Melbourne calendar date. */
+function csvDates(vals){
+  const dayFirst=vals.some(v=>{const m=/^(\d{1,2})\/(\d{1,2})\/\d{4}/.exec(v.trim());return m&&+m[1]>12});
+  const mel=new Intl.DateTimeFormat("en-CA",{timeZone:"Australia/Melbourne",year:"numeric",month:"2-digit",day:"2-digit"});
+  return vals.map(v=>{ v=v.trim(); let dt=null;
+    const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([ap]\.?m\.?)?)?/i.exec(v);
+    if(m){ let [mo,da]=dayFirst?[+m[2],+m[1]]:[+m[1],+m[2]]; let h=+(m[4]||0); const ap=(m[7]||"").toLowerCase();
+      if(ap.startsWith("p")&&h<12) h+=12; if(ap.startsWith("a")&&h===12) h=0;
+      dt=new Date(Date.UTC(+m[3],mo-1,da,h,+(m[5]||0),+(m[6]||0))); }
+    else if(/^\d{4}-\d{2}-\d{2}/.test(v)){ dt=new Date(/[zZ]|[+-]\d{2}:?\d{2}$/.test(v)||v.length<=10?v:v.replace(" ","T")+"Z"); }
+    return dt&&!isNaN(dt)?mel.format(dt):null; }); }
+async function sha(s){ const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,32); }
+function csvSay(html){ $("csvMsg").innerHTML=html; }
+$("csvFile").addEventListener("change",async e=>{
+  const file=e.target.files[0]; e.target.value=""; if(!file) return;
+  try{
+    const rows=parseCsv((await file.text()).replace(/^﻿/,""));
+    if(rows.length<2) return csvSay("That file has no entries.");
+    const hd=rows[0].map(h=>h.trim().toLowerCase());
+    const iD=hd.findIndex(h=>/^(date|submitted|submission date|created|timestamp|time)/.test(h));
+    const iP=hd.findIndex(h=>/post\s*code|postal|zip/.test(h));
+    const iE=hd.findIndex(h=>/e-?mail/.test(h));
+    if(iD<0||iP<0||iE<0) return csvSay("Couldn't find Date, Postcode and Email columns in that file. Use the website form export.");
+    const body=rows.slice(1); const ds=csvDates(body.map(r=>r[iD]||""));
+    const seen=new Set((webCsv&&webCsv.rows||[]).map(r=>r.h)); const out=[]; let old=0,bad=0,dup=0,noPc=0;
+    for(let i=0;i<body.length;i++){ const r=body[i], d=ds[i], em=(r[iE]||"").trim().toLowerCase();
+      if(!d||!em){bad++;continue} if(d<=CSV_CUTOFF){old++;continue}
+      const h=await sha(em); if(seen.has(h)){dup++;continue} seen.add(h);
+      const m=(r[iP]||"").match(/\d{4}/g); const p=m?m[m.length-1]:""; if(!p) noPc++;
+      out.push({d,p,h}); }
+    const parts=[body.length+" entries in "+file.name+"."];
+    if(old) parts.push(old+" dated 14/10 or earlier are already counted.");
+    if(dup) parts.push(dup+" already uploaded.");
+    if(bad) parts.push(bad+" skipped (no date or email).");
+    const show=extra=>{ csvSay(parts.map(()=>"<div></div>").join("")+(extra||"")); [...$("csvMsg").querySelectorAll("div")].forEach((c,i)=>c.textContent=parts[i]); };
+    if(!out.length){ parts.push("Nothing new to add."); return show(); }
+    parts.push(out.length+" new enquir"+(out.length===1?"y":"ies")+" to add"+(noPc?" ("+noPc+" without a postcode)":"")+".");
+    show('<button type="button" class="btn" id="csvGo">Add '+out.length+'</button><button type="button" class="btn" id="csvNo">Cancel</button>');
+    $("csvNo").onclick=()=>csvSay("");
+    $("csvGo").onclick=async()=>{ $("csvGo").disabled=true; csvSay("Saving…");
+      const {data,error}=await sb.rpc("stc_launch_save_webcsv",{p_rows:out,p_file:file.name});
+      if(error) return csvSay("Couldn't save: "+(error.code==="42501"?"this email can't upload.":"please try again."));
+      await db.load(); csvSay("Added "+data.added+" enquir"+(data.added===1?"y":"ies")+(data.duplicates?" ("+data.duplicates+" were already there)":"")+"."); };
+  }catch(err){ csvSay("Couldn't read that file. Is it a CSV export?"); }
+});
 boot();
 })();
 </script>
