@@ -155,8 +155,22 @@ td input[type=number]{width:74px;font-size:13px;padding:4px 6px}
 .ov-row small{grid-column:1/-1;color:var(--ink-3);font-size:12px}
 .ov-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;grid-column:1/-1}
 .ov-bar i{display:block;height:100%;background:var(--stc)}
-.rng-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:18px}
-.rng-bar .note{margin:0}
+.ov-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.ov-top h2{font-size:21px;font-weight:800;letter-spacing:-.01em;margin:0}
+.ov-meta{margin:8px 0 12px;font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+#pn-overview .ov-sum{font-size:17px;max-width:70ch;color:var(--ink-2)}
+#pn-overview .ov-sum strong{color:var(--ink)}
+#ovK{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:16px}
+#ovK .kpi .s{font-size:13px;color:var(--ink-3)}
+.plat{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px}
+.pl{border:1px solid var(--line);border-radius:6px;padding:14px 16px;background:var(--panel-2);display:flex;flex-direction:column;gap:2px}
+.pl.win{border-color:var(--ok)}
+.pl .pn{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:14px}
+.pl .pn em{font-style:normal;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ok)}
+.pl .plv{font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1.15;margin-top:6px}
+.pl .plv small{font-size:13px;font-weight:500;color:var(--ink-3);margin-left:4px}
+.pl .ln{display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-2);border-top:1px solid var(--line-soft);padding-top:6px;margin-top:6px}
+.pl .ln b{font-family:var(--mono);font-weight:400;color:var(--ink)}
 .rng{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
 .rng button{font:inherit;font-weight:700;font-size:13px;background:none;border:0;border-right:1px solid var(--line);color:var(--ink-2);padding:8px 14px;cursor:pointer}
 .rng button:last-child{border-right:0}
@@ -395,16 +409,16 @@ table.cr{min-width:1180px}
 </div></div>
 <div role="tabpanel" id="pn-overview" aria-labelledby="tb-overview">
 <section aria-labelledby="ov-h">
-  <div class="sec-head"><h2 id="ov-h">At a glance</h2><p id="ovAsOf"></p></div>
+  <div class="ov-top"><h2 id="ov-h">At a glance</h2><div class="rng" role="group" aria-label="Date range" id="rng"><button type="button" data-r="7">7 days</button><button type="button" data-r="14">14 days</button><button type="button" data-r="30">30 days</button><button type="button" data-r="all">All time</button></div></div>
+  <p class="ov-meta"><span id="rngLab"></span><span id="ovAsOf" hidden></span></p>
   <p class="ov-sum" id="ovSum">Loading…</p>
 </section>
-<div class="rng-bar"><div class="rng" role="group" aria-label="Date range" id="rng"><button type="button" data-r="7">7 days</button><button type="button" data-r="14">14 days</button><button type="button" data-r="30">30 days</button><button type="button" data-r="all">All time</button></div><p class="note" id="rngLab"></p></div>
-<section aria-label="Key numbers" style="margin-top:14px">
+<section aria-label="Key numbers" style="margin-top:20px">
   <div class="kpis" id="ovK"><div class="empty">Loading…</div></div>
 </section>
 <section aria-labelledby="cmp-h" style="margin-top:22px">
   <div class="ov-card"><h3 id="cmp-h">Meta vs TikTok<button type="button" data-go="ads">Ads detail →</button></h3>
-    <div class="scroll" style="border:0;background:none"><table class="cmp"><thead><tr><th></th><th class="r">Meta</th><th class="r">TikTok</th><th class="r">Both</th></tr></thead><tbody id="cmpTb"></tbody></table></div>
+    <div class="plat" id="cmpTb"></div>
     <p class="note" id="cmpNote" style="margin:0"></p></div>
 </section>
 <section aria-label="Detail at a glance" style="margin-top:22px">
@@ -716,14 +730,17 @@ function renderCompare(R){
   const mS=R.md.filter(x=>inR(x.d)).reduce((a,x)=>a+x.s,0), tS=R.td.filter(x=>inR(x.d)).reduce((a,x)=>a+x.s,0);
   const mP=R.md.filter(x=>inR(x.d)).reduce((a,x)=>a+(x.l||0),0), tP=R.td.filter(x=>inR(x.d)).reduce((a,x)=>a+(x.v||0),0);
   const mL=rowsL.filter(r=>(r.s==="meta"||r.s==="lp")&&inR(r.d)).length, tL=rowsL.filter(r=>r.s==="tiktok"&&inR(r.d)).length;
-  const hasT=R.td.length>0, c=(sp,l)=>l?aud(sp/l):"–";
-  const row=(lab,a,b,t,cls)=>{const tr=document.createElement("tr");if(cls)tr.className=cls;[lab,a,b,t].forEach((v,i)=>{const td=document.createElement("td");td.textContent=v;if(i)td.className="r num";tr.appendChild(td)});tb.appendChild(tr)};
-  row("Ad spend",aud(mS),hasT?aud(tS):"–",aud(mS+tS));
-  row("Leads in GHL",n0(mL),hasT?n0(tL):"–",n0(mL+tL));
-  row("Cost per lead (GHL)",c(mS,mL),hasT?c(tS,tL):"–",c(mS+tS,mL+tL),"cpl");
-  row("Leads the platform reports",n0(mP),hasT?n0(tP):"–",n0(mP+tP));
-  row("Cost per platform lead",c(mS,mP),hasT?c(tS,tP):"–",c(mS+tS,mP+tP));
-  $("cmpNote").textContent="Leads in GHL: Meta is instant forms plus the GHL landing page (Meta's video ads); TikTok is contacts GHL tags as TikTok. Website form enquiries aren't credited to either platform. Platform leads are what Meta and TikTok each report."+(hasT?"":" TikTok data isn't loaded yet.");
+  const hasT=R.td.length>0, mC=mL?mS/mL:null, tC=hasT&&tL?tS/tL:null;
+  const win=mC!=null&&tC!=null?(tC<mC?"tiktok":"meta"):null;
+  const panel=(key,name,sp,ld,cpl,plat)=>{const d=document.createElement("div");d.className="pl"+(win===key?" win":"");
+    d.innerHTML='<div class="pn"><span></span><em></em></div><div class="plv"><span></span><small>per lead</small></div><div class="ln"><span>Ad spend</span><b></b></div><div class="ln"><span>Leads in GHL</span><b></b></div>';
+    d.querySelector(".pn span").textContent=name; d.querySelector(".pn em").textContent=win===key?"Cheapest":"";
+    d.querySelector(".plv span").textContent=cpl!=null?aud(cpl):"–"; const bs=d.querySelectorAll(".ln b"); bs[0].textContent=sp!=null?aud0(sp):"–"; bs[1].textContent=ld!=null?n0(ld):"–";
+    if(plat!=null) d.title=name+" itself reports "+n0(plat)+" leads"; tb.appendChild(d)};
+  panel("meta","Meta",mS,mL,mC,mP);
+  panel("tiktok","TikTok",hasT?tS:null,hasT?tL:null,tC,hasT?tP:null);
+  panel("both","Both",mS+tS,mL+tL,(mL+tL)?(mS+tS)/(mL+tL):null,null);
+  $("cmpNote").textContent="Leads that reached GHL. Meta includes the landing page from its video ads. For comparison, Meta itself reports "+n0(mP)+(hasT?" and TikTok "+n0(tP):"")+" leads."+(hasT?"":" TikTok data isn't loaded yet.");
   return {mS,tS,mL,tL};
 }
 function renderOverview(){
@@ -753,11 +770,8 @@ function renderOverview(){
   bestReg=Object.values(reg).filter(g=>g.l>=3).map(g=>({...g,c:g.s/g.l})).sort((a,b)=>a.c-b.c)[0];
   // summary paragraph, built only from the figures above
   const P=[];
-  const TKd=(S&&S.tiktok&&S.tiktok.days)||[], tkS=TKd.reduce((a,x)=>a+x.s,0), tkL=leadsDoc&&TKd.length?rowsL.filter(r=>r.s==="tiktok"&&r.d>=TKd[0].d&&r.d<=(leadsDoc.asOf<S.tiktok.asOf?leadsDoc.asOf:S.tiktok.asOf)).length:0;
-  if(S) P.push("Since ads started on <strong>"+dmy(first)+"</strong>, STC has spent <strong>"+aud0(spend)+"</strong> on Meta"+(cpl?" at about <strong>"+aud0(cpl)+" per lead</strong>":"")+(TKd.length?" and <strong>"+aud0(tkS)+"</strong> on TikTok"+(tkL?" at about <strong>"+aud0(tkS/tkL)+" per lead</strong>":""):"")+".");
-  if(leadsDoc) P.push("There are <strong>"+n0(total)+" enquiries</strong> in total across "+n0(c.rows.length)+" Victorian postcodes"+(l7!=null?", <strong>"+l7+"</strong> of them in the 7 days to "+dmy(isoL(new Date(new Date(leadsDoc.asOf+"T00:00:00").getTime()-864e5)))+(p7?(" ("+(l7>=p7?"up":"down")+" from "+p7+" the week before)"):""):"")+".");
-  if(top) P.push("The closest suburb to launching is <strong>"+top.pc+" "+esc(top.name)+"</strong> with "+top.leads+" enquir"+(top.leads===1?"y":"ies")+", "+progTxt(top)+" for a patrol team. "+(top.prog<0.25?"It's early: suburbs fill as the ads keep running.":""));
-  if(bestAd) P.push("The strongest ad is <strong>“"+esc(adMeta(bestAd.n).hook)+"”</strong>"+(bestAge?", and <strong>"+bestAge.k+"</strong>-year-olds respond at the lowest cost":"")+".");
+  if(leadsDoc) P.push("<strong>"+n0(total)+" enquiries</strong> across "+n0(c.rows.length)+" Victorian postcodes since "+dmy(first||leadsDoc.asOf)+".");
+  if(top) P.push("Closest to launch: <strong>"+top.pc+" "+esc(top.name)+"</strong>, "+top.leads+" enquir"+(top.leads===1?"y":"ies")+" ("+progTxt(top)+").");
   $("ovSum").innerHTML=P.join(" ");
   $("ovAsOf").textContent=[leadsDoc?"Enquiries to "+dmy(leadsDoc.asOf):"",S?"ad data to "+dmy(S.asOf):""].filter(Boolean).join(" · ")+".";
   // KPI tiles
@@ -766,25 +780,17 @@ function renderOverview(){
   const CP=R?renderCompare(R):null;
   if(R) $("rngLab").textContent=R.all?"All time: "+(R.from?dmy(R.from)+" to ":"to ")+dmy(R.to)+".":dmy(R.from)+" to "+dmy(R.to)+", "+R.n+" full days.";
   const tile=(cls,v,l,sub)=>{const d=document.createElement("div");d.className="kpi "+cls;const a=document.createElement("div");a.className="eyebrow";a.textContent=l;const b=document.createElement("div");b.className="v num";b.textContent=v;const e=document.createElement("div");e.className="s";e.textContent=sub;d.append(a,b,e);K.appendChild(d)};
+  const lab=R&&!R.all?"Last "+R.n+" days":"All time";
+  let eN=total, eSub="All sources, duplicates removed";
   if(R&&!R.all){
-    const inR=d=>d>=R.from&&d<=R.to, inP=d=>d>=R.pf&&d<=R.pt, nE=rowsL.filter(r=>inR(r.d)).length, nP=rowsL.filter(r=>inP(r.d)).length;
-    /* Only compare with the period before when ads were running for all of it. */
-    const adStart=[R.md.length?R.md[0].d:null,R.td.length?R.td[0].d:null].filter(Boolean).sort()[0]||R.from;
-    const chg=nP?Math.round((nE-nP)/nP*100):null;
-    const cmpTxt=R.pf<adStart?"Ads started "+dmy(adStart)+", so there's no full "+R.n+" days before to compare":!nP?"None in the "+R.n+" days before":Math.abs(chg)<1?"About the same as the "+R.n+" days before ("+nP+")":(chg>0?"Up ":"Down ")+Math.abs(chg)+"% on the "+R.n+" days before ("+nP+")";
-    if(leadsDoc) tile("lead",n0(nE),"Enquiries, last "+R.n+" days",cmpTxt);
-    if(S) tile("",aud0(CP.mS+CP.tS),"Ad spend, last "+R.n+" days","Meta "+aud0(CP.mS)+" + TikTok "+aud0(CP.tS));
-    if(CP.mL+CP.tL) tile("",aud(( CP.mS+CP.tS)/(CP.mL+CP.tL)),"Cost per lead, both platforms",n0(CP.mL+CP.tL)+" Meta and TikTok leads in GHL");
-    const dFrom=R.from>adStart?R.from:adStart, nD=Math.round((new Date(R.to+"T00:00:00")-new Date(dFrom+"T00:00:00"))/864e5)+1;
-    if(S) tile("",aud0((CP.mS+CP.tS)/nD)+"/day","Daily ad spend","Average over "+nD+" days of ads. Meta budget now "+aud0(S.dailyBudget)+"/day");
-  } else {
-    if(leadsDoc) tile("lead",n0(total),"Total enquiries","Meta, TikTok, GHL landing page and website form, duplicates removed");
-    if(l7!=null) tile("",String(l7),"Enquiries, last 7 full days",p7!=null?(p7?((l7>=p7?"Up ":"Down ")+Math.abs(Math.round((l7-p7)/p7*100))+"% on the week before ("+p7+")"):"None the week before"):"");
-    if(S) tile("",aud0(CP?CP.mS+CP.tS:spend),"Ad spend to date",CP&&CP.tS?"Meta "+aud0(CP.mS)+" + TikTok "+aud0(CP.tS):"Meta since "+dmy(first)+", ex GST");
-    if(CP&&CP.mL+CP.tL) tile("",aud((CP.mS+CP.tS)/(CP.mL+CP.tL)),"Cost per lead, both platforms",n0(CP.mL+CP.tL)+" Meta and TikTok leads in GHL to "+dmy(R.to));
-    if(S) tile("",aud0(avg7)+"/day","Daily ad spend","Meta, last 7 days. Budget now "+aud0(S.dailyBudget)+"/day");
+    const inR=d=>d>=R.from&&d<=R.to, inP=d=>d>=R.pf&&d<=R.pt; eN=rowsL.filter(r=>inR(r.d)).length; const nP=rowsL.filter(r=>inP(r.d)).length;
+    const adStart=[R.md.length?R.md[0].d:null,R.td.length?R.td[0].d:null].filter(Boolean).sort()[0]||R.from, chg=nP?Math.round((eN-nP)/nP*100):null;
+    eSub=R.pf<adStart?"No earlier "+R.n+" days to compare":!nP?"None the "+R.n+" days before":Math.abs(chg)<1?"Same as the "+R.n+" days before":(chg>0?"Up ":"Down ")+Math.abs(chg)+"% on the "+R.n+" days before";
   }
-  if(c) tile("",c.rows.filter(r=>r.state==="ready"||r.state==="live").length+" / "+c.rows.length,"Suburbs ready to launch","Out of postcodes with at least one enquiry");
+  if(leadsDoc) tile("lead",n0(eN),"Enquiries · "+lab,eSub);
+  if(S&&CP) tile("",aud0(CP.mS+CP.tS),"Ad spend · "+lab,"Meta "+aud0(CP.mS)+" · TikTok "+aud0(CP.tS));
+  if(CP&&CP.mL+CP.tL) tile("",aud((CP.mS+CP.tS)/(CP.mL+CP.tL)),"Cost per lead · "+lab,"Meta and TikTok, leads in GHL");
+  if(c) tile("",String(c.rows.filter(r=>r.state==="ready"||r.state==="live").length),"Suburbs ready to launch","Of "+n0(c.rows.length)+" postcodes with enquiries");
   // top postcodes
   const pc=$("ovPc");pc.innerHTML="";
   ranked.slice(0,5).forEach(r=>{const d=document.createElement("div");d.className="ov-row";
