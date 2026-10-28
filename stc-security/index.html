@@ -590,7 +590,18 @@ function renderSpend(){
   if(crm!==null) k.push(['',aud(crmSpend/crm),'Cost per lead (CRM)',crm+' Meta leads in GHL to '+dmy(crmTo)+' from '+aud(crmSpend)+' spend']);
   k.push(['',String(mLeads),'Leads Meta reports','Instant forms plus landing-page sign-ups']);
   k.push(['',n0(impr),'Impressions',n0(clicks)+' link clicks']);
-  k.push(['','Not connected','TikTok spend','TikTok Ads isn\'t linked to reporting yet']);
+  // TikTok: spend from the spend doc's tiktok section (Windsor), cost per lead from TikTok leads in GHL over the same dates
+  const TK=S.tiktok, td=(TK&&TK.days)||[];
+  if(td.length){
+    const tFirst=td[0].d, tTot=td.reduce((a,x)=>a+x.s,0);
+    k.push(['',aud(tTot),'TikTok spend','Since '+dmy(tFirst)+' to '+dmy(TK.asOf)+'. '+n0(td.reduce((a,x)=>a+x.v,0))+' conversions TikTok reports']);
+    if(leadsDoc&&leadsDoc.rows){
+      const tTo=leadsDoc.asOf<TK.asOf?leadsDoc.asOf:TK.asOf;
+      const tCrm=leadsDoc.rows.filter(r=>r.s==="tiktok"&&r.d>=tFirst&&r.d<=tTo).length;
+      const tSp=td.filter(x=>x.d<=tTo).reduce((a,x)=>a+x.s,0);
+      if(tCrm) k.push(['',aud(tSp/tCrm),'TikTok cost per lead (CRM)',tCrm+' TikTok leads in GHL to '+dmy(tTo)+' from '+aud(tSp)+' spend']);
+    }
+  } else k.push(['','Not connected','TikTok spend','TikTok Ads isn\'t linked to reporting yet']);
   const K=$("spK"); K.innerHTML="";
   k.forEach(([cls,v,l,sub])=>{const d=document.createElement("div");d.className="kpi "+cls;const a=document.createElement("div");a.className="eyebrow";a.textContent=l;const b=document.createElement("div");b.className="v num";b.textContent=v;const c=document.createElement("div");c.className="s";c.textContent=sub;d.append(a,b,c);K.appendChild(d)});
   // daily chart
