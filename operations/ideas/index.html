@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Half-built Ideas · Ready to Rank</title>
+<style>
+@font-face{font-family:"Archivo";src:url("/operations/assets/Archivo-var.ttf") format("truetype");font-weight:100 900;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("/operations/assets/SpaceMono-Regular.ttf") format("truetype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("/operations/assets/SpaceMono-Bold.ttf") format("truetype");font-weight:700;font-display:swap;}
+:root{
+  --bg:#0F0F12; --surface:#17171C; --card:#1B1B21; --raise:#212129;
+  --line:#2A2A32; --line-soft:#22222A;
+  --white:#fff; --text:#D8D8E0; --muted:#9B9BA6; --faint:#6E6E7A;
+  --accent:#17B4F0; --accent-ink:#04222E; --green:#2BD9A6; --amber:#F5B02E; --red:#E04B4B; --violet:#A98BFF;
+  --mono:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Archivo",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;padding:0 0 90px;}
+button,input,select,textarea{font:inherit;color:inherit;}
+.hide{display:none !important;}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px;}
+a{color:var(--accent);text-decoration:none;}
+h1{font-size:clamp(26px,4vw,42px);font-weight:900;letter-spacing:-.025em;line-height:1.03;color:var(--white);}
+h1 em{font-style:normal;color:var(--accent);}
+.lede{font-size:clamp(13.5px,1.5vw,16px);color:var(--muted);max-width:72ch;margin-top:10px;}
+.btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:6px;padding:9px 14px;cursor:pointer;
+  font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.02em;}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);}
+.btn.sm{padding:5px 9px;font-size:10.5px;}
+.btn:disabled{opacity:.5;cursor:default;}
+
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
+.gate .box{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:30px 28px;}
+.gate h1{font-size:26px;margin-bottom:6px;}
+.gate p{font-size:12.8px;color:var(--muted);margin-bottom:22px;}
+.fl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 6px;}
+.in{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px;color:var(--white);font-size:14px;margin-bottom:14px;}
+.gate .btn{width:100%;padding:12px;font-size:13px;}
+.linkbtn{background:none;border:none;color:var(--accent);font-size:12.5px;margin-top:12px;padding:0;cursor:pointer;}
+.msg{font-size:12.5px;border-radius:6px;padding:9px 11px;margin-bottom:14px;}
+.msg.bad{background:rgba(224,75,75,.1);border:1px solid rgba(224,75,75,.4);color:#F3A0A0;}
+.msg.ok{background:rgba(43,217,166,.08);border:1px solid rgba(43,217,166,.35);color:var(--green);}
+
+.mast{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#14141A,var(--bg));}
+.mast .wrap{padding:30px 28px 24px;}
+.crumb{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:20px;}
+.crumb .who{margin-left:auto;display:flex;gap:10px;align-items:center;}
+.crumb .who button{background:none;border:1px solid var(--line);border-radius:4px;color:var(--muted);padding:3px 8px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:22px;}
+.bar .in{margin:0;max-width:280px;padding:8px 12px;font-size:13px;}
+.bar select.in{max-width:160px;}
+.bar .btn{margin-left:auto;}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.seg button{background:var(--card);border:none;color:var(--faint);font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;padding:8px 12px;cursor:pointer;}
+.seg button.on{background:rgba(23,180,240,.16);color:var(--accent);font-weight:700;}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.stat{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  border:1px solid var(--line);border-radius:5px;padding:5px 9px;background:var(--surface);}
+.stat b{color:var(--white);font-size:12px;margin-right:4px;}
+.stat.warn b{color:var(--amber);} .stat.bad b{color:var(--red);}
+
+main.wrap{padding-top:24px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;}
+.idea{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--faint);border-radius:10px;padding:16px 18px;min-width:0;
+  display:flex;flex-direction:column;gap:10px;}
+.idea.s-in_progress{border-left-color:var(--accent);}
+.idea.s-paused,.idea.s-parked{border-left-color:var(--amber);}
+.idea.s-blocked{border-left-color:var(--red);}
+.idea.s-idea{border-left-color:var(--violet);}
+.idea.s-done{border-left-color:var(--green);opacity:.75;}
+.idea.s-dropped{opacity:.55;}
+.ih{display:flex;align-items:flex-start;gap:10px;}
+.ih h2{font-size:17px;font-weight:900;color:var(--white);line-height:1.2;}
+.ih .edit{margin-left:auto;flex:none;}
+.tags{display:flex;flex-wrap:wrap;gap:5px;align-items:center;}
+.chip{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-radius:3px;padding:2px 6px;
+  border:1px solid var(--line);color:var(--faint);}
+.chip.in_progress{color:var(--accent);border-color:rgba(23,180,240,.45);}
+.chip.paused,.chip.parked{color:var(--amber);border-color:rgba(245,176,46,.45);}
+.chip.blocked{color:var(--red);border-color:rgba(224,75,75,.5);}
+.chip.idea{color:var(--violet);border-color:rgba(169,139,255,.45);}
+.chip.done{color:var(--green);border-color:rgba(43,217,166,.45);}
+.age{font-family:var(--mono);font-size:10px;color:var(--faint);margin-left:auto;}
+.age.old{color:var(--amber);}
+dl{display:grid;grid-template-columns:86px 1fr;gap:5px 10px;font-size:13px;}
+dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-top:3px;}
+dd{color:var(--text);min-width:0;overflow-wrap:anywhere;}
+dd.next{color:var(--white);font-weight:600;}
+dd.wait{color:var(--amber);}
+.foot{display:flex;gap:8px;align-items:center;margin-top:auto;padding-top:4px;flex-wrap:wrap;}
+.foot code{font-family:var(--mono);font-size:10px;color:var(--faint);overflow-wrap:anywhere;}
+.foot .btn{margin-left:auto;}
+
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(480px,100vw);background:var(--surface);border-left:1px solid var(--line);
+  z-index:21;overflow-y:auto;padding:22px 22px 40px;}
+#drawer header{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;}
+#drawer header h3{color:var(--white);font-size:19px;font-weight:900;line-height:1.2;}
+#drawer header .x{margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;width:30px;height:30px;font-size:16px;cursor:pointer;flex:none;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+textarea.in{min-height:64px;resize:vertical;font-size:13px;}
+.hint{font-size:11.5px;color:var(--faint);margin:-8px 0 14px;}
+.stamp{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:14px;}
+.actions{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--raise);border:1px solid var(--line);
+  border-radius:7px;padding:11px 17px;font-size:13px;z-index:30;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:92vw;}
+@media (max-width:620px){
+  .wrap{padding:0 16px;} .mast .wrap{padding:24px 16px 18px;}
+  .grid{grid-template-columns:1fr;} .row2{grid-template-columns:1fr;} .bar .in,.bar select.in{max-width:none;}
+  .bar .btn{margin-left:0;}
+}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate hide">
+  <div class="box">
+    <h1>Half-built <em>Ideas</em></h1>
+    <p>Ready to Rank operations. Sign in with your team account.</p>
+    <div id="gateMsg" class="msg hide"></div>
+    <form id="loginForm">
+      <label class="fl" for="email">Email</label>
+      <input class="in" id="email" type="email" autocomplete="username" required>
+      <label class="fl" for="pw">Password</label>
+      <input class="in" id="pw" type="password" autocomplete="current-password">
+      <button class="btn" id="loginBtn" type="submit">Sign in</button>
+    </form>
+    <button class="linkbtn" id="magicBtn" type="button">No password? Email me a sign-in link</button>
+  </div>
+</div>
+
+<div id="app" class="hide">
+  <div class="mast">
+    <div class="wrap">
+      <div class="crumb">
+        <a href="/operations/">&larr;&nbsp; Operations</a>
+        <span>/ <b>Half-built ideas</b></span>
+        <span class="who"><span id="whoName"></span><button id="signout" type="button">Sign out</button></span>
+      </div>
+      <h1>Everything started, <em>nothing forgotten</em></h1>
+      <p class="lede">Every idea that's been started and not finished: where it stopped, the very next step, and what it's waiting on. To pick one up, press <b>Copy resume prompt</b> and paste it into a new Claude Code chat.</p>
+      <div class="bar">
+        <input class="in" id="q" type="search" placeholder="Search ideas…">
+        <div class="seg" id="seg">
+          <button type="button" data-f="open" class="on">Open</button>
+          <button type="button" data-f="waiting">Waiting on someone</button>
+          <button type="button" data-f="all">All incl. done</button>
+        </div>
+        <select class="in" id="area"><option value="">All areas</option></select>
+        <button class="btn" id="addBtn" type="button">+ New idea</button>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </div>
+  <main class="wrap"><div class="grid" id="grid"></div></main>
+</div>
+
+<div id="scrim" class="scrim hide"></div>
+<aside id="drawer" class="hide" aria-live="polite"></aside>
+<div id="toast" class="toast hide"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = "https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY = "sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
+const PREVIEW = window.__PREVIEW || null;   // local render check only; never set on the live page
+const sb = PREVIEW ? null : supabase.createClient(SB_URL, SB_KEY);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const auDate = d => { if (!d) return ""; const [y,m,dd] = String(d).slice(0,10).split("-"); return `${dd}/${m}/${y}`; };
+const STATUSES = [["in_progress","In progress"],["blocked","Blocked"],["paused","Paused"],["parked","Parked"],["idea","Idea"],["done","Done"],["dropped","Dropped"]];
+const LABEL = Object.fromEntries(STATUSES);
+const ORDER = Object.fromEntries(STATUSES.map(([k],i) => [k,i]));
+const AREAS = ["SEO","Ads","Sales","Ops","Finance","Team","Personal"];
+const CLOSED = s => s === "done" || s === "dropped";
+
+let IDEAS = [], FILTER = "open", OPEN = null;
+
+const daysSince = d => d ? Math.floor((Date.now() - new Date(d + "T00:00:00")) / 864e5) : null;
+function age(d) {
+  const n = daysSince(d); if (n === null) return "";
+  if (n <= 0) return "today"; if (n === 1) return "1 day ago";
+  if (n < 60) return `${n} days ago`; return `${Math.round(n / 30)} months ago`;
+}
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.remove("hide"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.add("hide"), 3200); }
+
+function render() {
+  const q = $("q").value.trim().toLowerCase(), area = $("area").value;
+  let rows = IDEAS.filter(i => FILTER === "all" || !CLOSED(i.status));
+  if (FILTER === "waiting") rows = rows.filter(i => i.waiting_on);
+  if (area) rows = rows.filter(i => i.area === area);
+  if (q) rows = rows.filter(i => [i.title, i.stopped_at, i.next_step, i.waiting_on, i.notes, i.memory_ref, i.area]
+    .some(v => String(v || "").toLowerCase().includes(q)));
+  rows.sort((a,b) => (ORDER[a.status] - ORDER[b.status]) || String(b.last_touched).localeCompare(String(a.last_touched)));
+
+  $("grid").innerHTML = rows.map(card).join("") || `<p class="lede">Nothing matches.</p>`;
+
+  const open = IDEAS.filter(i => !CLOSED(i.status));
+  const count = s => open.filter(i => i.status === s).length;
+  $("stats").innerHTML = `<span class="stat"><b>${open.length}</b>open</span>
+    <span class="stat"><b>${count("in_progress")}</b>in progress</span>
+    <span class="stat bad"><b>${count("blocked")}</b>blocked</span>
+    <span class="stat warn"><b>${open.filter(i => i.waiting_on).length}</b>waiting on someone</span>
+    <span class="stat"><b>${IDEAS.filter(i => i.status === "done").length}</b>done</span>`;
+  document.querySelectorAll("[data-edit]").forEach(b => b.addEventListener("click", () => openIdea(b.dataset.edit)));
+  document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => copyPrompt(b.dataset.copy)));
+}
+
+function card(i) {
+  const n = daysSince(i.last_touched);
+  return `<article class="idea s-${esc(i.status)}">
+    <div class="ih"><h2>${esc(i.title)}</h2>
+      <button class="btn ghost sm edit" type="button" data-edit="${esc(i.id)}">Edit</button></div>
+    <div class="tags"><span class="chip ${esc(i.status)}">${esc(LABEL[i.status] || i.status)}</span>
+      <span class="chip">${esc(i.area)}</span>
+      <span class="age ${n !== null && n > 30 && !CLOSED(i.status) ? "old" : ""}" title="Last touched ${auDate(i.last_touched)}">${esc(age(i.last_touched))}</span></div>
+    <dl>
+      ${i.stopped_at ? `<dt>Stopped at</dt><dd>${esc(i.stopped_at)}</dd>` : ""}
+      ${i.next_step ? `<dt>Next step</dt><dd class="next">${esc(i.next_step)}</dd>` : ""}
+      ${i.waiting_on ? `<dt>Waiting on</dt><dd class="wait">${esc(i.waiting_on)}</dd>` : ""}
+      ${i.notes ? `<dt>Notes</dt><dd>${esc(i.notes)}</dd>` : ""}
+    </dl>
+    <div class="foot">${i.memory_ref ? `<code>memory: ${esc(i.memory_ref)}</code>` : ""}
+      <button class="btn sm" type="button" data-copy="${esc(i.id)}">Copy resume prompt</button></div>
+  </article>`;
+}
+
+function promptFor(i) {
+  if (i.resume_prompt) return i.resume_prompt;
+  return `Resume the half-built idea '${i.title}'.` + (i.memory_ref ? ` Read Claude memory file ${i.memory_ref} first (and anything it links).` : "")
+    + ` Last recorded: stopped at "${i.stopped_at || "unknown"}"; next step "${i.next_step || "unknown"}". Check live state rather than trusting the notes, then tell me where it stopped and the next step before doing anything.`;
+}
+async function copyPrompt(id) {
+  const i = IDEAS.find(x => x.id === id); if (!i) return;
+  try { await navigator.clipboard.writeText(promptFor(i)); toast("Copied. Paste it into a new Claude Code chat."); }
+  catch { window.prompt("Copy this prompt:", promptFor(i)); }
+}
+
+// ------------------------------------------------------------------ drawer
+
+function closeDrawer() { $("drawer").classList.add("hide"); $("scrim").classList.add("hide"); }
+$("scrim").addEventListener("click", closeDrawer);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+
+function openIdea(id) {
+  const i = id ? IDEAS.find(x => x.id === id) : null;
+  OPEN = i;
+  const v = k => esc(i ? i[k] ?? "" : "");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
+  const opt = (list, cur) => list.map(([k,l]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${l}</option>`).join("");
+  const d = $("drawer");
+  d.innerHTML = `<header><h3>${i ? esc(i.title) : "New idea"}</h3>
+    <button class="x" type="button" aria-label="Close">&times;</button></header>
+    <form>
+      <label class="fl">Idea</label><input class="in" name="title" required value="${v("title")}">
+      <div class="row2">
+        <div><label class="fl">Status</label><select class="in" name="status">${opt(STATUSES, i ? i.status : "in_progress")}</select></div>
+        <div><label class="fl">Area</label><select class="in" name="area">${opt(AREAS.map(a => [a,a]), i ? i.area : "Ops")}</select></div>
+      </div>
+      <div class="row2">
+        <div><label class="fl">Started</label><input class="in" name="started_on" type="date" value="${v("started_on")}"></div>
+        <div><label class="fl">Last touched</label><input class="in" name="last_touched" type="date" value="${i ? v("last_touched") : today}"></div>
+      </div>
+      <label class="fl">Where it stopped</label><textarea class="in" name="stopped_at">${v("stopped_at")}</textarea>
+      <label class="fl">Next step</label><textarea class="in" name="next_step">${v("next_step")}</textarea>
+      <label class="fl">Waiting on</label><input class="in" name="waiting_on" value="${v("waiting_on")}" placeholder="A person, an access, a decision. Leave blank if nothing.">
+      <label class="fl">Claude memory file</label><input class="in" name="memory_ref" value="${v("memory_ref")}" placeholder="e.g. seo_delivery_system.md">
+      <label class="fl">Resume prompt</label><textarea class="in" name="resume_prompt">${v("resume_prompt")}</textarea>
+      <p class="hint">Leave blank and the page writes one from the fields above.</p>
+      <label class="fl">Notes</label><textarea class="in" name="notes">${v("notes")}</textarea>
+      <div class="actions"><button class="btn" type="submit">${i ? "Save" : "Add idea"}</button>
+        ${i && !CLOSED(i.status) ? `<button class="btn ghost" type="button" id="doneBtn">Mark done</button>` : ""}
+        ${i ? `<button class="btn ghost" type="button" id="delBtn">Delete</button>` : ""}</div>
+    </form>
+    ${i ? `<p class="stamp">Last changed ${auDate(i.updated_at)} by ${esc(i.updated_by || "—")}</p>` : ""}`;
+  d.querySelector(".x").addEventListener("click", closeDrawer);
+  d.querySelector("form").addEventListener("submit", ev => { ev.preventDefault(); save(ev.target); });
+  const done = $("doneBtn"); if (done) done.addEventListener("click", () => setStatus("done"));
+  const del = $("delBtn"); if (del) del.addEventListener("click", remove);
+  d.classList.remove("hide"); $("scrim").classList.remove("hide");
+}
+
+async function save(f) {
+  const g = k => { const x = f.elements[k].value.trim(); return x === "" ? null : x; };
+  const row = { title: g("title"), status: g("status"), area: g("area"), started_on: g("started_on"),
+    last_touched: g("last_touched") || new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" }),
+    stopped_at: g("stopped_at"), next_step: g("next_step"), waiting_on: g("waiting_on"),
+    memory_ref: g("memory_ref"), resume_prompt: g("resume_prompt"), notes: g("notes") };
+  const res = OPEN
+    ? await sb.from("ops_ideas").update(row).eq("id", OPEN.id).select()
+    : await sb.from("ops_ideas").insert(row).select();
+  if (res.error || !res.data || !res.data.length) { toast(res.error ? res.error.message : "Not saved: you don't have edit rights."); return; }
+  toast("Saved"); closeDrawer(); await load();
+}
+
+async function setStatus(status) {
+  if (!OPEN) return;
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
+  const { error } = await sb.from("ops_ideas").update({ status, last_touched: today }).eq("id", OPEN.id);
+  if (error) { toast(error.message); return; }
+  toast("Marked done"); closeDrawer(); await load();
+}
+
+async function remove() {
+  if (!OPEN || !confirm(`Delete "${OPEN.title}"? Mark it Dropped instead if you might want it back.`)) return;
+  const { error } = await sb.from("ops_ideas").delete().eq("id", OPEN.id);
+  if (error) { toast(error.message); return; }
+  toast("Deleted"); closeDrawer(); await load();
+}
+
+// ------------------------------------------------------------------ data + auth
+
+async function load() {
+  if (PREVIEW) { IDEAS = PREVIEW.ideas; render(); return; }
+  const { data, error } = await sb.from("ops_ideas").select("*");
+  if (error) { $("grid").innerHTML = `<p class="msg bad">Could not load: ${esc(error.message)}</p>`; return; }
+  IDEAS = data || []; render();
+}
+
+$("area").innerHTML += AREAS.map(a => `<option value="${a}">${a}</option>`).join("");
+$("q").addEventListener("input", render);
+$("area").addEventListener("change", render);
+$("addBtn").addEventListener("click", () => openIdea(null));
+document.querySelectorAll("#seg button").forEach(b => b.addEventListener("click", () => {
+  FILTER = b.dataset.f;
+  document.querySelectorAll("#seg button").forEach(x => x.classList.toggle("on", x === b));
+  render();
+}));
+
+function gateMsg(t, bad) { const m = $("gateMsg"); m.textContent = t; m.className = "msg " + (bad ? "bad" : "ok"); }
+$("loginForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  if (!$("pw").value) { gateMsg("Enter your password, or use the sign-in link below.", true); return; }
+  $("loginBtn").disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("pw").value });
+  $("loginBtn").disabled = false;
+  if (error) { gateMsg(error.message, true); return; }
+  boot();
+});
+$("magicBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim();
+  if (!email) { gateMsg("Type your Ready to Rank email first.", true); return; }
+  const { error } = await sb.auth.signInWithOtp({ email,
+    options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
+  gateMsg(error ? error.message : "Check your inbox for a sign-in link.", !!error);
+});
+$("signout").addEventListener("click", async () => { if (sb) await sb.auth.signOut(); location.reload(); });
+
+async function boot() {
+  if (PREVIEW) { $("app").classList.remove("hide"); $("whoName").textContent = "Preview"; load(); return; }
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) { $("gate").classList.remove("hide"); $("app").classList.add("hide"); return; }
+  const [{ data:person }, { data:allowed }] = await Promise.all([
+    sb.from("tt_people").select("id,name").eq("id", session.user.id).maybeSingle(),
+    sb.rpc("ops_can_see_ideas"),
+  ]);
+  if (!person || allowed !== true) {
+    gateMsg("Half-built ideas are for Jose and Jhen only.", true);
+    await sb.auth.signOut(); $("gate").classList.remove("hide"); return;
+  }
+  $("whoName").textContent = person.name;
+  $("gate").classList.add("hide"); $("app").classList.remove("hide");
+  load();
+}
+boot();
+</script>
+</body>
+</html>
