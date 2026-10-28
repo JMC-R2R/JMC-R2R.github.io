@@ -369,7 +369,7 @@ table.cr{min-width:1180px}
     </div>
     <div class="eyebrow">Suburb launch tracker · Melbourne</div>
     <h1>When can a patrol team <em>go live</em> in each postcode?</h1>
-    <p>Ad spend to date, and every enquiry from Meta, TikTok and the website counted by postcode and measured against the number of members a team needs to launch. Change the numbers below and the whole page recalculates.</p>
+    <p>Ad spend to date, and every enquiry from Meta, TikTok, the GHL landing page and the website form counted by postcode and measured against the number of members a team needs to launch. Change the numbers below and the whole page recalculates.</p>
   </div>
 </header>
 
@@ -395,7 +395,7 @@ table.cr{min-width:1180px}
     <div class="ov-card"><h3>Closest postcodes to launch<button type="button" data-go="launch">All postcodes →</button></h3><div id="ovPc"></div></div>
     <div class="ov-card"><h3>Where enquiries come from<button type="button" data-go="launch">Detail →</button></h3><div id="ovSrc"></div>
       <div class="csv-up" id="csvUp">
-        <div class="csv-head"><span><b>Website form CSV</b><small id="csvLast">No uploads yet.</small></span>
+        <div class="csv-head"><span><b>Website form CSV (stcsecurity.com.au)</b><small id="csvLast">No uploads yet.</small></span>
           <label class="btn" for="csvFile">Upload CSV</label><input type="file" id="csvFile" accept=".csv,text/csv" hidden></div>
         <div id="csvMsg" class="csv-msg" role="status" aria-live="polite"></div>
       </div></div>
@@ -409,7 +409,7 @@ table.cr{min-width:1180px}
 <section aria-labelledby="how-h">
   <div class="sec-head"><h2 id="how-h">How the launch line works</h2></div>
   <div class="how">
-    <div class="step"><span class="eyebrow">Leads</span><b>Every enquiry, by postcode</b><span>Meta, TikTok and website sign-ups are combined. Test entries are removed and anyone who signed up twice is counted once.</span></div>
+    <div class="step"><span class="eyebrow">Leads</span><b>Every enquiry, by postcode</b><span>Meta instant forms, TikTok, the GHL landing page and the stcsecurity.com.au website form are combined. Test entries are removed and anyone who signed up twice is counted once.</span></div>
     <div class="step"><span class="eyebrow">Expected members</span><b>Leads × sign-up rate</b><span>Not every enquiry becomes a paying member. The slider sets what share you expect to sign up. Paid reservations always count in full.</span></div>
     <div class="step"><span class="eyebrow">Launch target</span><b>300 new, 200 next door</b><span>A suburb on its own needs more members to cover a team. A suburb next to a live one can share that team, so it needs fewer.</span></div>
   </div>
@@ -530,7 +530,7 @@ function compute(){
   for(const r of leadsDoc.rows||[]){
     if(!r.p){excluded.none++;continue}
     if(!isVic(r.p)){excluded.bad++;continue}
-    const o=by[r.p]||(by[r.p]={pc:r.p,name:NAMES[r.p]||"",leads:0,recent:0,src:{meta:0,tiktok:0,web:0,other:0}});
+    const o=by[r.p]||(by[r.p]={pc:r.p,name:NAMES[r.p]||"",leads:0,recent:0,src:{meta:0,tiktok:0,lp:0,web:0,other:0}});
     o.leads++; o.src[r.s]=(o.src[r.s]||0)+1;
     if(new Date(r.d+"T00:00:00")>=since) o.recent++;
   }
@@ -705,7 +705,7 @@ function renderOverview(){
   // KPI tiles
   const K=$("ovK");K.innerHTML="";
   const tile=(cls,v,l,sub)=>{const d=document.createElement("div");d.className="kpi "+cls;const a=document.createElement("div");a.className="eyebrow";a.textContent=l;const b=document.createElement("div");b.className="v num";b.textContent=v;const e=document.createElement("div");e.className="s";e.textContent=sub;d.append(a,b,e);K.appendChild(d)};
-  if(leadsDoc) tile("lead",n0(total),"Total enquiries","Meta, TikTok and website, duplicates removed");
+  if(leadsDoc) tile("lead",n0(total),"Total enquiries","Meta, TikTok, GHL landing page and website form, duplicates removed");
   if(l7!=null) tile("",String(l7),"Enquiries, last 7 full days",p7!=null?(p7?((l7>=p7?"Up ":"Down ")+Math.abs(Math.round((l7-p7)/p7*100))+"% on the week before ("+p7+")"):"None the week before"):"");
   if(S) tile("",aud0(spend),"Ad spend to date","Meta since "+dmy(first)+", ex GST");
   if(cpl) tile("",aud(cpl),"Cost per lead",crm+" Meta leads in GHL to "+dmy(crmTo));
@@ -720,7 +720,7 @@ function renderOverview(){
     const et=eta(r,c.asOf);d.children[3].textContent=progTxt(r)+(r.weeks!=null&&r.weeks<=104?" · "+et:"");pc.appendChild(d)});
   if(!ranked.length) pc.innerHTML='<div class="empty">No postcode data yet.</div>';
   // sources
-  const src=$("ovSrc");src.innerHTML="";const SN={meta:"Meta (Facebook & Instagram)",tiktok:"TikTok",web:"Website form",other:"Other"};
+  const src=$("ovSrc");src.innerHTML="";const SN={meta:"Meta instant forms (Facebook & Instagram)",tiktok:"TikTok",lp:"GHL landing page",web:"Website form (stcsecurity.com.au)",other:"Other"};
   const cnt={};rowsL.forEach(r=>cnt[r.s]=(cnt[r.s]||0)+1);
   Object.entries(cnt).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{const d=document.createElement("div");d.className="ov-row";d.innerHTML='<span></span><span class="m"></span><div class="ov-bar"><i style="background:var(--r2r)"></i></div>';
     d.children[0].textContent=SN[k]||k;d.children[1].textContent=v+" · "+Math.round(v/total*100)+"%";d.children[2].firstChild.style.width=(v/total*100)+"%";src.appendChild(d)});
@@ -802,7 +802,7 @@ function render(){
     const td=(cls,txt)=>{const t=document.createElement("td"); if(cls)t.className=cls; if(txt!==undefined)t.textContent=txt; tr.appendChild(t); return t};
     td("pc",r.pc); td("",r.name||"–"); td("r num",r.leads);
     const s=td(""); const sw=document.createElement("div"); sw.className="srcs";
-    [["meta","Meta"],["tiktok","TikTok"],["web","Web"],["other","Other"]].forEach(([k,l])=>{if(r.src[k]){const e=document.createElement("span");e.textContent=l+" "+r.src[k];sw.appendChild(e)}}); s.appendChild(sw);
+    [["meta","Meta"],["tiktok","TikTok"],["lp","Landing page"],["web","Website"],["other","Other"]].forEach(([k,l])=>{if(r.src[k]){const e=document.createElement("span");e.textContent=l+" "+r.src[k];sw.appendChild(e)}}); s.appendChild(sw);
     td("r num",r.recent);
     const pt=td("r"); const pi=document.createElement("input"); pi.type="number"; pi.min="0"; pi.step="1"; pi.value=r.paid||""; pi.placeholder="0"; pi.id="paid-"+r.pc; pi.setAttribute("aria-label","Paid reservations in "+r.pc); pi.disabled=!canWrite;
     pi.addEventListener("change",()=>savePc(r.pc,{paid:Math.max(0,parseInt(pi.value||"0",10)||0)})); pt.appendChild(pi);
