@@ -155,6 +155,111 @@ td input[type=number]{width:74px;font-size:13px;padding:4px 6px}
 .ov-row small{grid-column:1/-1;color:var(--ink-3);font-size:12px}
 .ov-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;grid-column:1/-1}
 .ov-bar i{display:block;height:100%;background:var(--stc)}
+.gap{margin-top:22px;border:2px solid var(--warn);border-radius:8px;background:linear-gradient(0deg,var(--warn-soft),var(--warn-soft)),var(--panel);padding:18px 20px}
+.gap .gk{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--warn)}
+.gap h3{font-size:22px;font-weight:900;letter-spacing:-.015em;margin:4px 0 6px}
+.gap>p{color:var(--ink-2);max-width:76ch;margin:0 0 14px;font-size:15px}
+.flow{display:grid;grid-template-columns:1fr auto 1.15fr auto 1fr;align-items:stretch;gap:10px}
+.flow .fs{border-radius:6px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+.flow .fs small{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.flow .fs b{font-size:17px;font-weight:800}
+.flow .fs span{font-size:13px;color:var(--ink-2)}
+.flow .fs.done{border-color:var(--ok)} .flow .fs.done small{color:var(--ok)}
+.flow .fs.miss{border:2px dashed var(--warn);background:var(--warn-soft)} .flow .fs.miss small,.flow .fs.miss b{color:var(--warn)}
+.flow .fs.next{opacity:.75}
+.flow .ar{align-self:center;font-size:22px;color:var(--ink-3)}
+.gq{margin:14px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:8px}
+.gq div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:14px}
+.gq div b{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);margin-bottom:3px;font-weight:700}
+.gap .gf{margin:12px 0 0;font-size:13px;color:var(--ink-3)}
+@media (max-width:760px){.flow{grid-template-columns:1fr}.flow .ar{transform:rotate(90deg);justify-self:center}}
+.gantt{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;overflow-x:auto}
+.gantt .g{display:grid;grid-template-columns:190px repeat(13,minmax(34px,1fr));align-items:center;min-width:720px}
+.gantt .gr{min-height:32px;border-top:1px solid var(--line-soft)}
+.gantt .gr>*{grid-row:1}
+.glg{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12px;color:var(--ink-2);min-width:720px}
+.glg i{display:inline-block;width:12px;height:8px;border-radius:4px;margin-right:6px;vertical-align:1px}
+.gantt .gh{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:center;padding-bottom:4px;border-bottom:1px solid var(--line-soft)}
+.gantt .gm{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);border-left:1px solid var(--line);padding-left:6px}
+.gantt .gl{font-size:13px;font-weight:700;padding-right:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gantt .gl b{font-family:var(--mono);color:var(--stc);margin-right:6px}
+.gantt .bar{height:18px;border-radius:9px;background:var(--stc);position:relative}
+.gantt .bar.soft{background:var(--stc-soft);border:1px solid var(--stc)}
+.gantt .bar.app{background:var(--r2r)}
+.gantt .bar.cz{background:#3bd62b}
+.gantt .bar.pre{background:var(--warn)}
+.gantt .bar.web{background:#8b7cf6}
+.gantt .web-seg{display:flex;gap:3px}
+.gantt .web-seg i{flex:1;height:18px;border-radius:9px;background:#8b7cf6;opacity:.9;font-style:normal;font-family:var(--mono);font-size:9.5px;color:#fff;display:grid;place-items:center;letter-spacing:.04em;white-space:nowrap;overflow:hidden}
+.tl li.web .dot{border-color:#8b7cf6;color:#8b7cf6}
+.tl li.web .when{color:#8b7cf6}
+.months{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;margin:4px 0 12px}
+.months div{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--panel-2)}
+.months div small{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#8b7cf6}
+.months div b{display:block;font-size:15px;font-weight:800;margin-top:2px}
+.months div span{font-size:12.5px;color:var(--ink-3)}
+.months div.cur{border-color:#8b7cf6}
+.wsteps{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:2px 0 12px;font-size:13px}
+.wsteps span{padding:4px 10px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line)}
+.wsteps em{font-style:normal;color:var(--ink-3)}
+.gantt .ms{justify-self:center;width:14px;height:14px;background:var(--warn);transform:rotate(45deg);border-radius:2px}
+.gantt .now{font-family:var(--mono);font-size:10.5px;color:var(--warn)}
+.aud{display:flex;flex-direction:column;gap:6px;margin:4px 0 12px}
+.aud .ar{display:grid;grid-template-columns:130px 1fr 110px;gap:10px;align-items:center;font-size:13.5px}
+.aud .ar .t{height:12px;background:var(--panel-2);border-radius:6px;overflow:hidden}
+.aud .ar .t i{display:block;height:100%;background:var(--ok);border-radius:6px}
+.aud .ar.mid .t i{background:var(--warn)}.aud .ar.hi .t i{background:var(--stc)}
+.aud .ar .v{font-family:var(--mono);font-size:12.5px;text-align:right}
+.ints{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
+.ints span{font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line)}
+.ckl{list-style:none!important;padding-left:0!important}
+.ckl li{display:flex;gap:10px;align-items:flex-start}
+.ckl li::before{content:"";flex:none;width:14px;height:14px;margin-top:3px;border:2px solid var(--ink-3);border-radius:3px}
+svg.cz{width:22px;height:22px;flex:none;border-radius:4px}
+.czh{display:flex;align-items:center;gap:8px}
+.czh .czn{font-weight:900;letter-spacing:-.01em;color:#3bd62b}
+.audtab{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.audc{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.audc.top{border-color:var(--ok)}
+.audc h3{font-size:15px;font-weight:800;margin:0 0 4px;display:flex;justify-content:space-between}
+.audc h3 em{font-style:normal;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ok)}
+.audc p{margin:0 0 8px;color:var(--ink-2);font-size:13.5px}
+.audc .n{font-size:26px;font-weight:900;letter-spacing:-.02em}
+.audc .n small{font-size:12.5px;font-weight:500;color:var(--ink-3);margin-left:4px}
+.audc .sub{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+td.adn .th{display:block;width:96px;height:54px;object-fit:cover;border-radius:4px;border:1px solid var(--line);margin-bottom:6px;background:var(--panel-2)}
+.nx-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px}
+.nx-head h2{font-size:24px;font-weight:900;letter-spacing:-.015em;margin:0}
+.nx-lede{color:var(--ink-2);max-width:72ch;margin:10px 0 0;font-size:16px}
+.nx-span{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.nx-span span{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:5px 11px;color:var(--ink-2)}
+.nx-span span b{color:var(--ink);font-weight:700}
+.tl{list-style:none;margin:28px 0 0;padding:0;position:relative}
+.tl::before{content:"";position:absolute;left:19px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.tl>li{position:relative;padding:0 0 26px 60px}
+.tl>li:last-child{padding-bottom:0}
+.tl .dot{position:absolute;left:0;top:0;width:40px;height:40px;border-radius:50%;background:var(--panel);border:2px solid var(--stc);display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:15px;color:var(--ink)}
+.tl li.chk .dot{border-color:var(--warn);color:var(--warn)}
+.tl .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px}
+.tl li.chk .card{border-color:var(--warn)}
+.tl .when{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--stc)}
+.tl li.chk .when{color:var(--warn)}
+.tl h3{font-size:18px;font-weight:800;margin:4px 0 6px;line-height:1.3}
+.tl p{margin:0 0 10px;color:var(--ink-2);font-size:14.5px}
+.tl ul{margin:0 0 10px;padding-left:18px;color:var(--ink-2);font-size:14.5px}
+.tl li li{margin:3px 0}
+.tl .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tl .chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink-2)}
+.tl .chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.tl .chip.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.tl .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;margin:4px 0 12px}
+.tl .fact{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:4px;padding:8px 10px}
+.tl .fact small{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.tl .fact b{font-size:17px;font-weight:800}
+.tl .pcs{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
+.tl .pcs span{font-family:var(--mono);font-size:12px;padding:4px 8px;border-radius:4px;background:var(--stc-soft);color:var(--ink)}
+.tl .pcs span small{color:var(--ink-3);margin-left:4px}
+.tl .quote{border-left:3px solid var(--line);padding:2px 0 2px 12px;margin:0 0 10px;color:var(--ink-2);font-size:14px}
 .ov-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
 .ov-top h2{font-size:21px;font-weight:800;letter-spacing:-.01em;margin:0}
 .ov-meta{margin:8px 0 12px;font-family:var(--mono);font-size:12px;color:var(--ink-3)}
@@ -404,6 +509,7 @@ table.cr{min-width:1180px}
     <button class="tab" role="tab" id="tb-overview" aria-controls="pn-overview" aria-selected="true" type="button">Overview</button>
     <button class="tab" role="tab" id="tb-launch" aria-controls="pn-launch" aria-selected="false" type="button" tabindex="-1">Suburb launch</button>
     <button class="tab" role="tab" id="tb-ads" aria-controls="pn-ads" aria-selected="false" type="button" tabindex="-1">Ads &amp; creative</button>
+    <button class="tab" role="tab" id="tb-next" aria-controls="pn-next" aria-selected="false" type="button" tabindex="-1">What's next</button>
   </div>
   <div class="fresh" id="fresh"><i></i><span>Checking last refresh…</span></div>
 </div></div>
@@ -519,6 +625,12 @@ table.cr{min-width:1180px}
   <div class="legend"><span><i style="background:var(--r2r)"></i>Share of spend</span><span><i style="background:var(--stc)"></i>Share of leads</span><span>Red bar longer than blue = this group brings more than its share of leads</span></div>
 </section>
 
+<section aria-labelledby="au-h">
+  <div class="sec-head"><h2 id="au-h">Who we're targeting</h2><p id="auAsOf"></p></div>
+  <div class="audtab" id="auT"><div class="empty">Loading…</div></div>
+  <p class="note" style="margin:12px 0 0">Every region runs the same three audiences. Cost per lead uses Meta's leads (instant forms plus landing-page sign-ups).</p>
+</section>
+
 <section aria-labelledby="cr-h">
   <div class="sec-head"><h2 id="cr-h">Creative performance</h2><p id="crAsOf"></p></div>
   <div class="kpis" id="crK"><div class="empty">Loading…</div></div>
@@ -529,6 +641,143 @@ table.cr{min-width:1180px}
   <div class="scroll"><table class="cr"><thead><tr><th>Concept</th><th class="r">Videos</th><th class="r">Spend</th><th class="r">Impressions</th><th class="r">Hook rate</th><th class="r">Hold rate</th><th class="r">Link CTR</th></tr></thead><tbody id="ccTb"></tbody></table></div>
 </section>
 
+</div>
+<div role="tabpanel" id="pn-next" aria-labelledby="tb-next" hidden>
+<section aria-labelledby="nx-h">
+  <div class="nx-head"><h2 id="nx-h">What's next: Phase 2</h2><span class="eyebrow">From December 2026 · 60 to 90 days</span></div>
+  <p class="nx-lede">Phase 1 showed where demand is. Phase 2 turns that interest into app members: focus the ads on the strongest postcodes, grow the list there, connect the app to Meta, then push app downloads in those suburbs, with the app ready to take registrations and payments.</p>
+  <div class="nx-span"><span><b>Weeks 1–2</b> focus + build the list</span><span><b>Weeks 1–4</b> app readiness</span><span><b>Weeks 5–12</b> app download push</span><span><b>Monthly</b> website pages</span></div>
+  <div class="gap" role="region" aria-label="The missing piece: pre-registration">
+    <div class="gk">The missing piece</div>
+    <h3>How will enquiries become pre-registered members?</h3>
+    <p>Marketing is doing its job: people in the target suburbs are putting their hand up. What isn't defined yet is the <strong>pre-registration</strong> step: how Software Co holds those people in the app, takes their details (and later payment), and tells them when their suburb goes live. Without it, every enquiry we pay for has nowhere to go.</p>
+    <div class="flow">
+      <div class="fs done"><small>Marketing · working</small><b id="gapLeads">Enquiries captured</b><span>Meta, TikTok, landing page and website, by postcode</span></div>
+      <div class="ar" aria-hidden="true">→</div>
+      <div class="fs miss"><small>Pre-registration · not defined</small><b>? Software Co</b><span>How does an enquiry become a pre-registered member, before the suburb launches?</span></div>
+      <div class="ar" aria-hidden="true">→</div>
+      <div class="fs next"><small>Sales · after launch</small><b>Paying members</b><span>Subscription starts when the suburb has enough members</span></div>
+    </div>
+    <div class="gq">
+      <div><b>Capture</b>Does the app have a pre-registration flow today, or only full sign-up?</div>
+      <div><b>Existing enquiries</b>How do the people who've already enquired get into the app?</div>
+      <div><b>Payment</b>Is a deposit or card taken at pre-registration, or only at launch?</div>
+      <div><b>Notify</b>How are pre-registered members told when their suburb goes live?</div>
+    </div>
+    <p class="gf">Raised at the start of the engagement as "sales vs marketing", and on the first call with Damian as the first thing to sort out.</p>
+  </div>
+  <div class="gantt" role="img" aria-label="Phase 2 plan by week, November 2026 to February 2027">
+    <div class="g"><div></div><div class="gm" style="grid-column:2/3">Nov</div><div class="gm" style="grid-column:3/7">December</div><div class="gm" style="grid-column:7/11">January</div><div class="gm" style="grid-column:11/15">February</div></div>
+    <div class="g"><div></div><div class="gh now">Now</div><div class="gh">W1</div><div class="gh">W2</div><div class="gh">W3</div><div class="gh">W4</div><div class="gh">W5</div><div class="gh">W6</div><div class="gh">W7</div><div class="gh">W8</div><div class="gh">W9</div><div class="gh">W10</div><div class="gh">W11</div><div class="gh">W12</div></div>
+    <div class="g gr"><div class="gl"><b>1</b>Focus ad spend</div><div class="bar" style="grid-column:3/5"></div><div class="bar soft" style="grid-column:5/15"></div></div>
+    <div class="g gr"><div class="gl"><b>2</b>Grow the list</div><div class="bar" style="grid-column:3/5"></div></div>
+    <div class="g gr"><div class="gl"><b>3</b>Pre-registration plan</div><div class="bar pre" style="grid-column:2/4"></div></div>
+    <div class="g gr"><div class="gl"><b style="color:#8b7cf6">W</b>Website, a page a month</div><div class="web-seg" style="grid-column:2/15"><i style="flex:1">HOME</i><i style="flex:4">ABOUT US</i><i style="flex:4">FAQS</i><i style="flex:4">LOCATIONS</i></div></div>
+    <div class="g gr"><div class="gl"><b>4</b>Connect app to Meta</div><div class="bar app" style="grid-column:3/7"></div></div>
+    <div class="g gr"><div class="gl"><b>!</b>App ready for members</div><div class="ms" style="grid-column:7/8"></div></div>
+    <div class="g gr"><div class="gl"><b>5</b>App download campaign</div><div class="bar" style="grid-column:7/15"></div></div>
+    <div class="g gr"><div class="gl"><b>6</b>CAASie billboards</div><div class="bar cz" style="grid-column:7/15"></div></div>
+    <div class="glg"><span><i style="background:var(--stc)"></i>Meta ads</span><span><i style="background:var(--stc-soft);border:1px solid var(--stc)"></i>Ads continue</span><span><i style="background:var(--warn)"></i>Meeting / checkpoint</span><span><i style="background:var(--r2r)"></i>App setup</span><span><i style="background:#3bd62b"></i>CAASie</span><span><i style="background:#8b7cf6"></i>Website</span></div>
+  </div>
+  </div>
+  <ol class="tl">
+    <li><span class="dot">1</span><div class="card">
+      <div class="when">Week 1 · from 01/12/2026</div>
+      <h3>Narrow the ad spend to the highest-intake areas</h3>
+      <p>Stop spreading the budget across all of Melbourne and put it where enquiries are already coming from.</p>
+      <div class="pcs" id="nxPcBuilt"><span>3030</span><span>3029</span><span>3064</span><span>3977</span><span>3024</span></div>
+      <ul>
+        <li><strong>Suggested campaign (already built, paused):</strong> a Meta campaign targeting 3030, 3029, 3064, 3977 and 3024, built on 28/10 with three audiences.</li>
+        <li>Lean on the <strong>interest-based</strong> audience. It has been by far the cheapest so far:</li>
+      </ul>
+      <div class="aud">
+        <div class="ar"><span>Interest-based</span><div class="t"><i style="width:17%"></i></div><span class="v">$6.93 / lead</span></div>
+        <div class="ar mid"><span>Advantage+</span><div class="t"><i style="width:56%"></i></div><span class="v">$22.26 / lead</span></div>
+        <div class="ar hi"><span>Remarketing</span><div class="t"><i style="width:100%"></i></div><span class="v">$40.02 / lead</span></div>
+      </div>
+      <p style="font-size:13px">Meta, 01/10 to 28/10/2026: interest-based 343 leads, Advantage+ 108, remarketing 26. Interests targeted: Security alarm, Fire safety, Home safety, Emergency management and Alarm device.</p>
+      <p id="nxPcLive" style="font-size:13.5px"></p>
+      <div class="meta"><span class="chip ok">Ready to launch</span><span class="chip">Ready to Rank</span></div>
+    </div></li>
+    <li><span class="dot">2</span><div class="card">
+      <div class="when">Weeks 1–2 · 01/12 to 14/12/2026</div>
+      <h3>Grow the list in those postcodes</h3>
+      <p>Run the focused campaign for a fixed two weeks with a set budget, so each target suburb has a bigger pool of interested households before the app push.</p>
+      <div class="facts"><div class="fact"><small>Period</small><b>14 days</b></div><div class="fact"><small>Budget (as built)</small><b>A$44/day</b></div><div class="fact"><small>Two-week total</small><b>A$616</b></div></div>
+      <ul>
+        <li>Budget shown is the campaign as built. Increase it if we want the list to grow faster; agree the figure before launch.</li>
+        <li>Track leads per postcode daily on this hub (Suburb launch tab).</li>
+      </ul>
+      <div class="meta"><span class="chip warn">Budget to confirm</span><span class="chip">Ready to Rank</span><span class="chip">Savvas Studio</span></div>
+    </div></li>
+    <li><span class="dot">3</span><div class="card">
+      <div class="when">Now, before Phase 2 starts</div>
+      <h3>Agree pre-registration with Software Co</h3>
+      <p>This closes the gap above. Marketing creates the interest; the app has to hold it until each suburb launches. It's the sales side of sales vs marketing, raised at the start and with Damian on our first call.</p>
+      <ul>
+        <li>Was pre-registration considered when the app was built?</li>
+        <li>How does someone who enquired through an ad become a pre-registered member in the app?</li>
+        <li>Who follows up the enquiries we already have, and how?</li>
+      </ul>
+      <div class="meta"><span class="chip warn">Needs a meeting</span><span class="chip">STC</span><span class="chip">Software Co</span><span class="chip">Ready to Rank</span></div>
+    </div></li>
+    <li class="web"><span class="dot">W</span><div class="card">
+      <div class="when">Started now · continues month by month</div>
+      <h3>Build out the full website, one page a month</h3>
+      <p>This wasn't part of Phase 1 on purpose. The current landing page has one job: get people to leave their details. It works because it's short. As soon as a page gives more information, fewer people take action.</p>
+      <p>Phase 2 needs more than that. Before someone downloads the app and pre-registers, they need to understand the service, so the full site is being built now, alongside the landing page, which stays live for the ads.</p>
+      <div class="wsteps"><span>Wireframe</span><em>→</em><span>STC approval</span><em>→</em><span>Build</span><em>→</em><span>Live</span><em>· one page a month</em></div>
+      <div class="months">
+        <div class="cur"><small>Now · Nov</small><b>Home page</b><span>Wireframe in progress</span></div>
+        <div><small>December</small><b>About us</b><span>Wireframe, approve, build</span></div>
+        <div><small>January</small><b>FAQs</b><span>Wireframe, approve, build</span></div>
+        <div><small>February</small><b>Locations</b><span>Suburb coverage pages</span></div>
+      </div>
+      <p style="font-size:13px">Page order after the home page is proposed and can change with STC's priorities.</p>
+      <div class="meta"><span class="chip ok">In progress</span><span class="chip">Ready to Rank</span><span class="chip">STC approvals</span></div>
+    </div></li>
+    <li><span class="dot">4</span><div class="card">
+      <div class="when">Weeks 1–4</div>
+      <h3>Connect the app to Meta for app promotion</h3>
+      <p>To run and track a Meta App Promotion campaign we need the app developer's help with the technical setup:</p>
+      <ul class="ckl">
+        <li>Set up or confirm the app's connection in Meta for Developers.</li>
+        <li>Add the Meta SDK, or a supported mobile measurement partner (MMP), to the app.</li>
+        <li>Set up and verify app events: App Install, Registration and Complete Registration.</li>
+        <li>Connect the app to the Meta ad account and check the events are tracking.</li>
+      </ul>
+      <p>Once that's done, the campaign can send people to download the app and, where supported, optimise for completed registrations rather than just installs.</p>
+      <div class="meta"><span class="chip warn">Needs the app developer</span><span class="chip">Software Co</span><span class="chip">Ready to Rank</span></div>
+    </div></li>
+    <li><span class="dot">5</span><div class="card">
+      <div class="when">Weeks 5–12</div>
+      <h3>Run the app download campaign in the target areas</h3>
+      <p>A higher-budget Meta App Promotion campaign in the focus postcodes, aimed at app downloads and completed registrations.</p>
+      <ul>
+        <li>Use the list we've built: upload the emails of people who've enquired (with their consent) so Meta can reach them and people like them.</li>
+        <li>Optimise for completed registrations once the app events are verified (step 4).</li>
+      </ul>
+      <div class="meta"><span class="chip">Starts once steps 3 and 4 and the app check are done</span><span class="chip">Ready to Rank</span></div>
+    </div></li>
+    <li><span class="dot">6</span><div class="card">
+      <div class="when">Weeks 5–12 · alongside step 5</div>
+      <h3 class="czh"><svg class="cz" viewBox="0 0 1000 1000" aria-hidden="true"><rect width="1000" height="1000" rx="160" fill="#3bd62b"/><path d="M378 400V203a123.5 123.5 0 0 1 247 0V400z" fill="#00232d"/><rect x="378" y="600" width="247" height="400" fill="#00232d"/><circle cx="500" cy="507" r="267" fill="#3bd62b"/><circle cx="500" cy="507" r="215" fill="#00232d"/><circle cx="500" cy="507" r="147" fill="#3bd62b"/><circle cx="500" cy="507" r="91" fill="#d6ffd2"/></svg><span>Digital billboards on <span class="czn">CAASie</span> in the same areas</span></h3>
+      <p>Run <a href="https://caasie.co/" target="_blank" rel="noopener">CAASie</a> digital billboards in the target suburbs at the same time, for awareness and app downloads, so people see STC on the street as well as on their phones.</p>
+      <div class="meta"><span class="chip">Ready to Rank</span><span class="chip">Savvas Studio (artwork)</span></div>
+    </div></li>
+    <li class="chk"><span class="dot">!</span><div class="card">
+      <div class="when">Must be ready before step 5 goes live</div>
+      <h3>The app has to be ready to take members</h3>
+      <p>By the time we're paying for downloads, the app must be able to:</p>
+      <ul class="ckl">
+        <li>Hold registrants (sign-ups by address and postcode)</li>
+        <li>Take payments</li>
+        <li>Notify members when their suburb launches</li>
+      </ul>
+      <div class="meta"><span class="chip warn">Software Co to confirm</span><span class="chip">STC</span></div>
+    </div></li>
+  </ol>
+</section>
 </div>
 
 <footer>
@@ -685,7 +934,9 @@ function renderCreative(){
   T.innerHTML="";
   rows.forEach(r=>{const tr=document.createElement("tr");
     const cell=(v,cls,isBest)=>{const td=document.createElement("td");td.className=cls||"";td.textContent=v;if(isBest)td.classList.add("best");tr.appendChild(td);return td};
-    const am=adMeta(r.n);const nt=document.createElement("td");nt.className="adn";nt.textContent=am.hook;if(am.meta){const sm=document.createElement("small");sm.textContent=am.meta;nt.appendChild(sm)}tr.appendChild(nt);
+    const am=adMeta(r.n);const nt=document.createElement("td");nt.className="adn";
+    const TH=thumbsDoc&&thumbsDoc.byName&&thumbsDoc.byName[r.n]; if(TH){const im=document.createElement("img");im.className="th";im.src=TH;im.alt="";im.loading="lazy";nt.appendChild(im)}
+    nt.appendChild(document.createTextNode(am.hook));if(am.meta){const sm=document.createElement("small");sm.textContent=am.meta;nt.appendChild(sm)}tr.appendChild(nt);
     const ct=document.createElement("td");const tg=document.createElement("span");tg.className="tag";tg.textContent=am.concept;ct.appendChild(tg);tr.appendChild(ct);
     cell(aud(r.spend),"r num");cell(n0(r.impr),"r num");cell(n0(r.v3),"r num");cell(n0(r.tp),"r num");
     const big=r.impr>=1000;
@@ -742,6 +993,24 @@ function renderCompare(R){
   panel("both","Both",mS+tS,mL+tL,(mL+tL)?(mS+tS)/(mL+tL):null,null);
   $("cmpNote").textContent="Leads that reached GHL. Meta includes the landing page from its video ads. For comparison, Meta itself reports "+n0(mP)+(hasT?" and TikTok "+n0(tP):"")+" leads."+(hasT?"":" TikTok data isn't loaded yet.");
   return {mS,tS,mL,tL};
+}
+let thumbsDoc=null, audDoc=null;
+function renderAud(){
+  const T=$("auT"); if(!T) return; const A=audDoc; if(!A||!A.rows){T.innerHTML='<div class="empty">No audience data loaded yet.</div>';return}
+  T.innerHTML=""; $("auAsOf").textContent="Meta, "+dmy(A.from)+" to "+dmy(A.to)+".";
+  const rows=A.rows.map(r=>({...r,c:r.l?r.s/r.l:null})), best=[...rows].filter(r=>r.c!=null).sort((a,b)=>a.c-b.c)[0];
+  rows.forEach(r=>{const d=document.createElement("div");d.className="audc"+(r===best?" top":"");
+    d.innerHTML='<h3><span></span><em></em></h3><p></p><div class="ints"></div><div class="n"><span></span><small>per lead</small></div><div class="sub"></div>';
+    d.querySelector("h3 span").textContent=r.label; d.querySelector("h3 em").textContent=r===best?"Cheapest":""; d.querySelector("p").textContent=r.desc||"";
+    const I=d.querySelector(".ints"); (r.interests||[]).forEach(x=>{const s=document.createElement("span");s.textContent=x;I.appendChild(s)}); if(!(r.interests||[]).length) I.remove();
+    d.querySelector(".n span").textContent=r.c!=null?aud(r.c):"–"; d.querySelector(".sub").textContent=n0(r.l)+" leads · "+aud0(r.s)+" spend · "+n0(r.i)+" impressions"; T.appendChild(d)});
+}
+function renderNext(){
+  const el=$("nxPcLive"); if(!el||!leadsDoc) return;
+  const gl=$("gapLeads"); if(gl) gl.textContent=n0((leadsDoc.rows||[]).length)+" enquiries";
+  const by={}; (leadsDoc.rows||[]).forEach(r=>{if(r.p&&isVic(r.p)) by[r.p]=(by[r.p]||0)+1});
+  const top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  el.textContent=top.length?"Highest intake on this hub today ("+dmy(leadsDoc.asOf)+"): "+top.map(([p,n])=>p+(NAMES[p]?" "+NAMES[p]:"")+" ("+n+")").join(", ")+".":"";
 }
 function renderOverview(){
   const c=compute(), S=spendDoc;
@@ -825,7 +1094,7 @@ function renderOverview(){
 function isoL(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function progTxt(r){const m=Math.round(r.exp);return "about "+(m<1?"under 1":n0(m))+" expected member"+(m===1?"":"s")+" of the "+n0(r.target)+" needed"}
 function esc(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
-function showTab(id,focus){["overview","launch","ads"].forEach(k=>{const on=k===id,b=$("tb-"+k);b.setAttribute("aria-selected",on);b.tabIndex=on?0:-1;$("pn-"+k).hidden=!on;if(on&&focus)b.focus()});try{localStorage.setItem("stcTab",id)}catch(e){}}
+function showTab(id,focus){["overview","launch","ads","next"].forEach(k=>{const on=k===id,b=$("tb-"+k);b.setAttribute("aria-selected",on);b.tabIndex=on?0:-1;$("pn-"+k).hidden=!on;if(on&&focus)b.focus()});try{localStorage.setItem("stcTab",id)}catch(e){}}
 function render(){
   $("convOut").textContent=scen.conv+"%";
   const be=$("breakeven");
@@ -840,6 +1109,8 @@ function render(){
   if(!c){return}
   const {rows,excluded,asOf}=c;
   try{renderOverview()}catch(e){}
+  try{renderNext()}catch(e){}
+  try{renderAud()}catch(e){}
   $("asOf").textContent="Lead data as at "+fmtDate(asOf)+".";
   const total=(leadsDoc.rows||[]).length;
   const ranked=[...rows].sort((a,b)=>b.prog-a.prog||b.leads-a.leads);
@@ -938,12 +1209,12 @@ document.querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",
 
 bindInputs(); render();
 document.querySelectorAll("#rng button").forEach(b=>b.addEventListener("click",()=>{ovR=b.dataset.r; try{localStorage.setItem("stcRange",ovR)}catch(e){} try{renderOverview()}catch(e){}}));
-const TABS=["overview","launch","ads"];
+const TABS=["overview","launch","ads","next"];
 TABS.forEach(k=>$("tb-"+k).addEventListener("click",()=>showTab(k)));
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{showTab(b.dataset.go);window.scrollTo({top:0,behavior:"smooth"})}));
 document.querySelector(".tablist").addEventListener("keydown",e=>{if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft")return;e.preventDefault();const i=TABS.findIndex(k=>$("tb-"+k).getAttribute("aria-selected")==="true");showTab(TABS[(i+(e.key==="ArrowRight"?1:TABS.length-1))%TABS.length],true)});
 /* Always open on the overview: it is the page a busy owner should land on. */
-if(location.hash==="#ads")showTab("ads"); else if(location.hash==="#launch")showTab("launch");
+if(location.hash==="#ads")showTab("ads"); else if(location.hash==="#launch")showTab("launch"); else if(location.hash==="#next")showTab("next");
 
 /* Data lives in Supabase behind RLS. The page never holds figures itself: every load goes
    through stc_launch_load(), which refuses any email not on STC's access list. */
@@ -1014,6 +1285,8 @@ async function boot(){
   setState("Changes save for everyone");
   db.doc("config/leads").onSnapshot(s=>{ leadsDoc=s.exists?s.data():null; if(!leadsDoc){$("kpis").innerHTML='<div class="empty">No lead data loaded yet.</div>';$("chart").innerHTML='<div class="empty">No lead data loaded yet.</div>';} render(); renderSpend(); });
   db.doc("config/settings").onSnapshot(s=>{ if(s.exists){ const d=s.data(); settings={...DEF,...d}; scen={conv:settings.conv,pace:settings.pace}; bindInputs(); } render(); });
+  db.doc("config/thumbs").onSnapshot(s=>{ thumbsDoc=s.exists?s.data():null; try{renderCreative()}catch(e){} },()=>{});
+  db.doc("config/audiences").onSnapshot(s=>{ audDoc=s.exists?s.data():null; try{renderAud()}catch(e){} },()=>{});
   db.doc("config/spend").onSnapshot(s=>{ spendDoc=s.exists?s.data():null; if(!spendDoc){$("spK").innerHTML='<div class="empty">No spend data loaded yet.</div>';$("spChart").innerHTML='<div class="empty">No spend data loaded yet.</div>';} renderSpend(); renderDemo(); renderCreative(); renderFresh(); renderOverview(); });
   db.collection("postcodes").onSnapshot(qs=>{ const m={}; qs.docs.forEach(d=>{m[d.id]=d.data()}); pcs=m; render(); });
   /* Pick up the 7am refresh without a reload. */
