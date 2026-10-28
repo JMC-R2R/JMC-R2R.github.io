@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>SOP Library — Ready to Rank</title>
+<style>
+@font-face{font-family:"Archivo";src:url("/operations/assets/Archivo-var.ttf") format("truetype");font-weight:100 900;font-style:normal;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("/operations/assets/SpaceMono-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("/operations/assets/SpaceMono-Bold.ttf") format("truetype");font-weight:700;font-style:normal;font-display:swap;}
+
+:root{
+  --bg:#0F0F12; --surface:#17171C; --card:#1B1B21;
+  --line:#2A2A32; --line-soft:#22222A;
+  --white:#fff; --text:#D8D8E0; --muted:#9B9BA6; --faint:#6E6E7A;
+  --accent:#17B4F0; --accent-ink:#0B0B0E; --green:#2BD9A6; --amber:#F5B02E; --red:#E04B4B;
+  --mono:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Archivo",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;}
+a{color:var(--accent);}
+.hide{display:none!important;}
+button{font-family:inherit;cursor:pointer;}
+.btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:6px;padding:8px 14px;
+  font-weight:800;font-size:12.5px;letter-spacing:.02em;}
+.btn:disabled{opacity:.5;cursor:default;}
+.ghost{background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:7px 12px;font-size:12.5px;}
+.ghost:hover{border-color:var(--accent);color:var(--white);}
+.ghost.danger:hover{border-color:var(--red);color:#FF9C9C;}
+.linkbtn{background:none;border:none;color:var(--accent);font-size:12.5px;margin-top:14px;text-decoration:underline;}
+.mono{font-family:var(--mono);}
+
+/* ---------------------------------------------------------------- gate */
+.signin{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
+.signin .box{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px 24px;}
+.signin h1{font-size:30px;font-weight:900;color:var(--white);letter-spacing:-.02em;margin-bottom:6px;}
+.signin h1 em{font-style:normal;color:var(--accent);}
+.signin p{color:var(--muted);font-size:13.5px;margin-bottom:18px;}
+.signin .btn{width:100%;padding:12px;font-size:13px;margin-top:6px;}
+.fl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:10px 0 5px;}
+.in{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--white);padding:9px 11px;font:inherit;font-size:14px;}
+.in:focus{outline:none;border-color:var(--accent);}
+.msg{font-size:12.5px;border-radius:6px;padding:9px 11px;margin-bottom:14px;}
+.msg.bad{color:#FF9C9C;background:rgba(224,75,75,.1);border:1px solid rgba(224,75,75,.4);}
+.msg.ok{color:#8FF0D2;background:rgba(43,217,166,.08);border:1px solid rgba(43,217,166,.35);}
+
+/* ---------------------------------------------------------------- shell */
+.top{border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:20;}
+.top .in-row{max-width:1240px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.top img{height:26px;}
+.crumb{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);}
+.crumb a{color:var(--faint);text-decoration:none;}
+.crumb a:hover{color:var(--accent);}
+.crumb b{color:var(--white);}
+.who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:12.5px;color:var(--muted);}
+.ro{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);
+  border:1px solid rgba(245,176,46,.4);border-radius:4px;padding:2px 6px;}
+
+.layout{max-width:1240px;margin:0 auto;padding:0 20px 90px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:34px;}
+nav.side{position:sticky;top:62px;align-self:start;padding-top:26px;max-height:calc(100vh - 62px);overflow:auto;}
+.side .search{width:100%;margin-bottom:14px;}
+.side h4{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:16px 0 6px;}
+.side a.sop{display:block;padding:7px 10px;border-radius:6px;color:var(--text);text-decoration:none;font-size:13.5px;line-height:1.3;border:1px solid transparent;}
+.side a.sop:hover{background:var(--card);}
+.side a.sop.on{background:var(--card);border-color:var(--line);color:var(--white);font-weight:700;}
+.side a.sop.arch{color:var(--faint);font-style:italic;}
+.side .newbtn{width:100%;margin-top:18px;}
+.side .archtoggle{display:flex;gap:7px;align-items:center;font-size:12px;color:var(--faint);margin-top:12px;}
+.side .empty{font-size:12.5px;color:var(--faint);}
+.mobpick{display:none;}
+
+main{min-width:0;padding-top:26px;}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
+.tools .meta{font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.04em;margin-right:auto;}
+.banner{border:1px solid rgba(245,176,46,.45);background:rgba(245,176,46,.08);border-radius:8px;padding:11px 14px;
+  margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13.4px;}
+.banner b{color:var(--amber);}
+.banner .sp{margin-left:auto;display:flex;gap:8px;}
+
+/* ---------------------------------------------------------------- SOP view (matches the printed checklist) */
+.mast{border-bottom:1px solid var(--line);padding:6px 0 26px;}
+.eyebrow{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:10px;}
+.mast h1{font-size:clamp(28px,4.4vw,46px);font-weight:900;letter-spacing:-.03em;line-height:1.02;color:var(--white);margin-bottom:12px;}
+.mast h1 em{font-style:normal;color:var(--accent);}
+.lede{font-size:clamp(14.5px,1.5vw,16.5px);color:var(--muted);max-width:64ch;white-space:pre-line;}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:24px;}
+.roles div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
+.roles b{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:4px;}
+.roles span{color:var(--white);font-size:14px;font-weight:700;}
+.roles small{display:block;color:var(--muted);font-size:12.5px;margin-top:3px;}
+
+.sec{margin-top:40px;}
+.sec>.num{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:9px;}
+.sec.gate>.num{color:var(--red);}
+.sec>h2{font-size:clamp(20px,2.6vw,26px);font-weight:900;color:var(--white);letter-spacing:-.02em;line-height:1.15;margin-bottom:8px;}
+.sec>.sub{font-size:14px;color:var(--muted);margin-bottom:14px;max-width:68ch;white-space:pre-line;}
+ul.ck{list-style:none;border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+ul.ck li{border-top:1px solid var(--line-soft);background:var(--surface);}
+ul.ck li:first-child{border-top:none;}
+ul.ck label{display:flex;gap:13px;align-items:flex-start;padding:12px 15px;cursor:pointer;}
+ul.ck input{appearance:none;-webkit-appearance:none;flex:none;width:19px;height:19px;margin-top:2px;
+  border:1.5px solid var(--faint);border-radius:4px;background:var(--bg);cursor:pointer;position:relative;}
+ul.ck input:checked{background:var(--green);border-color:var(--green);}
+ul.ck input:checked::after{content:"";position:absolute;left:5.5px;top:1.5px;width:5px;height:10px;
+  border:solid #0F0F12;border-width:0 2.5px 2.5px 0;transform:rotate(45deg);}
+ul.ck .x{flex:1;min-width:0;}
+ul.ck .x b{color:var(--white);font-size:14.6px;font-weight:700;line-height:1.35;}
+ul.ck .x .d{display:block;color:var(--muted);font-size:13px;margin-top:3px;white-space:pre-line;overflow-wrap:anywhere;}
+ul.ck input:checked + .x b{color:var(--faint);text-decoration:line-through;}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:2px;}
+.tag.missed{background:rgba(224,75,75,.15);color:var(--red);border:1px solid rgba(224,75,75,.35);}
+.tag.evidence{background:rgba(23,180,240,.12);color:var(--accent);border:1px solid rgba(23,180,240,.3);}
+.tplwrap{position:relative;margin-top:12px;}
+pre{background:#101015;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:7px;
+  padding:14px 16px;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--mono);font-size:12.4px;color:#E6E6EE;line-height:1.7;}
+.tplwrap .ghost{position:absolute;top:8px;right:8px;background:var(--card);}
+.why{margin-top:40px;border:1px solid var(--line);border-radius:9px;padding:16px 18px;background:var(--surface);}
+.why h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;}
+.why p{font-size:13.2px;color:var(--muted);white-space:pre-line;}
+
+/* ---------------------------------------------------------------- editor */
+.ed .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:16px;}
+.ed .card.gate{border-color:rgba(224,75,75,.45);}
+.ed .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ed textarea.in{min-height:64px;resize:vertical;line-height:1.5;}
+.ed textarea.tpl{font-family:var(--mono);font-size:12.4px;min-height:150px;}
+.ed .sechead{display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap;}
+.ed .sechead .n{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.12em;}
+.ed .sechead .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;}
+.ed .mini{padding:4px 9px;font-size:11.5px;}
+.ed .items{margin-top:12px;border:1px solid var(--line-soft);border-radius:8px;}
+.ed .item{display:grid;grid-template-columns:minmax(0,1fr) 150px auto;gap:8px;padding:10px;border-top:1px solid var(--line-soft);align-items:start;}
+.ed .item:first-child{border-top:none;}
+.ed .item .stack{display:flex;flex-direction:column;gap:6px;}
+.ed .item textarea.in{min-height:40px;font-size:13px;}
+.ed .item .acts{display:flex;gap:4px;}
+.ed select.in{padding:8px;}
+.ed .chk{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--muted);}
+.ed .rolerow{display:grid;grid-template-columns:1fr 1fr 1.4fr auto;gap:8px;margin-top:8px;}
+.ed .add{margin-top:10px;}
+.savebar{position:sticky;bottom:0;z-index:15;background:rgba(15,15,18,.96);border-top:1px solid var(--line);
+  margin:30px -20px 0;padding:12px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.savebar .in{flex:1;min-width:200px;}
+
+/* ---------------------------------------------------------------- drawer, dialog, toast */
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--surface);border-left:1px solid var(--line);
+  z-index:40;display:flex;flex-direction:column;}
+#drawer header{display:flex;align-items:center;padding:16px;border-bottom:1px solid var(--line);}
+#drawer header h3{color:var(--white);font-size:17px;}
+#drawer header .ghost{margin-left:auto;}
+#drawer .body{overflow:auto;padding:8px 16px 20px;}
+.ver{border-bottom:1px solid var(--line-soft);padding:12px 0;}
+.ver .w{font-size:13.5px;color:var(--white);font-weight:700;}
+.ver .m{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:2px;}
+.ver .n{font-size:12.8px;color:var(--muted);margin-top:4px;}
+.ver .ghost{margin-top:8px;}
+#ovl{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:none;align-items:center;justify-content:center;padding:16px;}
+#ovl.show{display:flex;}
+#dlg{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;}
+#dlg h3{color:var(--white);font-size:19px;margin-bottom:6px;}
+#dlg p{font-size:13px;color:var(--muted);}
+#dlg .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--card);border:1px solid var(--accent);
+  color:var(--white);padding:10px 16px;border-radius:8px;font-size:13px;z-index:60;max-width:calc(100% - 32px);}
+#toast.bad{border-color:var(--red);color:#FF9C9C;}
+
+@media screen and (max-width:860px){
+  .layout{grid-template-columns:1fr;gap:0;padding:0 16px 80px;}
+  nav.side{display:none;}
+  .mobpick{display:flex;gap:8px;margin-top:18px;}
+  .mobpick select{flex:1;}
+  .top .in-row{padding:10px 16px;}
+  .ed .row,.ed .rolerow{grid-template-columns:1fr;}
+  .ed .item{grid-template-columns:1fr;}
+  .savebar{margin:30px -16px 0;padding:12px 16px;}
+}
+@media print{
+  @page{size:A4 portrait;margin:12mm;}
+  body{background:#fff;color:#111;}
+  .top,nav.side,.mobpick,.tools,.banner,.tplwrap .ghost,#toast{display:none!important;}
+  .layout{display:block;padding:0;}
+  main{padding:0;}
+  .mast h1,.sec>h2,ul.ck .x b,.roles span{color:#111;}
+  .lede,.sec>.sub,ul.ck .x .d,.roles small,.why p{color:#444;}
+  ul.ck,ul.ck li,.roles div,.why{background:#fff;border-color:#ccc;}
+  ul.ck li{break-inside:avoid;}
+  ul.ck input{border-color:#555;background:#fff;}
+  pre{background:#f6f6f6;color:#111;border-color:#ccc;}
+}
+</style>
+</head>
+<body>
+
+<div id="gate" class="signin hide">
+  <div class="box">
+    <h1>SOP <em>Library</em></h1>
+    <p>Ready to Rank internal. Sign in with your team account.</p>
+    <div id="gateMsg" class="msg hide"></div>
+    <form id="loginForm">
+      <label class="fl" for="email">Email</label>
+      <input class="in" id="email" type="email" autocomplete="username" required>
+      <label class="fl" for="pw">Password</label>
+      <input class="in" id="pw" type="password" autocomplete="current-password">
+      <button class="btn" id="loginBtn" type="submit">Sign in</button>
+    </form>
+    <button class="linkbtn" id="magicBtn" type="button">No password? Email me a sign-in link</button>
+  </div>
+</div>
+
+<div id="app" class="hide">
+  <div class="top"><div class="in-row">
+    <img src="/operations/assets/r2r-logo.png" alt="Ready to Rank">
+    <span class="crumb"><a href="/operations/">Operations</a> / <b>SOP Library</b></span>
+    <span class="who"><span id="whoami"></span><span id="roBadge" class="ro hide">Read only</span>
+      <button id="signout" class="ghost" type="button">Sign out</button></span>
+  </div></div>
+
+  <div class="layout">
+    <nav class="side" aria-label="SOPs">
+      <input class="in search" id="search" type="search" placeholder="Find a SOP" aria-label="Find a SOP">
+      <div id="list"></div>
+      <button class="btn newbtn hide" id="newBtn" type="button">+ New SOP</button>
+      <label class="archtoggle hide" id="archWrap"><input type="checkbox" id="showArch"> Show archived</label>
+    </nav>
+    <main>
+      <div class="mobpick">
+        <select class="in" id="mobSelect" aria-label="Choose a SOP"></select>
+        <button class="btn hide" id="newBtnM" type="button">+ New</button>
+      </div>
+      <div id="view"></div>
+    </main>
+  </div>
+</div>
+
+<aside id="drawer" class="hide" aria-label="Version history">
+  <header><h3>Version history</h3><button class="ghost" id="drawerX" type="button">Close</button></header>
+  <div class="body" id="drawerBody"></div>
+</aside>
+
+<div id="ovl">
+  <div id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgh">
+    <h3 id="dlgh">New SOP</h3>
+    <p>Give it a name and an area. You can change both later.</p>
+    <label class="fl" for="nTitle">Name</label>
+    <input class="in" id="nTitle" maxlength="80" placeholder="e.g. Website launch-day checklist">
+    <label class="fl" for="nArea">Area</label>
+    <input class="in" id="nArea" maxlength="40" list="areaList" placeholder="e.g. Web builds">
+    <datalist id="areaList"></datalist>
+    <div class="btns">
+      <button type="button" class="ghost" id="nCancel">Cancel</button>
+      <button type="button" class="btn" id="nOk">Create and edit</button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="hide"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = "https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY = "sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const auDate = d => { if (!d) return ""; const t = new Date(d);
+  return t.toLocaleDateString("en-AU", { day:"2-digit", month:"2-digit", year:"2-digit" }) + " " +
+         t.toLocaleTimeString("en-AU", { hour:"numeric", minute:"2-digit" }); };
+const pad = n => String(n).padStart(2, "0");
+const clone = o => JSON.parse(JSON.stringify(o));
+const FLAGS = { "":"No tag", missed:"Often missed", evidence:"Evidence" };
+
+const sb = supabase.createClient(SB_URL, SB_KEY);
+let ME = null, CAN_WRITE = false;
+let SOPS = [], CUR = null;           // CUR = the SOP row on screen
+let MODE = "view";                   // view | edit | version
+let DRAFT = null, DRAFT_META = null; // editor state
+let VERSION = null;                  // a past version being previewed
+let DIRTY = false;
+
+function toast(msg, bad) {
+  const t = $("toast"); t.textContent = msg; t.className = bad ? "bad" : "";
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.add("hide"), bad ? 8000 : 3200);
+}
+function gateMsg(t, bad) { const m = $("gateMsg"); m.textContent = t; m.className = "msg " + (bad ? "bad" : "ok"); }
+
+// ------------------------------------------------------------------ auth (same as the registers)
+
+$("loginForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const pw = $("pw").value;
+  if (!pw) { gateMsg("Enter your password, or use the sign-in link below.", true); return; }
+  $("loginBtn").disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: pw });
+  $("loginBtn").disabled = false;
+  if (error) { gateMsg(error.message, true); return; }
+  boot();
+});
+$("magicBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim();
+  if (!email) { gateMsg("Type your Ready to Rank email first.", true); return; }
+  const { error } = await sb.auth.signInWithOtp({ email,
+    options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
+  gateMsg(error ? error.message : "Check your inbox for a sign-in link.", !!error);
+});
+$("signout").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
+
+async function boot() {
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) { $("gate").classList.remove("hide"); $("app").classList.add("hide"); return; }
+  const [{ data:person }, { data:writer }] = await Promise.all([
+    sb.from("tt_people").select("id,name").eq("id", session.user.id).maybeSingle(),
+    sb.from("so_sop_writers").select("person_id,active").eq("person_id", session.user.id).maybeSingle(),
+  ]);
+  if (!person) {
+    gateMsg("That account is not on the internal team list.", true);
+    await sb.auth.signOut(); $("gate").classList.remove("hide"); return;
+  }
+  ME = person; CAN_WRITE = !!(writer && writer.active);
+  $("gate").classList.add("hide"); $("app").classList.remove("hide");
+  $("whoami").textContent = ME.name;
+  $("roBadge").classList.toggle("hide", CAN_WRITE);
+  ["newBtn","newBtnM","archWrap"].forEach(id => $(id).classList.toggle("hide", !CAN_WRITE));
+  await loadList(new URLSearchParams(location.search).get("sop"));
+}
+
+// ------------------------------------------------------------------ data
+
+async function loadList(want) {
+  const { data, error } = await sb.from("so_sops")
+    .select("slug,title,area,sort,active,doc,updated_at,updated_by").order("area").order("sort").order("title");
+  if (error) { $("view").innerHTML = `<div class="msg bad">${esc(error.message)}</div>`; return; }
+  SOPS = data || [];
+  const pick = SOPS.find(s => s.slug === want) || SOPS.find(s => s.active);
+  renderList();
+  if (pick) openSop(pick.slug); else renderEmpty();
+}
+
+function renderList() {
+  const q = $("search").value.trim().toLowerCase();
+  const showArch = $("showArch").checked;
+  const rows = SOPS.filter(s => (s.active || showArch) &&
+    (!q || (s.title + " " + s.area + " " + JSON.stringify(s.doc)).toLowerCase().includes(q)));
+  const byArea = {};
+  rows.forEach(s => (byArea[s.area] = byArea[s.area] || []).push(s));
+  $("list").innerHTML = Object.keys(byArea).length ? Object.entries(byArea).map(([a, list]) =>
+    `<h4>${esc(a)}</h4>` + list.map(s =>
+      `<a href="?sop=${encodeURIComponent(s.slug)}" data-slug="${esc(s.slug)}" class="sop${CUR && CUR.slug === s.slug ? " on" : ""}${s.active ? "" : " arch"}">${esc(s.title)}</a>`
+    ).join("")).join("") : `<p class="empty">${q ? "No SOP matches that." : "No SOPs yet."}</p>`;
+  $("mobSelect").innerHTML = SOPS.filter(s => s.active || showArch).map(s =>
+    `<option value="${esc(s.slug)}"${CUR && CUR.slug === s.slug ? " selected" : ""}>${esc(s.area)} · ${esc(s.title)}</option>`).join("");
+  $("areaList").innerHTML = [...new Set(SOPS.map(s => s.area))].map(a => `<option value="${esc(a)}">`).join("");
+}
+$("search").addEventListener("input", renderList);
+$("showArch").addEventListener("change", renderList);
+$("list").addEventListener("click", ev => {
+  const a = ev.target.closest("a.sop"); if (!a) return;
+  ev.preventDefault(); openSop(a.dataset.slug);
+});
+$("mobSelect").addEventListener("change", ev => openSop(ev.target.value));
+
+function leaveOk() {
+  return !(MODE === "edit" && DIRTY) || confirm("You have unsaved changes to this SOP. Leave without saving?");
+}
+
+function openSop(slug) {
+  if (!leaveOk()) { renderList(); return; }
+  CUR = SOPS.find(s => s.slug === slug); if (!CUR) return;
+  MODE = "view"; DRAFT = null; VERSION = null; DIRTY = false;
+  history.replaceState(null, "", "?sop=" + encodeURIComponent(slug));
+  renderList(); renderView();
+  window.scrollTo(0, 0);
+}
+
+function renderEmpty() {
+  $("view").innerHTML = `<div class="mast"><span class="eyebrow">SOP Library</span><h1>No SOPs <em>yet</em></h1>
+    <p class="lede">${CAN_WRITE ? "Start one with + New SOP." : "Jose and Jhen add SOPs here."}</p></div>`;
+}
+
+// ------------------------------------------------------------------ view
+
+function titleHtml(t) {
+  const w = String(t || "").trim().split(/\s+/);
+  if (w.length < 2) return `<em>${esc(t)}</em>`;
+  return esc(w[0]) + " <em>" + esc(w[1]) + "</em>" + (w.length > 2 ? " " + esc(w.slice(2).join(" ")) : "");
+}
+
+function docHtml(title, doc) {
+  const d = doc || {};
+  const roles = (d.roles || []).filter(r => r.label || r.name);
+  let h = `<header class="mast">
+    <span class="eyebrow">${esc(d.eyebrow || "SOP")}</span>
+    <h1>${titleHtml(title)}</h1>
+    ${d.intro ? `<p class="lede">${esc(d.intro)}</p>` : ""}
+    ${roles.length ? `<div class="roles">${roles.map(r =>
+      `<div><b>${esc(r.label)}</b><span>${esc(r.name)}</span>${r.note ? `<small>${esc(r.note)}</small>` : ""}</div>`).join("")}</div>` : ""}
+  </header>`;
+  (d.sections || []).forEach((s, i) => {
+    h += `<section class="sec${s.gate ? " gate" : ""}">
+      <span class="num">${pad(i)} · ${esc(s.label || "")}</span>
+      ${s.heading ? `<h2>${esc(s.heading)}</h2>` : ""}
+      ${s.sub ? `<p class="sub">${esc(s.sub)}</p>` : ""}
+      ${(s.items || []).length ? `<ul class="ck">${s.items.map(it => `<li><label><input type="checkbox"><span class="x">
+        <b>${esc(it.title)}</b>${it.flag && FLAGS[it.flag] ? ` <span class="tag ${it.flag}">${esc(FLAGS[it.flag])}</span>` : ""}
+        ${it.detail ? `<span class="d">${esc(it.detail)}</span>` : ""}</span></label></li>`).join("")}</ul>` : ""}
+      ${s.template ? `<div class="tplwrap"><pre>${esc(s.template)}</pre><button class="ghost mini copy" type="button" data-s="${i}">Copy</button></div>` : ""}
+    </section>`;
+  });
+  if (d.why) h += `<div class="why"><h3>Why this exists</h3><p>${esc(d.why)}</p></div>`;
+  return h;
+}
+
+function renderView() {
+  const s = CUR;
+  let tools = `<div class="tools"><span class="meta">Last edited ${esc(auDate(s.updated_at))}${s.updated_by ? " by " + esc(s.updated_by) : ""}</span>
+    <button class="ghost" id="tReset" type="button">Clear ticks</button>
+    <button class="ghost" id="tPrint" type="button">Print</button>
+    <button class="ghost" id="tHist" type="button">History</button>`;
+  if (CAN_WRITE) tools += s.active
+    ? `<button class="ghost danger" id="tArch" type="button">Archive</button><button class="btn" id="tEdit" type="button">Edit</button>`
+    : `<button class="btn" id="tUnarch" type="button">Restore from archive</button>`;
+  tools += `</div>`;
+  const banner = s.active ? "" : `<div class="banner"><b>Archived.</b> The team can't see this SOP in the list.</div>`;
+  $("view").innerHTML = tools + banner + docHtml(s.title, s.doc);
+  $("tReset").onclick = () => document.querySelectorAll("#view ul.ck input").forEach(c => c.checked = false);
+  $("tPrint").onclick = () => window.print();
+  $("tHist").onclick = openHistory;
+  if ($("tEdit")) $("tEdit").onclick = () => startEdit(clone(s.doc), { title:s.title, area:s.area, slug:s.slug, base:s.updated_at, isNew:false });
+  if ($("tArch")) $("tArch").onclick = () => setActive(false);
+  if ($("tUnarch")) $("tUnarch").onclick = () => setActive(true);
+}
+
+$("view").addEventListener("click", async ev => {
+  const b = ev.target.closest("button.copy"); if (!b) return;
+  const doc = MODE === "version" ? VERSION.doc : CUR.doc;
+  try { await navigator.clipboard.writeText(doc.sections[+b.dataset.s].template); toast("Copied. Paste it into Slack."); }
+  catch { toast("Couldn't copy. Select the text and copy it by hand.", true); }
+});
+
+async function setActive(on) {
+  if (!on && !confirm(`Archive "${CUR.title}"? The team won't see it in the list. You can restore it later.`)) return;
+  const { error } = await sb.rpc("so_sop_set_active", { p_slug: CUR.slug, p_active: on });
+  if (error) { toast(error.message, true); return; }
+  toast(on ? "Restored." : "Archived.");
+  if (!on) $("showArch").checked = true;
+  await loadList(CUR.slug);
+}
+
+// ------------------------------------------------------------------ history
+
+async function openHistory() {
+  $("drawer").classList.remove("hide");
+  $("drawerBody").innerHTML = `<p class="ver m">Loading…</p>`;
+  const { data, error } = await sb.from("so_sop_versions")
+    .select("id,title,area,doc,note,saved_by,saved_at").eq("slug", CUR.slug).order("saved_at", { ascending:false }).limit(100);
+  if (error) { $("drawerBody").innerHTML = `<div class="msg bad">${esc(error.message)}</div>`; return; }
+  const list = data || [];
+  $("drawerBody").innerHTML = list.length ? list.map((v, i) => `<div class="ver">
+    <div class="w">${esc(v.saved_by || "Unknown")}${i === 0 ? ` <span class="ro" style="color:var(--green);border-color:rgba(43,217,166,.4)">Current</span>` : ""}</div>
+    <div class="m">${esc(auDate(v.saved_at))}</div>
+    ${v.note ? `<div class="n">${esc(v.note)}</div>` : ""}
+    ${i === 0 ? "" : `<button class="ghost mini" type="button" data-v="${v.id}">View this version</button>`}
+  </div>`).join("") : `<p class="ver n">No saved versions.</p>`;
+  $("drawerBody").onclick = ev => {
+    const b = ev.target.closest("button[data-v]"); if (!b) return;
+    showVersion(list.find(v => String(v.id) === b.dataset.v));
+  };
+}
+$("drawerX").onclick = () => $("drawer").classList.add("hide");
+
+function showVersion(v) {
+  if (!leaveOk()) return;
+  MODE = "version"; VERSION = v; DIRTY = false;
+  $("drawer").classList.add("hide");
+  $("view").innerHTML = `<div class="banner"><span><b>Old version</b> saved ${esc(auDate(v.saved_at))} by ${esc(v.saved_by || "unknown")}.
+    This isn't what the team sees.</span><span class="sp">
+    <button class="ghost" id="vBack" type="button">Back to current</button>
+    ${CAN_WRITE ? `<button class="btn" id="vRestore" type="button">Restore this version</button>` : ""}</span></div>` + docHtml(v.title, v.doc);
+  $("vBack").onclick = () => { MODE = "view"; VERSION = null; renderView(); };
+  if ($("vRestore")) $("vRestore").onclick = () =>
+    startEdit(clone(v.doc), { title:v.title, area:v.area, slug:CUR.slug, base:CUR.updated_at, isNew:false,
+      note:"Restored the version from " + auDate(v.saved_at) });
+  window.scrollTo(0, 0);
+}
+
+// ------------------------------------------------------------------ editor
+
+function startEdit(doc, meta) {
+  DRAFT = Object.assign({ eyebrow:"SOP", intro:"", roles:[], sections:[], why:"" }, doc);
+  DRAFT.sections = (DRAFT.sections || []).map(s => Object.assign({ label:"", heading:"", sub:"", gate:false, items:[], template:"" }, s));
+  DRAFT_META = meta; MODE = "edit"; DIRTY = !!meta.note || meta.isNew;
+  renderEditor();
+  window.scrollTo(0, 0);
+}
+
+const v = s => esc(s ?? "");
+function renderEditor() {
+  const d = DRAFT, m = DRAFT_META;
+  let h = `<div class="banner"><span><b>Editing.</b> Nobody sees your changes until you save. Ticking boxes is for whoever is doing the job and is never saved.</span></div>
+  <div class="ed">
+    <div class="card">
+      <div class="row">
+        <div><label class="fl">SOP name</label><input class="in" data-k="title" maxlength="80" value="${v(m.title)}"></div>
+        <div><label class="fl">Area</label><input class="in" data-k="area" maxlength="40" list="areaList" value="${v(m.area)}"></div>
+      </div>
+      <label class="fl">Small label above the name</label><input class="in" data-k="eyebrow" maxlength="80" value="${v(d.eyebrow)}">
+      <label class="fl">Intro</label><textarea class="in" data-k="intro">${v(d.intro)}</textarea>
+      <label class="fl">Who does what</label>
+      ${d.roles.map((r, ri) => `<div class="rolerow">
+        <input class="in" data-r="${ri}" data-k="label" placeholder="e.g. Does the work" value="${v(r.label)}">
+        <input class="in" data-r="${ri}" data-k="name" placeholder="e.g. Local SEO delivery" value="${v(r.name)}">
+        <input class="in" data-r="${ri}" data-k="note" placeholder="Note (optional)" value="${v(r.note)}">
+        <button class="ghost mini danger" type="button" data-act="delRole" data-r="${ri}" title="Remove">✕</button></div>`).join("")}
+      <button class="ghost mini add" type="button" data-act="addRole">+ Add a role</button>
+    </div>`;
+  d.sections.forEach((s, si) => {
+    h += `<div class="card${s.gate ? " gate" : ""}">
+      <div class="sechead"><span class="n">${pad(si)}</span>
+        <label class="chk"><input type="checkbox" data-s="${si}" data-k="gate"${s.gate ? " checked" : ""}> Gate (red: must be true before starting)</label>
+        <span class="sp">
+          <button class="ghost mini" type="button" data-act="secUp" data-s="${si}"${si === 0 ? " disabled" : ""}>↑</button>
+          <button class="ghost mini" type="button" data-act="secDown" data-s="${si}"${si === d.sections.length - 1 ? " disabled" : ""}>↓</button>
+          <button class="ghost mini danger" type="button" data-act="secDel" data-s="${si}">Delete section</button>
+        </span></div>
+      <div class="row">
+        <div><label class="fl">Section label</label><input class="in" data-s="${si}" data-k="label" value="${v(s.label)}"></div>
+        <div><label class="fl">Heading</label><input class="in" data-s="${si}" data-k="heading" value="${v(s.heading)}"></div>
+      </div>
+      <label class="fl">Explainer (optional)</label><textarea class="in" data-s="${si}" data-k="sub">${v(s.sub)}</textarea>
+      <label class="fl">Checklist items</label>
+      <div class="items">${s.items.map((it, ii) => `<div class="item">
+        <div class="stack"><input class="in" data-s="${si}" data-i="${ii}" data-k="title" placeholder="What has to be done" value="${v(it.title)}">
+          <textarea class="in" data-s="${si}" data-i="${ii}" data-k="detail" placeholder="Detail (optional)">${v(it.detail)}</textarea></div>
+        <select class="in" data-s="${si}" data-i="${ii}" data-k="flag">${Object.entries(FLAGS).map(([k, l]) =>
+          `<option value="${k}"${(it.flag || "") === k ? " selected" : ""}>${l}</option>`).join("")}</select>
+        <div class="acts">
+          <button class="ghost mini" type="button" data-act="itUp" data-s="${si}" data-i="${ii}"${ii === 0 ? " disabled" : ""} title="Move up">↑</button>
+          <button class="ghost mini" type="button" data-act="itDown" data-s="${si}" data-i="${ii}"${ii === s.items.length - 1 ? " disabled" : ""} title="Move down">↓</button>
+          <button class="ghost mini danger" type="button" data-act="itDel" data-s="${si}" data-i="${ii}" title="Delete">✕</button></div>
+      </div>`).join("")}</div>
+      <button class="ghost mini add" type="button" data-act="itAdd" data-s="${si}">+ Add item</button>
+      <label class="fl">Copy-and-paste template (optional, e.g. the Slack sign-off)</label>
+      <textarea class="in tpl" data-s="${si}" data-k="template">${v(s.template)}</textarea>
+    </div>`;
+  });
+  h += `<button class="ghost add" type="button" data-act="secAdd">+ Add section</button>
+    <div class="card"><label class="fl">Why this exists (optional)</label><textarea class="in" data-k="why">${v(d.why)}</textarea></div>
+  </div>
+  <div class="savebar">
+    <input class="in" id="saveNote" maxlength="200" placeholder="What changed? (shows in History)" value="${v(m.note || "")}">
+    <button class="ghost" id="eCancel" type="button">Cancel</button>
+    <button class="btn" id="eSave" type="button">Save</button>
+  </div>`;
+  $("view").innerHTML = h;
+  $("eCancel").onclick = () => {
+    if (DIRTY && !confirm("Throw away your changes?")) return;
+    DIRTY = false; MODE = "view";
+    if (DRAFT_META.isNew) { CUR = null; loadList(); } else renderView();
+  };
+  $("eSave").onclick = save;
+}
+
+$("view").addEventListener("input", ev => {
+  if (MODE !== "edit") return;
+  const el = ev.target, k = el.dataset.k; if (!k) return;
+  const val = el.type === "checkbox" ? el.checked : el.value;
+  if (el.dataset.r !== undefined) DRAFT.roles[+el.dataset.r][k] = val;
+  else if (el.dataset.i !== undefined) DRAFT.sections[+el.dataset.s].items[+el.dataset.i][k] = val;
+  else if (el.dataset.s !== undefined) {
+    DRAFT.sections[+el.dataset.s][k] = val;
+    if (k === "gate") el.closest(".card").classList.toggle("gate", val);
+  }
+  else if (k === "title" || k === "area") DRAFT_META[k] = val;
+  else DRAFT[k] = val;
+  DIRTY = true;
+});
+$("view").addEventListener("change", ev => {   // checkboxes and selects fire change, not always input
+  if (MODE === "edit" && (ev.target.type === "checkbox" || ev.target.tagName === "SELECT"))
+    ev.target.dispatchEvent(new Event("input", { bubbles:true }));
+});
+
+function swap(a, i, j) { if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; }
+$("view").addEventListener("click", ev => {
+  if (MODE !== "edit") return;
+  const b = ev.target.closest("button[data-act]"); if (!b) return;
+  const si = +b.dataset.s, ii = +b.dataset.i, d = DRAFT;
+  switch (b.dataset.act) {
+    case "addRole": d.roles.push({ label:"", name:"", note:"" }); break;
+    case "delRole": d.roles.splice(+b.dataset.r, 1); break;
+    case "secAdd": d.sections.push({ label:"New section", heading:"", sub:"", gate:false, items:[{ title:"", detail:"", flag:"" }], template:"" }); break;
+    case "secUp": swap(d.sections, si, si - 1); break;
+    case "secDown": swap(d.sections, si, si + 1); break;
+    case "secDel":
+      if (!confirm(`Delete section ${pad(si)} and its ${d.sections[si].items.length} items?`)) return;
+      d.sections.splice(si, 1); break;
+    case "itAdd": d.sections[si].items.push({ title:"", detail:"", flag:"" }); break;
+    case "itUp": swap(d.sections[si].items, ii, ii - 1); break;
+    case "itDown": swap(d.sections[si].items, ii, ii + 1); break;
+    case "itDel": d.sections[si].items.splice(ii, 1); break;
+    default: return;
+  }
+  DIRTY = true;
+  const y = window.scrollY; renderEditor(); window.scrollTo(0, y);
+  if (b.dataset.act === "itAdd") {
+    const ins = document.querySelectorAll(`input[data-s="${si}"][data-k="title"][data-i]`);
+    if (ins.length) ins[ins.length - 1].focus();
+  }
+});
+
+function tidy(doc) {
+  const d = clone(doc);
+  d.roles = d.roles.filter(r => (r.name || "").trim());
+  d.sections.forEach(s => { s.items = s.items.filter(it => (it.title || "").trim()); });
+  return d;
+}
+
+async function save() {
+  const m = DRAFT_META;
+  if (!String(m.title || "").trim()) { toast("Give the SOP a name.", true); return; }
+  const doc = tidy(DRAFT);
+  if (!doc.sections.length) { toast("A SOP needs at least one section.", true); return; }
+  $("eSave").disabled = true;
+  const { data, error } = await sb.rpc("so_sop_save", {
+    p_slug: m.slug, p_title: m.title, p_area: m.area || "General", p_doc: doc,
+    p_base: m.isNew ? null : m.base, p_note: $("saveNote").value || (m.isNew ? "Created" : null) });
+  $("eSave").disabled = false;
+  if (error) { toast(error.message, true); return; }
+  DIRTY = false; MODE = "view";
+  toast("Saved. The team sees the new version now.");
+  await loadList(m.slug);
+}
+
+// ------------------------------------------------------------------ new SOP
+
+function slugify(t) {
+  const base = String(t).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "sop";
+  let s = base, n = 2;
+  while (SOPS.some(x => x.slug === s)) s = base + "-" + n++;
+  return s;
+}
+function openNew() {
+  if (!leaveOk()) return;
+  $("nTitle").value = ""; $("nArea").value = CUR ? CUR.area : "";
+  $("ovl").classList.add("show"); $("nTitle").focus();
+}
+$("newBtn").onclick = openNew; $("newBtnM").onclick = openNew;
+$("nCancel").onclick = () => $("ovl").classList.remove("show");
+$("nOk").onclick = () => {
+  const title = $("nTitle").value.trim();
+  if (!title) { $("nTitle").focus(); return; }
+  $("ovl").classList.remove("show");
+  CUR = null; renderList();
+  startEdit({
+    eyebrow: "SOP · " + ($("nArea").value.trim() || "General"),
+    intro: "", why: "",
+    roles: [{ label:"Does the work", name:"", note:"" }, { label:"Checks it", name:"", note:"" }, { label:"Final approval", name:"Jhen", note:"" }],
+    sections: [
+      { label:"Gate: don't start until these are true", heading:"Before you start", sub:"", gate:true, items:[{ title:"", detail:"", flag:"" }], template:"" },
+      { label:"The work", heading:"", sub:"", gate:false, items:[{ title:"", detail:"", flag:"" }], template:"" },
+      { label:"Sign-off: the job isn't done without this", heading:"Post this in the client channel", sub:"", gate:false,
+        items:[{ title:"Screenshot of every section", detail:"", flag:"evidence" }, { title:"Anything not done is listed with a reason and a date", detail:"", flag:"" }], template:"" },
+    ],
+  }, { title, area: $("nArea").value.trim() || "General", slug: slugify(title), base: null, isNew: true });
+};
+
+window.addEventListener("beforeunload", ev => { if (MODE === "edit" && DIRTY) { ev.preventDefault(); ev.returnValue = ""; } });
+
+boot();
+</script>
+</body>
+</html>
