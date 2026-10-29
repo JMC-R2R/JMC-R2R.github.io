@@ -262,6 +262,10 @@ td.adn .th{display:block;width:96px;height:54px;object-fit:cover;border-radius:4
 .tl .quote{border-left:3px solid var(--line);padding:2px 0 2px 12px;margin:0 0 10px;color:var(--ink-2);font-size:14px}
 .ov-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
 .ov-top h2{font-size:21px;font-weight:800;letter-spacing:-.01em;margin:0}
+.ov-run{margin:12px 0 0;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;font-size:15px;color:var(--ink-2)}
+.ov-run b{font-size:22px;font-weight:900;color:var(--ink);letter-spacing:-.01em}
+.ov-run span{white-space:nowrap}
+.ov-run i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px}
 .ov-meta{margin:8px 0 12px;font-family:var(--mono);font-size:12px;color:var(--ink-3)}
 #pn-overview .ov-sum{font-size:17px;max-width:70ch;color:var(--ink-2)}
 #pn-overview .ov-sum strong{color:var(--ink)}
@@ -516,6 +520,7 @@ table.cr{min-width:1180px}
 <div role="tabpanel" id="pn-overview" aria-labelledby="tb-overview">
 <section aria-labelledby="ov-h">
   <div class="ov-top"><h2 id="ov-h">At a glance</h2><div class="rng" role="group" aria-label="Date range" id="rng"><button type="button" data-r="7">7 days</button><button type="button" data-r="14">14 days</button><button type="button" data-r="30">30 days</button><button type="button" data-r="all">All time</button></div></div>
+  <p class="ov-run" id="ovRun"></p>
   <p class="ov-meta"><span id="rngLab"></span><span id="ovAsOf" hidden></span></p>
   <p class="ov-sum" id="ovSum">Loading…</p>
 </section>
@@ -1045,7 +1050,14 @@ function renderOverview(){
   $("ovAsOf").textContent=[leadsDoc?"Enquiries to "+dmy(leadsDoc.asOf):"",S?"ad data to "+dmy(S.asOf):""].filter(Boolean).join(" · ")+".";
   // KPI tiles
   const K=$("ovK");K.innerHTML="";
-  const R=ovRange(); document.querySelectorAll("#rng button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.r===ovR)));
+  const R=ovRange();
+  if(R){ const fs=a=>{const x=a.find(d=>d.s>0);return x?x.d:null}, days=(a,b)=>Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/864e5)+1;
+    const mF=fs(R.md), tF=fs(R.td), first=[mF,tF].filter(Boolean).sort()[0];
+    if(first){ const parts=['<span><i></i>Ads running for <b>'+days(first,R.to)+' days</b></span>'];
+      if(mF) parts.push('<span>Meta since '+dmy(mF)+' ('+days(mF,R.to)+' days)</span>');
+      if(tF) parts.push('<span>TikTok since '+dmy(tF)+' ('+days(tF,R.to)+' days)</span>');
+      parts.push('<span>to '+dmy(R.to)+'</span>'); $("ovRun").innerHTML=parts.join(""); } }
+  document.querySelectorAll("#rng button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.r===ovR)));
   const CP=R?renderCompare(R):null;
   if(R) $("rngLab").textContent=R.all?"All time: "+(R.from?dmy(R.from)+" to ":"to ")+dmy(R.to)+".":dmy(R.from)+" to "+dmy(R.to)+", "+R.n+" full days.";
   const tile=(cls,v,l,sub)=>{const d=document.createElement("div");d.className="kpi "+cls;const a=document.createElement("div");a.className="eyebrow";a.textContent=l;const b=document.createElement("div");b.className="v num";b.textContent=v;const e=document.createElement("div");e.className="s";e.textContent=sub;d.append(a,b,e);K.appendChild(d)};
