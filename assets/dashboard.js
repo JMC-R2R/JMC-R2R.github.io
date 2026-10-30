@@ -132,7 +132,7 @@ async function loadData(){
       if (data.length < 1000) return { data: out }; i += 1000; } };
 
   const [seo, gbp, rev, geo, paid, social, leads, ranks, scans, refresh,
-         pcm, pst, pkw, pseg, pconv, gshare, neg, sq, gkw, grl, wlog] = await Promise.all([
+         pcm, pst, pkw, pseg, pconv, gshare, neg, sq, gkw, grl, wlog, notes] = await Promise.all([
     q('md_seo_daily','date'), q('md_gbp_daily','date'), q('md_gbp_reviews'), q('md_geo_visibility'),
     q('md_paid_daily','date'), q('md_social_daily','date'), q('md_leads_daily','date'),
     qAll('md_rankings'), q('md_mapgrid_scans'), q('md_refresh_log'),
@@ -140,7 +140,10 @@ async function loadData(){
     q('md_paid_campaign_month','month'), qAll('md_paid_search_terms','month'), qAll('md_paid_keywords','month'),
     qAll('md_paid_segments','month'), q('md_paid_conversions','month'), qAll('md_geo_share'),
     qAll('md_negative_requests'), qAll('md_seo_queries','month'), qAll('md_gbp_search_keywords','month'), qAll('md_gbp_review_list'), qAll('md_work_log','month'),
+    /* Team notes per month: the same table and rpt_add_insight as the Savvas dashboards. */
+    q('rpt_social_annotations'),
   ]);
+  RAW.notes = notes.data || [];
   RAW.seo = seo.data || []; RAW.gbp = gbp.data || []; RAW.reviews = rev.data || [];
   RAW.geo = geo.data || []; RAW.paid = paid.data || []; RAW.social = social.data || [];
   RAW.leads = leads.data || []; RAW.rankings = ranks.data || [];
@@ -479,6 +482,21 @@ function workDone(module){
         ${r.url ? `<div class="dlink">${link(r.url)}</div>` : ''}${r.done_on ? `<div class="ddate">${/published|posts|articles/i.test(c) ? 'Live' : 'Done'} ${d(r.done_on)}</div>` : ''}</div></li>`).join('')}</ul></div>`).join('')}</div></div>`;
 }
 
+/* Notes from the team for the selected month: what the delivery team's monthly report says
+   that the data can't (key points, AI answers seen, site health). Stored in
+   rpt_social_annotations, filed by month (ann_date), the same as the Savvas insights panel. */
+function teamNotes(){
+  const notes = (RAW.notes || []).filter(n => n.ann_date && monthOf(n.ann_date) === state.month)
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  if (!notes.length) return '';
+  const when = v => v ? new Date(v).toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
+  return `<div class="card notes"><div class="cardhead"><div><h3>Notes from the team, ${monthName(state.month)}</h3>
+      <p class="sub">What the team's report for the month adds to the numbers below.</p></div></div>
+    ${notes.map(n => `<div class="note">${n.label ? `<span class="mlbl">${esc(n.label)}</span>` : ''}
+      <div class="ntext">${esc(n.note)}</div>
+      <div class="nby">${esc(n.author || '')}${n.author ? ' · ' : ''}${when(n.created_at)}</div></div>`).join('')}</div>`;
+}
+
 /* Custom links built. Real rows for clients on custom link building (md_clients.modules.links,
    set from so_client_lifecycle.link_building). Everyone else sees a quiet teaser: Jose
    06/10/2026, "something that tries to sell but not sell a higher package". No price, no
@@ -569,7 +587,7 @@ function showOffer(mod){
 function viewSeo(){
   let out = head('SEO', 'Search performance',
     'Clicks, impressions and average position from Google Search Console, with the keywords we track.');
-  out += workDone('seo') + linksSection();
+  out += workDone('seo') + teamNotes() + linksSection();
   if (!V.seo.length && !V.rankings.length)
     return out + emptyState('Nothing to report for this month',
       `${CFG.name}'s website is not live yet, so there is no search data. Tracking starts the day it publishes.`);
