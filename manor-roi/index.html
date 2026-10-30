@@ -592,6 +592,12 @@
   @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} *{transition:none!important;animation:none!important} }
   @media print{ .navbar{position:static;backdrop-filter:none} }
 
+  /* Inside the hub's Reporting tab (30/10/2026): the hub supplies the header and sign-in,
+     and sizes the frame to the page, so nothing here is sticky or scrolls. */
+  html.embed header, html.embed .signout{display:none}
+  html.embed, html.embed body{overflow:hidden}
+  html.embed .navbar{position:relative;top:auto}
+
 </style>
 </head>
 <body data-theme="search">
@@ -1045,6 +1051,11 @@
 </div>
 
 <script>
+/* Shown inside the Manor hub's Reporting tab (30/10/2026), one sign-in for everyone. */
+const EMBED = window.self !== window.top;
+if (EMBED) document.documentElement.classList.add('embed');
+</script>
+<script>
 /* ============================================================
    Data lives in Supabase ("R2R - Dashboard" project). Mario enters
    each month via the "✎ Update data" button (edit-code protected);
@@ -1068,7 +1079,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-10-06-1400';
+const BUILD = '2026-10-30-1700';
 
 async function newerBuildAvailable(){
   try{
@@ -1138,7 +1149,18 @@ const AUTH = {
 };
 let SESSION = null;  // { access_token, refresh_token, expires_at (unix s) }
 
+/* Inside the hub, use the hub's own sign-in (same origin, same Supabase project) and never
+   refresh it from here. The hub's client renews it; refreshing here too would spend the same
+   refresh token twice, and Supabase then revokes the session and signs the hub out. */
+const HUB_STORE = 'sb-tjgrtrazyepvbcmmdhet-auth-token';
+function hubSession(){
+  try{
+    const s = JSON.parse(localStorage.getItem(HUB_STORE)||'null');
+    return (s && s.access_token) ? { access_token:s.access_token, refresh_token:null, expires_at:s.expires_at } : null;
+  }catch{ return null; }
+}
 function loadSession(){
+  if(EMBED){ const h = hubSession(); if(h){ SESSION = h; return SESSION; } }
   try{ SESSION = JSON.parse(localStorage.getItem(AUTH.store)||'null'); }catch{ SESSION=null; }
   return SESSION;
 }
@@ -1208,6 +1230,8 @@ function sessionEmail(){
   try{ return JSON.parse(atob(SESSION.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).email || ''; }catch(e){ return ''; }
 }
 async function tryRefresh(){
+  // Hub session: pick up the hub's renewed token instead of refreshing it here.
+  if(EMBED && hubSession()){ await new Promise(r => setTimeout(r, 1500)); loadSession(); return sessionValid(); }
   if(!SESSION||!SESSION.refresh_token) return false;
   try{
     const res = await fetch(AUTH.tokenUrl+'?grant_type=refresh_token',{
@@ -2907,6 +2931,8 @@ function showView(v){
   document.body.dataset.theme = v;
   $('viewLabel').textContent = v==='social' ? 'Social' : v==='search' ? 'Search & Local' : v==='bench' ? 'Benchmarking' : v==='ai' ? 'AI Search' : 'Marketing ROI';
   syncHash();
+  // Tell the hub which section is open, so its address bar deep-links it.
+  if (EMBED) try { window.parent.postMessage({ r2rDashboardTab: v }, location.origin); } catch (e) {}
   // The reporting period is the month chip selection, the same on every tab.
   if(PERIOD) $('period').textContent = monthLabel(PERIOD);
   if(v==='social') loadSocial();
