@@ -483,18 +483,52 @@ function workDone(module){
 }
 
 /* Notes from the team for the selected month: what the delivery team's monthly report says
-   that the data can't (key points, AI answers seen, site health). Stored in
-   rpt_social_annotations, filed by month (ann_date), the same as the Savvas insights panel. */
+   that the data can't (site health, domain trust, AI answers seen). Never numbers this
+   dashboard already measures: the report's date window differs, so they would contradict.
+   Stored in rpt_social_annotations, filed by month (ann_date), like the Savvas insights panel.
+   A short one-line note ("76, from 73") renders as a tile. A longer one renders as a card:
+   blank lines split blocks, a line ending ":" heads a block, "- " lines are items (short
+   ones as chips) and a line that is this client's /<slug>/notes/ image path renders as a
+   screenshot that opens full size. */
 function teamNotes(){
   const notes = (RAW.notes || []).filter(n => n.ann_date && monthOf(n.ann_date) === state.month)
     .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
   if (!notes.length) return '';
-  const when = v => v ? new Date(v).toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
+  const isTile = n => !/\n/.test(n.note || '') && String(n.note || '').length <= 40;
+  const tiles = notes.filter(isTile).map(n => {
+    const [v, ...rest] = String(n.note).split(', ');
+    return kpi(esc(n.label || ''), esc(v), rest.length ? esc(rest.join(', ')) : '');
+  });
+  const imgRe = new RegExp('^/' + CFG.slug + '/notes/[\\w.-]+\\.(png|jpe?g|webp)$', 'i');
+  const block = lines => {
+    let out = '', items = [], shots = [];
+    const flush = () => {
+      if (items.length) {
+        const chips = items.every(t => t.length <= 60 && !/\?/.test(t));
+        out += chips ? `<div class="nchips">${items.map(t => `<span class="nchip">${esc(t)}</span>`).join('')}</div>`
+                     : `<ul class="nlist">${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`;
+        items = [];
+      }
+      if (shots.length) {
+        out += `<div class="nshots${shots.length === 1 ? ' one' : ''}">${shots.map(s => `<a href="${esc(s)}" target="_blank" rel="noopener"><img src="${esc(s)}" alt="Screenshot from the team's report" loading="lazy"></a>`).join('')}</div>`;
+        shots = [];
+      }
+    };
+    lines.forEach(l => {
+      const t = l.trim();
+      if (imgRe.test(t)) { shots.push(t); return; }
+      if (/^- /.test(t)) { items.push(t.slice(2)); return; }
+      flush();
+      out += /:$/.test(t) ? `<span class="nsub">${esc(t.slice(0, -1))}</span>` : `<p class="ntext">${esc(t)}</p>`;
+    });
+    flush();
+    return out;
+  };
+  const cards = notes.filter(n => !isTile(n)).map(n => `<div class="ncard">${n.label ? `<h4>${esc(n.label)}</h4>` : ''}
+    ${String(n.note || '').split(/\n\s*\n/).map(b => block(b.split('\n').filter(x => x.trim()))).join('')}</div>`);
   return `<div class="card notes"><div class="cardhead"><div><h3>Notes from the team, ${monthName(state.month)}</h3>
-      <p class="sub">What the team's report for the month adds to the numbers below.</p></div></div>
-    ${notes.map(n => `<div class="note">${n.label ? `<span class="mlbl">${esc(n.label)}</span>` : ''}
-      <div class="ntext">${esc(n.note)}</div>
-      <div class="nby">${esc(n.author || '')}${n.author ? ' · ' : ''}${when(n.created_at)}</div></div>`).join('')}</div>`;
+      <p class="sub">From the team's report for the month: what the numbers below don't show.</p></div></div>
+    ${tiles.length ? `<div class="kpis">${tiles.join('')}</div>` : ''}${cards.join('')}</div>`;
 }
 
 /* Custom links built. Real rows for clients on custom link building (md_clients.modules.links,

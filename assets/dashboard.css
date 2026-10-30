@@ -240,10 +240,21 @@ footer.foot{border-top:1px solid var(--bd);padding:22px 0 46px;color:var(--ink3)
 
 /* ---------- notes from the team ---------- */
 .card.notes{margin-bottom:14px}
-.card.notes .note + .note{border-top:1px solid var(--bd);margin-top:14px;padding-top:14px}
-.card.notes .mlbl{display:block;font-size:9.5px;margin-bottom:6px;color:var(--accent)}
-.card.notes .ntext{font-size:13.5px;line-height:1.55;color:var(--ink2);white-space:pre-line}
-.card.notes .nby{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:8px}
+.card.notes .kpis{margin-bottom:12px}
+.card.notes .kpi{background:var(--s3,var(--ground))}
+.ncard{background:var(--s3,var(--ground));border:1px solid var(--bd);border-radius:12px;padding:15px;margin-top:12px}
+.ncard h4{font-size:13.5px;font-weight:800;margin:0 0 10px}
+.ncard .nsub{display:block;font-family:var(--mono);text-transform:uppercase;letter-spacing:.10em;font-size:9.5px;color:var(--ink3);margin:12px 0 7px}
+.ncard .nsub:first-of-type{margin-top:0}
+.ncard .ntext{font-size:13.5px;line-height:1.55;color:var(--ink2);margin:0 0 8px}
+.ncard .nchips{display:flex;flex-wrap:wrap;gap:7px}
+.ncard .nchip{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--ink);border:1px solid color-mix(in srgb,var(--accent) 35%,var(--bd));border-radius:99px;padding:5px 11px;font-size:12.5px}
+.ncard .nlist{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.45;color:var(--ink2)}
+.ncard .nshots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:10px;margin-top:12px}
+.ncard .nshots a{display:block;border:1px solid var(--bd);border-radius:9px;overflow:hidden;background:#fff}
+.ncard .nshots img{display:block;width:100%;height:150px;object-fit:cover;object-position:top}
+.ncard .nshots.one{grid-template-columns:minmax(0,640px)}
+.ncard .nshots.one img{height:auto}
 .gate-card .gate-alt{margin:14px 0 0;font-size:12.5px;text-align:center}
 .gate-card .gate-alt a{color:var(--ink3);text-decoration:underline}
 .gate-card .gate-alt a:hover{color:var(--ink)}
