@@ -97,7 +97,8 @@ msg = f"Update: GFW {label} social report (auto-publish + month tabs)"
 # Path-scoped commit. Without the pathspec this would also commit anything another session
 # had already staged in this repo, and the routine runs unattended.
 r = subprocess.run(["git", "-C", REPO, "commit", "-m", msg,
-                    "-m", "Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>",
+                    "-m", "Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>",
+                    "-m", "Claude-Session: https://claude.ai/code/session_013WE5Rj2eY41h1XxeuhL2bo",
                     "--"] + paths,
                    capture_output=True, text=True)
 out = r.stdout.strip() or r.stderr.strip()
