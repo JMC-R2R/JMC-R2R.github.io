@@ -107,6 +107,27 @@
   .group-h{display:flex; align-items:center; gap:10px; margin:22px 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:700}
   .group-h::after{content:''; flex:1; height:1px; background:var(--line)}
   .hide{display:none !important}
+
+  /* ---- admin tabs ---- */
+  .tabs{display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:22px}
+  .tabs button{background:none; border:0; border-bottom:2px solid transparent; color:var(--muted); padding:10px 14px; font-size:14px; font-weight:700; margin-bottom:-1px}
+  .tabs button[aria-selected=true]{color:var(--text); border-bottom-color:var(--blue)}
+
+  /* ---- productivity ---- */
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:22px}
+  .kpi{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px}
+  .kpi .l{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:700}
+  .kpi .v{font-size:26px; font-weight:800; letter-spacing:-.02em; margin-top:4px}
+  .kpi .n{font-size:12px; color:var(--muted); margin-top:2px}
+  .up{color:var(--s4)} .down{color:var(--s0)}
+  table.pt{border-collapse:collapse; width:100%; font-size:13px}
+  table.pt th, table.pt td{border-bottom:1px solid var(--line); padding:10px 12px; text-align:right; white-space:nowrap}
+  table.pt th:first-child, table.pt td:first-child{text-align:left; position:sticky; left:0; background:var(--panel2)}
+  table.pt thead th{color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em; background:var(--panel2)}
+  .flag{display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; border-radius:10px; margin-left:4px; background:#3A1E22; color:#FF9A9E}
+  .dcell{width:46px; height:38px; font-size:11px; font-weight:700; color:#06120A; cursor:default}
+  .dcell.wk{background:var(--sx); color:var(--muted)}
+  .note{font-size:12px; color:var(--muted); margin-top:10px}
   @media(max-width:640px){ main{padding:16px} header{padding:12px 16px} }
 </style>
 </head>
@@ -133,6 +154,43 @@
 
   <main>
     <!-- ADMIN -->
+    <div class="tabs hide" id="adminTabs" role="tablist">
+      <button role="tab" data-tab="delivery" aria-selected="true">Delivery</button>
+      <button role="tab" data-tab="productivity" aria-selected="false">Productivity</button>
+    </div>
+
+    <!-- PRODUCTIVITY (admin only; data is Scrin.io, synced daily by r2r-operations sync-scrin.yml) -->
+    <section id="prodView" class="hide">
+      <h2>Team productivity</h2>
+      <p class="sub">Hours and activity from Scrin.io, synced every morning at 6am. Days are Manila workdays; times are Melbourne time.</p>
+      <div class="bar-row" style="margin-top:0">
+        <div class="field">
+          <label for="pRange">Period</label>
+          <select id="pRange">
+            <option value="7">Last 7 days</option>
+            <option value="14" selected>Last 14 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
+        <div class="who" id="pSynced" style="text-align:left"></div>
+      </div>
+      <div class="kpis" id="pKpis"></div>
+      <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:10px">By person</h3>
+      <div class="scroll"><table class="pt" id="pTable"></table></div>
+      <p class="note" id="pNote"></p>
+      <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:26px 0 10px">Hours by day</h3>
+      <div class="legend">
+        <div class="k"><span class="swatch" style="background:var(--s4)"></span>7h+</div>
+        <div class="k"><span class="swatch" style="background:var(--s3)"></span>6–7h</div>
+        <div class="k"><span class="swatch" style="background:var(--s2)"></span>4–6h</div>
+        <div class="k"><span class="swatch" style="background:var(--s1)"></span>Under 4h</div>
+        <div class="k"><span class="swatch" style="background:var(--s0)"></span>Workday, nothing tracked</div>
+        <div class="k"><span class="swatch" style="background:var(--sx)"></span>Weekend</div>
+      </div>
+      <div class="scroll"><table class="grid" id="pDays"></table></div>
+    </section>
+
     <section id="adminView" class="hide">
       <h2>Delivery matrix</h2>
       <p class="sub">Red is falling behind. Scan the heatmap for hotspots, then read each person's grid below.</p>
@@ -273,6 +331,20 @@ function hideTip(){ tip.style.opacity='0'; }
 
 /* ---------- ADMIN ---------- */
 function renderAdmin() {
+  $('adminTabs').classList.remove('hide');
+  showTab(location.hash === '#productivity' ? 'productivity' : 'delivery');
+}
+
+function showTab(tab) {
+  document.querySelectorAll('#adminTabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
+  $('adminView').classList.toggle('hide', tab !== 'delivery');
+  $('prodView').classList.toggle('hide', tab !== 'productivity');
+  history.replaceState(null, '', tab === 'productivity' ? '#productivity' : location.pathname);
+  tab === 'productivity' ? renderProductivity() : renderDelivery();
+}
+document.querySelectorAll('#adminTabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+function renderDelivery() {
   $('adminView').classList.remove('hide');
   const freelancers = PEOPLE.filter(p => !p.is_admin);
   if (!$('fPerson').dataset.filled) {
@@ -382,8 +454,118 @@ $('addForm').addEventListener('submit', async e => {
   if (error) { $('addErr').textContent=error.message; return; }
   $('aTitle').value=''; $('aDue').value='';
   $('addSaved').classList.add('show'); setTimeout(()=>$('addSaved').classList.remove('show'),1400);
-  await loadAll(); renderAdmin();
+  await loadAll(); renderDelivery();
 });
+
+/* ---------- PRODUCTIVITY ---------- */
+// Scrin.io data: tt_scrin_people + tt_scrin_daily, admin-only by RLS. Days are Manila dates.
+let SCRIN = null;   // {people, daily}
+const hm = s => `${Math.floor(s/3600)}h ${String(Math.floor(s%3600/60)).padStart(2,'0')}m`;
+const manilaToday = () => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila'}).format(new Date());
+const addDays = (iso, n) => { const d = new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); };
+const isWeekday = iso => { const g = new Date(iso+'T00:00:00Z').getUTCDay(); return g>0 && g<6; };
+const dLabel = iso => new Date(iso+'T00:00:00Z').toLocaleDateString('en-AU',{weekday:'short', day:'2-digit', month:'2-digit', timeZone:'UTC'});
+const melbTime = ts => ts ? new Date(ts).toLocaleTimeString('en-AU',{hour:'numeric', minute:'2-digit', timeZone:'Australia/Melbourne'}).replace(' ','').toLowerCase() : '';
+const daySecs = r => r.tracked_seconds + r.offline_seconds;
+const hoursColour = (s, iso) => s >= 7*3600 ? 'var(--s4)' : s >= 6*3600 ? 'var(--s3)' : s >= 4*3600 ? 'var(--s2)' : s > 0 ? 'var(--s1)' : (isWeekday(iso) ? 'var(--s0)' : 'var(--sx)');
+
+async function loadScrin() {
+  const since = addDays(manilaToday(), -181);
+  const [p, d] = await Promise.all([
+    sb.from('tt_scrin_people').select('*').eq('tracked', true).order('name'),
+    sb.from('tt_scrin_daily').select('*').gte('day', since).order('day')
+  ]);
+  if (p.error || d.error) throw new Error((p.error||d.error).message);
+  SCRIN = { people: p.data||[], daily: d.data||[] };
+}
+
+function summarise(emp, days) {
+  const keys = new Set(days);
+  const rs = SCRIN.daily.filter(r => r.employment_id===emp && keys.has(r.day) && daySecs(r) > 0);
+  const secs = rs.reduce((a,r) => a+daySecs(r), 0);
+  const off = rs.reduce((a,r) => a+r.offline_seconds, 0);
+  const samples = rs.reduce((a,r) => a+r.activity_samples, 0);
+  const shots = rs.reduce((a,r) => a+r.screenshots, 0);
+  const act = samples ? rs.reduce((a,r) => a+(r.activity_avg||0)*r.activity_samples, 0)/samples : null;
+  const tracked = new Set(rs.map(r => r.day));
+  const missed = days.filter(d => isWeekday(d) && !tracked.has(d)).length;
+  return { secs, off, act, samples, shots, n: tracked.size, missed };
+}
+
+async function renderProductivity() {
+  if (!SCRIN) {
+    $('pKpis').innerHTML = `<div class="empty" style="grid-column:1/-1">Loading Scrin.io data…</div>`;
+    try { await loadScrin(); }
+    catch (e) { $('pKpis').innerHTML = `<div class="empty" style="grid-column:1/-1">Couldn't load Scrin.io data: ${esc(e.message)}</div>`; return; }
+  }
+  const N = +$('pRange').value;
+  const end = addDays(manilaToday(), -1);                       // yesterday, Manila
+  const days = Array.from({length:N}, (_,i) => addDays(end, i-N+1));
+  const prev = days.map(d => addDays(d, -N));
+  const lastSync = SCRIN.daily.reduce((a,r) => r.synced_at > a ? r.synced_at : a, '');
+  $('pSynced').innerHTML = lastSync ? `<b>Last synced</b>${new Date(lastSync).toLocaleString('en-AU',{dateStyle:'short', timeStyle:'short', timeZone:'Australia/Melbourne'})}` : '';
+
+  if (!SCRIN.daily.length) {
+    $('pKpis').innerHTML = `<div class="empty" style="grid-column:1/-1">No Scrin.io data yet. The first sync runs at 6am.</div>`;
+    $('pTable').innerHTML = ''; $('pDays').innerHTML = ''; return;
+  }
+
+  // Only people who tracked in this or the previous period (keeps never-joined invites out).
+  const people = SCRIN.people
+    .map(p => ({ ...p, cur: summarise(p.employment_id, days), was: summarise(p.employment_id, prev),
+                 label: (PEOPLE.find(x => x.id===p.person_id)?.name) || p.name }))
+    .filter(p => p.cur.secs || p.was.secs)
+    .sort((a,b) => b.cur.secs - a.cur.secs);
+
+  const regulars = people.filter(p => p.cur.secs);
+  const tot = people.reduce((a,p) => a+p.cur.secs, 0), totPrev = people.reduce((a,p) => a+p.was.secs, 0);
+  const samp = people.reduce((a,p) => a+p.cur.samples, 0);
+  const actAll = samp ? people.reduce((a,p) => a+(p.cur.act||0)*p.cur.samples, 0)/samp : null;
+  const shotsAll = people.reduce((a,p) => a+p.cur.shots, 0);
+  const missed = regulars.reduce((a,p) => a+p.cur.missed, 0);
+  const workdays = days.filter(isWeekday).length;
+  const perDay = regulars.length && workdays ? tot / regulars.reduce((a,p) => a+p.cur.n, 0) : 0;
+  const offAll = people.reduce((a,p) => a+p.cur.off, 0);
+  const delta = (a,b) => !b ? '' : `<span class="${a>=b?'up':'down'}">${a>=b?'▲':'▼'} ${hm(Math.abs(a-b))}</span> vs previous ${N} days`;
+
+  $('pKpis').innerHTML = `
+    <div class="kpi"><div class="l">Team hours</div><div class="v mono">${hm(tot)}</div><div class="n">${delta(tot,totPrev)}</div></div>
+    <div class="kpi"><div class="l">Avg per tracked day</div><div class="v mono">${hm(Math.round(perDay))}</div><div class="n">${regulars.length} people tracking</div></div>
+    <div class="kpi"><div class="l">Activity</div><div class="v mono">${actAll==null?'—':Math.round(actAll)+'%'}</div><div class="n">${samp} of ${shotsAll} screenshots carry a level</div></div>
+    <div class="kpi"><div class="l">Workdays not tracked</div><div class="v mono" style="color:${missed?'var(--s0)':'var(--s4)'}">${missed}</div><div class="n">across ${workdays} workdays</div></div>
+    <div class="kpi"><div class="l">Added manually</div><div class="v mono">${hm(offAll)}</div><div class="n">${tot?Math.round(offAll/tot*100):0}% of hours, no screenshots</div></div>`;
+
+  const done = id => !id ? null : TASKS.filter(t => t.assignee_id===id && t.status==='complete' && t.last_moved_at && t.last_moved_at.slice(0,10) >= days[0] && t.last_moved_at.slice(0,10) <= addDays(end,1)).length;
+  $('pTable').innerHTML = `<thead><tr><th>Person</th><th>Hours</th><th>Days tracked</th><th>Avg / day</th><th>Activity</th><th>Added manually</th><th>vs previous</th><th>Deliverables done</th></tr></thead><tbody>` +
+    people.map(p => {
+      const c = p.cur, flags = [];
+      if (c.missed && c.secs) flags.push(`${c.missed} workday${c.missed>1?'s':''} missed`);
+      if (c.act != null && c.act < 40) flags.push('low activity');
+      if (c.secs && c.off/c.secs >= .2) flags.push('high manual time');
+      const d = done(p.person_id);
+      return `<tr><td>${esc(p.label)}${flags.map(f => `<span class="flag">${f}</span>`).join('')}</td>
+        <td class="mono">${hm(c.secs)}</td><td class="mono">${c.n}</td><td class="mono">${c.n?hm(Math.round(c.secs/c.n)):'—'}</td>
+        <td class="mono">${c.act==null?'—':Math.round(c.act)+'%'}</td><td class="mono">${hm(c.off)}</td>
+        <td class="mono">${p.was.secs?`<span class="${c.secs>=p.was.secs?'up':'down'}">${c.secs>=p.was.secs?'▲':'▼'} ${hm(Math.abs(c.secs-p.was.secs))}</span>`:'—'}</td>
+        <td class="mono">${d==null?'<span style="color:var(--muted)">no login</span>':d}</td></tr>`;
+    }).join('') + '</tbody>';
+  $('pNote').textContent = (TASKS.length ? '' : 'Deliverables done stays at 0 until deliverables are added on the Delivery tab. ') +
+    'Activity is the Scrin.io activity level, averaged over the screenshots that carry one (none were recorded 08/10–29/10).';
+
+  $('pDays').innerHTML = `<thead><tr><th>Person</th>${days.map(d => `<th>${dLabel(d)}</th>`).join('')}</tr></thead><tbody>` +
+    people.map(p => `<tr><th>${esc(p.label)}</th>${days.map(d => {
+      const r = SCRIN.daily.find(x => x.employment_id===p.employment_id && x.day===d);
+      const s = r ? daySecs(r) : 0;
+      const t = r && s ? `${esc(p.label)} · ${dLabel(d)}: ${hm(s)}${r.offline_seconds?` (${hm(r.offline_seconds)} manual)`:''}<br>${melbTime(r.first_start)}–${melbTime(r.last_end)} Melbourne${r.activity_avg!=null?`<br>${Math.round(r.activity_avg)}% active`:''}`
+                         : `${esc(p.label)} · ${dLabel(d)}: nothing tracked`;
+      return `<td class="dcell ${!s && !isWeekday(d)?'wk':''}" style="background:${hoursColour(s,d)}" data-tip="${esc(t)}">${s?(s/3600).toFixed(1):''}</td>`;
+    }).join('')}</tr>`).join('') + '</tbody>';
+  $('pDays').querySelectorAll('[data-tip]').forEach(el => {
+    el.addEventListener('mousemove', e => showTip(el.dataset.tip, e.clientX, e.clientY));
+    el.addEventListener('mouseleave', hideTip);
+  });
+}
+$('pRange').addEventListener('change', renderProductivity);
 
 /* ---------- FREELANCER ---------- */
 function renderMine() {
