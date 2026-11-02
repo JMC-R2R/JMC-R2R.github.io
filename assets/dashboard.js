@@ -351,6 +351,108 @@ function renderAll(){
     ? 'Data as at ' + new Date(RAW.refresh.map(r => r.finished_at).filter(Boolean).sort().pop() || Date.now())
         .toLocaleDateString('en-AU')
     : newest ? 'Data to ' + new Date(newest + 'T00:00:00').toLocaleDateString('en-AU') : '';
+  tourAfterRender();
+}
+
+/* ---------------------------------------------------------------- walkthrough
+   Jose 02/11/2026: when a section goes live, walk the client through it. Switched on per
+   client with `walkthrough: true` in the shell config, so it can be proved on Hot Chicken
+   before anyone else sees it. Runs once per section per browser, for the client view only
+   (staff working in Admin view are not interrupted; "Show me around" replays it for anyone).
+   A section with no data has no .lede/.kpis, so its empty state never gets a tour: the tour
+   appears the first time there is something real to show. Copy is written with no figures,
+   so it can never disagree with the numbers on the page. */
+const TOUR_INTRO = {
+  overview: ['Your overview', 'Everything we are doing for you, on one page. Here is how to read it.'],
+  seo: ['Your SEO results', 'How the website is performing in Google, and the work we finished this month.'],
+  map_grid: ['Your Google Maps position', 'Where the business shows up on Google Maps across your service area.'],
+  gbp: ['Your Google Business Profile', 'How people found your profile and what they did next, including every review.'],
+  geo: ['Your AI visibility', 'Whether AI assistants name your business when people ask them for a recommendation.'],
+  paid_ads: ['Your Google Ads', 'This section is now live. It shows what was spent, what it bought and what people typed into Google before they clicked.'],
+  negatives: ['Your blocked searches', 'Every search or suburb you have asked us to stop paying for, and where each one is up to.'],
+  social: ['Your social media', 'How your organic posts performed this month.'],
+  leads_crm: ['Your leads', 'The enquiries that came through this month.'],
+};
+const tourCard = t => $$('#panel .card').find(c => (c.querySelector('h3')?.textContent || '').trim().startsWith(t));
+const tourCommon = [
+  { el: () => $('#panel .lede'), t: 'The month in a sentence', p: 'Each section opens with a plain-English summary, written from that month\'s real figures.' },
+  { el: () => $('#panel .kpis'), t: 'The key numbers', p: 'The figures that matter most, with the change on last month where there is one to compare.' },
+  { el: () => $('#panel .callout'), t: 'What it means', p: 'These notes point out what the numbers are telling us, so you do not have to work it out.' },
+];
+const tourMonth = { el: () => $('.monthbar'), t: 'Pick a month', p: 'Use these buttons to look back at any month. Everything on the page changes with it.' };
+const TOUR_EXTRA = {
+  paid_ads: [
+    { el: () => tourCard('Campaigns'), t: 'Your campaigns', p: 'Each campaign, who manages it, what it cost and the leads it produced.' },
+    { el: () => tourCard('What counted as a lead'), t: 'What counts as a lead', p: 'Exactly what Google recorded as a lead. We show this so you can check it against the calls and enquiries you actually got.' },
+    { el: () => tourCard('Every search term'), t: 'What people searched', p: 'What people typed into Google before your ad showed. See one that is not your kind of job? Tick Block and we will review it. Nothing changes in your ads until we have looked at it.' },
+    { el: () => $('#tabs .tab[data-tab="negatives"]'), t: 'Track what you blocked', p: 'Everything you tick lands here, so you can see where each request is up to.' },
+  ],
+};
+let tourNow = null;
+function tourKey(tab){ return `md-tour-${CFG.slug}-${tab}`; }
+function tourSeen(tab){ try { return !!localStorage.getItem(tourKey(tab)); } catch (e) { return true; } }   /* no storage: never nag */
+function tourMark(tab){ try { localStorage.setItem(tourKey(tab), new Date().toISOString()); } catch (e) {} }
+function tourEnd(){ if (!tourNow) return; tourNow.nodes.forEach(n => n.remove());
+  document.removeEventListener('keydown', tourNow.key); window.removeEventListener('resize', tourNow.draw); tourNow = null; }
+function tourSteps(tab){
+  const list = [...tourCommon, ...(TOUR_EXTRA[tab] || []), tourMonth];
+  return list.map(s => ({ ...s, node: s.el() })).filter(s => s.node && s.node.offsetParent !== null);
+}
+function tourStart(tab){
+  tourEnd();
+  const steps = tourSteps(tab), intro = TOUR_INTRO[tab]; if (!steps.length || !intro) return;
+  tourMark(tab);
+  const ring = el('<div class="tourring" aria-hidden="true"></div>');
+  const tip = el(`<div class="tourtip" role="dialog" aria-modal="true" aria-label="Walkthrough"></div>`);
+  let i = -1;   /* -1 = the welcome card */
+  const draw = () => {
+    const pad = 6, W = document.documentElement.clientWidth, w = Math.min(350, W - 32);
+    const s = steps[i], view = EMBED && onScreen();
+    tip.style.width = w + 'px';
+    tip.innerHTML = `<span class="mlbl">${i < 0 ? 'Walkthrough' : `Step ${i + 1} of ${steps.length}`}</span>
+      <h4>${esc(i < 0 ? intro[0] : s.t)}</h4><p>${esc(i < 0 ? intro[1] : s.p)}</p>
+      <div class="tourbtns"><button class="btn" type="button" data-skip>Skip</button>
+        ${i >= 0 ? '<button class="btn" type="button" data-back>Back</button>' : ''}
+        <button class="btn primary" type="button" data-next>${i < 0 ? 'Show me around' : i === steps.length - 1 ? 'Finish' : 'Next'}</button></div>`;
+    if (i < 0){
+      /* Welcome card: dim the page and centre the card in what is actually on screen. */
+      ring.style.cssText = `left:-40px;top:${window.scrollY - 40}px;width:0;height:0`;
+      const vh = view ? view.height : window.innerHeight, top = (view ? view.top : window.scrollY) + Math.max(16, vh / 2 - 110);
+      Object.assign(tip.style, { left: Math.round((W - w) / 2) + 'px', top: Math.round(top) + 'px' });
+    } else {
+      /* A tab can sit off the end of the scrolling tab row on a phone: bring it in first. */
+      if (s.node.closest('#tabs')) s.node.scrollIntoView({ block: 'nearest', inline: 'center' });
+      const r = s.node.getBoundingClientRect(), x = r.left + window.scrollX, y = r.top + window.scrollY;
+      /* A long table only needs its top lit up, or the card would sit a screen away from it. */
+      const h = Math.min(r.height, 260) + pad * 2;
+      ring.style.cssText = `left:${Math.max(4, x - pad)}px;top:${y - pad}px;width:${Math.min(r.width + pad * 2, W - 8)}px;height:${h}px`;
+      Object.assign(tip.style, { left: Math.round(Math.max(16, Math.min(x, W - w - 16))) + 'px', top: Math.round(y - pad + h + 12) + 'px' });
+    }
+    tip.scrollIntoView({ block: 'center' });
+    tip.querySelector('[data-next]').focus({ preventScroll: true });
+  };
+  const go = d => { i += d; if (i >= steps.length) return tourEnd(); if (i < -1) i = -1; draw(); };
+  tip.addEventListener('click', e => {
+    if (e.target.hasAttribute('data-skip')) return tourEnd();
+    if (e.target.hasAttribute('data-back')) return go(-1);
+    if (e.target.hasAttribute('data-next')) return go(1);
+  });
+  const key = e => { if (e.key === 'Escape') tourEnd(); if (e.key === 'ArrowRight') go(1); if (e.key === 'ArrowLeft') go(-1); };
+  document.addEventListener('keydown', key); window.addEventListener('resize', draw);
+  document.body.append(ring, tip);
+  tourNow = { nodes: [ring, tip], key, draw, tab };
+  draw();
+}
+/* Called at the end of renderAll. The timeout lets the charts draw and the hub resize its frame. */
+function tourAfterRender(){
+  tourEnd();
+  if (!CFG.walkthrough || isAdm(state.tab) || !TOUR_INTRO[state.tab]) return;
+  const panel = $('#panel');
+  if (!panel.querySelector('.lede, .kpis')) return;   /* not live yet: no tour */
+  const sub = panel.querySelector('.sub');
+  if (sub) sub.insertAdjacentHTML('afterend', '<button class="btn tourbtn" type="button" data-tour>Show me around</button>');
+  const tab = state.tab;
+  if (state.role === 'viewer' && !tourSeen(tab)) setTimeout(() => { if (state.tab === tab && !tourNow) tourStart(tab); }, 400);
 }
 
 /* Charts render after innerHTML so their mounts have a measured width. */
@@ -1522,6 +1624,7 @@ function renderShell(){
   panel.addEventListener('change', e => { const b = e.target.closest('input[data-neg]'); if (b) toggleNeg(b);
     const t = e.target.closest('input[data-admtick]'); if (t) admTick(t);
     if (e.target.id === 'planfile') admImport(e.target); });
+  panel.addEventListener('click', e => { if (e.target.closest('[data-tour]')) tourStart(state.tab); });
   panel.addEventListener('input', e => {
     const i = e.target.closest('[data-tfilter]'); if (!i) return;
     const t = TABLES[i.dataset.tfilter]; if (t){ t.q = i.value; dtRender(i.dataset.tfilter); }
