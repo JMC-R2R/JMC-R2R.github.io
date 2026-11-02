@@ -369,6 +369,12 @@ body.pinmode [data-anchor]{cursor:crosshair}
 .ip-where{font-family:var(--mono);font-size:10px;color:var(--savvas);background:var(--savvas-soft);padding:1px 7px;border-radius:20px}
 .ip-when{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-left:auto}
 .ip-body{font-size:13px;color:var(--ink2);line-height:1.5;margin-top:4px;white-space:pre-wrap}
+
+/* Inside the Cobalt hub's Reporting tab (02/11/2026): the hub supplies the header and sign-in,
+   and sizes the frame to the page, so nothing here is sticky or scrolls. */
+html.embed header,html.embed .pinhint{display:none}
+html.embed,html.embed body{overflow:hidden}
+html.embed nav.tabs,html.embed .monthbar{position:relative;top:auto}
 </style>
 </head>
 <body>
@@ -638,6 +644,10 @@ body.pinmode [data-anchor]{cursor:crosshair}
 const SB_URL="https://tjgrtrazyepvbcmmdhet.supabase.co";
 const SB_KEY="sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
 const sb=supabase.createClient(SB_URL,SB_KEY);
+/* Shown inside the Cobalt hub's Reporting tab (02/11/2026), one sign-in for everyone. Same origin and
+   same Supabase project as the hub, so supabase-js already shares the hub's session and its refresh lock. */
+const EMBED=window.self!==window.top;
+if(EMBED)document.documentElement.classList.add("embed");
 
 /* data vars */
 let N=0,DATES=[],SESSIONS=[],USERS=[],CONV=[],CLICKS=[],IMPR=[],POS=[];
@@ -2180,7 +2190,9 @@ function show(name){
   renderCharts();updateAddButton();
   window.scrollTo({top:0});
   renderBeacons();
-  maybeTour(name);
+  if(!EMBED)maybeTour(name);
+  // Tell the hub which section is open, so its address bar deep-links it.
+  if(EMBED)try{window.parent.postMessage({r2rDashboardTab:name},location.origin);}catch(e){}
 }
 tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.tab)));
 window.addEventListener("resize",()=>{clearTimeout(window._rz);window._rz=setTimeout(()=>{renderCharts();renderBeacons();},180);});
@@ -2198,11 +2210,14 @@ async function boot(){
   const {data:{session}}=await sb.auth.getSession();
   const email=session?.user?.email||null;
   const me=AUTHORS.find(a=>a.email===email);
-  ME={email,isAuthor:!!me,isAdmin:!!me?.is_admin,team:me?.team||null,name:me?.name||session?.user?.user_metadata?.name||(email?email.split("@")[0]:"You"),avatar:me?.avatar_path||null,role:me?.role_title||null};
+  ME={email,isAuthor:!!me&&me.team!=='client',isAdmin:!!me?.is_admin,team:me?.team||null,name:me?.name||session?.user?.user_metadata?.name||(email?email.split("@")[0]:"You"),avatar:me?.avatar_path||null,role:me?.role_title||null};
   renderAll();
   document.getElementById("gate").style.display="none";
   document.getElementById("app").style.display="block";
-  setTimeout(()=>maybeTour("overview"),500);
+  // The hub opens /cobalt/#<section> for a #reporting/<section> link.
+  const want=location.hash.slice(1);
+  if(EMBED&&secs[want])show(want);
+  if(!EMBED)setTimeout(()=>maybeTour("overview"),500);
 }
 
 /* auth */
