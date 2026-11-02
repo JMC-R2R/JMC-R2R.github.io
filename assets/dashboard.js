@@ -416,19 +416,30 @@ function tourStart(tab){
         <button class="btn primary" type="button" data-next>${i < 0 ? 'Show me around' : i === steps.length - 1 ? 'Finish' : 'Next'}</button></div>`;
     if (i < 0){
       /* Welcome card: dim the page and centre the card in what is actually on screen. */
-      ring.style.cssText = `left:-40px;top:${window.scrollY - 40}px;width:0;height:0`;
+      ring.style.cssText = `position:absolute;left:-40px;top:${window.scrollY - 40}px;width:0;height:0`;
+      tip.style.position = 'absolute';
       const vh = view ? view.height : window.innerHeight, top = (view ? view.top : window.scrollY) + Math.max(16, vh / 2 - 110);
       Object.assign(tip.style, { left: Math.round((W - w) / 2) + 'px', top: Math.round(top) + 'px' });
     } else {
+      /* The tab and month bars stay pinned while the page scrolls under them, so a highlight on
+         them must be pinned too (a page-positioned one slides away as soon as anything scrolls). */
+      const bars = $$('header.top, nav.tabs, .monthbar').filter(b => getComputedStyle(b).position === 'sticky');
+      const pinned = bars.some(b => b.contains(s.node));
+      const clear = (EMBED ? 72 : bars.reduce((t, b) => t + b.offsetHeight, 0)) + 18;   /* never lit up under a bar */
       /* A tab can sit off the end of the scrolling tab row on a phone: bring it in first. */
-      if (s.node.closest('#tabs')) s.node.scrollIntoView({ block: 'nearest', inline: 'center' });
-      const r = s.node.getBoundingClientRect(), x = r.left + window.scrollX, y = r.top + window.scrollY;
-      /* A long table only needs its top lit up, or the card would sit a screen away from it. */
-      const h = Math.min(r.height, 260) + pad * 2;
-      ring.style.cssText = `left:${Math.max(4, x - pad)}px;top:${y - pad}px;width:${Math.min(r.width + pad * 2, W - 8)}px;height:${h}px`;
-      Object.assign(tip.style, { left: Math.round(Math.max(16, Math.min(x, W - w - 16))) + 'px', top: Math.round(y - pad + h + 12) + 'px' });
+      if (s.node.closest('#tabs')) s.node.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'center' });
+      /* Scroll FIRST, measure second: measuring before a scroll is what left the box off target. */
+      if (!pinned){ s.node.style.scrollMarginTop = clear + 'px'; s.node.scrollIntoView({ behavior: 'instant', block: 'start' }); }
+      const r = s.node.getBoundingClientRect(), x = r.left + (pinned ? 0 : window.scrollX), y = r.top + (pinned ? 0 : window.scrollY);
+      const vh = view ? view.height : window.innerHeight;
+      /* Only a long table is cut short, so its card still sits next to what it describes. */
+      const room = Math.max(120, vh - clear - 240);
+      const h = (s.node.matches('.card') ? Math.min(r.height, 260, room) : Math.min(r.height, room)) + pad * 2;
+      const pos = pinned ? 'fixed' : 'absolute';
+      ring.style.cssText = `position:${pos};left:${Math.max(4, x - pad)}px;top:${y - pad}px;width:${Math.min(r.width + pad * 2, W - 8)}px;height:${h}px`;
+      Object.assign(tip.style, { position: pos, left: Math.round(Math.max(16, Math.min(x, W - w - 16))) + 'px', top: Math.round(y - pad + h + 12) + 'px' });
+      if (!pinned) tip.scrollIntoView({ behavior: 'instant', block: 'nearest' });
     }
-    tip.scrollIntoView({ block: 'center' });
     tip.querySelector('[data-next]').focus({ preventScroll: true });
   };
   const go = d => { i += d; if (i >= steps.length) return tourEnd(); if (i < -1) i = -1; draw(); };
