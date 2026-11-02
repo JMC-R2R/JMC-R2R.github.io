@@ -373,6 +373,12 @@ body.pinmode [data-anchor]{cursor:crosshair}
 /* Inside the Cobalt hub's Reporting tab (02/11/2026): everything stays as it is. The hub sizes
    the frame to the page, so the dashboard itself never shows a scrollbar. */
 html.embed,html.embed body{overflow:hidden}
+/* The hub page does the scrolling, so "stuck to the screen" is worked out from the hub's screen
+   (keepInView below): the header and tab bar stay just under the hub's tab bar, and the
+   walkthrough bar and pin hint stay at the bottom of what is on screen, as on /cobalt/. */
+html.embed header,html.embed nav.tabs{transform:translateY(var(--embed-top,0px))}
+html.embed .wt{bottom:var(--embed-bottom,0px)}
+html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
 </style>
 </head>
 <body>
@@ -646,6 +652,24 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
    same Supabase project as the hub, so supabase-js already shares the hub's session and its refresh lock. */
 const EMBED=window.self!==window.top;
 if(EMBED)document.documentElement.classList.add("embed");
+if(EMBED)(function keepInView(){
+  const root=document.documentElement;
+  const run=()=>{try{
+    const fr=window.frameElement; if(!fr) return;
+    const p=fr.getBoundingClientRect(), H=root.clientHeight;
+    const bar=window.parent.document.querySelector(".tabsbar");
+    const barBottom=bar?Math.max(0,bar.getBoundingClientRect().bottom):0;
+    const head=document.querySelector("header"), nav=document.querySelector("nav.tabs");
+    const stackH=(head?head.offsetHeight:0)+(nav?nav.offsetHeight:0);
+    const top=Math.min(Math.max(0,barBottom-p.top),Math.max(0,H-stackH));
+    const bottom=Math.max(0,H-Math.min(H,window.parent.innerHeight-p.top));
+    root.style.setProperty("--embed-top",top+"px");
+    root.style.setProperty("--embed-bottom",bottom+"px");
+  }catch(e){}};
+  try{window.parent.addEventListener("scroll",run,{passive:true});window.parent.addEventListener("resize",run);}catch(e){}
+  window.addEventListener("resize",run);
+  setInterval(run,400); run();
+})();
 
 /* data vars */
 let N=0,DATES=[],SESSIONS=[],USERS=[],CONV=[],CLICKS=[],IMPR=[],POS=[];
