@@ -383,9 +383,9 @@ html.embed,html.embed body{overflow:hidden}
 .tnote-shots img{width:100%;display:block;border:1px solid var(--bd);border-radius:8px}
 .tnote-shots:has(> a:only-child){max-width:860px}
 /* The hub page does the scrolling, so "stuck to the screen" is worked out from the hub's screen
-   (keepInView below): the header and tab bar stay just under the hub's tab bar, and the
-   walkthrough bar and pin hint stay at the bottom of what is on screen, as on /cobalt/. */
-html.embed header,html.embed nav.tabs{transform:translateY(var(--embed-top,0px))}
+   (keepInView below): the walkthrough bar and pin hint stay at the bottom of what is on screen.
+   The header and tab bar scroll away inside the hub (Jhen 02/11/2026): stacked under the hub's own
+   sticky tab bar they covered too much of the page. */
 html.embed .wt{bottom:var(--embed-bottom,0px)}
 html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
 </style>
@@ -693,7 +693,6 @@ if(EMBED)(function keepInView(){
     const stackH=(head?head.offsetHeight:0)+(nav?nav.offsetHeight:0);
     const top=Math.min(Math.max(0,barBottom-p.top),Math.max(0,H-stackH));
     const bottom=Math.max(0,H-Math.min(H,window.parent.innerHeight-p.top));
-    root.style.setProperty("--embed-top",top+"px");
     root.style.setProperty("--embed-bottom",bottom+"px");
   }catch(e){}};
   try{window.parent.addEventListener("scroll",run,{passive:true});window.parent.addEventListener("resize",run);}catch(e){}
