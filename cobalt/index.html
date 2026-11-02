@@ -373,6 +373,15 @@ body.pinmode [data-anchor]{cursor:crosshair}
 /* Inside the Cobalt hub's Reporting tab (02/11/2026): everything stays as it is. The hub sizes
    the frame to the page, so the dashboard itself never shows a scrollbar. */
 html.embed,html.embed body{overflow:hidden}
+
+/* Notes from the team (02/11/2026): what the delivery team's monthly SEO report adds */
+.tnote-h{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 4px}
+.tnote-b{color:var(--ink2);font-size:13px;margin:0 0 10px;max-width:72ch}
+.tnote-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.tnote-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-bottom:4px}
+.tnote-shots a{display:block}
+.tnote-shots img{width:100%;display:block;border:1px solid var(--bd);border-radius:8px}
+.tnote-shots:has(> a:only-child){max-width:860px}
 /* The hub page does the scrolling, so "stuck to the screen" is worked out from the hub's screen
    (keepInView below): the header and tab bar stay just under the hub's tab bar, and the
    walkthrough bar and pin hint stay at the bottom of what is on screen, as on /cobalt/. */
@@ -487,9 +496,29 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
       <div class="card chart" id="c-clicks"></div>
       <div class="card chart" id="c-position"></div>
     </div>
+    <div id="seo-team"></div>
     <h2 class="h2">Keyword rankings</h2>
     <p class="sub" id="rank-sub">Tracked in SE Ranking.</p>
     <div class="card tscroll"><table class="tbl" id="t-rank"></table></div>
+    <h2 class="h2" data-anchor="sec:seo-delivered-oct">Content delivered &mdash; October 2026</h2>
+    <p class="sub">12 pieces published: 4 blogs on cobaltconstructions.com.au and 8 Google Business Profile posts. Dates are the live publish dates.</p>
+    <div class="card tscroll"><table class="tbl" id="t-delivered-oct">
+      <thead><tr><th>Published</th><th>Type</th><th>Page</th></tr></thead>
+      <tbody>
+        <tr><td class="tnum">02/10</td><td>GBP post</td><td class="k"><a href="https://local.google.com/place?id=13025178787273490446&amp;use=posts&amp;lpsid=CIHM0ogKEJe16KuvwuCOAQ" target="_blank" rel="noopener">Why an Early Site Visit Can Save Time and Money on Your Build</a></td></tr>
+        <tr><td class="tnum">06/10</td><td>GBP post</td><td class="k"><a href="https://local.google.com/place?id=13025178787273490446&amp;use=posts&amp;lpsid=CIHM0ogKEIDwn866upWB-AE" target="_blank" rel="noopener">What Homeowners Say After Living in Their Cobalt Home</a></td></tr>
+        <tr><td class="tnum">07/10</td><td>Blog</td><td class="k"><a href="https://cobaltconstructions.com.au/buying-land-to-build-a-house/" target="_blank" rel="noopener">What Should I Check Before I Buy a Yarra Valley Block?</a></td></tr>
+        <tr><td class="tnum">13/10</td><td>GBP post</td><td class="k"><a href="https://local.google.com/place?id=13025178787273490446&amp;use=posts&amp;lpsid=CIHM0ogKELaf6Kz47IzengE" target="_blank" rel="noopener">A Complete Renovation Brings New Life to a Ferny Creek Home</a></td></tr>
+        <tr><td class="tnum">14/10</td><td>Blog</td><td class="k"><a href="https://cobaltconstructions.com.au/can-you-build-on-an-easement/" target="_blank" rel="noopener">What Do Easements and Covenants on a Title Mean for Where I Can Build?</a></td></tr>
+        <tr><td class="tnum">16/10</td><td>GBP post</td><td class="k"><a href="https://local.google.com/place?id=13025178787273490446&amp;use=posts&amp;lpsid=CIHM0ogKEJiP5uqlyb6XPw" target="_blank" rel="noopener">What to Weigh Up Before Building on an Acreage Block</a></td></tr>
+        <tr><td class="tnum">20/10</td><td>GBP post</td><td class="k"><a href="https://local.google.com/place?id=13025178787273490446&amp;use=posts&amp;lpsid=CIHM0ogKELWbi_quqMnf8wE" target="_blank" rel="noopener">Why Spring Is a Practical Time to Start Planning Your Build</a></td></tr>
+        <tr><td class="tnum">21/10</td><td>Blog</td><td class="k"><a href="https://cobaltconstructions.com.au/tree-removal-permit-victoria/" target="_blank" rel="noopener">Can I Remove Trees to Build? Vegetation Controls in the Yarra Ranges</a></td></tr>
+        <tr><td class="tnum">23/10</td><td>GBP post</td><td class="k"><a href="https://local.google.com/place?id=13025178787273490446&amp;use=posts&amp;lpsid=CIHM0ogKEInn0oSb9-36Ng" target="_blank" rel="noopener">The Features That Actually Define a Premium Custom Home</a></td></tr>
+        <tr><td class="tnum">27/10</td><td>GBP post</td><td class="k"><a href="https://local.google.com/place?id=13025178787273490446&amp;use=posts&amp;lpsid=CAIQACoeChxtc3BfaDpLSkZlQ2IyaEJ6Wlh6cHNZaWVvTTZ3" target="_blank" rel="noopener">Answering the Questions We Hear Most From First-Time Clients</a></td></tr>
+        <tr><td class="tnum">28/10</td><td>Blog</td><td class="k"><a href="https://cobaltconstructions.com.au/planning-permit-victoria/" target="_blank" rel="noopener">Do I Need a Planning Permit in the Yarra Ranges, and How Long Does It Take?</a></td></tr>
+        <tr><td class="tnum">30/10</td><td>GBP post</td><td class="k"><a href="https://local.google.com/place?id=13025178787273490446&amp;use=posts&amp;lpsid=CAIQACoeChxtc3BfaDo3Nk1CN1ctOWMwaTFKcjN4UzZSY0dR" target="_blank" rel="noopener">Design Details Worth Considering Before You Finalise Your Floor Plan</a></td></tr>
+      </tbody>
+    </table></div>
     <h2 class="h2" data-anchor="sec:seo-delivered">Content delivered &mdash; September 2026</h2>
     <p class="sub">14 pieces published to cobaltconstructions.com.au: 4 blogs, 8 suburb pages and 2 landing pages. Dates are the live publish dates.</p>
     <div class="card tscroll"><table class="tbl" id="t-delivered">
@@ -540,6 +569,7 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
     <h2 class="h2">Who else the answer cites</h2>
     <p class="sub" id="ai-domains-sub">&mdash;</p>
     <div class="card tscroll"><table class="tbl" id="t-ai-domains"></table></div>
+    <div id="ai-team"></div>
     <div class="inspanel" id="ins-aisearch"></div>
   </section>
 
@@ -681,6 +711,7 @@ let AI_OVERVIEW=[],AI_PROMPTS=[],AI_CITATIONS=[],AI_MONTH=null,AI_PREV=null;
 let INSIGHTS=[],AUTHORS=[],ME={email:null,isAuthor:false,name:null,avatar:null,role:null},PINMODE=false;
 let MANUAL_DEFS=[],MANUAL=[],MSEL=null;
 let CONTENT=[],OVERRIDES=[],FEEDBACK=[];
+let TEAMNOTES=[],GAM=[];  // the team's monthly report notes; organic engagement by month (GA4)
 // Month-on-month runs off its own long series, INDEPENDENT of the KPI window above.
 // Never derive it from DATES — a short window leaves no full month and the section goes blank.
 let MSERIES=[];
@@ -706,7 +737,7 @@ const monthShort=key=>MONTH_ABBR[Number(key.split("-")[1])-1];
 const monthLong=key=>monthShort(key)+" "+key.split("-")[0];
 
 async function loadData(){
-  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr,fb,gkw,gst,aiov,aipr,aici]=await Promise.all([
+  const [seo,social,paid,rank,posts,refresh,ins,auth,mdef,mval,cplan,ovr,fb,gkw,gst,aiov,aipr,aici,tnotes,gam]=await Promise.all([
     sb.from('cobalt_seo_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
     sb.from('cobalt_social_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
     sb.from('cobalt_paid_daily').select('*').gte('period_date',HISTORY_SINCE).order('period_date'),
@@ -724,8 +755,11 @@ async function loadData(){
     sb.from('cobalt_google_search_terms').select('*'),
     sb.from('cobalt_ai_overview').select('*').order('period_month'),
     sb.from('cobalt_ai_prompts').select('*'),
-    sb.from('cobalt_ai_citations').select('*')
+    sb.from('cobalt_ai_citations').select('*'),
+    sb.from('cobalt_team_notes').select('*').order('sort'),
+    sb.from('cobalt_ga_monthly').select('*').order('period_month')
   ]);
+  TEAMNOTES=(tnotes&&tnotes.data)||[]; GAM=(gam&&gam.data)||[];
   AI_OVERVIEW=aiov.data||[]; AI_PROMPTS=aipr.data||[]; AI_CITATIONS=aici.data||[];
   // AI search is a point-in-time snapshot, not a daily series, so it is scoped to
   // its own latest snapshot rather than the month picker at the top of the page.
@@ -826,6 +860,53 @@ function buildPaid(platform){
 }
 
 /* KPIs */
+/* ===== Notes from the team and organic engagement (02/11/2026) =====
+   Only what the delivery team's monthly report adds and this dashboard does not already measure.
+   Both follow the month picker like every other section, and stay empty for a month with nothing. */
+function teamPrevMonth(k){const[y,m]=k.split("-").map(Number);const d=new Date(y,m-2,1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
+function vsChip(now,was,show){
+  if(was==null||now==null)return "";
+  // Compare what is shown, so 57.2% against 57.2% reads as unchanged, not as a fall.
+  const d=show(now)===show(was)?0:now-was,cls=d===0?"flat":d>0?"up":"dn",arrow=cls==="flat"?"&#9632;":d>0?"&#9650;":"&#9660;";
+  return '<span class="chip '+cls+'">'+arrow+'</span> from '+show(was);
+}
+function noteBlock(list){
+  const tiles=list.filter(n=>n.kind==="tile"),rest=list.filter(n=>n.kind!=="tile");
+  let h=tiles.length?'<div class="kpis">'+tiles.map(n=>kpi(esc(n.label),esc(n.value||""),esc(n.foot||""))).join("")+'</div>':"";
+  h+=rest.map(n=>'<div class="card" style="margin-top:12px" data-anchor="note:'+n.id+'">'
+    +'<div class="tnote-h">'+esc(n.label)+'</div>'
+    +(n.body?'<p class="tnote-b">'+esc(n.body)+'</p>':"")
+    +((n.chips||[]).length?'<div class="tnote-chips">'+n.chips.map(c=>'<span class="chip flat">'+esc(c)+'</span>').join("")+'</div>':"")
+    +((n.images||[]).length?'<div class="tnote-shots">'+n.images.map(src=>'<a href="'+esc(src)+'" target="_blank" rel="noopener"><img src="'+esc(src)+'" alt="'+esc(n.label)+'" loading="lazy"></a>').join("")+'</div>':"")
+    +'</div>').join("");
+  return h;
+}
+function renderTeam(){
+  const seoEl=document.getElementById("seo-team"),aiEl=document.getElementById("ai-team");
+  if(!seoEl||!aiEl)return;
+  if(!MONTH){seoEl.innerHTML=aiEl.innerHTML="";return;}
+  const inM=r=>String(r.period_month).slice(0,7)===MONTH, PK=teamPrevMonth(MONTH);
+  const g=GAM.find(inM), p=GAM.find(r=>String(r.period_month).slice(0,7)===PK);
+  let h="";
+  if(g){
+    const er=r=>r&&r.org_sessions?r.org_engaged_sessions/r.org_sessions:null, ret=r=>r?r.org_users-r.org_new_users:null;
+    const pct=v=>(v*100).toFixed(1)+"%";
+    h+='<h2 class="h2" data-anchor="sec:seo-engagement">Engagement</h2>'
+      +'<p class="sub">Visitors from Google organic search in '+monthLong(MONTH)+', from GA4. Calendar month'+(p?', compared with '+monthLong(PK):'')+'.</p>'
+      +'<div class="kpis">'
+      +kpi("Engagement rate",pct(er(g)),vsChip(er(g),er(p),pct)||"engaged sessions ÷ sessions")
+      +kpi("Page views",fmt(g.org_page_views),vsChip(g.org_page_views,p&&p.org_page_views,fmt)||"organic visitors")
+      +kpi("Returning users",fmt(ret(g)),vsChip(ret(g),ret(p),fmt)||"visited before")
+      +'</div>';
+  }
+  const sn=TEAMNOTES.filter(n=>n.tab==="seo"&&inM(n));
+  if(sn.length)h+='<h2 class="h2" data-anchor="sec:seo-team">Notes from the team</h2>'
+      +'<p class="sub">From the delivery team&rsquo;s '+monthLong(MONTH)+' SEO report: what this dashboard does not measure.</p>'+noteBlock(sn);
+  seoEl.innerHTML=h;
+  const an=TEAMNOTES.filter(n=>n.tab==="aisearch"&&inM(n));
+  aiEl.innerHTML=an.length?'<h2 class="h2" data-anchor="sec:ai-team">Seen by the team</h2>'
+      +'<p class="sub">Checks from the delivery team&rsquo;s '+monthLong(MONTH)+' SEO report, with the screenshots they took.</p>'+noteBlock(an):"";
+}
 const kpi=(lab,val,foot)=>`<div class="kpi"><div class="lab">${lab}</div><div class="val tnum">${val}</div><div class="foot">${foot||""}</div></div>`;
 // Direction of travel on average Google position, read off the last two FULL months.
 // A LOWER number is better, so a rise in the number is a slip. Never assert a direction
@@ -1748,7 +1829,7 @@ function alignHeads(){
     });
   });
 }
-function renderAll(){renderMonthChips();renderWindowLabels();renderKPIs();renderMoM();renderServiceMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderFeedback();renderAiSearch();renderBeacons();updateAddButton();alignHeads();}
+function renderAll(){renderTeam();renderMonthChips();renderWindowLabels();renderKPIs();renderMoM();renderServiceMoM();posts();tables();renderCharts();fmtStamp();renderInsightPanels();renderManual();renderContent();renderCorrections();renderFeedback();renderAiSearch();renderBeacons();updateAddButton();alignHeads();}
 
 /* pin-anywhere: click any element (post, card, page area) while in pin mode */
 document.getElementById("app").addEventListener("click",e=>{
