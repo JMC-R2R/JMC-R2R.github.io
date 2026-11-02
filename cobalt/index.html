@@ -370,11 +370,9 @@ body.pinmode [data-anchor]{cursor:crosshair}
 .ip-when{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-left:auto}
 .ip-body{font-size:13px;color:var(--ink2);line-height:1.5;margin-top:4px;white-space:pre-wrap}
 
-/* Inside the Cobalt hub's Reporting tab (02/11/2026): the hub supplies the header and sign-in,
-   and sizes the frame to the page, so nothing here is sticky or scrolls. */
-html.embed header,html.embed .pinhint{display:none}
+/* Inside the Cobalt hub's Reporting tab (02/11/2026): everything stays as it is. The hub sizes
+   the frame to the page, so the dashboard itself never shows a scrollbar. */
 html.embed,html.embed body{overflow:hidden}
-html.embed nav.tabs,html.embed .monthbar{position:relative;top:auto}
 </style>
 </head>
 <body>
@@ -2190,7 +2188,7 @@ function show(name){
   renderCharts();updateAddButton();
   window.scrollTo({top:0});
   renderBeacons();
-  if(!EMBED)maybeTour(name);
+  maybeTour(name);
   // Tell the hub which section is open, so its address bar deep-links it.
   if(EMBED)try{window.parent.postMessage({r2rDashboardTab:name},location.origin);}catch(e){}
 }
@@ -2217,7 +2215,7 @@ async function boot(){
   // The hub opens /cobalt/#<section> for a #reporting/<section> link.
   const want=location.hash.slice(1);
   if(EMBED&&secs[want])show(want);
-  if(!EMBED)setTimeout(()=>maybeTour("overview"),500);
+  setTimeout(()=>maybeTour("overview"),500);
 }
 
 /* auth */
@@ -2234,7 +2232,8 @@ document.getElementById("gateform").addEventListener("submit",async e=>{
   if(error){err.textContent=error.message||"Incorrect email or password.";btn.disabled=false;btn.textContent="Sign in";return;}
   await boot();
 });
-document.getElementById("logout").addEventListener("click",async()=>{await sb.auth.signOut();location.reload();});
+// Inside the hub the sign-in is the hub's, so signing out reloads the whole hub, not just this frame.
+document.getElementById("logout").addEventListener("click",async()=>{await sb.auth.signOut();(EMBED?window.top:window).location.reload();});
 checkSession();
 </script>
 </body>
