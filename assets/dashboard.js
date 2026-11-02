@@ -381,6 +381,29 @@ const tourCommon = [
 ];
 const tourMonth = { el: () => $('.monthbar'), t: 'Pick a month', p: 'Use these buttons to look back at any month. Everything on the page changes with it.' };
 const TOUR_EXTRA = {
+  overview: [
+    { el: () => [...$$('#panel .eyebrow')].find(e => e.textContent.trim() === 'Share of voice'), t: 'Share of voice', p: 'How often you show up compared with your competitors, in the places your customers look.' },
+    { el: () => $('#tabs'), t: 'Every section', p: 'Each tab goes deeper on one service, and a padlock marks something not in your package.' },
+  ],
+  seo: [
+    { el: () => tourCard('Accomplished in'), t: 'What we finished', p: 'The work we completed this month. Each item is proven from the website, your profile or the hub.' },
+    { el: () => tourCard('Clicks and impressions'), t: 'Google traffic', p: 'How often the website appeared in Google and how often people clicked through.' },
+    { el: () => tourCard('Target keywords we track'), t: 'Your keywords', p: 'Where you rank for the searches we are working to win. You can sort, filter or download any table like this.' },
+  ],
+  map_grid: [
+    { el: () => tourCard('By keyword'), t: 'Each search, on the map', p: 'Your position across your service area for each search. Each point is one spot on the map.' },
+    { el: () => tourCard('Who is #1'), t: 'Who you are up against', p: 'The businesses ranking first across the grid.' },
+  ],
+  gbp: [
+    { el: () => tourCard('Where the views came from'), t: 'Where people saw you', p: 'Whether they found your profile on Google Search or Maps.' },
+    { el: () => tourCard('What people did'), t: 'What they did next', p: 'The calls, website clicks and direction requests that came from your profile.' },
+    { el: () => tourCard('Every Google review'), t: 'Your reviews', p: 'Every review, in one list.' },
+  ],
+  geo: [
+    { el: () => tourCard('By assistant'), t: 'Assistant by assistant', p: 'How often each AI assistant named your business.' },
+    { el: () => tourCard('Who the assistants recommend'), t: 'Who gets recommended', p: 'The businesses the assistants named when they were asked.' },
+    { el: () => tourCard('Every question and answer'), t: 'Read it for yourself', p: 'Every question we asked and the answer it gave.' },
+  ],
   paid_ads: [
     { el: () => tourCard('Campaigns'), t: 'Your campaigns', p: 'Each campaign, who manages it, what it cost and the leads it produced.' },
     { el: () => tourCard('What counted as a lead'), t: 'What counts as a lead', p: 'Exactly what Google recorded as a lead. We show this so you can check it against the calls and enquiries you actually got.' },
