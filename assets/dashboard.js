@@ -124,7 +124,7 @@ async function loadData(){
   const PK = { md_rankings: 'checked_at,keyword,search_engine', md_paid_search_terms: 'month,campaign,ad_group,search_term,match_type',
     md_paid_keywords: 'month,campaign,ad_group,keyword,match_type', md_paid_segments: 'month,dimension,label',
     md_geo_share: 'checked_at,engine,brand', md_negative_requests: 'id', md_seo_queries: 'month,query',
-    md_gbp_search_keywords: 'month,keyword', md_gbp_review_list: 'review_id', md_work_log: 'id' };
+    md_gbp_search_keywords: 'month,keyword', md_gbp_review_list: 'review_id', md_work_log: 'id', md_paid_calls: 'started_at,call_id' };
   const ordered = (b, cols) => (cols || '').split(',').filter(Boolean).reduce((x, c) => x.order(c), b);
   const qAll = async (t, dateCol) => { let out = [], i = 0;
     for (;;) { const { data, error } = await ordered(q(t, dateCol), PK[t]).range(i, i + 999);
@@ -132,7 +132,7 @@ async function loadData(){
       if (data.length < 1000) return { data: out }; i += 1000; } };
 
   const [seo, gbp, rev, geo, paid, social, leads, ranks, scans, refresh,
-         pcm, pst, pkw, pseg, pconv, gshare, neg, sq, gkw, grl, wlog, notes] = await Promise.all([
+         pcm, pst, pkw, pseg, pconv, gshare, neg, sq, gkw, grl, wlog, notes, pcalls] = await Promise.all([
     q('md_seo_daily','date'), q('md_gbp_daily','date'), q('md_gbp_reviews'), q('md_geo_visibility'),
     q('md_paid_daily','date'), q('md_social_daily','date'), q('md_leads_daily','date'),
     qAll('md_rankings'), q('md_mapgrid_scans'), q('md_refresh_log'),
@@ -142,8 +142,11 @@ async function loadData(){
     qAll('md_negative_requests'), qAll('md_seo_queries','month'), qAll('md_gbp_search_keywords','month'), qAll('md_gbp_review_list'), qAll('md_work_log','month'),
     /* Team notes per month: the same table and rpt_add_insight as the Savvas dashboards. */
     q('rpt_social_annotations'),
+    /* Google forwarding number call log. Rows only exist for accounts the feed pulls. */
+    qAll('md_paid_calls','started_at'),
   ]);
   RAW.notes = notes.data || [];
+  RAW.calls = pcalls.data || [];
   RAW.seo = seo.data || []; RAW.gbp = gbp.data || []; RAW.reviews = rev.data || [];
   RAW.geo = geo.data || []; RAW.paid = paid.data || []; RAW.social = social.data || [];
   RAW.leads = leads.data || []; RAW.rankings = ranks.data || [];
@@ -195,6 +198,7 @@ function applyMonth(){
   V.pkw  = RAW.pkw.filter(r => inM(r,'month'));
   V.pseg = RAW.pseg.filter(r => inM(r,'month'));
   V.pconv= RAW.pconv.filter(r => inM(r,'month'));
+  V.calls = RAW.calls.filter(r => inM(r,'started_at'));  V.callsPrev = RAW.calls.filter(r => inP(r,'started_at'));
   /* AI visibility is a snapshot: latest check on or before the month. The comparison is
      the LAST check of an earlier month (the month-end reading), never a second check in
      the same month, so the trend reads month on month. */
@@ -1194,6 +1198,8 @@ function viewPaid(){
         { sort:{ k:'conversions', dir:-1 }, filter:false, maxH:300 })}</div>`;
   }
 
+  out += paidCallsCard();
+
   /* Search terms — the spreadsheet */
   if (V.pst.length){
     const rows = V.pst.map(r => ({ ...r, cost: Number(r.cost), conversions: Number(r.conversions),
@@ -1262,6 +1268,50 @@ function viewPaid(){
         { sort:{ k:'month', dir:1 }, filter:false, maxH:320 })}</div>`;
   }
   return out;
+}
+
+/* Calls through Google forwarding numbers, one row per call from md_paid_calls.
+   No rows on record means the account has never recorded one, or it tracks calls with a
+   third party tool, so the card stays away rather than showing a false 0. Once there
+   is a record, a month with no calls is a real 0. Times stay in the ad account's time zone. */
+function paidCallsCard(){
+  if (!RAW.calls.length) return '';
+  const secs = r => Number(r.duration_seconds) || 0;
+  const mmss = v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, '0')}`;
+  const when = v => { const [, y, m, d, h, mi] = String(v).match(/(\d+)-(\d+)-(\d+)[T ](\d+):(\d+)/) || [];
+    return y ? `${d}/${m}/${y} ${(+h % 12) || 12}:${mi}${+h < 12 ? 'am' : 'pm'}` : esc(v); };
+  const zone = String((RAW.calls.find(r => r.account_time_zone) || {}).account_time_zone || '').split('/').pop().replace(/_/g, ' ');
+  const answered = r => r.status !== 'MISSED';
+  const count = a => ({ all: a.length, long: a.filter(r => answered(r) && secs(r) >= 30).length, missed: a.filter(r => !answered(r)).length });
+  const c = count(V.calls), p = V.callsPrev.length ? count(V.callsPrev) : null;
+  const talked = V.calls.filter(r => answered(r) && secs(r) > 0);
+  const avgLen = talked.length ? Math.round(talked.reduce((t, r) => t + secs(r), 0) / talked.length) : null;
+  const was = n => p ? `${monthName(V.prevMonth)}: ${fmt(n)}` : '';
+  let out = `<div class="card"><div class="cardhead"><div><h3>Phone calls from the ads</h3>
+    <p class="sub">Every call Google recorded through its forwarding number: people who tapped call on an ad, or clicked an ad and then rang the number on the website.</p></div></div>
+    <div class="kpis">
+    ${kpi('Calls', fmt(c.all), was(p && p.all))}
+    ${kpi('30 seconds or longer', fmt(c.long), was(p && p.long))}
+    ${kpi('Missed', fmt(c.missed), was(p && p.missed))}
+    ${kpi('Average call', avgLen == null ? '—' : mmss(avgLen), 'Answered calls, minutes:seconds')}</div>`;
+  const note = 'Google only tracks calls that come from an ad, so calls from Google Maps, organic search or a saved number are not here. It shares the area code or mobile prefix, never the full number. Some of these calls may already be counted in Leads above, so do not add the two together.';
+  if (!V.calls.length) return out + `<p class="sub">No calls came through from the ads in ${monthName(state.month)}.</p><p class="dtnote">${note}</p></div>`;
+  const dates = [...V.paid.map(r => String(r.date).slice(0, 10)), ...V.calls.map(r => String(r.started_at).slice(0, 10))].sort();
+  const days = [];
+  for (let d = new Date(dates[0] + 'T00:00:00'), end = dates[dates.length - 1]; ymd(d) <= end; d.setDate(d.getDate() + 1)) days.push(ymd(d));
+  /* Bars, not the line chart: its axis pads small counts into "1, 1, 1, 0, -0". */
+  const perDay = days.map(d => V.calls.filter(r => String(r.started_at).startsWith(d)).length), peak = Math.max(...perDay);
+  const dmy = d => d.split('-').reverse().join('/');
+  if (days.length > 1) out += `<p class="sub" style="margin-top:18px">Calls per day, ${dmy(days[0])} to ${dmy(days[days.length - 1])}. The busiest day had ${fmt(peak)}.</p>
+    <div style="display:flex;align-items:flex-end;gap:2px;height:72px;margin:8px 0 18px">${perDay.map((n, i) =>
+      `<span title="${dmy(days[i])}: ${n} call${n === 1 ? '' : 's'}" style="flex:1;min-width:0;border-radius:2px 2px 0 0;height:${n ? Math.max(n / peak * 100, 8) : 3}%;background:${n ? 'var(--accent)' : 'var(--bd)'}"></span>`).join('')}</div>`;
+  const rows = V.calls.map(r => ({ started_at: r.started_at, duration: secs(r), outcome: answered(r) ? 'Answered' : 'Missed',
+    source: r.source === 'LANDING_PAGE' ? 'Website, after clicking an ad' : r.source === 'AD' ? 'The ad' : null,
+    how: r.call_type === 'MANUALLY_DIALED' ? 'Dialled' : r.call_type === 'HIGH_END_MOBILE_SEARCH' ? 'Tapped to call' : null,
+    campaign: r.campaign, area: r.caller_area_code }));
+  return out + dataTable('calls', [{ k:'started_at', label:'When', fmt:when }, { k:'duration', label:'Length', num:1, fmt:mmss },
+    { k:'outcome', label:'Outcome' }, { k:'source', label:'Came from' }, { k:'how', label:'How' }, { k:'campaign', label:'Campaign' }, { k:'area', label:'Caller area' }],
+    rows, { sort:{ k:'started_at', dir:-1 }, maxH:360, note: `Times are in the ad account's time zone${zone ? ` (${esc(zone)})` : ''}. ${note}` }) + '</div>';
 }
 
 /* ---------------------------------------------------------------- negative keywords
