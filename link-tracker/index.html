@@ -43,6 +43,9 @@
   .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
   h2{font-size:16px; font-weight:800; letter-spacing:-.01em; margin-bottom:2px}
   .sub{font-size:12.5px; color:var(--muted); margin-bottom:14px; max-width:78ch}
+  .onote{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; margin-bottom:12px}
+  .onote .by{font-size:12px; color:var(--muted); margin-bottom:6px}
+  .onote .bd{white-space:pre-wrap; font-size:13.5px; line-height:1.5}
   section{margin-top:26px}
 
   /* ---- login ---- */
@@ -230,6 +233,7 @@
     <section>
       <h2>Month note</h2>
       <p class="sub">The roadblocks and per-client commentary you used to write at the top of the sheet. It was the most useful thing in there and it had nowhere to go.</p>
+      <div id="otherNotes"></div>
       <div class="form">
         <div class="fld"><textarea id="mnote" rows="5" placeholder="Roadblocks, what's slow, what's negotiating…"></textarea></div>
         <div class="formfoot">
@@ -315,14 +319,21 @@ async function boot(){
 /* ---------- read ---------- */
 async function refresh(){
   const mk = $('month').value;
-  const [{ data:st }, { data:links }, { data:note }] = await Promise.all([
+  const [{ data:st }, { data:links }, { data:notes }] = await Promise.all([
     sb.from('lb_month_standing').select('*').eq('month_key', mk),
     sb.from('lb_links').select('*').eq('month_key', mk).order('created_at',{ascending:false}),
-    sb.from('lb_month_notes').select('*').eq('month_key', mk).eq('author', EMAIL).maybeSingle()
+    sb.from('lb_month_notes').select('*').eq('month_key', mk).order('created_at')
   ]);
   drawCards(st || []);
   drawRows(links || []);
-  $('mnote').value = note ? note.body : "";
+  // Internal staff get every note for the month (writers still only get their own,
+  // the database enforces that). Yours goes in the box to edit; the rest show above it.
+  const all = notes || [];
+  const mine = all.find(n => (n.author || '').toLowerCase() === EMAIL.toLowerCase());
+  $('mnote').value = mine ? mine.body : "";
+  $('otherNotes').innerHTML = all.filter(n => n !== mine).map(n =>
+    `<div class="onote"><div class="by">${esc(n.author)} &middot; ${esc(new Date(n.created_at).toLocaleDateString())}</div>
+     <div class="bd">${esc(n.body)}</div></div>`).join('');
 }
 
 function drawCards(st){
