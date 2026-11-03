@@ -413,6 +413,7 @@ function tAbout(){
     var r=await sb.from("coaching_programs").update(row).eq("slug",CUR);if(r.error){$("pMsg").textContent=r.error.message;return}Object.assign(p,row);renderNav();render()};
 }
 
+if(new URLSearchParams(location.search).get("embed")){document.querySelector("header.top").classList.add("hide");document.documentElement.style.setProperty("--embed","1");var st=document.createElement("style");st.textContent="#app{min-height:100vh}";document.head.appendChild(st)}
 sb.auth.onAuthStateChange(function(ev){if(ev==="SIGNED_OUT")location.reload()});
 boot();
 })();
