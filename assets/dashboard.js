@@ -277,6 +277,16 @@ function chipFor(cur, prev){
   const d = delta(cur, prev);
   return `<span class="chip ${d.cls}">${d.txt}</span>`;
 }
+/* Ads that started part-way through last month leave no fair comparison: two days of
+   October made a single day of November read +9,727%. Returns the first day the ads had any
+   activity when that day falls after the 1st of last month, otherwise null. Switched on per
+   client with `partialCompare: true` so it can be proved on Hot Chicken first. */
+function paidPrevPartial(){
+  if (!CFG.partialCompare || !V.prevMonth) return null;
+  const first = RAW.paid.filter(r => Number(r.spend) > 0 || Number(r.impressions) > 0 || Number(r.clicks) > 0)
+    .map(r => String(r.date).slice(0, 10)).sort()[0];
+  return first && monthOf(first) === V.prevMonth && first.slice(8) !== '01' ? first : null;
+}
 /* Month-on-month change as an absolute number ("+3 vs Sep"). Small counts like "named in 4
    answers" move from 0, where a percentage is meaningless. lowerIsBetter for positions. */
 /* True when a's month is the calendar month straight before b's. */
@@ -1123,7 +1133,9 @@ function viewPaid(){
      monthly detail tables are refreshed with the full pull. */
   const spend = sum(V.paid,'spend'), clicks = sum(V.paid,'clicks'), impr = sum(V.paid,'impressions'), leads = sum(V.paid,'leads');
   const pSpend = sum(V.paidPrev,'spend'), pClicks = sum(V.paidPrev,'clicks'), pLeads = sum(V.paidPrev,'leads');
-  const cpl = leads ? spend / leads : null, pCpl = pLeads ? pSpend / pLeads : null;
+  const partial = paidPrevPartial();
+  const paidChip = (c, p) => partial ? '' : chipFor(c, p);
+  const cpl = leads ? spend / leads : null, pCpl = pLeads && !partial ? pSpend / pLeads : null;
   const cpc = clicks ? spend / clicks : null, ctr = impr ? clicks / impr * 100 : null, cvr = clicks ? leads / clicks * 100 : null;
   const searchC = V.pcm.filter(r => r.search_is != null);
   const wIS = (k) => { const w = sum(searchC, 'impressions'); return w ? searchC.reduce((t, r) => t + Number(r[k] || 0) * r.impressions, 0) / w : null; };
@@ -1137,10 +1149,10 @@ function viewPaid(){
     ${is != null ? `On the searches the ads were eligible for, they appeared ${share(is)} of the time${lostB != null ? ` — ${share(lostB)} of searches were missed because the daily budget ran out and ${share(lostR)} because of ad rank` : ''}.` : ''}</p>`;
 
   out += `<div class="kpis">
-    ${kpi('Spend', money2(spend), chipFor(spend, pSpend))}
-    ${kpi('Leads', fmt(leads), chipFor(leads, pLeads))}
+    ${kpi('Spend', money2(spend), partial ? `Ads started ${partial.split('-').reverse().join('/')}, so there is no full month to compare` : chipFor(spend, pSpend))}
+    ${kpi('Leads', fmt(leads), paidChip(leads, pLeads))}
     ${kpi('Cost per lead', cpl ? money2(cpl) : '—', pCpl ? `${monthName(V.prevMonth)}: ${money2(pCpl)}` : '')}
-    ${kpi('Clicks', fmt(clicks), chipFor(clicks, pClicks))}
+    ${kpi('Clicks', fmt(clicks), paidChip(clicks, pClicks))}
     ${kpi('Avg cost per click', money2(cpc))}
     ${kpi('Click-through rate', pct1(ctr), 'Clicks ÷ times shown')}
     ${kpi('Click to lead rate', pct1(cvr))}
