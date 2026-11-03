@@ -36,7 +36,7 @@
     --blue:#E2B934;        /* primary accent → Manor gold (dominant) */
     --azure:#17B4F0;       /* secondary highlight → R2R blue (the blend) */
   }
-  body[data-theme="social"]{
+  body[data-theme="social"],body[data-theme="reels"]{
     --ink:#1B1719; --panel:#241F21; --panel-2:#2C2629; --line:#3A3236;
     --blue:#D0531E;        /* primary accent → Savvas Studio terracotta (--corduroy) */
     --azure:#E2B934;       /* secondary → Manor gold (the Manor × Savvas blend) */
@@ -598,6 +598,58 @@
   html.embed, html.embed body{overflow:hidden}
   html.embed .navbar{position:relative;top:auto}
 
+
+  /* Instagram engagement against competitors */
+  .eng-venue{all:unset;cursor:pointer;color:var(--white);font-family:var(--sans);border-bottom:1px dotted var(--muted)}
+  .eng-venue:hover,.eng-venue:focus-visible{color:var(--azure);border-bottom-color:var(--azure)}
+  .eng-modal{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.66);display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow:auto}
+  .eng-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;width:100%;max-width:680px}
+  .eng-box h3{font-family:var(--sans);font-size:19px;margin:0;color:var(--white)}
+  .eng-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+  .eng-x{all:unset;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;padding:4px 8px}
+  .eng-x:hover,.eng-x:focus-visible{color:var(--white)}
+  .eng-post{display:block;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);color:var(--white);text-decoration:none;font-size:12.5px;line-height:1.45}
+  .eng-post small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:3px}
+  .rl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:14px;align-items:start}
+  .rl-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+  .rl-cover{display:block;aspect-ratio:9/16;background:var(--panel-2);position:relative}
+  .rl-cover img{width:100%;height:100%;object-fit:cover;display:block}
+  .rl-badge{position:absolute;left:10px;top:10px;background:rgba(11,11,14,.82);color:var(--manor-gold);font-family:var(--mono);font-size:10.5px;font-weight:700;padding:5px 8px;border-radius:6px}
+  .rl-body{padding:13px 14px 15px}
+  .rl-date{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+  .rl-title{font-size:13px;line-height:1.4;color:var(--white);margin:5px 0 11px;min-height:54px}
+  .rl-row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid rgba(255,255,255,.06);font-size:12px;color:var(--muted)}
+  .rl-row b{font-family:var(--mono);font-weight:700;color:var(--white);font-size:12.5px}
+  .rl-row b.rl-best{color:var(--manor-gold)}
+  .rl-watch{display:block;text-align:center;margin-top:11px;padding:8px;border:1px solid var(--line);border-radius:8px;color:var(--white);text-decoration:none;font-size:12px;font-weight:600}
+  .rl-watch:hover,.rl-watch:focus-visible{border-color:var(--azure);color:var(--azure)}
+  @media(max-width:600px){.rl-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rl-body{padding:10px}.rl-title{min-height:0}}
+  .fd-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 2px 14px}
+  .fd-bar select{font-family:var(--mono);font-size:11.5px;color:var(--white);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .fd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;align-items:start}
+  .fd-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;color:var(--white);text-decoration:none}
+  .fd-card:hover{border-color:var(--azure)}
+  .fd-card img{width:100%;aspect-ratio:4/5;object-fit:cover;background:var(--panel-2);display:block}
+  .fd-body{padding:11px 12px;font-size:12px;line-height:1.45;flex:1;display:flex;flex-direction:column;gap:7px}
+  .fd-meta{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+  .fd-stats{font-family:var(--mono);font-size:11px;margin-top:auto}
+  .pg-range{display:flex;gap:8px;margin:0 2px 14px;flex-wrap:wrap}
+  .pg-range button{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer}
+  .pg-range button.on{color:var(--white);border-color:var(--blue)}
+  .pg-chart{position:relative}
+  .pg-chart svg{display:block;width:100%;height:auto;touch-action:pan-y}
+  .pg-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}
+  .pg-title{font-family:var(--sans);font-weight:700;font-size:14.5px;color:var(--white)}
+  .pg-sub{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .pg-chg{font-family:var(--mono);font-size:12px;font-weight:700;white-space:nowrap;text-align:right}
+  .pg-chg small{display:block;font-weight:400;font-size:9.5px;color:var(--muted);margin-top:2px}
+  .pg-chg.up{color:var(--good)} .pg-chg.down{color:var(--bad)} .pg-chg.flat{color:var(--muted)}
+  .pg-tip{position:fixed;z-index:60;pointer-events:none;background:#0B0B0E;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--white);max-width:260px;box-shadow:0 6px 22px rgba(0,0,0,.45)}
+  .pg-tip b{display:block;margin-bottom:2px}
+  .pg-tip span{color:var(--muted)}
+  .pg-key{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.8;margin:0 2px 14px}
+  .pg-key b{color:var(--white);font-weight:700}
+  .pg-key i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:3px;margin-right:6px}
 </style>
 </head>
 <body data-theme="search">
@@ -655,6 +707,7 @@
   <div class="tabs" role="tablist">
     <button class="tab active" id="tabSearch" role="tab" onclick="showView('search')"><span class="ti">◎</span>Search &amp; Local</button>
     <button class="tab" id="tabBench" role="tab" onclick="showView('bench')"><span class="ti">▤</span>Benchmarking</button>
+    <button class="tab" id="tabReels" role="tab" onclick="showView('reels')"><span class="ti">▶</span>Reels &amp; Posts<span class="tnew">New</span></button>
     <button class="tab" id="tabAi" role="tab" onclick="showView('ai')"><span class="ti">✦</span>AI Search<span class="tnew">New</span></button>
     <button class="tab" id="tabSocial" role="tab" onclick="showView('social')"><span class="ti">◍</span>Social</button>
     <button class="tab" id="tabRoi" role="tab" onclick="showView('roi')"><span class="ti">$</span>Marketing ROI</button>
@@ -804,6 +857,26 @@
     <div class="card"><div class="lbl">Age &amp; gender</div><div id="sAge" style="margin-top:12px"></div></div>
   </div>
   <div class="note" id="sAudNote"></div>
+
+  <div class="seclabel">Instagram · Manor against each competitor</div>
+  <div class="pg-range" id="sEngPeriod" role="group" aria-label="Period"></div>
+  <div class="card">
+    <div class="tblwrap"><table class="kw" id="sEngTbl"></table></div>
+    <div class="note" id="sEngNote"></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <div class="lbl" id="sEngBarsLbl">Engagement rate</div>
+      <div class="bench" id="sEngBars" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <div class="pg-head"><div><div class="pg-title">Likes + comments per post, month by month</div><div class="pg-sub">Middle post each venue published that month</div></div></div>
+      <div class="pg-range" id="sEngPick" role="group" aria-label="Compare Manor with"></div>
+      <div class="legend" id="sEngLegend"></div>
+      <div class="pg-chart" id="sEngTrend"></div>
+      <div class="note" id="sEngTrendNote"></div>
+    </div>
+  </div>
 
   <div class="seclabel">Competitor social presence · how Manor stacks up</div>
   <div class="grid g4" id="scKpis"></div>
@@ -961,6 +1034,33 @@
 </div><!-- /viewBench -->
 
 <!-- ===== AI SEARCH VIEW — is Manor recommended when couples ask AI? ===== -->
+<div class="view" id="viewReels" data-anchor="sec:reels">
+  <div class="savvas-banner">
+    <img class="savvas-mascot" src="https://cdn.prod.website-files.com/67afd385cf839b0956c26535/68313a1298a186b5fcc266c2_Savvas%20Icon%20Logomarks-05.png" alt="Savvas Studio">
+    <div class="sb-body">
+      <div class="sb-title">Reels and everything posted, for the selected month</div>
+      <div class="sb-sub">Manor on High's reels, produced by Savvas Studio, plus every public post from Manor and its competitors.</div>
+    </div>
+  </div>
+  <div class="seclabel" id="rlWorkedLabel">What worked</div>
+  <div class="grid g4" id="rlWorked"></div>
+  <div class="seclabel" id="rlTblLabel" style="margin-bottom:8px">Every reel</div>
+  <div class="pg-range" id="rlSort" role="group" aria-label="Sort reels"></div>
+  <div class="rl-grid" id="rlGrid"></div>
+  <div class="note" id="rlNote"></div>
+  <div class="seclabel" id="fdLabel" style="margin-bottom:8px">Everything posted</div>
+  <div class="fd-bar">
+    <select id="fdVenue" aria-label="Venue" onchange="renderFeed()"></select>
+    <select id="fdType" aria-label="Post type" onchange="renderFeed()">
+      <option value="all">All post types</option><option value="reel">Reels</option><option value="carousel">Carousels</option><option value="image">Images</option>
+    </select>
+    <span class="fd-meta" id="fdCount"></span>
+  </div>
+  <div class="fd-grid" id="fdGrid"></div>
+  <div class="pg-range" style="margin-top:14px;justify-content:center"><button type="button" id="fdMore" onclick="FD_LIMIT += 48; renderFeed(true)">Show more</button></div>
+  <div class="note">Competitors' reach, saves, shares, hook rate and watch time are private to their own accounts, so the feed shows what is public. Likes and comments are as at the latest capture.</div>
+</div><!-- /viewReels -->
+
 <div class="view" id="viewAi" data-anchor="sec:ai">
   <div class="monthnotice" id="aEmpty" hidden></div>
   <div class="r2r-banner">
@@ -1079,7 +1179,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-10-30-1700';
+const BUILD = '2026-11-04-1030';
 
 async function newerBuildAvailable(){
   try{
@@ -1295,6 +1395,7 @@ async function startApp(){
   if(h.view === 'roi') showView('roi');
   else if(h.view === 'social') showView('social');
   else if(h.view === 'bench') showView('bench');
+  else if(h.view === 'reels') showView('reels');
   else if(h.view === 'ai') showView('ai');
   else showView('search');
   // The ROI figure element is id="roi", so a #roi url makes the browser anchor-jump
@@ -1369,6 +1470,9 @@ SUPA.kwuni   = SUPA.url + "/rest/v1/manor_keyword_universe";
 SUPA.gbp     = SUPA.url + "/rest/v1/manor_gbp_monthly";
 SUPA.gbpkw   = SUPA.url + "/rest/v1/manor_gbp_keywords";
 SUPA.seod    = SUPA.url + "/rest/v1/manor_seo_daily";
+SUPA.engSnap = SUPA.url + "/rest/v1/manor_social_engagement_snapshots";
+SUPA.engMon  = SUPA.url + "/rest/v1/manor_social_engagement_monthly";
+SUPA.cposts  = SUPA.url + "/rest/v1/manor_social_competitor_posts";
 const CLIENT_DOMAIN = 'manoronhigh.com.au';
 SUPA.months = SUPA.url + "/rest/v1/manor_month_index";
 
@@ -1448,6 +1552,7 @@ function parseHash(){
 }
 
 function setPeriod(p){
+  if(typeof currentView === 'function' && currentView() === 'reels') setTimeout(loadReels, 0);
   if(p === PERIOD) return;
   PERIOD = p;
   renderChips();
@@ -1781,7 +1886,7 @@ function renderPosts(posts, isSample, elId){
 
 async function loadSocial(){
   try{
-    const [mRes,pRes,dRes,aRes,bRes,tRes,cRes,kRes,qRes,uRes] = await Promise.all([
+    const [mRes,pRes,dRes,aRes,bRes,tRes,cRes,kRes,qRes,uRes,esRes,emRes] = await Promise.all([
       fetch(`${SUPA.social}?select=*&order=period_date.asc`, {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.sposts}?select=*&order=engagement.desc`,  {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.daily}?select=*&order=metric_date.asc`,   {cache:'no-store', headers: authHeaders()}),
@@ -1791,7 +1896,9 @@ async function loadSocial(){
       fetch(`${SUPA.scomp}?select=*&order=snapshot_date`,      {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.comps}?select=domain,label,colour&active=is.true&order=sort_order`, {cache:'no-store', headers: authHeaders()}),
       fetch(`${SUPA.posts}?select=*&order=posted_at`,          {cache:'no-store', headers: authHeaders()}),
-      fetch(`${SUPA.aud}?select=*&order=snapshot_date`,        {cache:'no-store', headers: authHeaders()})
+      fetch(`${SUPA.aud}?select=*&order=snapshot_date`,        {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.engSnap}?select=*&order=snapshot_date`,    {cache:'no-store', headers: authHeaders()}),
+      fetch(`${SUPA.engMon}?select=*&order=period_date`,       {cache:'no-store', headers: authHeaders()})
     ]);
     if(mRes.status===401||mRes.status===403){ if(await reauthOrGate()) return loadSocial(); return; }
     if(!mRes.ok) throw new Error('HTTP '+mRes.status);
@@ -1808,7 +1915,9 @@ async function loadSocial(){
       comp:  cRes.ok ? await cRes.json() : [],
       comps: kRes.ok ? await kRes.json() : [],
       posts: qRes.ok ? await qRes.json() : [],
-      aud:   uRes.ok ? await uRes.json() : []
+      aud:   uRes.ok ? await uRes.json() : [],
+      engSnap: esRes.ok ? await esRes.json() : [],
+      engMon:  emRes.ok ? await emRes.json() : []
     };
     SOCIAL_DATA = extra;
     if(groups.length){
@@ -1896,6 +2005,7 @@ function renderSocial(groups, posts, isSample, extra){
 
   drawDailyChart((extra.daily||[]).filter(r=>r.platform==='instagram'));
   renderSocialComp(extra.comp||[], extra.comps||[], last);
+  try{ renderEngagement(extra.engSnap||[], extra.engMon||[], extra.comps||[], extra.comp||[]); }catch(e){ console.warn('engagement render failed', e); }
   const safe = (fn, ...a) => { try{ fn(...a); }catch(e){ console.warn(fn.name + ' failed', e); } };
   safe(renderMoM, groups, extra.posts||[]);
   safe(renderFormats, extra.posts||[]);
@@ -1938,7 +2048,8 @@ function drawDailyChart(rows){
    like (Manor's figure here can differ by a follower or two from the Windsor-fed
    KPI above, which is pulled at a different time). Followers and post counts are
    all that Instagram and Facebook show publicly; reach and engagement for other
-   accounts are private, so they are never estimated. Posting pace and follower
+   accounts are private, so they are never estimated. Likes and comments per post
+   are public, and come through Meta's API in renderEngagement below. Posting pace and follower
    growth need two snapshots in different months and appear once they exist. */
 function renderSocialComp(snaps, comps, last){
   const nf = n => (+n||0).toLocaleString('en-AU');
@@ -2038,7 +2149,7 @@ function renderSocialComp(snaps, comps, last){
   $('sCompNote').innerHTML = `Public profile figures captured weekly; this table is as at <b>${fmtAU(S)}</b>${after && PERIOD ? ` — competitor captures began after ${monthLabel(PERIOD)}, so this is the latest standing rather than that month’s` : ''}. `
     + (showMoM ? `“Vs last month” compares with the last capture in ${monLabel(prevM.slice(0,7)+'-01')}. ` : `Month-on-month columns appear once captures exist in two different months (from November). `)
     + (showGrow ? `Growth columns run from the first capture on ${fmtAU(base)}. ` : '')
-    + `Posts per week needs at least two weeks of captures. Instagram and Facebook only show followers and post counts publicly — other venues’ reach and engagement are private, so they are not compared. “Talking about” is Facebook’s own count of people interacting with the page over the last week. “Not public” means the page hides the figure, which is never shown as zero.`;
+    + `Posts per week needs at least two weeks of captures. Other venues’ reach is private, so it isn’t compared. Instagram likes and comments are compared in the engagement section below. “Talking about” is Facebook’s own count of people interacting with the page over the last week. “Not public” means the page hides the figure, which is never shown as zero.`;
 }
 
 /* ================= SOCIAL v3 — month on month, formats, Reels, best times, audience =================
@@ -2916,7 +3027,7 @@ function aiChart(rows){
 
 /* ---------- view tabs ---------- */
 function showView(v){
-  if(v!=='social' && v!=='search' && v!=='bench' && v!=='ai') v='roi';
+  if(v!=='social' && v!=='search' && v!=='bench' && v!=='ai' && v!=='reels') v='roi';
   $('viewAi').classList.toggle('active',     v==='ai');
   $('tabAi').classList.toggle('active',      v==='ai');
   $('viewRoi').classList.toggle('active',    v==='roi');
@@ -2927,15 +3038,18 @@ function showView(v){
   $('tabSocial').classList.toggle('active',  v==='social');
   $('tabSearch').classList.toggle('active',  v==='search');
   $('tabBench').classList.toggle('active',   v==='bench');
+  $('viewReels').classList.toggle('active',  v==='reels');
+  $('tabReels').classList.toggle('active',   v==='reels');
   // Per-tab co-branding: ROI = Manor+R2R, Social = Manor+Savvas, Search = R2R-led.
   document.body.dataset.theme = v;
-  $('viewLabel').textContent = v==='social' ? 'Social' : v==='search' ? 'Search & Local' : v==='bench' ? 'Benchmarking' : v==='ai' ? 'AI Search' : 'Marketing ROI';
+  $('viewLabel').textContent = v==='social' ? 'Social' : v==='search' ? 'Search & Local' : v==='bench' ? 'Benchmarking' : v==='reels' ? 'Reels & Posts' : v==='ai' ? 'AI Search' : 'Marketing ROI';
   syncHash();
   // Tell the hub which section is open, so its address bar deep-links it.
   if (EMBED) try { window.parent.postMessage({ r2rDashboardTab: v }, location.origin); } catch (e) {}
   // The reporting period is the month chip selection, the same on every tab.
   if(PERIOD) $('period').textContent = monthLabel(PERIOD);
   if(v==='social') loadSocial();
+  if(v==='reels') loadReels();
   if((v==='search' || v==='bench') && !SEARCH_LOADED) loadSearch();
   if(v==='ai') AI_DATA ? renderAi(AI_DATA) : loadAi();
   // keep the active tab visible when the tab strip scrolls sideways on a phone
@@ -3004,6 +3118,281 @@ const avatarHTML = e => { const a = authorOf(e);
   return a && a.avatar_path ? `<img src="${esc(a.avatar_path)}" alt="">`
                             : `<span class="av-init">${esc(initialsOf(a ? a.name : e))}</span>`; };
 const roleOf = e => (authorOf(e)||{}).role_title || '';
+
+/* ================= INSTAGRAM ENGAGEMENT, MANOR AGAINST COMPETITORS =================
+   Everything here is a measured figure from public posts. A month with no data stays
+   a gap rather than a zero, and nothing here claims a cause. */
+const PG_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pgAdd = (iso, n) => { const y = +iso.slice(0,4), m = +iso.slice(5,7) - 1 + n; const d = new Date(Date.UTC(y, m, 1)); return d.toISOString().slice(0,10); };
+const pgLabel = iso => PG_MONTHS[+iso.slice(5,7)-1] + ' ' + iso.slice(2,4);
+const pgLastComplete = () => { const n = new Date(); return pgAdd(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`, -1); };
+const pgInt = v => Math.round(v).toLocaleString('en-AU');
+const pgOne = v => v.toFixed(1);
+const pgMedian = a => { const s = a.slice().sort((x,y) => x-y), h = s.length >> 1; return s.length ? (s.length % 2 ? s[h] : (s[h-1]+s[h])/2) : null; };
+
+const PG_MARKS = {A:{d:'2025-10-01',l:'Savvas starts'}};
+/* One line chart. One y-axis from zero, thin marks, a crosshair tooltip. Series with a
+   `splitAt` draw muted before that month and in full colour after it. */
+function pgDrawChart(el, o){
+  const W = 560, H = o.h || 200, PL = 46, PR = 12, PT = 16, PB = 24, pw = W-PL-PR, ph = H-PT-PB;
+  const n = o.months.length, X = i => PL + pw*i/(n-1);
+  const all = []; o.series.forEach(s => o.months.forEach(m => { if(s.vals[m] != null) all.push(s.vals[m]); }));
+  if(!all.length){ el.innerHTML = '<div class="pg-sub" style="padding:18px 0">No data for this period.</div>'; return; }
+  const raw = Math.max(...all) * 1.05 || 1, mag = Math.pow(10, Math.floor(Math.log10(raw/3)));
+  const stepV = [1,2,2.5,5,10].map(x => x*mag).find(x => x*3 >= raw), top = stepV*3, Y = v => PT + ph - v/top*ph;
+  const tick = v => (o.tickPre||'') + (v >= 1000 ? (v/1000).toFixed(v % 1000 ? 1 : 0) + 'k' : Number.isInteger(v) ? String(v) : v.toFixed(v < 10 ? 2 : 1));
+  let g = '';
+  for(let k = 0; k <= 3; k++){ const v = top*k/3; g += `<line x1="${PL}" y1="${Y(v).toFixed(1)}" x2="${W-PR}" y2="${Y(v).toFixed(1)}" stroke="rgba(255,255,255,.07)"/><text x="${PL-7}" y="${(Y(v)+3.5).toFixed(1)}" text-anchor="end" font-family="Space Mono,monospace" font-size="10" fill="#8C8C99">${esc(tick(v))}</text>`; }
+  (o.marks||[]).forEach(k => { const i = o.months.indexOf(PG_MARKS[k].d); if(i < 0) return;
+    g += `<line x1="${X(i).toFixed(1)}" y1="${PT}" x2="${X(i).toFixed(1)}" y2="${PT+ph}" stroke="rgba(255,255,255,.28)" stroke-dasharray="3 3"/><text x="${X(i).toFixed(1)}" y="${PT-5}" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" font-weight="700" fill="#FFFFFF">${k}</text>`; });
+  const paths = (s, from, to, colour, width) => { let d = '', pen = false, lone = '';
+    for(let i = from; i <= to; i++){ const v = s.vals[o.months[i]];
+      if(v == null){ pen = false; continue; }
+      const prev = i > from ? s.vals[o.months[i-1]] : null, next = i < to ? s.vals[o.months[i+1]] : null;
+      if(prev == null && next == null) lone += `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.5" fill="${colour}"/>`;
+      d += `${pen ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`; pen = true; }
+    return (d ? `<path d="${d}" fill="none" stroke="${colour}" stroke-width="${width}" stroke-linejoin="round" stroke-linecap="round"/>` : '') + lone; };
+  let lines = '';
+  o.series.forEach(s => {
+    const w = s.width || 2;
+    if(s.splitAt != null){ lines += paths(s, 0, s.splitAt, '#6E6E7A', w) + paths(s, s.splitAt, n-1, s.colour, w); }
+    else lines += paths(s, 0, n-1, s.colour, w);
+  });
+  const step = n > 13 ? 6 : 3;
+  let xl = '';
+  o.months.forEach((m,i) => { if((n-1-i) % step === 0) xl += `<text x="${X(i).toFixed(1)}" y="${H-7}" text-anchor="${i === 0 ? 'start' : i === n-1 ? 'end' : 'middle'}" font-family="Space Mono,monospace" font-size="10" fill="#8C8C99">${pgLabel(m)}</text>`; });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.aria||'Monthly trend')}">${g}${lines}${xl}<g class="pg-hover" style="display:none"><line y1="${PT}" y2="${PT+ph}" stroke="rgba(255,255,255,.45)"/>${o.series.map(s => `<circle r="4.5" fill="${s.colour}" stroke="#17171C" stroke-width="2"/>`).join('')}</g></svg>`;
+  const svg = el.querySelector('svg'), hov = svg.querySelector('.pg-hover'), cross = hov.querySelector('line'), dots = hov.querySelectorAll('circle');
+  const leave = () => { hov.style.display = 'none'; pgTip(null); };
+  const move = ev => {
+    const r = svg.getBoundingClientRect(), x = (ev.clientX - r.left)/r.width*W;
+    const i = Math.max(0, Math.min(n-1, Math.round((x-PL)/pw*(n-1)))), m = o.months[i];
+    hov.style.display = ''; cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i));
+    o.series.forEach((s,k) => { const v = s.vals[m]; dots[k].style.display = v == null ? 'none' : ''; if(v != null){ dots[k].setAttribute('cx', X(i)); dots[k].setAttribute('cy', Y(v)); } });
+    pgTip(o.tip(m), ev.clientX, ev.clientY);
+  };
+  svg.addEventListener('pointermove', move); svg.addEventListener('pointerdown', move); svg.addEventListener('pointerleave', leave);
+}
+function pgTip(html, x, y){
+  let t = document.getElementById('pgTipEl');
+  if(!html){ if(t) t.hidden = true; return; }
+  if(!t){ t = document.createElement('div'); t.id = 'pgTipEl'; t.className = 'pg-tip'; document.body.appendChild(t); }
+  t.innerHTML = html; t.hidden = false;
+  const w = t.offsetWidth, h = t.offsetHeight;
+  t.style.left = Math.max(8, Math.min(window.innerWidth-w-8, x+14)) + 'px';
+  t.style.top  = Math.max(8, (y-h-12 < 8 ? y+16 : y-h-12)) + 'px';
+}
+
+/* Every public post is fetched once, in pages, and shared by the Social and Reels tabs. */
+let CP_CACHE = null;
+function getCompetitorPosts(){
+  if(CP_CACHE) return CP_CACHE;
+  CP_CACHE = (async () => { const all = [];
+    for(let off = 0; off < 20000; off += 1000){
+      const page = await getJSON(`${SUPA.cposts}?select=*&order=posted_at.desc&limit=1000&offset=${off}`);
+      all.push(...page); if(page.length < 1000) break; }
+    return all; })().catch(e => { CP_CACHE = null; throw e; });
+  return CP_CACHE;
+}
+const ENG_PERIODS = [{d:7,l:'7 days'},{d:30,l:'1 month'},{d:91,l:'3 months'},{d:182,l:'6 months'}];
+let ENG_DAYS = 30, ENG_CTX = null;
+const engPeriodLabel = d => (ENG_PERIODS.find(p => p.d === d) || {}).l || '';
+const engSafeLink = u => /^https:\/\/(www\.)?instagram\.com\//.test(u||'') ? u : '#';
+const engKind = p => p.product_type === 'REELS' ? 'reel' : p.media_type === 'CAROUSEL_ALBUM' ? 'carousel' : p.media_type === 'IMAGE' ? 'image' : 'other';
+const engKindLabel = {reel:'Reel', carousel:'Carousel', image:'Image', other:'Post'};
+function engStats(domain, posts, followers, days){
+  const since = Date.now() - days*86400000;
+  const ps = posts.filter(p => p.domain === domain && new Date(p.posted_at).getTime() >= since);
+  const vis = ps.filter(p => p.like_count != null);
+  const reels = ps.filter(p => engKind(p) === 'reel'), rv = reels.filter(p => p.view_count != null);
+  const avgL = vis.length ? vis.reduce((t,p) => t+p.like_count,0)/vis.length : null;
+  const avgC = vis.length ? vis.reduce((t,p) => t+(p.comments_count||0),0)/vis.length : null;
+  const all = posts.filter(p => p.domain === domain);
+  return { posts:ps.length, perWeek:ps.length/(days/7), reels:reels.length, carousels:ps.filter(p => engKind(p) === 'carousel').length, images:ps.filter(p => engKind(p) === 'image').length,
+    hidden:ps.length-vis.length, avgL, avgC, avgViews: rv.length ? rv.reduce((t,p) => t+p.view_count,0)/rv.length : null,
+    rate: vis.length && followers ? (avgL+avgC)/followers : null, list:ps, latest: all.length ? all.reduce((m,p) => p.posted_at > m ? p.posted_at : m, '') : null };
+}
+/* Follower change needs a capture at or before the period start. Rounded counts such as
+   "11K" can't show real growth, so those aren't used. */
+function engFollowerChange(domain, snaps, days){
+  const rows = snaps.filter(r => r.domain === domain && r.platform === 'instagram' && r.followers != null).sort((a,b) => a.snapshot_date < b.snapshot_date ? -1 : 1);
+  const rounded = v => v >= 10000 && v % 1000 === 0;
+  const startISO = new Date(Date.now()-days*86400000).toISOString().slice(0,10);
+  const base = rows.filter(r => r.snapshot_date <= startISO).pop(), last = rows[rows.length-1];
+  if(!base || !last || base === last || rounded(base.followers) || rounded(last.followers)) return null;
+  return last.followers - base.followers;
+}
+function setEngPeriod(d){ ENG_DAYS = d; renderEngTable(); }
+
+/* Instagram, Manor against each tracked venue. Hidden likes stay hidden, never scored on comments alone. */
+function renderEngagement(snaps, monthly, comps, compSnaps){
+  const nameOf = {}; (comps||[]).forEach(c => nameOf[c.domain] = c.label);
+  const handleOf = {}, followersOf = {};
+  (compSnaps||[]).filter(r => r.platform === 'instagram').sort((a,b) => a.snapshot_date < b.snapshot_date ? -1 : 1).forEach(r => { handleOf[r.domain] = r.handle; if(r.followers != null) followersOf[r.domain] = r.followers; });
+  // The API's exact count wins over the weekly capture's rounded one.
+  snaps.slice().sort((a,b) => a.snapshot_date < b.snapshot_date ? -1 : 1).forEach(r => { if(r.handle) handleOf[r.domain] = r.handle; if(r.followers != null) followersOf[r.domain] = +r.followers; });
+  ENG_CTX = {nameOf, handleOf, followersOf, compSnaps:compSnaps||[], posts:null};
+  getCompetitorPosts().then(p => { ENG_CTX.posts = p; renderEngTable(); }).catch(e => { $('sEngNote').textContent = 'Could not load competitor posts, so none are shown. ('+(e.message||e)+')'; });
+  ENG_TREND = {monthly, nameOf};
+  renderEngTrend();
+}
+
+function renderEngTable(){
+  const C = ENG_CTX; if(!C || !C.posts) return;
+  $('sEngPeriod').innerHTML = ENG_PERIODS.map(p => `<button type="button" class="${p.d===ENG_DAYS?'on':''}" onclick="setEngPeriod(${p.d})">${p.l}</button>`).join('');
+  const doms = Object.keys(C.nameOf).filter(d => C.handleOf[d] || C.posts.some(p => p.domain === d));
+  const rows = doms.map(d => ({d, name:C.nameOf[d]||d, me:d===CLIENT_DOMAIN, followers:C.followersOf[d], ...engStats(d, C.posts, C.followersOf[d], ENG_DAYS)}))
+    .sort((a,b) => (b.rate ?? -1) - (a.rate ?? -1) || b.posts - a.posts);
+  const me = rows.find(r => r.me) || {};
+  const pct = v => (v*100).toFixed(2) + '%', n1 = v => v == null ? '—' : v.toFixed(1), nI = v => v == null ? '—' : Math.round(v).toLocaleString('en-AU');
+  const dm = t => t ? fmtAU(t.slice(0,10)) : '—';
+  let rank = 0;
+  $('sEngTbl').innerHTML = `<thead><tr><th>Rank</th><th>Venue</th><th class="num">Followers</th><th class="num">Posts</th><th class="num">Per week</th><th class="num">Reels</th><th class="num">Avg likes</th><th class="num">Avg comments</th><th class="num">Avg reel views</th><th class="num">Engagement</th><th class="num">Vs Manor</th><th class="num">Latest post</th></tr></thead><tbody>`
+    + rows.map(r => { if(r.rate != null) rank++;
+      const hiddenAll = r.posts && r.hidden === r.posts, diff = r.rate != null && me.rate != null && !r.me ? (r.rate-me.rate)*100 : null;
+      return `<tr class="${r.me?'me':''}"><td>${r.rate == null ? '—' : rank}</td><td>${r.me ? esc(r.name) : `<button type="button" class="eng-venue" onclick="openEngModal('${esc(r.d)}')">${esc(r.name)}</button>`}</td><td class="num">${nI(r.followers)}</td><td class="num">${r.posts}</td><td class="num">${r.perWeek.toFixed(1)}</td><td class="num">${r.reels}</td>`
+        + `<td class="num">${hiddenAll ? '<span class="muted">hidden</span>' : n1(r.avgL)}</td><td class="num">${hiddenAll ? '<span class="muted">—</span>' : n1(r.avgC)}</td><td class="num">${nI(r.avgViews)}</td>`
+        + `<td class="num"><b>${r.rate != null ? pct(r.rate) : hiddenAll ? '<span class="muted">likes hidden</span>' : '<span class="muted">no posts</span>'}</b></td>`
+        + `<td class="num">${r.me ? '<span class="muted">—</span>' : diff == null ? '<span class="muted">—</span>' : `<span class="${diff>0?'down':diff<0?'up':''}">${diff>0?'+':''}${diff.toFixed(2)} pts</span>`}</td><td class="num">${dm(r.latest)}</td></tr>`; }).join('') + '</tbody>';
+  const scored = rows.filter(r => r.rate != null), myRank = scored.findIndex(r => r.me) + 1;
+  const from = new Date(Date.now()-ENG_DAYS*86400000).toISOString().slice(0,10);
+  $('sEngNote').innerHTML = `Posts published from <b>${fmtAU(from)}</b> to today${myRank ? `. Manor is <b>${ord(myRank)} of ${scored.length}</b> on engagement` : ''}. Engagement is average likes + comments per post ÷ current followers. Vs Manor is percentage points: red means the competitor is ahead. Short periods rest on few posts, so check the Posts column. Click a venue to compare it with Manor. These tabs are separate from the month chips above.`;
+  $('sEngBarsLbl').textContent = `Engagement rate, last ${engPeriodLabel(ENG_DAYS)}`;
+  const max = Math.max(...rows.map(r => r.rate || 0), 0.0001);
+  $('sEngBars').innerHTML = rows.map(r => `<div class="brow ${r.me?'me':''}"><span class="bname ${r.me?'me':''}">${esc(r.name)}</span>`
+    + (r.rate == null ? `<div class="btrack"></div><span class="bval">${r.posts ? 'likes hidden' : 'no posts'}</span>`
+                      : `<div class="btrack"><div class="bfill" style="width:${Math.max(2,Math.round(r.rate/max*100))}%${r.me?'':';background:#8C8C99'}"></div></div><span class="bval">${pct(r.rate)}</span>`) + `</div>`).join('');
+}
+
+let ENG_OPEN = null;
+function closeEngModal(){ const m = $('engModal'); if(m) m.remove(); document.removeEventListener('keydown', engEsc); if(ENG_OPEN && ENG_OPEN.back){ try{ ENG_OPEN.back.focus(); }catch(e){} } ENG_OPEN = null; }
+function engEsc(e){ if(e.key === 'Escape') closeEngModal(); }
+function setEngModalPeriod(d){ ENG_DAYS = d; renderEngTable(); openEngModal(ENG_OPEN.d, true); }
+function openEngModal(d, keep){
+  const C = ENG_CTX; if(!C || !C.posts) return;
+  const back = keep && ENG_OPEN ? ENG_OPEN.back : document.activeElement;
+  const old = $('engModal'); if(old) old.remove();
+  ENG_OPEN = {d, back};
+  const fM = C.followersOf[CLIENT_DOMAIN], fT = C.followersOf[d];
+  const M = engStats(CLIENT_DOMAIN, C.posts, fM, ENG_DAYS), T = engStats(d, C.posts, fT, ENG_DAYS);
+  const gM = engFollowerChange(CLIENT_DOMAIN, C.compSnaps, ENG_DAYS), gT = engFollowerChange(d, C.compSnaps, ENG_DAYS);
+  const int = v => Math.round(v).toLocaleString('en-AU'), one = v => v.toFixed(1), pc = v => (v*100).toFixed(2)+'%';
+  const line = (label, a, b, fmt, diffFmt) => {
+    const has = a != null && b != null, dv = has ? a-b : null;
+    const cls = !has || Math.abs(dv) < 1e-9 ? '' : dv > 0 ? 'up' : 'down';
+    const df = !has ? '—' : (dv > 0 ? '+' : '') + (diffFmt || fmt)(dv);
+    return `<tr><td>${esc(label)}</td><td class="num">${a == null ? '<span class="muted">—</span>' : fmt(a)}</td><td class="num">${b == null ? '<span class="muted">—</span>' : fmt(b)}</td><td class="num"><span class="${cls}">${df}</span></td></tr>`; };
+  const pts = v => (v*100).toFixed(2)+' pts';
+  const top = T.list.filter(p => p.like_count != null).sort((a,b) => (b.like_count+(b.comments_count||0))-(a.like_count+(a.comments_count||0))).slice(0,3);
+  const cap = p => esc((p.caption||'No caption').replace(/\s+/g,' ').slice(0,110));
+  const el = document.createElement('div');
+  el.id = 'engModal'; el.className = 'eng-modal'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); el.setAttribute('aria-label', `${C.nameOf[d]||d} compared with Manor on High`);
+  el.onclick = e => { if(e.target === el) closeEngModal(); };
+  el.innerHTML = `<div class="eng-box"><div class="eng-top"><div><h3>${esc(C.nameOf[d]||d)}</h3><div class="pg-sub">Compared with Manor on High · <a href="https://www.instagram.com/${esc(C.handleOf[d]||'')}/" target="_blank" rel="noopener" style="color:inherit">@${esc(C.handleOf[d]||'')}</a></div></div><button type="button" class="eng-x" aria-label="Close" onclick="closeEngModal()">✕</button></div>`
+    + `<div class="pg-range">${ENG_PERIODS.map(p => `<button type="button" class="${p.d===ENG_DAYS?'on':''}" onclick="setEngModalPeriod(${p.d})">${p.l}</button>`).join('')}</div>`
+    + `<div class="tblwrap"><table class="kw"><thead><tr><th>Metric</th><th class="num">Manor</th><th class="num">${esc(C.nameOf[d]||d)}</th><th class="num">Manor's difference</th></tr></thead><tbody>`
+    + line('Followers', fM, fT, int) + line('Follower change', gM, gT, int) + line('Posts', M.posts, T.posts, int) + line('Posts per week', M.perWeek, T.perWeek, one)
+    + line('Reels', M.reels, T.reels, int) + line('Carousels', M.carousels, T.carousels, int) + line('Images', M.images, T.images, int)
+    + line('Avg likes per post', M.avgL, T.avgL, one) + line('Avg comments per post', M.avgC, T.avgC, one) + line('Avg reel views', M.avgViews, T.avgViews, int)
+    + line('Engagement rate', M.rate, T.rate, pc, pts)
+    + `</tbody></table></div><div class="note">A dash means it isn't available for this period: likes may be hidden, a venue may not have posted, or follower history may not reach back that far.</div>`
+    + `<div class="seclabel" style="margin-top:18px">Their top posts, last ${engPeriodLabel(ENG_DAYS)}</div>`
+    + (top.length ? top.map(p => `<a class="eng-post" href="${esc(engSafeLink(p.permalink))}" target="_blank" rel="noopener">${cap(p)}<small>${engKindLabel[engKind(p)]} · ${fmtAU(p.posted_at.slice(0,10))} · ${p.like_count.toLocaleString('en-AU')} likes · ${(p.comments_count||0).toLocaleString('en-AU')} comments${p.view_count != null ? ` · ${p.view_count.toLocaleString('en-AU')} views` : ''}</small></a>`).join('') : '<div class="pg-sub">No posts with visible likes in this period.</div>')
+    + `</div>`;
+  document.body.appendChild(el);
+  document.addEventListener('keydown', engEsc);
+  el.querySelector('.eng-x').focus();
+}
+
+/* ================= REELS & POSTS ================= */
+let RL_DATA = null, FD_LIMIT = 48, RL_SORT = 'date';
+async function loadReels(){
+  try{
+    const [mine, comps, posts] = await Promise.all([
+      getJSON(`${SUPA.posts}?select=*&platform=eq.instagram&order=posted_at.desc`),
+      getJSON(`${SUPA.comps}?select=domain,label&active=is.true&order=sort_order`),
+      getCompetitorPosts()
+    ]);
+    RL_DATA = {mine, comps, posts};
+    renderReels();
+    const sel = $('fdVenue');
+    if(!sel.options.length) sel.innerHTML = '<option value="all">All venues</option>' + comps.map(c => `<option value="${esc(c.domain)}">${esc(c.label)}</option>`).join('');
+    renderFeed();
+  }catch(e){ $('rlNote').textContent = 'Could not reach the live database, so no reels are shown rather than stale ones. ('+(e.message||e)+')'; }
+}
+function renderReels(){
+  const D = RL_DATA; if(!D) return;
+  const pub = {}; D.posts.forEach(p => { if(p.domain === CLIENT_DOMAIN) pub[p.media_id] = p; });
+  const all = D.mine.filter(p => /^REEL/.test(p.format||'')).map(p => { const q = pub[p.media_id] || {}; return {...p, hook: p.reel_skip_rate == null ? null : 1-(+p.reel_skip_rate), watch: p.reel_avg_watch_ms == null ? null : +p.reel_avg_watch_ms/1000, likes:q.like_count, comments:q.comments_count, thumb:q.thumb_url, link:p.permalink||q.permalink}; });
+  const month = PERIOD || (all[0] && all[0].period_date);
+  const inMonth = all.filter(p => p.period_date === month), list = inMonth;
+  const name = month ? monthLabel(month) : '';
+  $('rlTblLabel').textContent = `Every reel in ${name} (${inMonth.length})`;
+  // What worked is worked out from the month's numbers, naming the reel behind each.
+  const best = (k) => inMonth.filter(p => p[k] != null).sort((a,b) => b[k]-a[k])[0];
+  const avg = k => { const v = inMonth.filter(p => p[k] != null); return v.length ? v.reduce((t,p) => t+(+p[k]),0)/v.length : null; };
+  const short = p => esc((p.caption||'No caption').replace(/\s+/g,' ').slice(0,70));
+  const tile = (lbl, p, val, a, fmt) => !p ? '' : `<div class="card"><div class="lbl">${lbl}</div><div class="big" style="font-size:28px">${val}</div><div class="small">${a != null ? `month average ${fmt(a)} · ` : ''}${fmtAU(String(p.posted_at).slice(0,10))}</div><div class="small" style="margin-top:6px"><a href="${esc(engSafeLink(p.link))}" target="_blank" rel="noopener" style="color:var(--white)">${short(p)}</a></div></div>`;
+  const int = v => Math.round(v).toLocaleString('en-AU'), pc = v => Math.round(v*100)+'%', sec = v => v.toFixed(1)+'s';
+  const bR = best('reach'), bH = best('hook'), bW = best('watch'), bS = best('shares');
+  $('rlWorkedLabel').textContent = `What worked in ${name}`;
+  $('rlWorked').innerHTML = inMonth.length ? tile('Widest reach', bR, bR && int(bR.reach), avg('reach'), int) + tile('Best hook rate', bH, bH && pc(bH.hook), avg('hook'), pc) + tile('Longest watch', bW, bW && sec(bW.watch), avg('watch'), sec) + tile('Most shared', bS, bS && int(bS.shares), avg('shares'), int)
+    : `<div class="card" style="grid-column:1/-1"><div class="pg-sub">No reels recorded for ${esc(name)}.</div></div>`;
+  const sorts = [['date','Newest'],['reach','Reach'],['views','Views'],['hook','Past 3 seconds'],['watch','Average watch'],['shares','Shares']];
+  $('rlSort').innerHTML = sorts.map(([k,l]) => `<button type="button" class="${RL_SORT===k?'on':''}" onclick="RL_SORT='${k}';renderReels()">${l}</button>`).join('');
+  const shown = list.map(p => ({...p, sharesPer1k: p.shares != null && p.views ? p.shares/p.views*1000 : null}))
+    .sort((a,b) => RL_SORT === 'date' ? (a.posted_at < b.posted_at ? 1 : -1) : (b[RL_SORT] ?? -1)-(a[RL_SORT] ?? -1));
+  const hi = {}; ['reach','views','hook','watch','sharesPer1k','likes','comments','saves','shares'].forEach(k => { const v = shown.filter(p => p[k] != null).map(p => +p[k]); hi[k] = v.length ? Math.max(...v) : null; });
+  const row = (p, label, k, fmt) => `<div class="rl-row"><span>${label}</span><b class="${p[k] != null && shown.length > 1 && +p[k] === hi[k] ? 'rl-best' : ''}">${p[k] == null ? '—' : fmt(+p[k])}</b></div>`;
+  const bucket = p => `${SUPA.url}/storage/v1/object/public/manor-social/${String(p.period_date).slice(0,7)}/${encodeURIComponent(p.media_id)}.jpg`;
+  $('rlGrid').innerHTML = shown.map(p => { const wins = ['reach','hook','watch','shares'].filter(k => p[k] != null && shown.length > 1 && +p[k] === hi[k]).length;
+    return `<article class="rl-card"><a class="rl-cover" href="${esc(engSafeLink(p.link))}" target="_blank" rel="noopener" aria-label="Watch on Instagram"><img src="${esc(bucket(p))}" alt="Reel cover" loading="lazy" data-alt="${esc(p.thumb||'')}" onerror="if(this.dataset.alt&&this.src!==this.dataset.alt){this.src=this.dataset.alt;this.dataset.alt='';}else{this.remove();}">${wins >= 2 ? '<span class="rl-badge">Top performer</span>' : ''}</a><div class="rl-body"><div class="rl-date">${fmtAU(String(p.posted_at).slice(0,10))}</div><div class="rl-title">${short(p)}</div>`
+      + row(p,'Views','views',int) + row(p,'Reach','reach',int) + row(p,'Past 3 seconds','hook',pc) + row(p,'Average watch','watch',sec) + row(p,'Shares per 1,000 views','sharesPer1k',v => v.toFixed(1))
+      + row(p,'Likes','likes',int) + row(p,'Comments','comments',int) + row(p,'Saves','saves',int) + row(p,'Shares','shares',int)
+      + `<a class="rl-watch" href="${esc(engSafeLink(p.link))}" target="_blank" rel="noopener">Watch on Instagram ↗</a></div></article>`; }).join('');
+  $('rlNote').textContent = 'Past 3 seconds is the hook rate: the share of viewers who stayed past the first 3 seconds (100% minus Instagram’s skip rate). Instagram doesn’t give reel length, so watch is average seconds, not a percentage. Gold marks the best figure in the list. A dash means Instagram didn’t report it.';
+}
+function renderFeed(keepLimit){
+  const D = RL_DATA; if(!D) return;
+  if(!keepLimit) FD_LIMIT = 48;
+  const nameOf = {}; D.comps.forEach(c => nameOf[c.domain] = c.label);
+  const v = $('fdVenue').value, t = $('fdType').value, ym = (PERIOD || lastFullMonth().period_date).slice(0,7);
+  $('fdLabel').textContent = `Everything posted in ${monthLabel(ym + '-01')}`;
+  // Calendar month in Melbourne, so a post near midnight lands in the month Instagram shows it.
+  const melMonth = p => new Date(p.posted_at).toLocaleDateString('en-CA', {timeZone:'Australia/Melbourne'}).slice(0,7);
+  const list = D.posts.filter(p => (v === 'all' || p.domain === v) && (t === 'all' || engKind(p) === t) && melMonth(p) === ym);
+  $('fdCount').textContent = `${list.length.toLocaleString('en-AU')} posts`;
+  $('fdGrid').innerHTML = list.slice(0, FD_LIMIT).map(p => `<a class="fd-card" href="${esc(engSafeLink(p.permalink))}" target="_blank" rel="noopener">${p.thumb_url ? `<img src="${esc(p.thumb_url)}" alt="" loading="lazy" onerror="this.remove()">` : ''}<div class="fd-body"><div class="fd-meta">${esc(nameOf[p.domain]||p.domain)}<br>${engKindLabel[engKind(p)]} · ${fmtAU(p.posted_at.slice(0,10))}</div><div>${esc((p.caption||'No caption').replace(/\s+/g,' ').slice(0,120))}</div><div class="fd-stats">${p.like_count == null ? 'Likes hidden' : p.like_count.toLocaleString('en-AU')+' likes'} · ${(p.comments_count||0).toLocaleString('en-AU')} comments${p.view_count != null ? `<br>${p.view_count.toLocaleString('en-AU')} views` : ''}</div></div></a>`).join('') || '<div class="pg-sub">Nothing posted for this selection.</div>';
+  $('fdMore').style.display = list.length > FD_LIMIT ? '' : 'none';
+}
+
+let ENG_TREND = null, ENG_PICK = 'mid';
+function pickEng(k){ ENG_PICK = k; renderEngTrend(); }
+function renderEngTrend(){
+  const {monthly, nameOf} = ENG_TREND, L = pgLastComplete(), months = [];
+  for(let i = 5; i >= 0; i--) months.push(pgAdd(L,-i));
+  const usable = monthly.filter(r => r.median_interactions != null && +r.posts_with_likes >= 3 && r.period_date <= L);
+  const manor = {}, mid = {}, byMonth = {}, byVenue = {};
+  usable.forEach(r => { if(r.domain === CLIENT_DOMAIN){ manor[r.period_date] = +r.median_interactions; return; }
+    (byMonth[r.period_date] = byMonth[r.period_date] || []).push(r);
+    (byVenue[r.domain] = byVenue[r.domain] || {})[r.period_date] = +r.median_interactions; });
+  Object.keys(byMonth).forEach(m => { if(byMonth[m].length >= 3) mid[m] = pgMedian(byMonth[m].map(r => +r.median_interactions)); });
+  const venues = Object.keys(byVenue).sort((a,b) => (nameOf[a]||a) < (nameOf[b]||b) ? -1 : 1);
+  if(ENG_PICK !== 'mid' && !byVenue[ENG_PICK]) ENG_PICK = 'mid';
+  $('sEngPick').innerHTML = `<button type="button" class="${ENG_PICK==='mid'?'on':''}" onclick="pickEng('mid')">All competitors</button>`
+    + venues.map(v => `<button type="button" class="${ENG_PICK===v?'on':''}" onclick="pickEng('${esc(v)}')">${esc(nameOf[v]||v)}</button>`).join('');
+  const other = ENG_PICK === 'mid' ? mid : byVenue[ENG_PICK], otherName = ENG_PICK === 'mid' ? 'Middle of the seven competitors' : (nameOf[ENG_PICK]||ENG_PICK);
+  const GOLD = '#E2B934', GREY = '#A8A8B4';
+  $('sEngLegend').innerHTML = `<span><i style="background:${GOLD}"></i>Manor on High</span><span><i style="background:${GREY}"></i>${esc(otherName)}</span>`;
+  pgDrawChart($('sEngTrend'), {months, fmt:pgInt, aria:'Instagram likes and comments per post by month, Manor against '+otherName, h:230,
+    series:[{name:otherName, colour:GREY, vals:other}, {name:'Manor on High', colour:GOLD, vals:manor, width:3}],
+    tip:d => { const list = (byMonth[d]||[]).slice().sort((a,b) => b.median_interactions-a.median_interactions);
+      return `<b>${pgLabel(d)}</b>` + (manor[d] != null ? `Manor on High: ${pgOne(manor[d])}<br>` : '')
+        + (other[d] != null ? `<span>${esc(otherName)}: ${pgOne(other[d])}</span><br>` : '')
+        + (ENG_PICK === 'mid' ? list.slice(0,3).map(r => `<span>${esc(nameOf[r.domain]||r.domain)}: ${pgOne(+r.median_interactions)}</span>`).join('<br>') : ''); }});
+  $('sEngTrendNote').textContent = 'Last six complete months. Months where a venue published fewer than 3 posts with visible likes are left blank. Figures are today’s public likes and comments, so they can include engagement from boosted posts.';
+}
+
 const currentView = () => document.body.dataset.theme || 'search';
 const canAuthorView = v => { const a = authorOf(insAuthor()); if(!a) return false;
   return a.is_admin || !VIEW_OWNER[v] || VIEW_OWNER[v] === a.team; };
@@ -3254,7 +3643,7 @@ function renderBeacons(){
 
 /* ---------- per-view panel ---------- */
 function renderInsightPanels(){
-  [['roi','viewRoi'],['social','viewSocial'],['search','viewSearch'],['bench','viewBench'],['ai','viewAi']].forEach(([view, id]) => {
+  [['roi','viewRoi'],['social','viewSocial'],['search','viewSearch'],['bench','viewBench'],['reels','viewReels'],['ai','viewAi']].forEach(([view, id]) => {
     const sec = $(id); if(!sec) return;
     let panel = sec.querySelector('.inspanel');
     if(!panel){ panel = document.createElement('div'); panel.className = 'inspanel'; sec.appendChild(panel); }
