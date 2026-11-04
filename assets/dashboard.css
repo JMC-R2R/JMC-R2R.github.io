@@ -230,7 +230,7 @@ footer.foot{border-top:1px solid var(--bd);padding:22px 0 46px;color:var(--ink3)
 
 /* ---------- accomplished tasks ---------- */
 .card.done{border-color:color-mix(in srgb,var(--good) 35%,var(--bd));margin-bottom:14px}
-.donegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px}
+.donegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px}
 .donecol .mlbl{display:block;font-size:9.5px;margin-bottom:8px;color:var(--good)}
 .donecol ul{list-style:none;display:flex;flex-direction:column;gap:9px}
 .donecol li{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;line-height:1.4}
@@ -426,7 +426,7 @@ html.rvopen{overflow:hidden}
 .rp-ax{font:10px var(--mono);fill:var(--ink3)}
 .rp-ring{font:9px var(--mono);fill:rgba(255,255,255,.75)}
 .rp-note{font-style:italic;margin-top:12px}
-.rp-ai-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:12px 0}
+.rp-ai-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
 .rp-ai-tile{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:var(--s1);border:1px solid var(--bd);border-top:3px solid var(--bd2);border-radius:10px;padding:12px 14px;color:var(--ink);cursor:pointer;font-family:var(--sans)}
 .rp-ai-tile.on{border-top-color:var(--c)}
 .rp-ai-tile .mlbl em{font-style:normal;font-size:8.5px;border:1px solid var(--bd2);border-radius:4px;padding:1px 4px;margin-left:4px}
@@ -450,3 +450,9 @@ html.rvopen{overflow:hidden}
 .rp-chip.brand b{opacity:.65}
 .rp-ai-tile .mlbl,#rpAi .mlbl,.card > .mlbl{font-size:9.5px}
 #rpAi + .card + .lede,#rpAi + .lede{margin-top:18px}
+.rp-rvs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px;margin-top:8px}
+.rp-rv{display:flex;flex-direction:column;gap:8px;background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:14px}
+.rp-rv p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink);display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.rp-rv footer{margin-top:auto;font-size:11.5px;color:var(--ink3)}
+.rp-rv footer b{color:var(--ink2)}
+.rp-stars{color:var(--warn);letter-spacing:1px}
