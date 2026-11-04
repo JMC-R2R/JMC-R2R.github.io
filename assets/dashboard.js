@@ -124,7 +124,8 @@ async function loadData(){
   const PK = { md_rankings: 'checked_at,keyword,search_engine', md_paid_search_terms: 'month,campaign,ad_group,search_term,match_type',
     md_paid_keywords: 'month,campaign,ad_group,keyword,match_type', md_paid_segments: 'month,dimension,label',
     md_geo_share: 'checked_at,engine,brand', md_negative_requests: 'id', md_seo_queries: 'month,query',
-    md_gbp_search_keywords: 'month,keyword', md_gbp_review_list: 'review_id', md_work_log: 'id', md_paid_calls: 'started_at,call_id' };
+    md_gbp_search_keywords: 'month,keyword', md_gbp_review_list: 'review_id', md_work_log: 'id', md_paid_calls: 'started_at,call_id',
+    md_report_history: 'date', md_ai_overview_keywords: 'month,keyword', md_gen_ai_daily: 'date' };
   const ordered = (b, cols) => (cols || '').split(',').filter(Boolean).reduce((x, c) => x.order(c), b);
   const qAll = async (t, dateCol) => { let out = [], i = 0;
     for (;;) { const { data, error } = await ordered(q(t, dateCol), PK[t]).range(i, i + 999);
@@ -145,6 +146,11 @@ async function loadData(){
     /* Google forwarding number call log. Rows only exist for accounts the feed pulls. */
     qAll('md_paid_calls','started_at'),
   ]);
+  /* Extended reporting: read only for clients it is switched on for. */
+  if (RP()){
+    const [hist, aio, genai] = await Promise.all([qAll('md_report_history'), qAll('md_ai_overview_keywords'), qAll('md_gen_ai_daily')]);
+    RAW.hist = hist.data || []; RAW.aio = aio.data || []; RAW.genai = genai.data || [];
+  }
   RAW.notes = notes.data || [];
   RAW.calls = pcalls.data || [];
   RAW.seo = seo.data || []; RAW.gbp = gbp.data || []; RAW.reviews = rev.data || [];
@@ -170,6 +176,7 @@ async function loadData(){
   [['seo','date'],['gbp','date'],['paid','date'],['social','date'],['leads','date'],
    ['rankings','checked_at'],['scans','checked_at'],['geo','checked_at'],['pcm','month']]
     .forEach(([k, c]) => (RAW[k] || []).forEach(r => r[c] && set.add(monthOf(r[c]))));
+  if (RP()) rpBuild();
   state.months = [...set].sort();
   if (!state.months.length) state.months = [monthOf(ymd(new Date()))];
   state.month = state.months[state.months.length - 1];
@@ -391,11 +398,11 @@ const TOUR_EXTRA = {
   ],
   seo: [
     { el: () => tourCard('Accomplished in'), t: 'What we finished', p: 'The work we completed this month. Each item is proven from the website, your profile or the hub.' },
-    { el: () => tourCard('Clicks and impressions'), t: 'Google traffic', p: 'How often the website appeared in Google and how often people clicked through.' },
+    { el: () => tourCard('Clicks and impressions') || tourCard('Google Search Console Data'), t: 'Google traffic', p: 'How often the website appeared in Google and how often people clicked through.' },
     { el: () => tourCard('Target keywords we track'), t: 'Your keywords', p: 'Where you rank for the searches we are working to win. You can sort, filter or download any table like this.' },
   ],
   map_grid: [
-    { el: () => tourCard('By keyword'), t: 'Each search, on the map', p: 'Your position across your service area for each search. Each point is one spot on the map.' },
+    { el: () => tourCard('By keyword') || tourCard('Latest scan'), t: 'Each search, on the map', p: 'Your position across your service area for each search. Each point is one spot on the map.' },
     { el: () => tourCard('Who is #1'), t: 'Who you are up against', p: 'The businesses ranking first across the grid.' },
   ],
   gbp: [
@@ -758,6 +765,314 @@ function showOffer(mod){
   document.body.appendChild(box);
 }
 
+/* ---------------------------------------------------------------- extended reporting
+   Jose 04/11/2026, on Unleash, from the Manor build. Off unless the shell sets
+   reportPlus: true, so every other client renders exactly as before. The range buttons are a
+   deliberate exception to "the calendar month is the only scope control": they apply to the
+   Search Console and GA4 graphs and their own tiles, and each states its dates. */
+const RP = () => !!CFG.reportPlus;
+const RP_RANGES = [{ d:7, l:'7 days' }, { d:30, l:'1 month' }, { d:91, l:'3 months' }, { d:182, l:'6 months' }, { d:487, l:'16 months' }];
+const RP_AI_RANGES = [{ m:3, l:'3 months' }, { m:6, l:'6 months' }, { m:16, l:'16 months' }];
+const rp = { gsc:91, ga:91, aiRange:3, aiOn:{ aio:true, vis:true, impr:false, clicks:false, gen:false }, kw:null, view:'rank' };
+const rpDay = s => new Date(s + 'T00:00:00');
+const rpYmd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const rpAdd = (s, n) => { const d = rpDay(s); d.setDate(d.getDate() + n); return rpYmd(d); };
+const rpAu = s => rpDay(s).toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' });
+const rpMon = m => rpDay(m + '-01').toLocaleDateString('en-AU', { month:'short', year:'numeric' });
+const rpMonthAdd = (m, n) => { const d = rpDay(m + '-01'); d.setMonth(d.getMonth() + n); return rpYmd(d).slice(0, 7); };
+const rpHas = (r, k) => r[k] != null;
+const rpSum = (a, k) => a.reduce((t, r) => t + (Number(r[k]) || 0), 0);
+const rpBtn = (group, val, on, label) => `<button type="button" class="rp-btn${on ? ' on' : ''}" data-rp="${group}" data-v="${esc(String(val))}">${esc(label)}</button>`;
+
+/* One row per day: the long history, with the daily feed's newer figures laid over it. */
+function rpBuild(){
+  const m = {}; const at = d => (m[d] = m[d] || { date: d });
+  (RAW.hist || []).forEach(r => Object.assign(at(r.date), r));
+  (RAW.seo || []).forEach(r => { const x = at(r.date);
+    if (r.source === 'gsc'){ if (r.clicks != null) x.gsc_clicks = r.clicks; if (r.impressions != null) x.gsc_impressions = r.impressions; if (r.avg_position != null) x.gsc_position = r.avg_position; }
+    if (r.source === 'ga4' && r.sessions != null) x.sessions = r.sessions; });
+  (RAW.gbp || []).forEach(r => { const x = at(r.date);
+    if (r.impr_search_mobile != null || r.impr_search_desktop != null) x.gbp_search = (Number(r.impr_search_mobile) || 0) + (Number(r.impr_search_desktop) || 0);
+    if (r.impr_maps_mobile != null || r.impr_maps_desktop != null) x.gbp_maps = (Number(r.impr_maps_mobile) || 0) + (Number(r.impr_maps_desktop) || 0); });
+  (RAW.genai || []).forEach(r => { at(r.date).gen_ai = r.impressions; });
+  RAW.daily = Object.values(m).sort((a, b) => a.date.localeCompare(b.date));
+}
+function rpWindow(key, days){
+  const rows = (RAW.daily || []).filter(r => rpHas(r, key));
+  if (!rows.length) return null;
+  const end = rows[rows.length - 1].date, start = rpAdd(end, -(days - 1)), prevEnd = rpAdd(start, -1), prevStart = rpAdd(prevEnd, -(days - 1));
+  const inR = (a, b) => (RAW.daily || []).filter(r => r.date >= a && r.date <= b);
+  return { end, start, first: rows[0].date, cur: inR(start, end), prev: inR(prevStart, prevEnd), prevStart, prevEnd };
+}
+/* Daily up to three months; weekly beyond that, so 16 months stays readable. */
+function rpBuckets(rows, days, keys, avgKeys = []){
+  if (days <= 91) return rows.map(r => ({ label: r.date, ...r }));
+  const out = []; let cur = null;
+  rows.forEach((r, i) => { if (!cur || i % 7 === 0){ cur = { label: r.date, n: {} }; out.push(cur); }
+    keys.forEach(k => { if (r[k] != null){ if (avgKeys.includes(k)){ cur.n[k] = (cur.n[k] || 0) + 1; } cur[k] = (cur[k] || 0) + Number(r[k]); } }); });
+  out.forEach(b => avgKeys.forEach(k => { if (b.n[k]) b[k] = b[k] / b.n[k]; }));
+  return out;
+}
+/* Line chart: each axis scales to its own series. Missing days are gaps, never zero. */
+function rpLines(rows, series, { yL = '', yR = '', labelFmt } = {}){
+  const W = 1000, H = 280, L = 58, R = 58, T = 14, B = 30, n = rows.length;
+  if (!n) return '<p class="sub">No data for this period.</p>';
+  const x = i => L + (n === 1 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1));
+  const nice = v => { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; };
+  const maxOf = s => nice(Math.max(0, ...rows.map(r => Number(r[s.k]) || 0)));
+  const mL = Math.max(1, ...series.filter(s => s.axis !== 'r').map(maxOf)), mR = Math.max(1, ...series.filter(s => s.axis === 'r').map(maxOf));
+  const y = (v, s) => T + (H - T - B) * (1 - v / (s.axis === 'r' ? mR : mL));
+  const hasR = series.some(s => s.axis === 'r');
+  let g = '';
+  [0, .25, .5, .75, 1].forEach(f => { const yy = T + (H - T - B) * (1 - f);
+    g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="var(--bd)"/><text x="${L - 8}" y="${yy + 4}" text-anchor="end" class="rp-ax">${fmt(mL * f, (mL * f) % 1 ? 1 : 0)}${yL}</text>`;
+    if (hasR) g += `<text x="${W - R + 8}" y="${yy + 4}" class="rp-ax">${fmt(mR * f, (mR * f) % 1 ? 1 : 0)}${yR}</text>`; });
+  const step = Math.max(1, Math.ceil(n / 7));
+  rows.forEach((r, i) => { if (i % step === 0) g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" class="rp-ax">${esc((labelFmt || (v => rpDay(v).toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit' })))(r.label))}</text>`; });
+  const lines = series.map(s => { let d = '', pen = false, dots = '';
+    rows.forEach((r, i) => { const v = r[s.k]; if (v == null){ pen = false; return; }
+      const c = `${x(i).toFixed(1)} ${y(Number(v), s).toFixed(1)}`; d += (pen ? 'L' : 'M') + c; pen = true;
+      if (n <= 20) dots += `<circle cx="${x(i).toFixed(1)}" cy="${y(Number(v), s).toFixed(1)}" r="3.5" fill="${s.color}"/>`; });
+    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linejoin="round"/>${dots}`; }).join('');
+  const hit = rows.map((r, i) => { const w = (W - L - R) / Math.max(1, n - 1);
+    const lab = (labelFmt || rpAu)(r.label), tip = [lab].concat(series.map(s => `${s.name}: ${r[s.k] == null ? 'not reported' : fmt(r[s.k], s.dp || 0)}${s.unit || ''}`)).join('\n');
+    return `<rect x="${(x(i) - w / 2).toFixed(1)}" y="${T}" width="${w.toFixed(1)}" height="${H - T - B}" fill="transparent"><title>${esc(tip)}</title></rect>`; }).join('');
+  return `<svg class="rp-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map(s => s.name).join(' and '))} over time">${g}${lines}${hit}</svg>`;
+}
+const rpLegend = series => `<div class="legend">${series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('')}</div>`;
+function rpNote(w, days, what){
+  return `${rpAu(w.start < w.first ? w.first : w.start)} to ${rpAu(w.end)}${w.start < w.first ? `. ${what} history starts ${rpAu(w.first)}, so this period is shorter than selected` : ''}. ${days > 91 ? 'Plotted weekly. ' : ''}`;
+}
+function rpGscHtml(){
+  const w = rpWindow('gsc_impressions', rp.gsc);
+  const btns = RP_RANGES.map(r => rpBtn('gsc', r.d, r.d === rp.gsc, r.l)).join('');
+  if (!w) return emptyState('No Search Console data yet', 'Google has not reported search data for this website yet.');
+  const c = rpSum(w.cur,'gsc_clicks'), i = rpSum(w.cur,'gsc_impressions'), pc = rpSum(w.prev,'gsc_clicks'), pi = rpSum(w.prev,'gsc_impressions');
+  const posOf = a => { const x = a.filter(r => r.gsc_position != null && r.gsc_impressions); const t = rpSum(x,'gsc_impressions'); return t ? x.reduce((s, r) => s + Number(r.gsc_position) * Number(r.gsc_impressions), 0) / t : null; };
+  const pos = posOf(w.cur), pp = posOf(w.prev), hasPrev = w.prev.some(r => r.gsc_impressions != null);
+  const gen = w.cur.filter(r => r.gen_ai != null), genP = w.prev.filter(r => r.gen_ai != null);
+  const foot = (a, b) => hasPrev ? chipFor(a, b) + ' vs previous period' : 'No earlier period to compare';
+  const series = [{ k:'gsc_impressions', name:'Impressions', color:'var(--ink3)' }, { k:'gsc_clicks', name:'Clicks', color:'var(--accent)', axis:'r' }];
+  if (gen.length) series.push({ k:'gen_ai', name:'AI impressions', color:'var(--warn)' });
+  const rows = rpBuckets(w.cur, rp.gsc, ['gsc_clicks','gsc_impressions','gen_ai']);
+  return `<div class="cardhead"><div><h3>Google Search Console Data</h3><p class="sub">${rpNote(w, rp.gsc, 'Search Console')}Google reports this about two days behind.</p></div>
+      <div class="rp-range" role="group" aria-label="Search Console period">${btns}</div></div>
+    <div class="kpis">${kpi('Clicks', fmt(c), foot(c, pc))}${kpi('Impressions', fmt(i), foot(i, pi))}
+      ${gen.length ? kpi('AI impressions', fmt(rpSum(gen,'gen_ai')), genP.length ? chipFor(rpSum(gen,'gen_ai'), rpSum(genP,'gen_ai')) + ' vs previous period' : 'AI Overviews and AI Mode') : ''}
+      ${kpi('Click rate', i ? pct1(c / i * 100) : '—', 'Clicks ÷ impressions')}
+      ${kpi('Avg position', pos != null ? fmt(pos, 1) : '—', pp != null && pos != null ? stepChip(pos, pp, 'previous', { dp:1, lowerIsBetter:true }) : 'Lower is better')}</div>
+    ${rpLegend(series)}${rpLines(rows, series)}
+    ${gen.length ? '<p class="sub">Google counts AI impressions as part of total impressions, so the AI line is not extra on top.</p>' : ''}`;
+}
+function rpGaHtml(){
+  const w = rpWindow('sessions', rp.ga);
+  if (!w) return emptyState('No Google Analytics data yet', 'Google Analytics has not reported any visits for this website yet.');
+  const btns = RP_RANGES.map(r => rpBtn('ga', r.d, r.d === rp.ga, r.l)).join('');
+  const S = a => rpSum(a,'sessions'), hasPrev = w.prev.some(r => r.sessions != null);
+  const adu = a => { const x = a.filter(r => r.users != null); return x.length ? rpSum(x,'users') / x.length : null; };
+  const er = a => { const x = a.filter(r => r.engaged_sessions != null && r.sessions != null), t = rpSum(x,'sessions'); return t ? rpSum(x,'engaged_sessions') / t * 100 : null; };
+  const foot = (a, b) => hasPrev && a != null && b != null ? chipFor(a, b) + ' vs previous period' : 'No earlier period to compare';
+  const ke = rpSum(w.cur,'key_events');
+  const series = [{ k:'sessions', name:'Sessions', color:'var(--accent)' }, { k:'users', name:'Users', color:'var(--ink3)' }];
+  const rows = rpBuckets(w.cur, rp.ga, ['sessions','users']);
+  return `<div class="cardhead"><div><h3>Google Analytics 4 Data</h3><p class="sub">${rpNote(w, rp.ga, 'Analytics')}</p></div>
+      <div class="rp-range" role="group" aria-label="Analytics period">${btns}</div></div>
+    <div class="kpis">${kpi('Sessions', fmt(S(w.cur)), foot(S(w.cur), S(w.prev)))}
+      ${kpi('Average daily users', adu(w.cur) != null ? fmt(adu(w.cur), 1) : '—', foot(adu(w.cur), adu(w.prev)))}
+      ${kpi('Engagement rate', er(w.cur) != null ? pct1(er(w.cur)) : '—', 'Share of sessions that were engaged')}
+      ${kpi('Page views', fmt(rpSum(w.cur,'pageviews')), foot(rpSum(w.cur,'pageviews'), rpSum(w.prev,'pageviews')))}
+      ${kpi('Key events', fmt(ke), ke ? foot(ke, rpSum(w.prev,'key_events')) : 'None recorded in this period')}</div>
+    ${rpLegend(series)}${rpLines(rows, series)}`;
+}
+
+/* AI tracker. AI Overview and assistant readings are monthly, so this chart is monthly. */
+const rpNamed = r => r.result && /^(named|found|yes)/i.test(r.result);
+function rpAiMonths(){
+  const m = {}; const at = k => (m[k] = m[k] || { label:k, month:k });
+  (RAW.aio || []).forEach(r => { const x = at(monthOf(r.month)); x.aio = (x.aio || 0) + 1; });
+  /* Last reading in each month: two checks in one month never add together. */
+  const last = {}; (RAW.geo || []).forEach(r => { const k = monthOf(r.checked_at); if (!last[k] || r.checked_at > last[k]) last[k] = r.checked_at; });
+  Object.entries(last).forEach(([k, d]) => { const s = RAW.geo.filter(r => r.checked_at === d); at(k).vis = s.length ? s.filter(rpNamed).length / s.length * 100 : null; });
+  (RAW.daily || []).forEach(r => { if (r.gsc_impressions != null){ const x = at(monthOf(r.date)); x.impr = (x.impr || 0) + Number(r.gsc_impressions); x.clicks = (x.clicks || 0) + Number(r.gsc_clicks || 0); }
+    if (r.gen_ai != null){ const x = at(monthOf(r.date)); x.gen = (x.gen || 0) + Number(r.gen_ai); } });
+  return Object.values(m).sort((a, b) => a.month.localeCompare(b.month));
+}
+function rpAiHtml(){
+  const all = rpAiMonths().filter(r => r.month <= state.month);
+  if (!all.length) return '';
+  const end = all[all.length - 1].month, start = rpMonthAdd(end, -(rp.aiRange - 1));
+  const prevEnd = rpMonthAdd(start, -1), prevStart = rpMonthAdd(prevEnd, -(rp.aiRange - 1));
+  const cur = all.filter(r => r.month >= start), prev = all.filter(r => r.month >= prevStart && r.month <= prevEnd);
+  const lastOf = (a, k) => { const x = a.filter(r => r[k] != null); return x.length ? x[x.length - 1][k] : null; };
+  const tot = (a, k) => { const x = a.filter(r => r[k] != null); return x.length ? rpSum(x, k) : null; };
+  const defs = [
+    { k:'aio', label:'AI Overview keywords', tag:'Google', v:lastOf(cur,'aio'), p:lastOf(prev,'aio'), f:x => fmt(x), c:'var(--accent)', note:'Searches where Google’s AI Overview cites your website' },
+    { k:'vis', label:'AI assistant visibility', tag:'AI', v:lastOf(cur,'vis'), p:lastOf(prev,'vis'), f:x => pct1(x), c:'var(--good)', axis:'r', note:'Share of ChatGPT, Claude, Gemini and Perplexity answers naming you', unit:'%', dp:1 },
+    { k:'impr', label:'Impressions', tag:'Google', v:tot(cur,'impr'), p:tot(prev,'impr'), f:x => fmt(x), c:'var(--ink3)', note:'From Google Search Console' },
+    { k:'clicks', label:'Clicks', tag:'Google', v:tot(cur,'clicks'), p:tot(prev,'clicks'), f:x => fmt(x), c:'var(--warn)', note:'From Google Search Console' },
+  ];
+  if (cur.some(r => r.gen != null)) defs.splice(2, 0, { k:'gen', label:'AI impressions', tag:'Google', v:tot(cur,'gen'), p:tot(prev,'gen'), f:x => fmt(x), c:'#a78bfa', note:'Search Console generative AI report' });
+  const tiles = defs.map(d => `<button type="button" class="rp-ai-tile${rp.aiOn[d.k] ? ' on' : ''}" data-rp="ai" data-v="${d.k}" aria-pressed="${!!rp.aiOn[d.k]}" style="--c:${d.c}">
+      <span class="mlbl">${esc(d.label)} <em>${d.tag}</em></span>
+      <b class="tnum">${d.v != null ? d.f(d.v) : '—'}</b><small>This period</small>
+      <span class="rp-prev tnum">${d.p != null ? d.f(d.p) : '—'}</span><small>${d.p != null ? 'Previous period' : 'No earlier reading'}</small></button>`).join('');
+  const series = defs.filter(d => rp.aiOn[d.k]).map(d => {
+    const big = d.k === 'impr' || d.k === 'gen';
+    return { k:d.k, name:d.label, color:d.c, axis: d.k === 'vis' ? 'r' : (big ? 'r' : undefined), unit:d.unit, dp:d.dp }; });
+  /* A percentage and a count share the right axis only if they share a unit. */
+  const mixed = series.some(s => s.k === 'vis') && series.some(s => s.k === 'impr' || s.k === 'gen');
+  if (mixed) series.forEach(s => { if (s.k === 'impr' || s.k === 'gen') s.axis = undefined; });
+  const curRange = all.filter(r => r.month >= start);
+  const partial = (() => { const t = rpYmd(new Date()).slice(0, 7); return end === t; })();
+  return `<div class="cardhead"><div><h3>AI visibility tracker</h3>
+      <p class="sub">${rpMon(curRange[0].month)} to ${rpMon(end)}${partial ? ' (month in progress)' : ''}, monthly readings. Tap a tile to show or hide it on the graph.</p></div>
+      <div class="rp-range" role="group" aria-label="AI tracker period">${RP_AI_RANGES.map(r => rpBtn('airange', r.m, r.m === rp.aiRange, r.l)).join('')}</div></div>
+    <div class="rp-ai-tiles">${tiles}</div>
+    ${series.length ? rpLegend(series) + rpLines(curRange, series, { labelFmt:rpMon, yR: series.some(s => s.axis === 'r' && s.k === 'vis') ? '%' : '' }) : '<p class="sub">Pick a tile to plot it.</p>'}
+    <p class="sub">AI Overview keywords are the ones found in the Australian keyword database we track, so they are a strong sample rather than every search Google answers. Each assistant reading is ${(RAW.geo || []).length ? 'our month-end set of questions' : 'taken monthly'}.</p>`;
+}
+/* Every AI Overview citation, month against month. */
+function rpAioTable(){
+  const rows = (RAW.aio || []).filter(r => monthOf(r.month) <= state.month);
+  if (!rows.length) return '';
+  const months = [...new Set(rows.map(r => monthOf(r.month)))].sort();
+  const cur = months[months.length - 1], prv = months[months.length - 2] || null;
+  const by = {};
+  rows.forEach(r => { const x = by[r.keyword] = by[r.keyword] || { keyword:r.keyword, months:{} }; const m = monthOf(r.month); x.months[m] = true; if (m === cur || !x.page) x.page = r.page; });
+  const list = Object.values(by).map(x => { const on = !!x.months[cur], was = prv && x.months[prv];
+    const o = { keyword:x.keyword, page:x.page ? '/' + x.page : '—', status: on ? (prv && !was ? 'New' : 'Kept') : (was ? 'Dropped' : 'Earlier'), sort: on ? (prv && !was ? 0 : 1) : (was ? 2 : 3) };
+    months.forEach(m => { o['m' + m] = x.months[m] ? 1 : 0; }); return o; });
+  const n = k => list.filter(r => r.status === k).length, nCur = list.filter(r => r.sort < 2).length;
+  const pill = v => `<span class="rankpill ${v === 'New' ? 'win' : v === 'Kept' ? 'mid' : 'out'}">${v}</span>`;
+  const cols = [{ k:'keyword', label:'Search' }, { k:'page', label:'Page cited', fmt:v => `<span class="rvtext">${esc(v)}</span>` }, { k:'sort', label:'Status', fmt:(v, r) => pill(r.status) }]
+    .concat(months.map(m => ({ k:'m' + m, label:rpDay(m + '-01').toLocaleDateString('en-AU', { month:'short' }), num:1, fmt:v => v ? '✓' : '—' })));
+  return `<div class="card"><div class="cardhead"><div><h3>AI Overviews you are featured in</h3>
+    <p class="sub">${fmt(nCur)} searches in ${monthName(cur)}${prv ? `, against ${fmt(months.length > 1 ? list.filter(r => r['m' + prv]).length : 0)} in ${monthName(prv)}: ${fmt(n('New'))} new, ${fmt(n('Dropped'))} dropped` : ''}. Google’s AI answer linked to your website for each of these.</p></div></div>
+    ${dataTable('aio', cols, list, { sort:{ k:'sort', dir:1 }, maxH:560 })}</div>`;
+}
+
+/* Map pack on a real map. One base image per client (CFG.mapBase), pins placed by coordinates. */
+const rpMapOn = () => RP() && !!CFG.mapBase;
+const mgX = (lng, z) => 256 * (lng + 180) / 360 * Math.pow(2, z);
+const mgY = (lat, z) => { const t = Math.sin(lat * Math.PI / 180); return 256 * (0.5 - Math.log((1 + t) / (1 - t)) / (4 * Math.PI)) * Math.pow(2, z); };
+const rpPts = s => (RAW.points || []).filter(p => p.scan_id === s.id);
+function rpStats(s){ const f = rpPts(s).filter(p => p.rank != null), r = f.map(p => +p.rank);
+  return { found:f.length, total:rpPts(s).length, top3:r.filter(v => v <= 3).length, first:r.filter(v => v === 1).length, avg:r.length ? r.reduce((a, b) => a + b, 0) / r.length : null }; }
+function rpSeries(){
+  /* One scan per keyword per day, latest wins: a re-scan must not read as a second reading. */
+  const best = {};
+  (RAW.scans || []).filter(s => monthOf(s.checked_at) <= state.month && rpPts(s).length).forEach(s => {
+    const k = s.keyword.toLowerCase() + '|' + s.checked_at, t = s.scanned_at || s.checked_at;
+    if (!best[k] || String(t) > String(best[k].scanned_at || best[k].checked_at)) best[k] = s; });
+  return Object.values(best).sort((a, b) => String(a.checked_at).localeCompare(String(b.checked_at)));
+}
+const rpSame = (a, b) => a.grid_size === b.grid_size && +a.spacing_km === +b.spacing_km && a.zoom === b.zoom;
+function rpMapSvg(s, prev, movement){
+  const B = CFG.mapBase, km = (lat, lng) => 111.32 * Math.sqrt(Math.pow(lat - B.lat, 2) + Math.pow((lng - B.lng) * Math.cos(B.lat * Math.PI / 180), 2));
+  const px = (lat, lng) => [320 + mgX(lng, B.z) - mgX(B.lng, B.z), 320 + mgY(lat, B.z) - mgY(B.lat, B.z)];
+  const prior = {}; if (prev) rpPts(prev).forEach(p => { prior[p.idx] = p; });
+  const metres = 156543.03392 * Math.cos(B.lat * Math.PI / 180) / Math.pow(2, B.z);
+  const rings = (B.rings || [5, 10]).map(k => { const r = k * 1000 / metres;
+    return `<circle cx="320" cy="320" r="${r.toFixed(1)}" fill="none" stroke="rgba(255,255,255,.3)" stroke-dasharray="4 5"/><text x="320" y="${(320 - r + 13).toFixed(1)}" text-anchor="middle" class="rp-ring">${k} km</text>`; }).join('');
+  const colour = r => r <= 3 ? ['#2E9E5B', '#fff'] : r <= 10 ? ['#E2B934', '#17171C'] : r <= 20 ? ['#E8703A', '#17171C'] : ['#C94A4A', '#fff'];
+  const size = B.pin || 15;
+  const pins = rpPts(s).map(p => { const [x, y] = px(+p.lat, +p.lng), r = p.rank == null ? null : +p.rank, o = prior[p.idx], was = o && o.rank != null ? +o.rank : null;
+    const tip = `${r == null ? 'Not found here' : 'Rank #' + r} · ${km(+p.lat, +p.lng).toFixed(1)} km from the business${o ? ` · Last scan: ${was == null ? 'not found' : '#' + was}` : ''}${p.top_competitor ? ` · #1 here: ${p.top_competitor}` : ''}`;
+    let fill, ink, label;
+    if (movement){
+      if (r == null && was == null) return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="rgba(255,255,255,.25)"><title>${esc(tip)}</title></circle>`;
+      const d = r == null ? -1 : was == null ? 1 : was - r; fill = d > 0 ? '#2E9E5B' : d < 0 ? '#C94A4A' : '#6E6E7A'; ink = '#fff';
+      label = r == null ? '✕' : was == null ? 'new' : d === 0 ? '=' : (d > 0 ? '+' : '') + d;
+    } else { if (r == null) return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="rgba(255,255,255,.25)"><title>${esc(tip)}</title></circle>`; [fill, ink] = colour(r); label = String(r); }
+    const fs = String(label).length > 2 ? size * .62 : size * .8;
+    return `<g><title>${esc(tip)}</title><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${size}" fill="${fill}" stroke="#17171C" stroke-width="1.5"/><text x="${x.toFixed(1)}" y="${(y + fs * .36).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-family="var(--mono)" font-weight="700" fill="${ink}">${esc(label)}</text></g>`; }).join('');
+  const [sx, sy] = s.centre_lat != null ? px(+s.centre_lat, +s.centre_lng) : [320, 320];
+  const star = [...Array(10)].map((_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? size * .42 : size * .95; return `${(sx + r * Math.cos(a)).toFixed(1)},${(sy + r * Math.sin(a)).toFixed(1)}`; }).join(' ');
+  return `<div class="rp-map"><img src="${esc(B.src)}" alt="Map of the area around ${esc(s.centre_label || CFG.name)}" loading="lazy"><svg viewBox="0 0 640 640" role="img" aria-label="${esc(s.keyword)} map pack positions">${rings}${pins}<polygon points="${star}" fill="#fff" stroke="#17171C" stroke-width="1.5"><title>${esc(CFG.name)}</title></polygon></svg></div>`;
+}
+function rpMapHtml(){
+  const all = rpSeries();
+  if (!all.length) return emptyState('No scan yet', 'No map grid scan has been run for this month yet.');
+  const kws = [...new Set(all.map(s => s.keyword))].sort((a, b) => a.localeCompare(b));
+  if (!rp.kw || !kws.includes(rp.kw)) rp.kw = kws[0];
+  const ser = k => all.filter(s => s.keyword === k);
+  const pair = k => { const l = ser(k), c = l[l.length - 1], ps = l.slice(0, -1).filter(s => rpSame(s, c)); return [c, ps[ps.length - 1] || null]; };
+  const [cur, prev] = pair(rp.kw);
+  if (!prev && rp.view === 'move') rp.view = 'rank';
+  const A = rpStats(cur), P = prev ? rpStats(prev) : null, who = CFG.name.split(/\s+/)[0];
+  const foot = (a, b, low) => { if (!P) return 'Baseline scan'; if (a == null || b == null) return 'Not comparable'; const d = a - b;
+    if (Math.abs(d) < .05) return 'No change since ' + rpAu(prev.checked_at); const good = low ? d < 0 : d > 0;
+    return `<span class="chip ${good ? 'up' : 'dn'}">${d > 0 ? '+' : ''}${fmt(d, Number.isInteger(d) ? 0 : 1)}</span> since ${rpAu(prev.checked_at)}`; };
+  const tiles = `<div class="kpis">${kpi(`Points where ${esc(who)} appears`, `${fmt(A.found)} of ${fmt(A.total)}`, foot(A.found, P && P.found))}
+    ${kpi('Top 3 points', fmt(A.top3), foot(A.top3, P && P.top3))}${kpi('#1 points', fmt(A.first), foot(A.first, P && P.first))}
+    ${kpi('Average rank where found', A.avg != null ? fmt(A.avg, 1) : '—', foot(A.avg, P && P.avg, true))}</div>`;
+  const switcher = `<div class="rp-range rp-kw" role="group" aria-label="Keyword">${kws.map(k => rpBtn('kw', k, k === rp.kw, k)).join('')}</div>
+    ${prev ? `<div class="rp-range" role="group" aria-label="Map view">${rpBtn('view', 'rank', rp.view === 'rank', 'Ranks')}${rpBtn('view', 'move', rp.view === 'move', 'What moved')}</div>` : ''}`;
+  const mapA = `<div class="card"><div class="cardhead"><div><h3>${rp.view === 'move' ? 'What moved since ' + rpAu(prev.checked_at) : 'Latest scan'}</h3><p class="sub">${esc(rp.kw)} · ${rpAu(cur.checked_at)}</p></div></div>${rpMapSvg(cur, prev, rp.view === 'move')}</div>`;
+  const mapB = prev ? `<div class="card"><div class="cardhead"><div><h3>Month on month</h3><p class="sub">Previous scan · ${esc(rp.kw)} · ${rpAu(prev.checked_at)}</p></div></div>${rpMapSvg(prev, null, false)}</div>`
+    : `<div class="card"><div class="cardhead"><div><h3>Month on month</h3></div></div><p>Growth appears here after the next scan, with both maps side by side.</p><p class="sub">${rpAu(cur.checked_at)} is the starting point. Google doesn’t keep past map rankings, so nothing earlier can be measured.</p></div>`;
+  const key = rp.view === 'move'
+    ? '<span><i style="background:#2E9E5B"></i>Improved</span><span><i style="background:#C94A4A"></i>Dropped or lost (✕)</span><span><i style="background:#6E6E7A"></i>No change</span><span><i style="background:rgba(255,255,255,.3)"></i>Not found in either scan</span>'
+    : '<span><i style="background:#2E9E5B"></i>Top 3</span><span><i style="background:#E2B934"></i>4 to 10</span><span><i style="background:#E8703A"></i>11 to 20</span><span><i style="background:#C94A4A"></i>21+</span><span><i style="background:rgba(255,255,255,.3)"></i>Not found</span>';
+  const rowsT = kws.map(k => { const [c, p] = pair(k), a = rpStats(c), b = p ? rpStats(p) : null;
+    const dl = (x, y, low) => { if (!b || x == null || y == null) return '—'; const d = x - y; if (Math.abs(d) < .05) return '0'; const good = low ? d < 0 : d > 0; return `<span class="chip ${good ? 'up' : 'dn'}">${d > 0 ? '+' : ''}${fmt(d, Number.isInteger(d) ? 0 : 1)}</span>`; };
+    return `<tr class="${k === rp.kw ? 'rp-me' : ''}"><td>${esc(k)}</td><td class="tnum">${fmt(a.found)}</td><td>${dl(a.found, b && b.found)}</td><td class="tnum">${fmt(a.top3)}</td><td>${dl(a.top3, b && b.top3)}</td><td class="tnum">${fmt(a.first)}</td><td>${dl(a.first, b && b.first)}</td><td class="tnum">${a.avg != null ? fmt(a.avg, 1) : '—'}</td><td>${dl(a.avg, b && b.avg, true)}</td></tr>`; }).join('');
+  const founds = kws.map(k => rpStats(pair(k)[0]).found), spread = Math.max(...founds) - Math.min(...founds);
+  const boxed = A.total && Math.max(...founds) / A.total < .6 && spread <= A.total * .1;
+  const reach = +cur.spacing_km * (cur.grid_size - 1) / 2;
+  const note = `Each pin is one search from that spot on the map: ${cur.grid_size} × ${cur.grid_size} points, ${+cur.spacing_km} km apart, reaching ${fmt(reach, reach % 1 ? 1 : 0)} km from the business. Average rank only counts points where ${esc(who)} was found. `
+    + (boxed ? `Google returned ${esc(who)} within about the same area on every keyword, which looks like the edge of its search view at this zoom rather than true reach, so a grey point doesn’t prove ${esc(who)} wouldn’t show for someone there. Compare ranks and top 3 points for growth. ` : '')
+    + `Comparisons are scan against scan, by the dates shown. Google’s results change day to day, so read small moves with care. These scans run each month end.`;
+  return `${tiles}<div class="rp-switch">${switcher}</div><div class="grid2 rp-maps">${mapA}${mapB}</div><div class="legend rp-key">${key}</div>
+    <div class="card"><div class="cardhead"><div><h3>Every keyword, scan against scan</h3></div></div><div class="tscroll"><table class="tbl"><thead><tr><th>Keyword</th><th>Points found</th><th>Change</th><th>Top 3</th><th>Change</th><th>#1</th><th>Change</th><th>Avg rank</th><th>Change</th></tr></thead><tbody>${rowsT}</tbody></table></div><p class="sub rp-note">${note}</p></div>`;
+}
+/* GBP: monthly views, reviews total, where people see you, and search chips. */
+function rpGbpExtras(){
+  const byM = {};
+  (RAW.daily || []).forEach(r => { if (r.gbp_search == null && r.gbp_maps == null) return; const m = monthOf(r.date); if (m > state.month) return;
+    const x = byM[m] = byM[m] || { m, s:0, g:0 }; x.s += Number(r.gbp_search) || 0; x.g += Number(r.gbp_maps) || 0; });
+  const months = Object.values(byM).sort((a, b) => a.m.localeCompare(b.m)).slice(-12);
+  let out = '';
+  if (months.length){
+    const max = Math.max(...months.map(r => r.s + r.g), 1), W = 1000, H = 290, L = 58, T = 12, B = 30, bw = Math.min(70, (W - L - 20) / months.length * .55);
+    const nice = (() => { const p = Math.pow(10, Math.floor(Math.log10(max))), f = max / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; })();
+    const y = v => T + (H - T - B) * (1 - v / nice);
+    let g = ''; [0, .25, .5, .75, 1].forEach(f => { g += `<line x1="${L}" x2="${W}" y1="${y(nice * f)}" y2="${y(nice * f)}" stroke="var(--bd)"/><text x="${L - 8}" y="${y(nice * f) + 4}" text-anchor="end" class="rp-ax">${fmt(nice * f)}</text>`; });
+    months.forEach((r, i) => { const cx = L + (W - L - 20) * (i + .5) / months.length, x = cx - bw / 2;
+      g += `<g><title>${esc(rpMon(r.m))}: ${fmt(r.s)} on Google Search, ${fmt(r.g)} on Google Maps</title><rect x="${x}" y="${y(r.g)}" width="${bw}" height="${Math.max(0, y(0) - y(r.g))}" rx="3" fill="var(--warn)"/><rect x="${x}" y="${y(r.g + r.s)}" width="${bw}" height="${Math.max(0, y(r.g) - y(r.g + r.s))}" rx="3" fill="var(--accent)"/></g>
+        <text x="${cx}" y="${H - 8}" text-anchor="middle" class="rp-ax">${esc(rpMon(r.m))}</text>`; });
+    out += `<div class="card"><div class="cardhead"><div><h3>Profile views over time</h3><p class="sub">Monthly, from Google Business Profile</p></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Google Search</span><span><i style="background:var(--warn)"></i>Google Maps</span></div></div>
+      <svg class="rp-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Profile views by month, Search and Maps">${g}</svg></div>`;
+  }
+  const last = months[months.length - 1], tot = last ? last.s + last.g : 0;
+  const rvCard = V.reviews && V.reviews.review_count != null ? `<div class="card"><span class="mlbl">Reviews</span><div class="rp-big tnum">${V.reviews.avg_rating != null ? fmt(V.reviews.avg_rating, 1) + ' ★' : '—'}</div><p class="sub">${fmt(V.reviews.review_count)} Google reviews, as at ${rpAu(String(V.reviews.as_of).slice(0, 10))}</p></div>` : '';
+  const whereCard = tot ? `<div class="card"><span class="mlbl">Where people see you</span><div class="rp-split"><span style="width:${(last.s / tot * 100).toFixed(1)}%;background:var(--accent)">${Math.round(last.s / tot * 100)}% Search</span><span style="width:${(last.g / tot * 100).toFixed(1)}%;background:var(--warn)">${Math.round(last.g / tot * 100)}% Maps</span></div><p class="sub">${esc(rpMon(last.m))}: ${fmt(last.s)} views on Google Search, ${fmt(last.g)} on Google Maps.</p></div>` : '';
+  if (rvCard || whereCard) out += `<div class="grid2">${rvCard}${whereCard}</div>`;
+  const kwM = (RAW.gkw || []).filter(r => monthOf(r.month) <= state.month).map(r => monthOf(r.month)).sort().pop();
+  if (kwM){
+    const brand = new RegExp(CFG.name.split(/\s+/)[0], 'i');
+    const rows = RAW.gkw.filter(r => monthOf(r.month) === kwM).map(r => ({ ...r, val:r.users != null ? Number(r.users) : (r.below_threshold ? Number(r.below_threshold) - .5 : 0), b:brand.test(r.keyword) }))
+      .sort((a, b) => b.val - a.val).slice(0, 24);
+    const dis = rpSum(rows.filter(r => !r.b && r.users != null), 'users'), bra = rpSum(rows.filter(r => r.b && r.users != null), 'users');
+    out += `<div class="card"><div class="cardhead"><div><h3>What people search to find you</h3></div></div><div class="rp-chips">${rows.map(r => `<span class="rp-chip${r.b ? ' brand' : ''}">${esc(r.keyword)} <b class="tnum">${r.users != null ? fmt(r.users) : 'under ' + fmt(r.below_threshold)}</b></span>`).join('')}</div>
+      <p class="sub rp-note">${esc(rpMon(kwM))}: the phrases people typed into Google before landing on the profile. Faded terms are branded (someone already looking for ${esc(CFG.name)}); solid terms are people discovering you. ${fmt(dis)} discovery searches vs ${fmt(bra)} branded across the terms shown.</p></div>`;
+  }
+  return out;
+}
+/* Buttons in these sections redraw only their own section, so the page never jumps. */
+document.addEventListener('click', ev => {
+  const b = ev.target.closest && ev.target.closest('[data-rp]'); if (!b || !RP()) return;
+  const g = b.dataset.rp, v = b.dataset.v;
+  const redraw = (id, fn) => { const el = document.getElementById(id); if (el) el.innerHTML = fn(); };
+  if (g === 'gsc'){ rp.gsc = +v; redraw('rpGsc', rpGscHtml); }
+  if (g === 'ga'){ rp.ga = +v; redraw('rpGa', rpGaHtml); }
+  if (g === 'airange'){ rp.aiRange = +v; redraw('rpAi', rpAiHtml); }
+  if (g === 'ai'){ rp.aiOn[v] = !rp.aiOn[v]; redraw('rpAi', rpAiHtml); }
+  if (g === 'kw'){ rp.kw = v; redraw('rpMap', rpMapHtml); }
+  if (g === 'view'){ rp.view = v; redraw('rpMap', rpMapHtml); }
+});
+
 function viewSeo(){
   let out = head('SEO', 'Search performance',
     'Clicks, impressions and average position from Google Search Console, with the keywords we track.');
@@ -766,12 +1081,13 @@ function viewSeo(){
     return out + emptyState('Nothing to report for this month',
       `${CFG.name}'s website is not live yet, so there is no search data. Tracking starts the day it publishes.`);
   const a = V.agg, p = V.aggPrev;
-  out += `<div class="kpis">
+  if (RP()) out += `<div class="card" id="rpGsc">${rpGscHtml()}</div><div class="card" id="rpGa">${rpGaHtml()}</div>`;
+  else out += `<div class="kpis">
     ${kpi('Clicks', fmt(a.clicks), chipFor(a.clicks, p.clicks))}
     ${kpi('Impressions', fmt(a.impressions), chipFor(a.impressions, p.impressions))}
     ${kpi('Sessions', fmt(a.sessions), chipFor(a.sessions, p.sessions))}
     ${kpi('Avg position', a.position ? fmt(a.position,1) : '—', 'Lower is better')}</div>`;
-  if (V.dates.length) out += `<div class="card"><div class="cardhead">
+  if (!RP() && V.dates.length) out += `<div class="card"><div class="cardhead">
       <div><h3>Clicks and impressions</h3><p class="sub">Daily, ${monthName(state.month)}</p></div>
       <div class="legend"><span><i style="background:var(--accent)"></i>Clicks</span>
         <span><i style="background:var(--ink3)"></i>Impressions</span></div></div>
@@ -813,6 +1129,13 @@ function viewMapGrid(){
   if (!V.scans.length)
     return out + emptyState('No scan yet',
       'No map grid scan has been run for this month yet.');
+  if (rpMapOn()){
+    out += `<div id="rpMap">${rpMapHtml()}</div>`;
+    const cmp = {}; (RAW.points || []).filter(p => V.scans.some(s => s.id === p.scan_id) && p.top_competitor).forEach(p => { cmp[p.top_competitor] = (cmp[p.top_competitor] || 0) + 1; });
+    const crows = Object.entries(cmp).map(([name, n]) => ({ name, n }));
+    if (crows.length) out += `<div class="card"><div class="cardhead"><div><h3>Who is #1 across the grid</h3><p class="sub">The business in first place at each measured point, across all keywords</p></div></div>${dataTable('mapcomp', [{ k:'name', label:'Business' }, { k:'n', label:'Points at #1', num:1, fmt:v => fmt(v) }], crows, { sort:{ k:'n', dir:-1 }, maxH:380 })}</div>`;
+    return out;
+  }
 
   const scans = V.scans.slice().sort((a,b) => (a.avg_rank ?? 999) - (b.avg_rank ?? 999));
   const total = sum(scans,'total_points'), found = sum(scans,'found_points');
@@ -902,23 +1225,27 @@ function viewGbp(){
   const totNow = endOf(state.month), totPrev = V.prevMonth ? endOf(V.prevMonth) : [];
   const avgR = arr => arr.length ? arr.reduce((t, r) => t + (r.rating || 0), 0) / arr.length : null;
   const newM = rv.filter(inMonth), newP = rv.filter(inPrev);
+  /* The list only holds what Google's feed returns. Where Google states its own total, quote that. */
+  const rvN = RP() && V.reviews?.review_count != null ? Number(V.reviews.review_count) : totNow.length;
+  const rvA = RP() && V.reviews?.avg_rating != null ? Number(V.reviews.avg_rating) : avgR(totNow);
   const replyRate = totNow.length ? totNow.filter(r => r.replied).length / totNow.length * 100 : null;
 
+  const noYet = RP() && !g.length;
   const pm = V.prevMonth ? monthName(V.prevMonth) : null;
   const vs = (c, p) => `${chipFor(c, p)}${pm ? ` vs ${pm}` : ''}`;
   out += `<p class="lede">${hasViews ? `In ${monthName(state.month)} the profile was viewed ${fmt(v)} times on Google Search and Maps${pm && vp ? ` (${vp ? (v >= vp ? 'up' : 'down') + ' from ' + fmt(vp) : ''} in ${pm})` : ''}. ` : ''}
-    People took ${fmt(a)} action${a === 1 ? '' : 's'} from it: ${fmt(sum(g,'calls'))} call${sum(g,'calls') === 1 ? '' : 's'}, ${fmt(sum(g,'website_clicks'))} website visit${sum(g,'website_clicks') === 1 ? '' : 's'} and ${fmt(sum(g,'direction_requests'))} direction request${sum(g,'direction_requests') === 1 ? '' : 's'}.
-    ${totNow.length ? `The profile holds ${fmt(totNow.length)} Google reviews averaging ${fmt(avgR(totNow), 2)} stars${newM.length ? `, with ${fmt(newM.length)} new this month` : ', with none new this month'}.` : ''}</p>`;
+    ${noYet ? `Google has not reported profile activity for ${monthName(state.month)} yet. It usually lands within a few days. ` : `People took ${fmt(a)} action${a === 1 ? '' : 's'} from it: ${fmt(sum(g,'calls'))} call${sum(g,'calls') === 1 ? '' : 's'}, ${fmt(sum(g,'website_clicks'))} website visit${sum(g,'website_clicks') === 1 ? '' : 's'} and ${fmt(sum(g,'direction_requests'))} direction request${sum(g,'direction_requests') === 1 ? '' : 's'}.`}
+    ${totNow.length ? `The profile holds ${fmt(rvN)} Google reviews averaging ${fmt(rvA, 2)} stars${newM.length ? `, with ${fmt(newM.length)} new this month` : ', with none new this month'}.` : ''}</p>`;
 
   out += `<div class="kpis">
     ${hasViews ? kpi('Profile views', fmt(v), vs(v, vp)) : ''}
-    ${kpi('Actions taken', fmt(a), vs(a, ap))}
-    ${kpi('Calls', fmt(sum(g,'calls')), vs(sum(g,'calls'), sum(gp,'calls')))}
-    ${kpi('Website clicks', fmt(sum(g,'website_clicks')), vs(sum(g,'website_clicks'), sum(gp,'website_clicks')))}
-    ${kpi('Direction requests', fmt(sum(g,'direction_requests')), vs(sum(g,'direction_requests'), sum(gp,'direction_requests')))}
+    ${noYet ? '' : kpi('Actions taken', fmt(a), vs(a, ap))}
+    ${noYet ? '' : kpi('Calls', fmt(sum(g,'calls')), vs(sum(g,'calls'), sum(gp,'calls')))}
+    ${noYet ? '' : kpi('Website clicks', fmt(sum(g,'website_clicks')), vs(sum(g,'website_clicks'), sum(gp,'website_clicks')))}
+    ${noYet ? '' : kpi('Direction requests', fmt(sum(g,'direction_requests')), vs(sum(g,'direction_requests'), sum(gp,'direction_requests')))}
     ${hasViews && v ? kpi('Action rate', pct1(a / v * 100), 'Actions ÷ profile views') : ''}
-    ${totNow.length ? kpi('Google reviews', fmt(totNow.length), `${newM.length >= 0 ? `<span class="chip ${newM.length ? 'up' : 'flat'}">+${fmt(newM.length)}</span> this month` : ''}`) : ''}
-    ${totNow.length ? kpi('Average rating', fmt(avgR(totNow), 2) + ' ★', totPrev.length ? `${chipFor(avgR(totNow), avgR(totPrev))} vs ${pm}` : '') : ''}
+    ${totNow.length ? kpi('Google reviews', fmt(rvN), `${newM.length >= 0 ? `<span class="chip ${newM.length ? 'up' : 'flat'}">+${fmt(newM.length)}</span> this month` : ''}`) : ''}
+    ${totNow.length ? kpi('Average rating', fmt(rvA, 2) + ' ★', totPrev.length ? `${chipFor(avgR(totNow), avgR(totPrev))} vs ${pm}` : '') : ''}
     ${replyRate != null ? kpi('Reviews replied to', pct1(replyRate), `${fmt(totNow.filter(r => r.replied).length)} of ${fmt(totNow.length)}`) : ''}</div>`;
 
   /* Callouts — every sentence switches on a value */
@@ -955,6 +1282,7 @@ function viewGbp(){
         ${barList(acts, { value: r => r.n, valueFmt: x => fmt(x), extra: delta })}</div></div>`;
   }
 
+  if (RP()) out += rpGbpExtras();
   /* Searches that surfaced the profile (Google releases these monthly, a few weeks late) */
   const kwM = RAW.gkw.filter(r => monthOf(r.month) <= state.month).map(r => monthOf(r.month)).sort().pop();
   if (kwM){
@@ -975,7 +1303,7 @@ function viewGbp(){
     const last6 = Object.keys(byM).sort().slice(-6);
     out += `<div class="card"><div class="cardhead"><div><h3>New reviews by month</h3><p class="sub">Last six months with reviews</p></div></div>
       ${barList(last6.map(m => ({ label: new Date(m + '-01T00:00:00').toLocaleDateString('en-AU', { month:'short', year:'2-digit' }), n: byM[m] })), { value: r => r.n, valueFmt: x => fmt(x) })}</div>
-      <div class="card"><div class="cardhead"><div><h3>Every Google review</h3><p class="sub">${fmt(rv.length)} reviews · ${fmt(avgR(rv), 2)} average · newest first</p></div></div>
+      <div class="card"><div class="cardhead"><div><h3>Every Google review</h3><p class="sub">${RP() && rvN > rv.length ? `The ${fmt(rv.length)} most recent of ${fmt(rvN)} that Google makes available` : `${fmt(rv.length)} reviews`} · ${fmt(avgR(rv), 2)} average · newest first</p></div></div>
       ${dataTable('reviews', [{ k:'d', label:'Date', fmt:v => new Date(v + 'T00:00:00').toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' }) },
         { k:'rating', label:'Stars', num:1, fmt:v => `<span style="color:var(--warn)">${'★'.repeat(v || 0)}</span>` },
         { k:'reviewer', label:'Reviewer' }, { k:'comment', label:'Review', fmt:v => `<span class="rvtext">${esc(v || '— (rating only)')}</span>` },
@@ -988,6 +1316,7 @@ function viewGbp(){
 function viewGeo(){
   let out = head('AI Visibility', 'Being named in AI answers',
     'Whether the business gets recommended when someone asks an AI assistant, rather than typing a search.');
+  if (RP()) out += `<div class="card" id="rpAi">${rpAiHtml()}</div>` + rpAioTable();
   const snap = V.geoSnap;
   if (!snap.length)
     return out + emptyState('Baseline not captured yet',
