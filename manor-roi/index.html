@@ -599,6 +599,13 @@
   html.embed .navbar{position:relative;top:auto}
 
 
+  /* Leads list */
+  .ld-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+  .ld-bar input,.ld-bar select{font-family:var(--mono);font-size:11.5px;color:var(--white);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .ld-bar input{min-width:220px;flex:1}
+  table.kw td a.ld-link{color:var(--white);white-space:nowrap}
+  table.kw td a.ld-link:hover{color:var(--azure)}
+  .ld-msg{font-size:11.5px;color:var(--muted);max-width:280px;display:block;margin-top:3px}
   /* Map pack radius */
   .mg-wrap{position:relative;border-radius:10px;overflow:hidden;background:#1f1f26}
   .mg-wrap img{display:block;width:100%;height:auto}
@@ -1102,6 +1109,25 @@
   </div>
   <div class="seclabel">Campaigns</div>
   <div class="card"><div class="tblwrap"><table class="kw" id="adTbl"></table></div><div class="note" id="adNote"></div></div>
+
+  <div class="seclabel">Leads in GoHighLevel, all channels</div>
+  <div class="sh-tiles" id="ldTiles"></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><div class="lbl">Where the leads came from</div><div class="bench" id="ldBars" style="margin-top:12px"></div></div>
+    <div class="card"><div class="pg-title">New leads over time</div><div class="pg-chart" id="ldChart" style="margin-top:8px"></div></div>
+  </div>
+  <div class="note" id="ldNote"></div>
+  <div class="seclabel">Every lead</div>
+  <div class="card">
+    <div class="ld-bar">
+      <input type="search" id="ldSearch" placeholder="Search name, email or phone" aria-label="Search leads" oninput="LD_LIMIT=50;renderLeadList()">
+      <select id="ldChannel" aria-label="Channel" onchange="LD_LIMIT=50;renderLeadList()"></select>
+      <span class="fd-meta" id="ldCount"></span>
+    </div>
+    <div class="tblwrap"><table class="kw" id="ldTbl"></table></div>
+    <div class="pg-range" style="margin-top:12px;justify-content:center"><button type="button" id="ldMore" onclick="LD_LIMIT+=50;renderLeadList()">Show more</button></div>
+    <div class="note" id="ldListNote"></div>
+  </div>
 </div><!-- /viewPaid -->
 
 <div class="view" id="viewReels" data-anchor="sec:reels">
@@ -1249,7 +1275,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-11-04-1330';
+const BUILD = '2026-11-04-1500';
 
 async function newerBuildAvailable(){
   try{
@@ -3438,10 +3464,11 @@ async function loadPaid(){
   try{
     if(!AD_ROWS){ const all = []; for(let off = 0; off < 20000; off += 1000){ const page = await getJSON(`${SUPA.paid}?select=*&order=period_date&limit=1000&offset=${off}`); all.push(...page); if(page.length < 1000) break; } AD_ROWS = all; }
     renderPaid();
+    loadLeads();
   }catch(e){ $('adSummary').textContent = 'Could not reach the live database, so no ads figures are shown rather than stale ones. ('+(e.message||e)+')'; }
 }
 function setAdPlat(p){ AD_PLAT = p; renderPaid(); }
-function setAdDays(d){ AD_DAYS = d; renderPaid(); }
+function setAdDays(d){ AD_DAYS = d; renderPaid(); renderLeads(); }
 function renderPaid(){
   if(!AD_ROWS) return;
   $('adPlat').innerHTML = [['google','Google Ads'],['meta','Meta Ads']].map(([k,l]) => `<button type="button" class="${AD_PLAT===k?'on':''}" onclick="setAdPlat('${k}')">${l}</button>`).join('');
@@ -3476,10 +3503,59 @@ function renderPaid(){
       tip:d => `<b>${c.weekly?'Week of ':''}${shDmy(d)}</b>${c.vals[d] == null ? '<span>Nothing recorded</span>' : `${lbl}: ${fmtTip(c.vals[d])}`}`}); };
   draw('adSpend','spend','Spend',money,'$'); draw('adConv','conversions',conv,int,'');
   const camps = {}; cur.forEach(r => { (camps[r.campaign_id] = camps[r.campaign_id] || {name:r.campaign_name, rows:[]}).rows.push(r); });
-  const rows = Object.values(camps).map(c => ({name:c.name, ...roll(c.rows), noLeads:c.rows.every(noLeadData)})).filter(c => c.sp > 0 || c.im > 0).sort((a,b) => b.sp-a.sp);
-  $('adTbl').innerHTML = `<thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Impressions</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">CPC</th><th class="num">${conv}</th><th class="num">${costL}</th>${isG?'<th class="num">Calls</th>':''}</tr></thead><tbody>`
-    + rows.map(c => `<tr><td>${esc(c.name||'Unnamed')}</td><td class="num">${money(c.sp)}</td><td class="num">${int(c.im)}</td><td class="num">${int(c.cl)}</td><td class="num">${c.ctr==null?'—':(c.ctr*100).toFixed(2)+'%'}</td><td class="num">${money(c.cpc)}</td><td class="num">${c.noLeads?'<span class="muted">—</span>':int(c.co)}</td><td class="num">${c.noLeads?'<span class="muted">—</span>':money(c.cpa)}</td>${isG?`<td class="num">${int(c.ca)}</td>`:''}</tr>`).join('') + '</tbody>';
-  $('adNote').textContent = isG ? 'Conversions are as counted by Google Ads. A cost shows a dash when a campaign recorded no conversions.' : 'Leads are as attributed by Meta and may not match form submissions in GoHighLevel. A dash means lead data was not available for that campaign.';
+  const rows = Object.values(camps).map(c => ({name:c.name, ids:[...new Set(c.rows.map(r => String(r.campaign_id)))], ...roll(c.rows), noLeads:c.rows.every(noLeadData)})).filter(c => c.sp > 0 || c.im > 0).sort((a,b) => b.sp-a.sp);
+  $('adTbl').innerHTML = `<thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Impressions</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">CPC</th><th class="num">${conv}</th><th class="num">${costL}</th>${isG?'<th class="num">Calls</th>':''}<th class="num">GHL leads</th></tr></thead><tbody>`
+    + rows.map(c => `<tr><td>${esc(c.name||'Unnamed')}</td><td class="num">${money(c.sp)}</td><td class="num">${int(c.im)}</td><td class="num">${int(c.cl)}</td><td class="num">${c.ctr==null?'—':(c.ctr*100).toFixed(2)+'%'}</td><td class="num">${money(c.cpc)}</td><td class="num">${c.noLeads?'<span class="muted">—</span>':int(c.co)}</td><td class="num">${c.noLeads?'<span class="muted">—</span>':money(c.cpa)}</td>${isG?`<td class="num">${int(c.ca)}</td>`:''}<td class="num">${LD_DATA ? leadsFor(c.ids, c.name, start, end) : '<span class="muted">—</span>'}</td></tr>`).join('') + '</tbody>';
+  $('adNote').textContent = (isG ? 'Conversions are as counted by Google Ads, and can include calls and other actions. ' : 'Leads are as attributed by Meta. ') + 'GHL leads are new contacts in GoHighLevel whose tracking points to that campaign, so the two counts rarely match. A dash means the figure wasn\u2019t available.';
+}
+
+/* GoHighLevel leads (read-only extract). The server only returns names and contact details to
+   Manor on High and Ready to Rank users; everyone else gets the counts. */
+let LD_DATA = null, LD_LIMIT = 50;
+const ldDate = iso => new Date(iso).toLocaleDateString('en-CA', {timeZone:'Australia/Melbourne'});
+const LD_ORDER = ['Google Ads','Meta Ads','Google Business Profile','Organic search','Social media','Direct or untracked','Other'];
+async function loadLeads(){
+  try{
+    if(!LD_DATA){ const res = await fetch(`${SUPA.rpc}manor_leads`, {method:'POST', cache:'no-store', headers:{...authHeaders(),'Content-Type':'application/json'}, body:'{}'});
+      if(!res.ok) throw new Error('HTTP '+res.status); LD_DATA = await res.json(); }
+    renderPaid(); renderLeads();
+  }catch(e){ $('ldNote').textContent = 'Could not load leads, so none are shown. ('+(e.message||e)+')'; }
+}
+function ldWindow(){ const end = shAddDays(new Date().toISOString().slice(0,10),-1); return {end, start:shAddDays(end,-(AD_DAYS-1)), pStart:shAddDays(end,-(2*AD_DAYS-1))}; }
+function leadsFor(ids, name, start, end){ const n = LD_DATA.rows.filter(r => { const d = ldDate(r.added_at); return d >= start && d <= end && r.campaign && (ids.includes(String(r.campaign)) || r.campaign === name); }).length; return n; }
+function renderLeads(){
+  if(!LD_DATA) return;
+  const {start,end,pStart} = ldWindow(), all = LD_DATA.rows, cur = all.filter(r => { const d = ldDate(r.added_at); return d >= start && d <= end; }), prev = all.filter(r => { const d = ldDate(r.added_at); return d >= pStart && d < start; });
+  const first = all.length ? ldDate(all[all.length-1].added_at) : null, covered = first && first <= pStart, int = v => Math.round(v).toLocaleString('en-AU');
+  const count = (a,c) => a.filter(r => r.channel === c).length, paid = a => count(a,'Google Ads')+count(a,'Meta Ads');
+  const gSpend = AD_ROWS ? AD_ROWS.filter(r => r.period_date >= start && r.period_date <= end).reduce((t,r) => t+(+r.spend||0),0) : 0, pN = paid(cur);
+  $('ldTiles').innerHTML = shTile('New leads', int(cur.length), shChg(cur.length, covered ? prev.length : null)) + shTile('From Google Ads', int(count(cur,'Google Ads')), shChg(count(cur,'Google Ads'), covered ? count(prev,'Google Ads') : null)) + shTile('From Meta Ads', int(count(cur,'Meta Ads')), shChg(count(cur,'Meta Ads'), covered ? count(prev,'Meta Ads') : null))
+    + shTile('Ad spend per tracked ad lead', pN ? '$'+(gSpend/pN).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—', '<div class="sh-chg">Google + Meta spend ÷ leads tracked to those ads</div>') + shTile('Direct or untracked', int(count(cur,'Direct or untracked')), `<div class="sh-chg">${cur.length ? Math.round(count(cur,'Direct or untracked')/cur.length*100) : 0}% of new leads</div>`);
+  const max = Math.max(1, ...LD_ORDER.map(c => count(cur,c)));
+  $('ldBars').innerHTML = LD_ORDER.filter(c => count(cur,c)).map(c => `<div class="brow"><span class="bname">${esc(c)}</span><div class="btrack"><div class="bfill" style="width:${Math.max(2,Math.round(count(cur,c)/max*100))}%"></div></div><span class="bval">${int(count(cur,c))}</span></div>`).join('') || '<div class="pg-sub">No leads in this period.</div>';
+  const c = shSeries(cur.map(r => ({d:ldDate(r.added_at)})),'d',() => 1,AD_DAYS,start,end);
+  c.buckets.forEach(b => { if(c.vals[b] == null) c.vals[b] = 0; });
+  pgDrawChart($('ldChart'), {months:c.buckets, fmt:pgInt, step:shStep(c.buckets.length), xLabel:shDm, aria:'New leads over time', series:[{name:'New leads', colour:'#E2B934', vals:c.vals}],
+    tip:d => `<b>${c.weekly?'Week of ':''}${shDmy(d)}</b>New leads: ${int(c.vals[d]||0)}`});
+  $('ldNote').textContent = `${shDmy(start)} to ${shDmy(end)}. A lead is a new contact in GoHighLevel, which includes brochure downloads as well as tour and enquiry forms. Channel comes from the tracking on that contact's latest visit, so "direct or untracked" can include people who first came from an ad or search but whose tracking wasn't carried through.`;
+  const sel = $('ldChannel');
+  if(!sel.options.length) sel.innerHTML = '<option value="all">All channels</option>' + LD_ORDER.map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+  renderLeadList();
+}
+function renderLeadList(){
+  if(!LD_DATA) return;
+  const {start,end} = ldWindow(), ch = $('ldChannel').value, q = ($('ldSearch').value||'').trim().toLowerCase(), ok = LD_DATA.details;
+  $('ldSearch').style.display = ok ? '' : 'none';
+  const list = LD_DATA.rows.filter(r => { const d = ldDate(r.added_at); if(d < start || d > end) return false; if(ch !== 'all' && r.channel !== ch) return false;
+    return !q || [r.first_name,r.last_name,r.email,r.phone].some(v => String(v||'').toLowerCase().includes(q)); });
+  $('ldCount').textContent = `${list.length.toLocaleString('en-AU')} leads`;
+  const dm = iso => { const d = ldDate(iso); return d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4); };
+  const shown = list.slice(0, LD_LIMIT), phone = v => String(v||'').replace(/[^+\d]/g,'');
+  $('ldTbl').innerHTML = ok
+    ? `<thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Form</th><th>Channel</th><th>Event</th><th>Event date</th><th class="num">Guests</th></tr></thead><tbody>` + shown.map(r => `<tr><td style="white-space:nowrap;font-family:var(--mono);font-size:11.5px">${dm(r.added_at)}</td><td>${esc([r.first_name,r.last_name].filter(Boolean).join(' ')||'No name')}${r.message ? `<span class="ld-msg">${esc(r.message.slice(0,160))}</span>` : ''}</td><td>${r.email ? `<a class="ld-link" href="mailto:${esc(r.email)}">${esc(r.email)}</a>` : '—'}</td><td>${r.phone ? `<a class="ld-link" href="tel:${esc(phone(r.phone))}">${esc(r.phone)}</a>` : '—'}</td><td>${esc(r.form_source||'—')}</td><td>${esc(r.channel)}</td><td>${esc(r.event_type||'—')}</td><td style="white-space:nowrap">${r.event_date && /^\d{4}-\d{2}-\d{2}/.test(r.event_date) ? esc(r.event_date.slice(8,10)+'/'+r.event_date.slice(5,7)+'/'+r.event_date.slice(0,4)) : esc(r.event_date||'—')}</td><td class="num">${esc(r.guests||'—')}</td></tr>`).join('') + '</tbody>'
+    : `<thead><tr><th>Date</th><th>Form</th><th>Channel</th></tr></thead><tbody>` + shown.map(r => `<tr><td style="font-family:var(--mono);font-size:11.5px">${dm(r.added_at)}</td><td>${esc(r.form_source||'—')}</td><td>${esc(r.channel)}</td></tr>`).join('') + '</tbody>';
+  $('ldMore').style.display = list.length > LD_LIMIT ? '' : 'none';
+  $('ldListNote').textContent = ok ? 'From GoHighLevel, read-only. Please treat these contact details as private: they are for following up enquiries only.' : 'Names and contact details are only shown to Manor on High and Ready to Rank.';
 }
 
 /* Every public post is fetched once, in pages, and shared by the Social and Reels tabs. */
