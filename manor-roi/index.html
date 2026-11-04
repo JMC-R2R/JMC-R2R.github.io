@@ -42,7 +42,7 @@
     --azure:#E2B934;       /* secondary → Manor gold (the Manor × Savvas blend) */
   }
   body[data-theme="search"],
-  body[data-theme="bench"]{
+  body[data-theme="bench"],body[data-theme="paid"]{
     --ink:#1B1719; --panel:#241F21; --panel-2:#2C2629; --line:#3A3236;
     --blue:#17B4F0;        /* primary accent → R2R blue (R2R runs search) */
     --azure:#E2B934;       /* secondary → Manor gold */
@@ -599,6 +599,16 @@
   html.embed .navbar{position:relative;top:auto}
 
 
+  /* Work done */
+  .wd-item{padding:9px 0;border-top:1px solid rgba(255,255,255,.06);font-size:13px;line-height:1.4;color:var(--white)}
+  .wd-item a{color:var(--white)}
+  .wd-item small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:3px}
+  .wd-count{font-family:var(--sans);font-size:26px;font-weight:700;color:var(--white);margin:2px 0 8px}
+  /* Period switchers, GA4 and paid tiles */
+  .sh-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px}
+  .sh-chg{font-family:var(--mono);font-size:11px;margin-top:6px;color:var(--muted)}
+  .sh-chg.up{color:var(--good)} .sh-chg.down{color:var(--bad)}
+  .sh-range{margin-bottom:12px}
   /* Instagram engagement against competitors */
   .eng-venue{all:unset;cursor:pointer;color:var(--white);font-family:var(--sans);border-bottom:1px dotted var(--muted)}
   .eng-venue:hover,.eng-venue:focus-visible{color:var(--azure);border-bottom-color:var(--azure)}
@@ -708,6 +718,7 @@
     <button class="tab active" id="tabSearch" role="tab" onclick="showView('search')"><span class="ti">◎</span>Search &amp; Local</button>
     <button class="tab" id="tabBench" role="tab" onclick="showView('bench')"><span class="ti">▤</span>Benchmarking</button>
     <button class="tab" id="tabReels" role="tab" onclick="showView('reels')"><span class="ti">▶</span>Reels &amp; Posts<span class="tnew">New</span></button>
+    <button class="tab" id="tabPaid" role="tab" onclick="showView('paid')"><span class="ti">◈</span>Paid Ads<span class="tnew">New</span></button>
     <button class="tab" id="tabAi" role="tab" onclick="showView('ai')"><span class="ti">✦</span>AI Search<span class="tnew">New</span></button>
     <button class="tab" id="tabSocial" role="tab" onclick="showView('social')"><span class="ti">◍</span>Social</button>
     <button class="tab" id="tabRoi" role="tab" onclick="showView('roi')"><span class="ti">$</span>Marketing ROI</button>
@@ -919,6 +930,10 @@
   <!-- NUMBERS FIRST. Search Console leads: it is the closest thing to "did people
        find us on Google this month", and it renders for every month, unlike the
        competitor benchmark which only exists from Jul 2026. -->
+  <div class="seclabel" id="wdLabel">Work done this month</div>
+  <div class="grid g3" id="wdGrid"></div>
+  <div class="note" id="wdNote"></div>
+
   <div class="seclabel">Your search performance · Google Search Console</div>
   <div class="grid g4">
     <div class="card hero accent"><div class="lbl">Clicks</div><div class="big" id="sc1">—</div><div class="small">from Google Search</div><div class="delta" id="sc1Delta"></div></div>
@@ -934,6 +949,7 @@
 
   <div class="seclabel">Clicks &amp; impressions over time</div>
   <div class="trend">
+    <div class="pg-range sh-range" id="scRange" role="group" aria-label="Search Console period"></div>
     <div class="legend">
       <span><i style="background:var(--blue)"></i>Clicks</span>
       <span><i style="background:var(--manor-gold)"></i>Impressions</span>
@@ -941,6 +957,15 @@
     <div id="scChart"></div>
     <div class="note" id="scChartNote"></div>
   </div>
+
+  <div class="seclabel">Website analytics · Google Analytics 4</div>
+  <div class="pg-range sh-range" id="gaRange" role="group" aria-label="Analytics period"></div>
+  <div class="sh-tiles" id="gaTiles"></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><div class="pg-title">Sessions</div><div class="pg-chart" id="gaSess" style="margin-top:8px"></div></div>
+    <div class="card"><div class="pg-title">Enquiry events</div><div class="pg-chart" id="gaEvents" style="margin-top:8px"></div></div>
+  </div>
+  <div class="note" id="gaNote"></div>
 
   <div class="seclabel">Google Business Profile · your local presence</div>
   <div class="grid g4">
@@ -993,6 +1018,9 @@
     </div>
   </div>
 
+  <div class="seclabel">Summary</div>
+  <div class="card" id="qSummary" style="line-height:1.65;font-size:14.5px;color:var(--white)">—</div>
+
   <div class="seclabel">Scorecard · where Manor ranks across every channel</div>
   <div class="card"><div class="tblwrap"><table class="kw score" id="qScore"></table></div><div class="note" id="qScoreNote"></div></div>
 
@@ -1029,11 +1057,31 @@
     <div class="note">Sorted by search volume. “Best rival” is the highest-ranking venue among the venues we track — not the whole search result, which also contains directories such as Easy Weddings and Tagvenue.</div>
   </div>
 
-  <div class="seclabel">What this means</div>
-  <div class="card" id="qSummary" style="line-height:1.65;font-size:14.5px;color:var(--white)">—</div>
 </div><!-- /viewBench -->
 
 <!-- ===== AI SEARCH VIEW — is Manor recommended when couples ask AI? ===== -->
+<div class="view" id="viewPaid" data-anchor="sec:paid">
+  <div class="r2r-banner">
+    <img class="r2r-mark" src="rtr-logo.png" alt="Ready to Rank">
+    <div class="sb-body">
+      <div class="sb-title">Paid ads managed by Ready&nbsp;to&nbsp;Rank</div>
+      <div class="sb-sub">Google Ads and Meta Ads results. These period buttons are separate from the month chips above.</div>
+    </div>
+  </div>
+  <div class="pg-range" id="adPlat" role="group" aria-label="Ad platform"></div>
+  <div class="pg-range" id="adRange" role="group" aria-label="Period"></div>
+  <div class="card" id="adSummary" style="line-height:1.65;font-size:14.5px;color:var(--white)">—</div>
+  <div class="seclabel">Results</div>
+  <div class="sh-tiles" id="adTiles"></div>
+  <div class="seclabel">Over time</div>
+  <div class="grid g2">
+    <div class="card"><div class="pg-title">Spend</div><div class="pg-chart" id="adSpend" style="margin-top:8px"></div></div>
+    <div class="card"><div class="pg-title" id="adConvTitle">Conversions</div><div class="pg-chart" id="adConv" style="margin-top:8px"></div></div>
+  </div>
+  <div class="seclabel">Campaigns</div>
+  <div class="card"><div class="tblwrap"><table class="kw" id="adTbl"></table></div><div class="note" id="adNote"></div></div>
+</div><!-- /viewPaid -->
+
 <div class="view" id="viewReels" data-anchor="sec:reels">
   <div class="savvas-banner">
     <img class="savvas-mascot" src="https://cdn.prod.website-files.com/67afd385cf839b0956c26535/68313a1298a186b5fcc266c2_Savvas%20Icon%20Logomarks-05.png" alt="Savvas Studio">
@@ -1179,7 +1227,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-11-04-1030';
+const BUILD = '2026-11-04-1230';
 
 async function newerBuildAvailable(){
   try{
@@ -1396,6 +1444,7 @@ async function startApp(){
   else if(h.view === 'social') showView('social');
   else if(h.view === 'bench') showView('bench');
   else if(h.view === 'reels') showView('reels');
+  else if(h.view === 'paid') showView('paid');
   else if(h.view === 'ai') showView('ai');
   else showView('search');
   // The ROI figure element is id="roi", so a #roi url makes the browser anchor-jump
@@ -1473,6 +1522,8 @@ SUPA.seod    = SUPA.url + "/rest/v1/manor_seo_daily";
 SUPA.engSnap = SUPA.url + "/rest/v1/manor_social_engagement_snapshots";
 SUPA.engMon  = SUPA.url + "/rest/v1/manor_social_engagement_monthly";
 SUPA.cposts  = SUPA.url + "/rest/v1/manor_social_competitor_posts";
+SUPA.hist    = SUPA.url + "/rest/v1/manor_search_daily";
+SUPA.paid    = SUPA.url + "/rest/v1/manor_paid_daily";
 const CLIENT_DOMAIN = 'manoronhigh.com.au';
 SUPA.months = SUPA.url + "/rest/v1/manor_month_index";
 
@@ -2413,6 +2464,7 @@ function renderSearch(D){
 /* Cross-channel scorecard: Manor's rank in the tracked set on every channel we measure,
    with movement where an earlier reading exists. Each row says what it is measured on,
    because the channels have different start dates and cadences. */
+let SCORE_ROWS = [];
 function renderScorecard(D){
   const el = $('qScore'); if(!el) return;
   const nameOf = {}; D.comps.forEach(c => nameOf[c.domain] = c.label);
@@ -2452,6 +2504,7 @@ function renderScorecard(D){
         <td class="num"><span class="rankpill ${r.rank===1?'r1':''}">${r.rank ? ord(r.rank) : '—'}</span> <span class="muted">of ${r.of}</span></td>
         <td>${r.rank === 1 ? '<b style="color:var(--manor-gold)">Manor on High</b>' : (leader || '—')}</td><td class="num">${mv}</td><td class="muted" style="font-size:12px">${basis}</td></tr>`).join('')
     + '</tbody>';
+  SCORE_ROWS = rows;
   const firsts = rows.filter(r => r[2].rank === 1).map(r => r[0]);
   const list = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length-1];
   $('qScoreNote').innerHTML = (firsts.length ? `<b>Manor leads the set on ${list(firsts)}.</b> ` : '')
@@ -2600,13 +2653,25 @@ function renderCompetitors(D){
     // which is not necessarily the visibility leader.
     const topCover = cur.reduce((a,b)=> (b.keywords_ranked||0) > (a.keywords_ranked||0) ? b : a, cur[0]);
     const coverPhrase = topCover.domain===CLIENT_DOMAIN
-      ? 'more than any other venue in the set'
-      : `second only to ${nameOf[topCover.domain]||topCover.domain} on ${topCover.keywords_ranked}`;
+      ? 'more than any other venue tracked'
+      : `behind ${esc(nameOf[topCover.domain]||topCover.domain)} on ${topCover.keywords_ranked}`;
+    const leader = cur[0];
+    // Worked out from the same keyword rows the head-to-head and battleground panels use.
+    const posOf = {}; D.ranks.filter(r => r.period_date === P).forEach(r => { const v = +r.position; if(r.position != null && v > 0 && v < 100) (posOf[r.domain] = posOf[r.domain] || {})[r.keyword] = v; });
+    const mine = posOf[CLIENT_DOMAIN] || {}, myPos = Object.values(mine);
+    const page1 = myPos.filter(v => v <= 10).length, page2 = myPos.filter(v => v > 10 && v <= 20).length;
+    const h2h = cur.filter(r => r.domain !== CLIENT_DOMAIN).map(r => { const t = posOf[r.domain] || {}; const kws = new Set([...Object.keys(mine), ...Object.keys(t)]); let ahead = 0, behind = 0;
+      kws.forEach(k => { const a = mine[k] ?? 999, b = t[k] ?? 999; if(a < b) ahead++; else if(b < a) behind++; }); return {name:nameOf[r.domain]||r.domain, ahead, behind, gap:ahead-behind}; }).sort((a,b) => a.gap-b.gap);
+    const closest = h2h[0], weakest = h2h[h2h.length-1];
+    const others = (SCORE_ROWS||[]).filter(r => !/^(Search visibility|Keywords ranking)/.test(r[0]) && r[2].rank).map(r => `${ord(r[2].rank)} of ${r[2].of} on ${esc(r[0].replace('Google AI answers citing the venue','Google AI answers'))}`);
+    const list = a => a.length < 2 ? a.join('') : a.slice(0,-1).join(', ') + ' and ' + a[a.length-1];
     $('qSummary').innerHTML =
-      `Across the ${me.keywords_tracked} wedding and function keywords we track, <b>Manor on High ranks ${ord(myRank)} of ${cur.length}</b> venues on search visibility (${(+me.visibility).toFixed(2)}%).${moved} ` +
-      `You appear for <b>${me.keywords_ranked}</b> of them — ${coverPhrase} — with an average position of ${me.avg_position!=null?Math.round(me.avg_position):'—'}. ` +
-      (bestMap(CLIENT_DOMAIN)?`You also hold <b>#${bestMap(CLIENT_DOMAIN)} in the Google map pack</b> on ${me.map_top3} tracked keyword${me.map_top3===1?'':'s'}, which is where most local wedding searches actually convert. `:'') +
-      `The blue-link results for these terms are dominated by directories rather than venues, so the realistic near-term win is moving page-two rankings onto page one.`;
+      `Across the ${me.keywords_tracked} wedding and function keywords we track, <b>Manor on High ranks ${ord(myRank)} of ${cur.length}</b> venues on search visibility (${(+me.visibility).toFixed(2)}%)` +
+      (leader.domain !== CLIENT_DOMAIN ? `, behind ${esc(nameOf[leader.domain]||leader.domain)} on ${(+leader.visibility).toFixed(2)}%` : '') + `.${moved} ` +
+      `You appear for <b>${me.keywords_ranked}</b> of those keywords, ${coverPhrase}, with <b>${page1} on page one</b> and <b>${page2} on page two</b>, which are the closest ranking gains. ` +
+      (bestMap(CLIENT_DOMAIN) ? `You hold #${bestMap(CLIENT_DOMAIN)} in the Google map pack on ${me.map_top3} tracked keyword${me.map_top3===1?'':'s'}. ` : '') +
+      (closest ? `Head to head, ${esc(closest.name)} is the toughest rival (you lead on ${closest.ahead} keywords, they lead on ${closest.behind}), and you are furthest ahead of ${esc(weakest.name)} (${weakest.ahead} to ${weakest.behind}). ` : '') +
+      (others.length ? `Across other channels, Manor ranks ${list(others)}.` : '');
   }
 
 }
@@ -2711,13 +2776,13 @@ function renderOwn(D){
       + (partial ? '. <b>This month is still in progress</b>, so totals are lower than a full month by definition and no month-on-month change is shown.' : '')
       + ` <b>Average position is not the same measure as the tracked rankings on Benchmarking</b> — it is impressions-weighted across every query the site appears for, including people searching for “Manor on High” by name, so it always reads far stronger than a tracked-keyword position.`;
 
-    drawSeoChart(seoMonth, P);
   } else {
     ['sc1','sc2','sc3','sc4','sc5','sc6'].forEach(id => { const el=$(id); if(el) el.textContent='—'; });
     ['sc1Delta','sc2Delta','sc5Delta','sc6Delta'].forEach(id=>{ const el=$(id); if(el) el.textContent=''; });
     $('scNote').innerHTML = `Search Console and analytics data for Manor on High starts in <b>May 2026</b> — nothing was recorded for ${monthLabel(P)}.`;
-    drawSeoChart([], P);
   }
+  loadSearchHistory();
+  loadWorkDone(P);
 }
 
 /* Daily clicks (left axis) and impressions (right). Two axes because impressions
@@ -2750,15 +2815,15 @@ function drawSeoChart(rows, P){
   const impArea=`M${X(0).toFixed(1)} ${(PT+ph).toFixed(1)} `+data.map((r,i)=>'L'+X(i).toFixed(1)+' '+YI(+r.impressions||0).toFixed(1)).join(' ')+` L${X(n-1).toFixed(1)} ${(PT+ph).toFixed(1)} Z`;
   const impLine=data.map((r,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+YI(+r.impressions||0).toFixed(1)).join(' ');
   const clkLine=data.map((r,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+YC(+r.clicks||0).toFixed(1)).join(' ');
+  const longRange = n > 40 || String(data[0].period_date).slice(0,4) !== String(data[n-1].period_date).slice(0,4);
   let xl=''; data.forEach((r,i)=>{ if(i===0||i===n-1||i===Math.floor(n/2))
-    xl+=`<text x="${X(i).toFixed(1)}" y="${H-PB+20}" fill="#8C8C99" font-size="10" font-family="Space Mono, monospace" text-anchor="middle">${String(r.period_date).slice(8,10)}/${String(r.period_date).slice(5,7)}</text>`; });
+    xl+=`<text x="${X(i).toFixed(1)}" y="${H-PB+20}" fill="#8C8C99" font-size="10" font-family="Space Mono, monospace" text-anchor="${i===0?'start':i===n-1?'end':'middle'}">${String(r.period_date).slice(8,10)}/${String(r.period_date).slice(5,7)}${longRange?'/'+String(r.period_date).slice(2,4):''}</text>`; });
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily Search Console clicks and impressions">`
     +`${grid}${axL}${axR}`
     +`<path d="${impArea}" fill="${gold}" opacity="0.12"/>`
     +`<path d="${impLine}" fill="none" stroke="${gold}" stroke-width="2"/>`
     +`<path d="${clkLine}" fill="none" stroke="${blue}" stroke-width="2.5"/>`
     +`${xl}</svg>`;
-  $('scChartNote').textContent = `${data.length} day${data.length===1?'':'s'} with Search Console data. Left axis clicks, right axis impressions.`;
   regPinMap(el,'scChart',data.map(r=>String(r.period_date)),data.map(r=>String(r.period_date)),data.map((_,i)=>X(i)),W);
 }
 const ord = n => n+({1:'st',2:'nd',3:'rd'}[n%100>10&&n%100<14?0:n%10]||'th');
@@ -3027,7 +3092,7 @@ function aiChart(rows){
 
 /* ---------- view tabs ---------- */
 function showView(v){
-  if(v!=='social' && v!=='search' && v!=='bench' && v!=='ai' && v!=='reels') v='roi';
+  if(v!=='social' && v!=='search' && v!=='bench' && v!=='ai' && v!=='reels' && v!=='paid') v='roi';
   $('viewAi').classList.toggle('active',     v==='ai');
   $('tabAi').classList.toggle('active',      v==='ai');
   $('viewRoi').classList.toggle('active',    v==='roi');
@@ -3038,11 +3103,13 @@ function showView(v){
   $('tabSocial').classList.toggle('active',  v==='social');
   $('tabSearch').classList.toggle('active',  v==='search');
   $('tabBench').classList.toggle('active',   v==='bench');
+  $('viewPaid').classList.toggle('active',   v==='paid');
+  $('tabPaid').classList.toggle('active',    v==='paid');
   $('viewReels').classList.toggle('active',  v==='reels');
   $('tabReels').classList.toggle('active',   v==='reels');
   // Per-tab co-branding: ROI = Manor+R2R, Social = Manor+Savvas, Search = R2R-led.
   document.body.dataset.theme = v;
-  $('viewLabel').textContent = v==='social' ? 'Social' : v==='search' ? 'Search & Local' : v==='bench' ? 'Benchmarking' : v==='reels' ? 'Reels & Posts' : v==='ai' ? 'AI Search' : 'Marketing ROI';
+  $('viewLabel').textContent = v==='social' ? 'Social' : v==='search' ? 'Search & Local' : v==='bench' ? 'Benchmarking' : v==='reels' ? 'Reels & Posts' : v==='paid' ? 'Paid Ads' : v==='ai' ? 'AI Search' : 'Marketing ROI';
   syncHash();
   // Tell the hub which section is open, so its address bar deep-links it.
   if (EMBED) try { window.parent.postMessage({ r2rDashboardTab: v }, location.origin); } catch (e) {}
@@ -3050,6 +3117,7 @@ function showView(v){
   if(PERIOD) $('period').textContent = monthLabel(PERIOD);
   if(v==='social') loadSocial();
   if(v==='reels') loadReels();
+  if(v==='paid') loadPaid();
   if((v==='search' || v==='bench') && !SEARCH_LOADED) loadSearch();
   if(v==='ai') AI_DATA ? renderAi(AI_DATA) : loadAi();
   // keep the active tab visible when the tab strip scrolls sideways on a phone
@@ -3158,9 +3226,9 @@ function pgDrawChart(el, o){
     if(s.splitAt != null){ lines += paths(s, 0, s.splitAt, '#6E6E7A', w) + paths(s, s.splitAt, n-1, s.colour, w); }
     else lines += paths(s, 0, n-1, s.colour, w);
   });
-  const step = n > 13 ? 6 : 3;
+  const step = o.step || (n > 13 ? 6 : 3), xLab = o.xLabel || pgLabel;
   let xl = '';
-  o.months.forEach((m,i) => { if((n-1-i) % step === 0) xl += `<text x="${X(i).toFixed(1)}" y="${H-7}" text-anchor="${i === 0 ? 'start' : i === n-1 ? 'end' : 'middle'}" font-family="Space Mono,monospace" font-size="10" fill="#8C8C99">${pgLabel(m)}</text>`; });
+  o.months.forEach((m,i) => { if((n-1-i) % step === 0) xl += `<text x="${X(i).toFixed(1)}" y="${H-7}" text-anchor="${i === 0 ? 'start' : i === n-1 ? 'end' : 'middle'}" font-family="Space Mono,monospace" font-size="10" fill="#8C8C99">${xLab(m)}</text>`; });
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.aria||'Monthly trend')}">${g}${lines}${xl}<g class="pg-hover" style="display:none"><line y1="${PT}" y2="${PT+ph}" stroke="rgba(255,255,255,.45)"/>${o.series.map(s => `<circle r="4.5" fill="${s.colour}" stroke="#17171C" stroke-width="2"/>`).join('')}</g></svg>`;
   const svg = el.querySelector('svg'), hov = svg.querySelector('.pg-hover'), cross = hov.querySelector('line'), dots = hov.querySelectorAll('circle');
   const leave = () => { hov.style.display = 'none'; pgTip(null); };
@@ -3181,6 +3249,145 @@ function pgTip(html, x, y){
   const w = t.offsetWidth, h = t.offsetHeight;
   t.style.left = Math.max(8, Math.min(window.innerWidth-w-8, x+14)) + 'px';
   t.style.top  = Math.max(8, (y-h-12 < 8 ? y+16 : y-h-12)) + 'px';
+}
+
+/* ================= PERIOD SWITCHERS: SEARCH CONSOLE, GA4, PAID ADS =================
+   Rolling windows ending on the latest day with data. From 3 months up, charts show weekly
+   totals so they stay readable. Changes compare with the equal period just before, and are
+   left out when that earlier period isn't fully covered. */
+const SH_RANGES = [{d:7,l:'7 days'},{d:14,l:'14 days'},{d:30,l:'1 month'},{d:91,l:'3 months'},{d:182,l:'6 months'},{d:487,l:'16 months'}];
+const shAddDays = (iso, n) => { const d = new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); };
+const shWeek = iso => { const d = new Date(iso+'T00:00:00Z'), w = (d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-w); return d.toISOString().slice(0,10); };
+const shDm = iso => iso.slice(8,10)+'/'+iso.slice(5,7);
+const shDmy = iso => iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(2,4);
+const shBtns = (ranges, cur, fn) => ranges.map(r => `<button type="button" class="${r.d===cur?'on':''}" onclick="${fn}(${r.d})">${r.l}</button>`).join('');
+const shChg = (now, then, goodUp=true) => { if(now == null || then == null || !then) return '<div class="sh-chg">no earlier period to compare</div>';
+  const p = (now-then)/then*100, t = Math.abs(p) < 0.5 ? '' : ((p > 0) === goodUp ? 'up' : 'down');
+  return `<div class="sh-chg ${t}">${p > 0 ? '+' : ''}${Math.round(p)}% on the period before</div>`; };
+const shTile = (lbl, val, sub) => `<div class="card"><div class="lbl">${lbl}</div><div class="big" style="font-size:28px">${val}</div>${sub||''}</div>`;
+/* Totals per bucket: every day under 3 months, weekly from there. */
+function shSeries(rows, dateKey, valFn, days, start, end){
+  const weekly = days >= 91, buckets = [], vals = {};
+  if(weekly){ for(let w = shWeek(start); w <= end; w = shAddDays(w,7)) buckets.push(w); }
+  else { for(let d = start; d <= end; d = shAddDays(d,1)) buckets.push(d); }
+  rows.forEach(r => { const d = String(r[dateKey]).slice(0,10); if(d < start || d > end) return; const v = valFn(r); if(v == null) return; const k = weekly ? shWeek(d) : d; vals[k] = (vals[k]||0)+v; });
+  return {buckets, vals, weekly};
+}
+function shStep(n){ return Math.max(1, Math.ceil(n/5)); }
+
+/* Work done follows the month chips. Wording comes from each item's recorded status, so a
+   piece still awaiting approval is never described as published. */
+const WD_GROUPS = [['blog','Blogs'],['gbp','Google Business Profile posts'],['location_page','Location pages']];
+const wdStatus = r => {
+  if(r.stream === 'gbp') return r.client_status === 'live' ? 'Posted' : 'Scheduled or in progress';
+  if(r.client_status === 'live' || r.client_status === 'published') return 'Published';
+  if(r.client_status === 'for_approval') return r.stream === 'location_page' ? 'Built, awaiting your approval' : 'Written, awaiting your approval';
+  return 'In progress';
+};
+async function loadWorkDone(P){
+  const month = (P || PERIOD || '').slice(0,7); if(!month) return;
+  $('wdLabel').textContent = `Work done in ${monthLabel(month + '-01')}`;
+  try{
+    const res = await fetch(`${SUPA.rpc}manor_work_done`, {method:'POST', cache:'no-store', headers:{...authHeaders(), 'Content-Type':'application/json'}, body:JSON.stringify({p_month:month})});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const rows = await res.json();
+    $('wdGrid').innerHTML = WD_GROUPS.map(([k,l]) => { const list = rows.filter(r => r.stream === k);
+      return `<div class="card"><div class="lbl">${l}</div><div class="wd-count">${list.length}</div>` + (list.length ? list.map(r => {
+        const safe = /^https:\/\/(www\.)?manoronhigh\.com\.au\//.test(r.live_url||'') ? r.live_url : null;
+        return `<div class="wd-item">${safe ? `<a href="${esc(safe)}" target="_blank" rel="noopener">${esc(r.title)}</a>` : esc(r.title)}<small>${r.publish_date ? fmtAU(r.publish_date) + ' · ' : ''}${wdStatus(r)}</small></div>`; }).join('') : '<div class="pg-sub">Nothing recorded for this month.</div>') + `</div>`; }).join('');
+    $('wdNote').textContent = 'From the content hub. Status shows where each piece is up to. Link building is reported separately.';
+  }catch(e){ $('wdGrid').innerHTML = ''; $('wdNote').textContent = 'Could not load this month’s work, so none is listed. ('+(e.message||e)+')'; }
+}
+
+let SH_ROWS = null, SC_DAYS = 30, GA_DAYS = 30;
+async function loadSearchHistory(){
+  try{
+    if(!SH_ROWS){ const all = []; for(let off = 0; off < 5000; off += 1000){ const page = await getJSON(`${SUPA.hist}?select=*&order=metric_date&limit=1000&offset=${off}`); all.push(...page); if(page.length < 1000) break; } SH_ROWS = all; }
+    renderScRange(); renderGa();
+  }catch(e){ $('scChartNote').textContent = 'Could not load Search Console history, so no chart is shown. ('+(e.message||e)+')'; }
+}
+function setScDays(d){ SC_DAYS = d; renderScRange(); }
+function setGaDays(d){ GA_DAYS = d; renderGa(); }
+function renderScRange(){
+  if(!SH_ROWS) return;
+  $('scRange').innerHTML = shBtns(SH_RANGES, SC_DAYS, 'setScDays');
+  const has = SH_ROWS.filter(r => r.gsc_clicks != null); if(!has.length){ drawSeoChart([], null); $('scChartNote').textContent = 'No Search Console data yet.'; return; }
+  const end = has[has.length-1].metric_date, start = shAddDays(end, -(SC_DAYS-1)), first = has[0].metric_date;
+  const inRange = has.filter(r => r.metric_date >= start && r.metric_date <= end);
+  const c = shSeries(inRange, 'metric_date', r => +r.gsc_clicks, SC_DAYS, start, end), i = shSeries(inRange, 'metric_date', r => +r.gsc_impressions, SC_DAYS, start, end);
+  drawSeoChart(c.buckets.filter(b => c.vals[b] != null).map(b => ({period_date:b, clicks:c.vals[b], impressions:i.vals[b]})), null);
+  const sum = (a,k) => a.reduce((t,r) => t+(+r[k]||0),0), pStart = shAddDays(start,-SC_DAYS), prev = has.filter(r => r.metric_date >= pStart && r.metric_date < start);
+  const covered = prev.length >= SC_DAYS*0.95, ch = (a,b) => { if(!covered || !b) return ''; const p = (a-b)/b*100; return ` (${p>0?'+':''}${Math.round(p)}% on the period before)`; };
+  $('scChartNote').textContent = `${shDmy(start < first ? first : start)} to ${shDmy(end)}: ${num(sum(inRange,'gsc_clicks'))} clicks${ch(sum(inRange,'gsc_clicks'),sum(prev,'gsc_clicks'))} and ${num(sum(inRange,'gsc_impressions'))} impressions${ch(sum(inRange,'gsc_impressions'),sum(prev,'gsc_impressions'))}. ${c.weekly?'Weekly totals. ':''}Left axis clicks, right axis impressions.`
+    + (start < first ? ` Search Console history for this property starts ${shDmy(first)}, so this period is shorter than selected.` : '');
+}
+function renderGa(){
+  if(!SH_ROWS) return;
+  $('gaRange').innerHTML = shBtns(SH_RANGES, GA_DAYS, 'setGaDays');
+  const has = SH_ROWS.filter(r => r.sessions != null); if(!has.length) return;
+  const lastFull = shAddDays(new Date().toISOString().slice(0,10), -1);
+  const end = has.map(r => r.metric_date).filter(d => d <= lastFull).pop() || has[has.length-1].metric_date, start = shAddDays(end, -(GA_DAYS-1));
+  const cur = has.filter(r => r.metric_date >= start && r.metric_date <= end), pStart = shAddDays(start,-GA_DAYS), prev = has.filter(r => r.metric_date >= pStart && r.metric_date < start);
+  const ok = prev.length >= GA_DAYS*0.95, sum = (a,k) => a.reduce((t,r) => t+(+r[k]||0),0), n = v => Math.round(v).toLocaleString('en-AU');
+  const t = (k, a=cur, b=prev) => [sum(a,k), ok ? sum(b,k) : null];
+  const [sN,sP] = t('sessions'), [vN,vP] = t('pageviews'), [kN,kP] = t('key_events'), [eN,eP] = t('engaged_sessions');
+  const uN = sum(cur,'users')/(cur.length||1), uP = ok ? sum(prev,'users')/(prev.length||1) : null;
+  const rate = sN ? eN/sN : null, rateP = ok && sP ? eP/sP : null;
+  $('gaTiles').innerHTML = shTile('Sessions', n(sN), shChg(sN,sP)) + shTile('Average daily users', n(uN), shChg(uN,uP)) + shTile('Engagement rate', rate == null ? '—' : Math.round(rate*100)+'%', shChg(rate,rateP)) + shTile('Page views', n(vN), shChg(vN,vP)) + shTile('Enquiry events', n(kN), shChg(kN,kP));
+  const draw = (id, k, lbl) => { const c = shSeries(cur,'metric_date', r => r[k] == null ? null : +r[k], GA_DAYS, start, end);
+    pgDrawChart($(id), {months:c.buckets, fmt:pgInt, step:shStep(c.buckets.length), xLabel:shDm, aria:lbl+' over time', series:[{name:lbl, colour:'#17B4F0', vals:c.vals}],
+      tip:d => `<b>${c.weekly?'Week of ':''}${shDmy(d)}</b>${c.vals[d] == null ? '<span>No data</span>' : `${lbl}: ${n(c.vals[d])}`}`}); };
+  draw('gaSess','sessions','Sessions'); draw('gaEvents','key_events','Enquiry events');
+  $('gaNote').textContent = `${shDmy(start)} to ${shDmy(end)}, all traffic sources.${GA_DAYS >= 91 ? ' Charts show weekly totals.' : ''} Enquiry events are the actions marked as key events in Google Analytics. Users are averaged per day because adding daily users would count returning visitors more than once.`;
+}
+
+let AD_ROWS = null, AD_PLAT = 'google', AD_DAYS = 30;
+async function loadPaid(){
+  try{
+    if(!AD_ROWS){ const all = []; for(let off = 0; off < 20000; off += 1000){ const page = await getJSON(`${SUPA.paid}?select=*&order=period_date&limit=1000&offset=${off}`); all.push(...page); if(page.length < 1000) break; } AD_ROWS = all; }
+    renderPaid();
+  }catch(e){ $('adSummary').textContent = 'Could not reach the live database, so no ads figures are shown rather than stale ones. ('+(e.message||e)+')'; }
+}
+function setAdPlat(p){ AD_PLAT = p; renderPaid(); }
+function setAdDays(d){ AD_DAYS = d; renderPaid(); }
+function renderPaid(){
+  if(!AD_ROWS) return;
+  $('adPlat').innerHTML = [['google','Google Ads'],['meta','Meta Ads']].map(([k,l]) => `<button type="button" class="${AD_PLAT===k?'on':''}" onclick="setAdPlat('${k}')">${l}</button>`).join('');
+  $('adRange').innerHTML = shBtns(SH_RANGES, AD_DAYS, 'setAdDays');
+  const isG = AD_PLAT === 'google', conv = isG ? 'Conversions' : 'Leads', costL = isG ? 'Cost per conversion' : 'Cost per lead';
+  const all = AD_ROWS.filter(r => r.platform === AD_PLAT);
+  const today = new Date().toISOString().slice(0,10), end = shAddDays(today,-1), start = shAddDays(end,-(AD_DAYS-1)), pStart = shAddDays(start,-AD_DAYS);
+  const cur = all.filter(r => r.period_date >= start && r.period_date <= end), prev = all.filter(r => r.period_date >= pStart && r.period_date < start);
+  const dates = all.map(r => r.period_date).sort(), first = dates[0];
+  const sum = (a,k) => a.reduce((t,r) => t+(+r[k]||0),0);
+  const roll = a => { const sp = sum(a,'spend'), cl = sum(a,'clicks'), im = sum(a,'impressions'), co = sum(a,'conversions'), ca = sum(a,'phone_calls'); return {sp,cl,im,co,ca, cpc:cl?sp/cl:null, ctr:im?cl/im:null, cpa:co?sp/co:null}; };
+  const N = roll(cur), covered = first && first <= pStart && prev.length > 0, Pv = covered ? roll(prev) : {};
+  const money = v => v == null ? '—' : '$'+v.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2}), int = v => Math.round(v).toLocaleString('en-AU');
+  const label = (SH_RANGES.find(r => r.d === AD_DAYS)||{}).l;
+  $('adConvTitle').textContent = conv;
+  if(!N.sp && !N.im){
+    $('adSummary').innerHTML = `No ${isG?'Google':'Meta'} ads ran in the last ${esc(label)}.`;
+    ['adTiles','adSpend','adConv','adTbl'].forEach(id => $(id).innerHTML = ''); $('adNote').textContent = ''; return;
+  }
+  // Older Meta campaigns came through without lead figures, so they can't be counted as zero leads.
+  const noLeadData = r => !isG && r.period_date < '2026-08-01';
+  const scored = isG ? N : roll(cur.filter(r => !noLeadData(r)));
+  const leadPct = isG ? null : (N.sp ? scored.sp/N.sp : null);
+  $('adSummary').innerHTML = `In the ${shDmy(start)} to ${shDmy(end)} period, ${isG?'Google':'Meta'} Ads spent <b>${money(N.sp)}</b> for <b>${int(N.cl)} clicks</b> at ${money(N.cpc)} per click` +
+    (scored.co ? ` and <b>${int(scored.co)} ${conv.toLowerCase()}</b> at ${money(scored.cpa)} each` : '') + (isG && N.ca ? `, plus ${int(N.ca)} phone calls` : '') + `. ` +
+    (covered && Pv.cpa && scored.cpa && isG ? `Cost per conversion ${scored.cpa <= Pv.cpa ? 'improved' : 'rose'} from ${money(Pv.cpa)} in the period before. ` : '') +
+    (!isG && leadPct != null && leadPct < 0.999 ? 'Lead figures only cover campaigns from August 2026, so cost per lead excludes older spend. ' : '');
+  $('adTiles').innerHTML = shTile('Spend', money(N.sp), shChg(N.sp, Pv.sp, true).replace(/ (up|down)"/,'"')) + shTile(conv, int(scored.co), shChg(scored.co, covered && (isG || start >= '2026-08-01') ? Pv.co : null)) + shTile(costL, money(scored.cpa), shChg(scored.cpa, covered && (isG || start >= '2026-08-01') ? Pv.cpa : null, false))
+    + shTile('Clicks', int(N.cl), shChg(N.cl, Pv.cl)) + shTile('Cost per click', money(N.cpc), shChg(N.cpc, Pv.cpc, false)) + shTile('Click-through rate', N.ctr == null ? '—' : (N.ctr*100).toFixed(2)+'%', shChg(N.ctr, Pv.ctr)) + shTile('Impressions', int(N.im), shChg(N.im, Pv.im)) + (isG ? shTile('Phone calls', int(N.ca), shChg(N.ca, Pv.ca)) : '');
+  const draw = (id, k, lbl, fmtTip, tick) => { const c = shSeries(cur,'period_date', r => k === 'conversions' && noLeadData(r) ? null : +r[k], AD_DAYS, start, end);
+    pgDrawChart($(id), {months:c.buckets, fmt:pgInt, tickPre:tick, step:shStep(c.buckets.length), xLabel:shDm, aria:lbl+' over time', series:[{name:lbl, colour:'#17B4F0', vals:c.vals}],
+      tip:d => `<b>${c.weekly?'Week of ':''}${shDmy(d)}</b>${c.vals[d] == null ? '<span>Nothing recorded</span>' : `${lbl}: ${fmtTip(c.vals[d])}`}`}); };
+  draw('adSpend','spend','Spend',money,'$'); draw('adConv','conversions',conv,int,'');
+  const camps = {}; cur.forEach(r => { (camps[r.campaign_id] = camps[r.campaign_id] || {name:r.campaign_name, rows:[]}).rows.push(r); });
+  const rows = Object.values(camps).map(c => ({name:c.name, ...roll(c.rows), noLeads:c.rows.every(noLeadData)})).filter(c => c.sp > 0 || c.im > 0).sort((a,b) => b.sp-a.sp);
+  $('adTbl').innerHTML = `<thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Impressions</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">CPC</th><th class="num">${conv}</th><th class="num">${costL}</th>${isG?'<th class="num">Calls</th>':''}</tr></thead><tbody>`
+    + rows.map(c => `<tr><td>${esc(c.name||'Unnamed')}</td><td class="num">${money(c.sp)}</td><td class="num">${int(c.im)}</td><td class="num">${int(c.cl)}</td><td class="num">${c.ctr==null?'—':(c.ctr*100).toFixed(2)+'%'}</td><td class="num">${money(c.cpc)}</td><td class="num">${c.noLeads?'<span class="muted">—</span>':int(c.co)}</td><td class="num">${c.noLeads?'<span class="muted">—</span>':money(c.cpa)}</td>${isG?`<td class="num">${int(c.ca)}</td>`:''}</tr>`).join('') + '</tbody>';
+  $('adNote').textContent = isG ? 'Conversions are as counted by Google Ads. A cost shows a dash when a campaign recorded no conversions.' : 'Leads are as attributed by Meta and may not match form submissions in GoHighLevel. A dash means lead data was not available for that campaign.';
 }
 
 /* Every public post is fetched once, in pages, and shared by the Social and Reels tabs. */
@@ -3643,7 +3850,7 @@ function renderBeacons(){
 
 /* ---------- per-view panel ---------- */
 function renderInsightPanels(){
-  [['roi','viewRoi'],['social','viewSocial'],['search','viewSearch'],['bench','viewBench'],['reels','viewReels'],['ai','viewAi']].forEach(([view, id]) => {
+  [['roi','viewRoi'],['social','viewSocial'],['search','viewSearch'],['bench','viewBench'],['reels','viewReels'],['paid','viewPaid'],['ai','viewAi']].forEach(([view, id]) => {
     const sec = $(id); if(!sec) return;
     let panel = sec.querySelector('.inspanel');
     if(!panel){ panel = document.createElement('div'); panel.className = 'inspanel'; sec.appendChild(panel); }
