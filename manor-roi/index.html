@@ -605,6 +605,8 @@
   .ld-bar input{min-width:220px;flex:1}
   table.kw td a.ld-link{color:var(--white);white-space:nowrap}
   table.kw td a.ld-link:hover{color:var(--azure)}
+  .ld-sms{font-size:11.5px;color:var(--white);display:block;max-width:280px;margin-top:3px;line-height:1.4}
+  .ld-new{display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:700;color:#17171C;background:var(--manor-gold);border-radius:4px;padding:1px 5px;margin-left:5px}
   .ld-msg{font-size:11.5px;color:var(--muted);max-width:280px;display:block;margin-top:3px}
   /* Map pack radius */
   .mg-wrap{position:relative;border-radius:10px;overflow:hidden;background:#1f1f26}
@@ -1275,7 +1277,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-11-04-1500';
+const BUILD = '2026-11-04-1600';
 
 async function newerBuildAvailable(){
   try{
@@ -3525,12 +3527,13 @@ function ldWindow(){ const end = shAddDays(new Date().toISOString().slice(0,10),
 function leadsFor(ids, name, start, end){ const n = LD_DATA.rows.filter(r => { const d = ldDate(r.added_at); return d >= start && d <= end && r.campaign && (ids.includes(String(r.campaign)) || r.campaign === name); }).length; return n; }
 function renderLeads(){
   if(!LD_DATA) return;
-  const {start,end,pStart} = ldWindow(), all = LD_DATA.rows, cur = all.filter(r => { const d = ldDate(r.added_at); return d >= start && d <= end; }), prev = all.filter(r => { const d = ldDate(r.added_at); return d >= pStart && d < start; });
+  const {start,end,pStart} = ldWindow(), all = LD_DATA.rows, smsIn = all.filter(r => r.sms_direction === 'inbound' && r.sms_at), smsFrom = smsIn.filter(r => { const d = ldDate(r.sms_at); return d >= start && d <= end; }), smsUnread = all.filter(r => r.sms_unread).length, cur = all.filter(r => { const d = ldDate(r.added_at); return d >= start && d <= end; }), prev = all.filter(r => { const d = ldDate(r.added_at); return d >= pStart && d < start; });
   const first = all.length ? ldDate(all[all.length-1].added_at) : null, covered = first && first <= pStart, int = v => Math.round(v).toLocaleString('en-AU');
   const count = (a,c) => a.filter(r => r.channel === c).length, paid = a => count(a,'Google Ads')+count(a,'Meta Ads');
   const gSpend = AD_ROWS ? AD_ROWS.filter(r => r.period_date >= start && r.period_date <= end).reduce((t,r) => t+(+r.spend||0),0) : 0, pN = paid(cur);
   $('ldTiles').innerHTML = shTile('New leads', int(cur.length), shChg(cur.length, covered ? prev.length : null)) + shTile('From Google Ads', int(count(cur,'Google Ads')), shChg(count(cur,'Google Ads'), covered ? count(prev,'Google Ads') : null)) + shTile('From Meta Ads', int(count(cur,'Meta Ads')), shChg(count(cur,'Meta Ads'), covered ? count(prev,'Meta Ads') : null))
-    + shTile('Ad spend per tracked ad lead', pN ? '$'+(gSpend/pN).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—', '<div class="sh-chg">Google + Meta spend ÷ leads tracked to those ads</div>') + shTile('Direct or untracked', int(count(cur,'Direct or untracked')), `<div class="sh-chg">${cur.length ? Math.round(count(cur,'Direct or untracked')/cur.length*100) : 0}% of new leads</div>`);
+    + shTile('Ad spend per tracked ad lead', pN ? '$'+(gSpend/pN).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—', '<div class="sh-chg">Google + Meta spend ÷ leads tracked to those ads</div>') + shTile('Direct or untracked', int(count(cur,'Direct or untracked')), `<div class="sh-chg">${cur.length ? Math.round(count(cur,'Direct or untracked')/cur.length*100) : 0}% of new leads</div>`)
+    + shTile('Latest SMS is from the lead', int(smsFrom.length), `<div class="sh-chg">in this period · ${int(smsUnread)} unread across all dates</div>`);
   const max = Math.max(1, ...LD_ORDER.map(c => count(cur,c)));
   $('ldBars').innerHTML = LD_ORDER.filter(c => count(cur,c)).map(c => `<div class="brow"><span class="bname">${esc(c)}</span><div class="btrack"><div class="bfill" style="width:${Math.max(2,Math.round(count(cur,c)/max*100))}%"></div></div><span class="bval">${int(count(cur,c))}</span></div>`).join('') || '<div class="pg-sub">No leads in this period.</div>';
   const c = shSeries(cur.map(r => ({d:ldDate(r.added_at)})),'d',() => 1,AD_DAYS,start,end);
@@ -3539,23 +3542,31 @@ function renderLeads(){
     tip:d => `<b>${c.weekly?'Week of ':''}${shDmy(d)}</b>New leads: ${int(c.vals[d]||0)}`});
   $('ldNote').textContent = `${shDmy(start)} to ${shDmy(end)}. A lead is a new contact in GoHighLevel, which includes brochure downloads as well as tour and enquiry forms. Channel comes from the tracking on that contact's latest visit, so "direct or untracked" can include people who first came from an ad or search but whose tracking wasn't carried through.`;
   const sel = $('ldChannel');
-  if(!sel.options.length) sel.innerHTML = '<option value="all">All channels</option>' + LD_ORDER.map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+  if(!sel.options.length) sel.innerHTML = '<option value="all">All channels</option><option value="sms">Latest SMS is from the lead</option><option value="unread">Unread SMS</option>' + LD_ORDER.map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
   renderLeadList();
+}
+function ldSms(r){
+  if(!r.sms_at || !r.sms_direction) return '<span class="muted">—</span>';
+  const d = ldDate(r.sms_at), when = d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4);
+  return `<span style="white-space:nowrap;font-family:var(--mono);font-size:11px">${r.sms_direction === 'inbound' ? 'From lead' : 'From Manor'} · ${when}</span>${r.sms_unread ? '<span class="ld-new">UNREAD</span>' : ''}${r.sms_body ? `<span class="ld-sms">${esc(r.sms_body.slice(0,180))}</span>` : ''}`;
 }
 function renderLeadList(){
   if(!LD_DATA) return;
   const {start,end} = ldWindow(), ch = $('ldChannel').value, q = ($('ldSearch').value||'').trim().toLowerCase(), ok = LD_DATA.details;
   $('ldSearch').style.display = ok ? '' : 'none';
-  const list = LD_DATA.rows.filter(r => { const d = ldDate(r.added_at); if(d < start || d > end) return false; if(ch !== 'all' && r.channel !== ch) return false;
+  const smsView = ch === 'sms' || ch === 'unread';
+  const list = LD_DATA.rows.filter(r => { if(ch === 'unread'){ if(!r.sms_unread) return false; } else if(ch === 'sms'){ if(r.sms_direction !== 'inbound' || !r.sms_at) return false; const d = ldDate(r.sms_at); if(d < start || d > end) return false; }
+      else { const d = ldDate(r.added_at); if(d < start || d > end) return false; if(ch !== 'all' && r.channel !== ch) return false; }
     return !q || [r.first_name,r.last_name,r.email,r.phone].some(v => String(v||'').toLowerCase().includes(q)); });
+  if(smsView) list.sort((a,b) => String(b.sms_at) < String(a.sms_at) ? -1 : 1);
   $('ldCount').textContent = `${list.length.toLocaleString('en-AU')} leads`;
   const dm = iso => { const d = ldDate(iso); return d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4); };
   const shown = list.slice(0, LD_LIMIT), phone = v => String(v||'').replace(/[^+\d]/g,'');
   $('ldTbl').innerHTML = ok
-    ? `<thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Form</th><th>Channel</th><th>Event</th><th>Event date</th><th class="num">Guests</th></tr></thead><tbody>` + shown.map(r => `<tr><td style="white-space:nowrap;font-family:var(--mono);font-size:11.5px">${dm(r.added_at)}</td><td>${esc([r.first_name,r.last_name].filter(Boolean).join(' ')||'No name')}${r.message ? `<span class="ld-msg">${esc(r.message.slice(0,160))}</span>` : ''}</td><td>${r.email ? `<a class="ld-link" href="mailto:${esc(r.email)}">${esc(r.email)}</a>` : '—'}</td><td>${r.phone ? `<a class="ld-link" href="tel:${esc(phone(r.phone))}">${esc(r.phone)}</a>` : '—'}</td><td>${esc(r.form_source||'—')}</td><td>${esc(r.channel)}</td><td>${esc(r.event_type||'—')}</td><td style="white-space:nowrap">${r.event_date && /^\d{4}-\d{2}-\d{2}/.test(r.event_date) ? esc(r.event_date.slice(8,10)+'/'+r.event_date.slice(5,7)+'/'+r.event_date.slice(0,4)) : esc(r.event_date||'—')}</td><td class="num">${esc(r.guests||'—')}</td></tr>`).join('') + '</tbody>'
-    : `<thead><tr><th>Date</th><th>Form</th><th>Channel</th></tr></thead><tbody>` + shown.map(r => `<tr><td style="font-family:var(--mono);font-size:11.5px">${dm(r.added_at)}</td><td>${esc(r.form_source||'—')}</td><td>${esc(r.channel)}</td></tr>`).join('') + '</tbody>';
+    ? `<thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Form</th><th>Channel</th><th>Event</th><th>Event date</th><th class="num">Guests</th><th>Latest SMS</th></tr></thead><tbody>` + shown.map(r => `<tr><td style="white-space:nowrap;font-family:var(--mono);font-size:11.5px">${dm(r.added_at)}</td><td>${esc([r.first_name,r.last_name].filter(Boolean).join(' ')||'No name')}${r.message ? `<span class="ld-msg">${esc(r.message.slice(0,160))}</span>` : ''}</td><td>${r.email ? `<a class="ld-link" href="mailto:${esc(r.email)}">${esc(r.email)}</a>` : '—'}</td><td>${r.phone ? `<a class="ld-link" href="tel:${esc(phone(r.phone))}">${esc(r.phone)}</a>` : '—'}</td><td>${esc(r.form_source||'—')}</td><td>${esc(r.channel)}</td><td>${esc(r.event_type||'—')}</td><td style="white-space:nowrap">${r.event_date && /^\d{4}-\d{2}-\d{2}/.test(r.event_date) ? esc(r.event_date.slice(8,10)+'/'+r.event_date.slice(5,7)+'/'+r.event_date.slice(0,4)) : esc(r.event_date||'—')}</td><td class="num">${esc(r.guests||'—')}</td><td>${ldSms(r)}</td></tr>`).join('') + '</tbody>'
+    : `<thead><tr><th>Date</th><th>Form</th><th>Channel</th><th>Latest SMS</th></tr></thead><tbody>` + shown.map(r => `<tr><td style="font-family:var(--mono);font-size:11.5px">${dm(r.added_at)}</td><td>${esc(r.form_source||'—')}</td><td>${esc(r.channel)}</td><td>${ldSms(r)}</td></tr>`).join('') + '</tbody>';
   $('ldMore').style.display = list.length > LD_LIMIT ? '' : 'none';
-  $('ldListNote').textContent = ok ? 'From GoHighLevel, read-only. Please treat these contact details as private: they are for following up enquiries only.' : 'Names and contact details are only shown to Manor on High and Ready to Rank.';
+  $('ldListNote').textContent = ok ? 'From GoHighLevel, read-only. Latest SMS shows only the most recent message in each conversation, so a lead who replied and then got an answer shows as "From Manor", and this isn\u2019t a total count of replies. Please treat contact details and messages as private: they are for following up enquiries only.' : 'Names and contact details are only shown to Manor on High and Ready to Rank.';
 }
 
 /* Every public post is fetched once, in pages, and shared by the Social and Reels tabs. */
