@@ -148,8 +148,8 @@ async function loadData(){
   ]);
   /* Extended reporting: read only for clients it is switched on for. */
   if (RP()){
-    const [hist, aio, genai] = await Promise.all([qAll('md_report_history'), qAll('md_ai_overview_keywords'), qAll('md_gen_ai_daily')]);
-    RAW.hist = hist.data || []; RAW.aio = aio.data || []; RAW.genai = genai.data || [];
+    const [hist, aio, genai, aiq] = await Promise.all([qAll('md_report_history'), qAll('md_ai_overview_keywords'), qAll('md_gen_ai_daily'), sb.from('md_ai_questions').select('*').eq('client_id', id).order('created_at')]);
+    RAW.hist = hist.data || []; RAW.aio = aio.data || []; RAW.genai = genai.data || []; RAW.aiq = aiq.data || [];
   }
   RAW.notes = notes.data || [];
   RAW.calls = pcalls.data || [];
@@ -892,8 +892,8 @@ function rpAiMonths(){
   const m = {}; const at = k => (m[k] = m[k] || { label:k, month:k });
   (RAW.aio || []).forEach(r => { const x = at(monthOf(r.month)); x.aio = (x.aio || 0) + 1; });
   /* Last reading in each month: two checks in one month never add together. */
-  const last = {}; (RAW.geo || []).forEach(r => { const k = monthOf(r.checked_at); if (!last[k] || r.checked_at > last[k]) last[k] = r.checked_at; });
-  Object.entries(last).forEach(([k, d]) => { const s = RAW.geo.filter(r => r.checked_at === d); const x = at(k); x.vis = s.length ? s.filter(rpNamed).length / s.length * 100 : null; x.qs = new Set(s.map(r => r.prompt)).size;
+  const geoC = rpCoreOnly(RAW.geo || []), last = {}; geoC.forEach(r => { const k = monthOf(r.checked_at); if (!last[k] || r.checked_at > last[k]) last[k] = r.checked_at; });
+  Object.entries(last).forEach(([k, d]) => { const s = geoC.filter(r => r.checked_at === d); const x = at(k); x.vis = s.length ? s.filter(rpNamed).length / s.length * 100 : null; x.qs = new Set(s.map(r => r.prompt)).size;
     RP_ENGINES.forEach(e => { const a = s.filter(r => String(r.engine).toLowerCase() === e.n.toLowerCase()); if (a.length) x['e_' + e.n] = a.filter(rpNamed).length / a.length * 100; }); });
   (RAW.daily || []).forEach(r => { if (r.gsc_impressions != null){ const x = at(monthOf(r.date)); x.impr = (x.impr || 0) + Number(r.gsc_impressions); x.clicks = (x.clicks || 0) + Number(r.gsc_clicks || 0); }
     if (r.gen_ai != null){ const x = at(monthOf(r.date)); x.gen = (x.gen || 0) + Number(r.gen_ai); } });
@@ -1081,6 +1081,60 @@ document.addEventListener('click', ev => {
   if (g === 'ai'){ rp.aiOn[v] = !rp.aiOn[v]; redraw('rpAi', rpAiHtml); }
   if (g === 'kw'){ rp.kw = v; redraw('rpMap', rpMapHtml); }
   if (g === 'view'){ rp.view = v; redraw('rpMap', rpMapHtml); }
+});
+
+/* AI Questions. Jose 04/11/2026: the client approves or adds questions, the team reviews, and only
+   then does a question join the month-end run. 'added' questions never move the trend figures. */
+const RP_Q_CAP = 30;
+const rpAdded = () => new Set((RAW.aiq || []).filter(q => q.question_set === 'added').map(q => q.question));
+const rpCoreOnly = rows => { const a = rpAdded(); return a.size ? rows.filter(r => !a.has(r.prompt)) : rows; };
+function rpQHtml(){
+  const all = RAW.aiq || [], by = (...s) => all.filter(q => s.includes(q.status));
+  const team = ['admin', 'editor'].includes(state.role);
+  const used = by('tracking', 'client_approved', 'client_added').length, full = used >= RP_Q_CAP;
+  const chips = q => (q.competitors || []).length ? `<div class="rp-q-comp"><span class="mlbl">Named on your closest question</span> ${q.competitors.map(c => `<span class="rp-chip">${esc(c)}</span>`).join('')}</div>` : '';
+  const sug = by('suggested').map(q => `<article class="rp-q"><label class="mlbl" for="q-${q.id}">Suggested question</label>
+      <textarea id="q-${q.id}" rows="2" maxlength="200">${esc(q.question)}</textarea>
+      ${q.reason ? `<p class="sub">${esc(q.reason)}</p>` : ''}${chips(q)}
+      <div class="rp-q-act"><button type="button" class="rp-btn on" data-rpq="approve" data-id="${q.id}"${full ? ' disabled' : ''}>Approve</button><button type="button" class="rp-btn" data-rpq="decline" data-id="${q.id}">Decline</button></div></article>`).join('');
+  const wait = by('client_approved', 'client_added').map(q => `<article class="rp-q"><p class="rp-q-text">${esc(q.question)}</p>
+      <p class="sub">${q.status === 'client_added' ? 'Added by you' : 'Approved by you'}${q.client_note ? ': ' + esc(q.client_note) : ''}. Our team checks it before tracking starts.</p>
+      ${team ? `<input type="text" id="n-${q.id}" maxlength="200" placeholder="Note to the client (optional)" aria-label="Note to the client"><div class="rp-q-act"><button type="button" class="rp-btn on" data-rpq="review-approve" data-id="${q.id}">Start tracking</button><button type="button" class="rp-btn" data-rpq="review-reject" data-id="${q.id}">Don’t track</button></div>` : ''}</article>`).join('');
+  const snap = V.geoSnapAll || V.geoSnap || [];
+  const rows = by('tracking').map(q => { const a = snap.filter(r => r.prompt === q.question), named = a.filter(rpNamed).map(r => r.engine);
+    const others = [...new Set(a.flatMap(r => r.mentioned || []))].filter(n => n.toLowerCase() !== CFG.name.toLowerCase());
+    return { question:q.question, set:q.question_set === 'core' ? 'Core' : 'Added', named:a.length ? (named.length ? named.join(', ') : 'Not named') : 'First reading at the next month end', others:others.slice(0, 5).join(', ') || '—', sort:a.length && !named.length ? 0 : 1 }; });
+  const closed = by('declined', 'rejected').map(q => `<li>${esc(q.question)} <span class="sub">${q.status === 'declined' ? 'Declined' : 'Not tracked' + (q.review_note ? ': ' + esc(q.review_note) : '')}</span></li>`).join('');
+  return `<div class="cardhead"><div><h3>AI Questions</h3><p class="sub">The questions we ask ChatGPT, Claude, Gemini and Perplexity each month, aiming to get ${esc(CFG.name)} named ahead of competitors. Assistants don’t rank businesses like Google does and their answers vary, so results can’t be guaranteed.</p></div>
+      <div class="rp-q-count tnum"><b>${fmt(used)}</b> of ${RP_Q_CAP} in use</div></div>
+    <p class="rp-q-msg" id="rpqMsg" role="status"></p>
+    ${sug ? `<h4 class="rp-q-h">Waiting for your approval</h4><p class="sub">Change the wording if it isn’t how your customers would ask.</p><div class="rp-q-grid">${sug}</div>` : ''}
+    <h4 class="rp-q-h">Add your own question</h4>
+    ${full ? '<p class="sub">You’ve reached the limit of 30 questions. Talk to your account manager about swapping one.</p>' : `<div class="rp-q-add"><label class="mlbl" for="rpqNew">Your question</label><textarea id="rpqNew" rows="2" maxlength="200" placeholder="How would a customer ask an AI assistant for what you do?"></textarea><label class="mlbl" for="rpqNote">Anything we should know (optional)</label><input type="text" id="rpqNote" maxlength="200"><div class="rp-q-act"><button type="button" class="rp-btn on" data-rpq="add">Send for review</button></div></div>`}
+    ${wait ? `<h4 class="rp-q-h">With our team</h4><div class="rp-q-grid">${wait}</div>` : ''}
+    <h4 class="rp-q-h">Being tracked</h4>
+    <p class="sub">“Core” questions drive the trend figures above. “Added” questions are measured here so new ones never change that trend.</p>
+    ${dataTable('aiq', [{ k:'question', label:'Question' }, { k:'set', label:'Set' }, { k:'named', label:'Named you' }, { k:'others', label:'Also named' }], rows, { sort:{ k:'sort', dir:1 }, maxH:460 })}
+    ${closed ? `<details class="rp-q-closed"><summary>Declined or not tracked</summary><ul>${closed}</ul></details>` : ''}`;
+}
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest && ev.target.closest('[data-rpq]'); if (!b || !RP()) return;
+  const a = b.dataset.rpq, id = b.dataset.id, msg = t => { const m = document.getElementById('rpqMsg'); if (m) m.textContent = t; };
+  const val = i => (document.getElementById(i)?.value || '').trim();
+  let call;
+  if (a === 'approve') call = ['md_ai_question_respond', { p_id:id, p_action:'approve', p_question:val('q-' + id), p_note:null }];
+  if (a === 'decline') call = ['md_ai_question_respond', { p_id:id, p_action:'decline', p_question:null, p_note:null }];
+  if (a === 'add'){ const t = val('rpqNew'); if (t.length < 10){ msg('Please type the full question first.'); return; } call = ['md_ai_question_add', { p_slug:CFG.slug, p_question:t, p_note:val('rpqNote') || null }]; }
+  if (a === 'review-approve') call = ['md_ai_question_review', { p_id:id, p_action:'approve', p_note:val('n-' + id) || null }];
+  if (a === 'review-reject') call = ['md_ai_question_review', { p_id:id, p_action:'reject', p_note:val('n-' + id) || null }];
+  if (!call) return;
+  b.disabled = true; msg('Saving…');
+  const { error } = await sb.rpc(call[0], call[1]);
+  if (error){ b.disabled = false; msg('That didn’t save: ' + error.message); return; }
+  const { data } = await sb.from('md_ai_questions').select('*').eq('client_id', RAW.client.id).order('created_at');
+  RAW.aiq = data || [];
+  const el = document.getElementById('rpQ'); if (el){ el.innerHTML = rpQHtml(); wireTables(); }
+  msg('Saved.');
 });
 
 function viewSeo(){
@@ -1326,7 +1380,9 @@ function viewGbp(){
 function viewGeo(){
   let out = head('AI Visibility', 'Being named in AI answers',
     'Whether the business gets recommended when someone asks an AI assistant, rather than typing a search.');
-  if (RP()) out += `<div class="card" id="rpAi">${rpAiHtml()}</div>` + rpAioTable();
+  /* Added questions are shown on their own and never move the trend figures. */
+  if (RP()){ V.geoSnapAll = V.geoSnapAll || V.geoSnap; V.geoSnap = rpCoreOnly(V.geoSnap); V.geoPrevSnap = rpCoreOnly(V.geoPrevSnap); }
+  if (RP()) out += `<div class="card" id="rpAi">${rpAiHtml()}</div>` + rpAioTable() + `<div class="card" id="rpQ">${rpQHtml()}</div>`;
   const snap = V.geoSnap;
   if (!snap.length)
     return out + emptyState('Baseline not captured yet',
@@ -1393,7 +1449,7 @@ function viewGeo(){
     ${dataTable('aiprompts', [{ k:'prompt', label:'Question asked' }, { k:'engine', label:'Assistant' },
       { k:'result', label:'Result', fmt:v => `<span class="rankpill ${/^named/i.test(v) ? 'win' : /source/i.test(v) ? 'mid' : 'out'}">${esc(v)}</span>` },
       { k:'src', label:'Cited page', fmt:(v, r) => (r.sources || []).map(u => /^https?:/.test(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(u.replace(/^https?:\/\/(www\.)?/,''))}</a>` : esc(u)).join('<br>') || '—' },
-      { k:'notes', label:'Other businesses named' }], snap.map(r => ({ ...r, src: (r.sources || []).join(' ') })), { sort:{ k:'prompt', dir:1 }, maxH:520 })}</div>`;
+      { k:'notes', label:'Other businesses named' }], (V.geoSnapAll || snap).map(r => ({ ...r, src: (r.sources || []).join(' ') })), { sort:{ k:'prompt', dir:1 }, maxH:520 })}</div>`;
   return out;
 }
 

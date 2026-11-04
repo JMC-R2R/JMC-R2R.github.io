@@ -456,3 +456,21 @@ html.rvopen{overflow:hidden}
 .rp-rv footer{margin-top:auto;font-size:11.5px;color:var(--ink3)}
 .rp-rv footer b{color:var(--ink2)}
 .rp-stars{color:var(--warn);letter-spacing:1px}
+.rp-q-count{font:11px var(--mono);color:var(--ink2);white-space:nowrap}
+.rp-q-count b{font-size:20px;color:var(--ink)}
+.rp-q-h{font-size:14px;margin:20px 0 6px}
+.rp-q-msg{min-height:1.2em;margin:4px 0;font-size:13px;color:var(--accent)}
+.rp-q-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:12px;margin-top:10px}
+.rp-q,.rp-q-add{display:flex;flex-direction:column;gap:8px;background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:14px}
+.rp-q-add{max-width:760px;margin-top:8px}
+.rp-q p{margin:0}
+.rp-q-text{font-weight:700}
+.rp-q textarea,.rp-q input,.rp-q-add textarea,.rp-q-add input{width:100%;box-sizing:border-box;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;color:var(--ink);font:14px var(--sans);padding:9px 10px}
+.rp-q textarea:focus,.rp-q input:focus,.rp-q-add textarea:focus,.rp-q-add input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.rp-q-comp{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.rp-q-comp .rp-chip{font-size:12px;padding:3px 9px}
+.rp-q-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
+.rp-btn:disabled{opacity:.5;cursor:not-allowed}
+.rp-q-closed{margin-top:14px;font-size:13px;color:var(--ink2)}
+.rp-q-closed summary{cursor:pointer}
+.rp-q .mlbl,.rp-q-add .mlbl{font-size:9.5px}
