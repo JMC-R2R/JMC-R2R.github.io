@@ -679,6 +679,28 @@
   .pg-key{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.8;margin:0 2px 14px}
   .pg-key b{color:var(--white);font-weight:700}
   .pg-key i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:3px;margin-right:6px}
+  /* Meta reel re-edit brief: Paid Ads tab, shown only to logins the database allows. */
+  #crWrap{scroll-margin-top:90px}
+  .cr-sum{line-height:1.65;font-size:14.5px;color:var(--white)}
+  .cr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  .cr-shot h4{margin:0 0 6px;font-size:15px;color:var(--white)}
+  .cr-shot p{margin:0 0 12px;font-size:13px;line-height:1.55;color:var(--muted)}
+  .cr-exs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .cr-ex{display:block;color:var(--white);text-decoration:none;font-size:12px;line-height:1.4;min-width:0}
+  .cr-ex img{display:block;width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:6px;background:var(--panel-2);margin-bottom:6px}
+  .cr-ex b{display:block;font-family:var(--mono);font-size:14px;color:var(--good)}
+  .cr-ex.low b{color:var(--bad)}
+  .cr-avoid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px}
+  .cr-reel{display:grid;gap:12px}
+  .cr-reel h4{margin:0;font-size:17px;color:var(--white)}
+  .cr-meta{font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.6;overflow-wrap:anywhere}
+  .cr-meta b{font-size:15px;color:var(--bad)}
+  .cr-line{font-size:15px;line-height:1.5;color:var(--white)}
+  .cr-reel>img{display:block;width:100%;border-radius:6px}
+  .cr-edit{border-left:3px solid var(--manor-gold);padding-left:12px;font-size:13.5px;line-height:1.55;color:var(--white)}
+  .cr-edit span{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--manor-gold);margin-bottom:3px}
+  .cr-rules{margin:0;padding-left:18px;font-size:13.5px;line-height:1.7;color:var(--white)}
+  .cr-foot{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,170px));gap:12px;margin-top:12px}
 </style>
 </head>
 <body data-theme="search">
@@ -1112,6 +1134,8 @@
   <div class="seclabel">Campaigns</div>
   <div class="card"><div class="tblwrap"><table class="kw" id="adTbl"></table></div><div class="note" id="adNote"></div></div>
 
+  <div id="crWrap" hidden></div>
+
   <div class="seclabel">Leads in GoHighLevel, all channels</div>
   <div class="sh-tiles" id="ldTiles"></div>
   <div class="grid g2" style="margin-top:14px">
@@ -1277,7 +1301,7 @@ const SUPA = {
    concluded nothing had shipped. Refresh now also asks whether a newer build
    exists and offers to load it.
    ============================================================ */
-const BUILD = '2026-11-04-1600';
+const BUILD = '2026-11-04-1700';
 
 async function newerBuildAvailable(){
   try{
@@ -1486,6 +1510,7 @@ async function startApp(){
   const so=$('signoutBtn'); if(so){ so.hidden = !GATE_ENABLED; if(GATE_ENABLED){ const em = sessionEmail(); so.textContent = 'Sign out'; so.title = em ? 'Signed in as ' + em : ''; } }
   // Month chips must exist before any view renders — every view renders PERIOD.
   const h = parseHash();
+  CR_JUMP = /^#paid\/creative/.test(location.hash || '');
   if(h.period) PERIOD = h.period;
   await loadMonths();
   // Search & Local is the landing view — it's the benchmark Mario opens the dashboard for.
@@ -3462,11 +3487,50 @@ function renderGa(){
 }
 
 let AD_ROWS = null, AD_PLAT = 'google', AD_DAYS = 30;
+/* Meta reel re-edit brief. The words and figures come from the database, which only returns
+   them to Ready to Rank and Savvas Studio logins, so nothing here is readable in the public page source. */
+let CR_DATA = null, CR_JUMP = false;
+async function loadCreative(){
+  const wrap = $('crWrap'); if(!wrap) return;
+  try{
+    if(!CR_DATA){
+      const res = await fetch(SUPA.rpc+'manor_creative_brief', { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:'{}' });
+      if(!res.ok) { wrap.hidden = true; return; }
+      CR_DATA = await res.json();
+    }
+    if(!CR_DATA){ wrap.hidden = true; return; }
+    wrap.innerHTML = creativeHtml(CR_DATA); wrap.hidden = false;
+    if(CR_JUMP){ CR_JUMP = false; setTimeout(() => wrap.scrollIntoView({behavior:'auto', block:'start'}), 150); }
+  }catch(e){ wrap.hidden = true; }
+}
+function creativeHtml(d){
+  const img = f => 'creative/' + encodeURIComponent(f);
+  const ig = c => 'https://www.instagram.com/reel/' + encodeURIComponent(c) + '/';
+  const pct = n => (+n).toFixed(1) + '%';
+  const ex = (x, low) => `<a class="cr-ex${low?' low':''}" href="${ig(x.u)}" target="_blank" rel="noopener"><img src="${img(x.i)}" alt="" loading="lazy"><b>${pct(x.h)}</b>${esc(x.l)}</a>`;
+  return `<div class="seclabel">Meta reels to re-edit</div>
+  <div class="card cr-sum">${esc(d.summary)}</div>
+  <div class="seclabel">Hook rate, ${esc(d.period)}, weakest first</div>
+  <div class="card"><div class="tblwrap"><table class="kw"><thead><tr><th>Reel</th><th class="num">Hook rate</th><th>Suggested opening</th><th>Audience</th></tr></thead><tbody>${d.reels.map(r => `<tr><td>${esc(r.ad)}</td><td class="num"><span class="down">${pct(r.h30)}</span></td><td>${esc(r.shot)}</td><td>${esc(r.aud)}</td></tr>`).join('')}</tbody></table></div><div class="note">Account average ${pct(d.avg)}. ${esc(d.keep)}</div></div>
+  <div class="seclabel">What to open on</div>
+  <div class="cr-grid">${d.shots.map(s => `<div class="card cr-shot"><h4>${esc(s.t)}</h4><p>${esc(s.w)}</p><div class="cr-exs">${s.ex.map(x => ex(x)).join('')}</div></div>`).join('')}</div>
+  <div class="note">${esc(d.tip)}</div>
+  <div class="seclabel">What held viewers least</div>
+  <div class="card"><div class="cr-avoid">${d.avoid.map(x => ex(x,true)).join('')}</div><div class="note">${esc(d.avoidNote)}</div></div>
+  <div class="seclabel">Reel by reel</div>
+  <div class="cr-grid">${d.reels.map(r => `<div class="card cr-reel"><h4>${esc(r.ad)}</h4><div class="cr-meta"><b>${pct(r.h30)}</b> last 30 days · ${pct(r.hall)} all-time · ${esc(r.aud)}<br>${esc(r.file)}</div><div class="cr-line">“${esc(r.line)}”</div><img src="${img('ad-'+r.id+'.jpg')}" alt="Opening 3 seconds of ${esc(r.ad)}" loading="lazy"><div class="cr-edit"><span>Open on: ${esc(r.shot)}</span>${esc(r.edit)}</div></div>`).join('')}</div>
+  <div class="seclabel">For every edit</div>
+  <div class="card"><ul class="cr-rules">${d.rules.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+  <div class="seclabel">Bride footage already in these reels</div>
+  <div class="card"><div class="cr-sum">${esc(d.footageNote)}</div><div class="cr-foot">${d.footage.map(f => `<div class="cr-ex"><img src="${img(f.i)}" alt="" loading="lazy"><b style="color:var(--white);font-family:inherit;font-size:13px">${esc(f.l)}</b>${esc(f.s)}</div>`).join('')}</div></div>
+  <div class="note">${esc(d.method)}</div>`;
+}
 async function loadPaid(){
   try{
     if(!AD_ROWS){ const all = []; for(let off = 0; off < 20000; off += 1000){ const page = await getJSON(`${SUPA.paid}?select=*&order=period_date&limit=1000&offset=${off}`); all.push(...page); if(page.length < 1000) break; } AD_ROWS = all; }
     renderPaid();
     loadLeads();
+    loadCreative();
   }catch(e){ $('adSummary').textContent = 'Could not reach the live database, so no ads figures are shown rather than stale ones. ('+(e.message||e)+')'; }
 }
 function setAdPlat(p){ AD_PLAT = p; renderPaid(); }
