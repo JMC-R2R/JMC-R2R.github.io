@@ -148,8 +148,8 @@ async function loadData(){
   ]);
   /* Extended reporting: read only for clients it is switched on for. */
   if (RP()){
-    const [hist, aio, genai] = await Promise.all([qAll('md_report_history'), qAll('md_ai_overview_keywords'), qAll('md_gen_ai_daily')]);
-    RAW.hist = hist.data || []; RAW.aio = aio.data || []; RAW.genai = genai.data || [];
+    const [hist, aio, genai, aiq] = await Promise.all([qAll('md_report_history'), qAll('md_ai_overview_keywords'), qAll('md_gen_ai_daily'), sb.from('md_ai_questions').select('*').eq('client_id', id).order('created_at')]);
+    RAW.hist = hist.data || []; RAW.aio = aio.data || []; RAW.genai = genai.data || []; RAW.aiq = aiq.data || [];
   }
   RAW.notes = notes.data || [];
   RAW.calls = pcalls.data || [];
@@ -773,7 +773,7 @@ function showOffer(mod){
 const RP = () => !!CFG.reportPlus;
 const RP_RANGES = [{ d:7, l:'7 days' }, { d:30, l:'1 month' }, { d:91, l:'3 months' }, { d:182, l:'6 months' }, { d:487, l:'16 months' }];
 const RP_AI_RANGES = [{ m:3, l:'3 months' }, { m:6, l:'6 months' }, { m:16, l:'16 months' }];
-const rp = { gsc:91, ga:91, aiRange:3, aiOn:{ aio:true, vis:true, impr:false, clicks:false, gen:false }, kw:null, view:'rank' };
+const rp = { gsc:91, ga:91, aiRange:6, aiOn:{ aio:true, vis:false, impr:false, clicks:false, gen:false, e_ChatGPT:true, e_Gemini:true, e_Perplexity:true, e_Claude:true }, kw:null, view:'rank' };
 const rpDay = s => new Date(s + 'T00:00:00');
 const rpYmd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const rpAdd = (s, n) => { const d = rpDay(s); d.setDate(d.getDate() + n); return rpYmd(d); };
@@ -820,7 +820,7 @@ function rpLines(rows, series, { yL = '', yR = '', labelFmt } = {}){
   const x = i => L + (n === 1 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1));
   const nice = v => { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; };
   const maxOf = s => nice(Math.max(0, ...rows.map(r => Number(r[s.k]) || 0)));
-  const mL = Math.max(1, ...series.filter(s => s.axis !== 'r').map(maxOf)), mR = Math.max(1, ...series.filter(s => s.axis === 'r').map(maxOf));
+  const mL = Math.max(1, ...series.filter(s => s.axis !== 'r').map(maxOf)), mR = series.some(s => s.axis === 'r' && s.pct) ? 100 : Math.max(1, ...series.filter(s => s.axis === 'r').map(maxOf));
   const y = (v, s) => T + (H - T - B) * (1 - v / (s.axis === 'r' ? mR : mL));
   const hasR = series.some(s => s.axis === 'r');
   let g = '';
@@ -830,10 +830,10 @@ function rpLines(rows, series, { yL = '', yR = '', labelFmt } = {}){
   const step = Math.max(1, Math.ceil(n / 7));
   rows.forEach((r, i) => { if (i % step === 0) g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" class="rp-ax">${esc((labelFmt || (v => rpDay(v).toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit' })))(r.label))}</text>`; });
   const lines = series.map(s => { let d = '', pen = false, dots = '';
-    rows.forEach((r, i) => { const v = r[s.k]; if (v == null){ pen = false; return; }
+    rows.forEach((r, i) => { const v = r[s.k]; if (v == null){ if (!s.connect) pen = false; return; }
       const c = `${x(i).toFixed(1)} ${y(Number(v), s).toFixed(1)}`; d += (pen ? 'L' : 'M') + c; pen = true;
       if (n <= 20) dots += `<circle cx="${x(i).toFixed(1)}" cy="${y(Number(v), s).toFixed(1)}" r="3.5" fill="${s.color}"/>`; });
-    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linejoin="round"/>${dots}`; }).join('');
+    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linejoin="round"${s.dash ? ` stroke-dasharray="${s.dash}"` : ''}/>${dots}`; }).join('');
   const hit = rows.map((r, i) => { const w = (W - L - R) / Math.max(1, n - 1);
     const lab = (labelFmt || rpAu)(r.label), tip = [lab].concat(series.map(s => `${s.name}: ${r[s.k] == null ? 'not reported' : fmt(r[s.k], s.dp || 0)}${s.unit || ''}`)).join('\n');
     return `<rect x="${(x(i) - w / 2).toFixed(1)}" y="${T}" width="${w.toFixed(1)}" height="${H - T - B}" fill="transparent"><title>${esc(tip)}</title></rect>`; }).join('');
@@ -887,12 +887,14 @@ function rpGaHtml(){
 
 /* AI tracker. AI Overview and assistant readings are monthly, so this chart is monthly. */
 const rpNamed = r => r.result && /^(named|found|yes)/i.test(r.result);
+const RP_ENGINES = [{ n:'ChatGPT', c:'#19C37D', dash:'' }, { n:'Gemini', c:'#A78BFA', dash:'10 5' }, { n:'Perplexity', c:'#EC4899', dash:'3 5' }, { n:'Claude', c:'#E8703A', dash:'16 6 3 6' }];
 function rpAiMonths(){
   const m = {}; const at = k => (m[k] = m[k] || { label:k, month:k });
   (RAW.aio || []).forEach(r => { const x = at(monthOf(r.month)); x.aio = (x.aio || 0) + 1; });
   /* Last reading in each month: two checks in one month never add together. */
-  const last = {}; (RAW.geo || []).forEach(r => { const k = monthOf(r.checked_at); if (!last[k] || r.checked_at > last[k]) last[k] = r.checked_at; });
-  Object.entries(last).forEach(([k, d]) => { const s = RAW.geo.filter(r => r.checked_at === d); at(k).vis = s.length ? s.filter(rpNamed).length / s.length * 100 : null; });
+  const geoC = rpCoreOnly(RAW.geo || []), last = {}; geoC.forEach(r => { const k = monthOf(r.checked_at); if (!last[k] || r.checked_at > last[k]) last[k] = r.checked_at; });
+  Object.entries(last).forEach(([k, d]) => { const s = geoC.filter(r => r.checked_at === d); const x = at(k); x.vis = s.length ? s.filter(rpNamed).length / s.length * 100 : null; x.qs = new Set(s.map(r => r.prompt)).size;
+    RP_ENGINES.forEach(e => { const a = s.filter(r => String(r.engine).toLowerCase() === e.n.toLowerCase()); if (a.length) x['e_' + e.n] = a.filter(rpNamed).length / a.length * 100; }); });
   (RAW.daily || []).forEach(r => { if (r.gsc_impressions != null){ const x = at(monthOf(r.date)); x.impr = (x.impr || 0) + Number(r.gsc_impressions); x.clicks = (x.clicks || 0) + Number(r.gsc_clicks || 0); }
     if (r.gen_ai != null){ const x = at(monthOf(r.date)); x.gen = (x.gen || 0) + Number(r.gen_ai); } });
   return Object.values(m).sort((a, b) => a.month.localeCompare(b.month));
@@ -911,16 +913,20 @@ function rpAiHtml(){
     { k:'impr', label:'Impressions', tag:'Google', v:tot(cur,'impr'), p:tot(prev,'impr'), f:x => fmt(x), c:'var(--ink3)', note:'From Google Search Console' },
     { k:'clicks', label:'Clicks', tag:'Google', v:tot(cur,'clicks'), p:tot(prev,'clicks'), f:x => fmt(x), c:'var(--warn)', note:'From Google Search Console' },
   ];
-  if (cur.some(r => r.gen != null)) defs.splice(2, 0, { k:'gen', label:'AI impressions', tag:'Google', v:tot(cur,'gen'), p:tot(prev,'gen'), f:x => fmt(x), c:'#a78bfa', note:'Search Console generative AI report' });
+  if (cur.some(r => r.gen != null)) defs.splice(2, 0, { k:'gen', label:'AI impressions', tag:'Google', v:tot(cur,'gen'), p:tot(prev,'gen'), f:x => fmt(x), c:'#22D3EE', note:'Search Console generative AI report' });
+  RP_ENGINES.forEach(e => { if (cur.some(r => r['e_' + e.n] != null) || prev.some(r => r['e_' + e.n] != null)) defs.push({ k:'e_' + e.n, label:e.n, tag:'AI', v:lastOf(cur, 'e_' + e.n), p:lastOf(prev, 'e_' + e.n), f:x => pct1(x), c:e.c, dash:e.dash, unit:'%', dp:1 }); });
+  /* Readings at a point in time: with nothing in the previous period, compare with the first one shown. */
+  defs.forEach(d => { if (d.p != null || !(d.k === 'aio' || d.k === 'vis' || d.k.startsWith('e_'))) return;
+    const x = cur.filter(r => r[d.k] != null); if (x.length > 1) d.first = { v:x[0][d.k], m:x[0].month }; });
   const tiles = defs.map(d => `<button type="button" class="rp-ai-tile${rp.aiOn[d.k] ? ' on' : ''}" data-rp="ai" data-v="${d.k}" aria-pressed="${!!rp.aiOn[d.k]}" style="--c:${d.c}">
       <span class="mlbl">${esc(d.label)} <em>${d.tag}</em></span>
       <b class="tnum">${d.v != null ? d.f(d.v) : '—'}</b><small>This period</small>
-      <span class="rp-prev tnum">${d.p != null ? d.f(d.p) : '—'}</span><small>${d.p != null ? 'Previous period' : 'No earlier reading'}</small></button>`).join('');
+      <span class="rp-prev tnum">${d.p != null ? d.f(d.p) : (d.first ? d.f(d.first.v) : '—')}</span><small>${d.p != null ? 'Previous period' : (d.first ? 'First reading, ' + rpMon(d.first.m) : 'No earlier reading')}</small></button>`).join('');
   const series = defs.filter(d => rp.aiOn[d.k]).map(d => {
-    const big = d.k === 'impr' || d.k === 'gen';
-    return { k:d.k, name:d.label, color:d.c, axis: d.k === 'vis' ? 'r' : (big ? 'r' : undefined), unit:d.unit, dp:d.dp }; });
+    const big = d.k === 'impr' || d.k === 'gen', pct = d.k === 'vis' || d.k.startsWith('e_');
+    return { k:d.k, name:d.label, color:d.c, axis: pct || big ? 'r' : undefined, unit:d.unit, dp:d.dp, dash:d.dash, pct, connect:d.k !== 'impr' && d.k !== 'clicks' && d.k !== 'gen' }; });
   /* A percentage and a count share the right axis only if they share a unit. */
-  const mixed = series.some(s => s.k === 'vis') && series.some(s => s.k === 'impr' || s.k === 'gen');
+  const mixed = series.some(s => s.pct) && series.some(s => s.k === 'impr' || s.k === 'gen');
   if (mixed) series.forEach(s => { if (s.k === 'impr' || s.k === 'gen') s.axis = undefined; });
   const curRange = all.filter(r => r.month >= start);
   const partial = (() => { const t = rpYmd(new Date()).slice(0, 7); return end === t; })();
@@ -928,8 +934,8 @@ function rpAiHtml(){
       <p class="sub">${rpMon(curRange[0].month)} to ${rpMon(end)}${partial ? ' (month in progress)' : ''}, monthly readings. Tap a tile to show or hide it on the graph.</p></div>
       <div class="rp-range" role="group" aria-label="AI tracker period">${RP_AI_RANGES.map(r => rpBtn('airange', r.m, r.m === rp.aiRange, r.l)).join('')}</div></div>
     <div class="rp-ai-tiles">${tiles}</div>
-    ${series.length ? rpLegend(series) + rpLines(curRange, series, { labelFmt:rpMon, yR: series.some(s => s.axis === 'r' && s.k === 'vis') ? '%' : '' }) : '<p class="sub">Pick a tile to plot it.</p>'}
-    <p class="sub">AI Overview keywords are the ones found in the Australian keyword database we track, so they are a strong sample rather than every search Google answers. Each assistant reading is ${(RAW.geo || []).length ? 'our month-end set of questions' : 'taken monthly'}.</p>`;
+    ${series.length ? rpLegend(series) + rpLines(curRange, series, { labelFmt:rpMon, yR: series.some(s => s.axis === 'r' && s.pct) ? '%' : '' }) : '<p class="sub">Pick a tile to plot it.</p>'}
+    <p class="sub">AI Overview keywords are the ones found in the Australian keyword database we track, so they are a strong sample rather than every search Google answers. Each assistant line is the share of our questions where that assistant named ${esc(CFG.name)}, with a dot for each reading; months between readings are joined up.${(() => { const q = curRange.filter(r => r.qs); return new Set(q.map(r => r.qs)).size > 1 ? ' Questions asked: ' + q.map(r => `${r.qs} in ${rpMon(r.month)}`).join(', ') + '.' : ''; })()}</p>`;
 }
 /* Every AI Overview citation, month against month. */
 function rpAioTable(){
@@ -1049,6 +1055,10 @@ function rpGbpExtras(){
   const rvCard = V.reviews && V.reviews.review_count != null ? `<div class="card"><span class="mlbl">Reviews</span><div class="rp-big tnum">${V.reviews.avg_rating != null ? fmt(V.reviews.avg_rating, 1) + ' ★' : '—'}</div><p class="sub">${fmt(V.reviews.review_count)} Google reviews, as at ${rpAu(String(V.reviews.as_of).slice(0, 10))}</p></div>` : '';
   const whereCard = tot ? `<div class="card"><span class="mlbl">Where people see you</span><div class="rp-split"><span style="width:${(last.s / tot * 100).toFixed(1)}%;background:var(--accent)">${Math.round(last.s / tot * 100)}% Search</span><span style="width:${(last.g / tot * 100).toFixed(1)}%;background:var(--warn)">${Math.round(last.g / tot * 100)}% Maps</span></div><p class="sub">${esc(rpMon(last.m))}: ${fmt(last.s)} views on Google Search, ${fmt(last.g)} on Google Maps.</p></div>` : '';
   if (rvCard || whereCard) out += `<div class="grid2">${rvCard}${whereCard}</div>`;
+  /* Latest reviews to read at a glance. The full list with sort and download stays below. */
+  const latest = (RAW.grl || []).filter(r => r.comment && String(r.created_at).slice(0, 7) <= state.month).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 6);
+  if (latest.length) out += `<div class="card"><div class="cardhead"><div><h3>Latest reviews</h3><p class="sub">The six most recent with written comments. Every review is in the full list further down.</p></div></div>
+    <div class="rp-rvs">${latest.map(r => `<article class="rp-rv"><div class="rp-stars" aria-label="${fmt(r.rating)} stars">${'★'.repeat(r.rating || 0)}</div><p>${esc(r.comment)}</p><footer><b>${esc(r.reviewer || 'Google reviewer')}</b> · ${rpAu(String(r.created_at).slice(0, 10))}${r.replied ? ' · Replied' : ''}</footer></article>`).join('')}</div></div>`;
   const kwM = (RAW.gkw || []).filter(r => monthOf(r.month) <= state.month).map(r => monthOf(r.month)).sort().pop();
   if (kwM){
     const brand = new RegExp(CFG.name.split(/\s+/)[0], 'i');
@@ -1071,6 +1081,60 @@ document.addEventListener('click', ev => {
   if (g === 'ai'){ rp.aiOn[v] = !rp.aiOn[v]; redraw('rpAi', rpAiHtml); }
   if (g === 'kw'){ rp.kw = v; redraw('rpMap', rpMapHtml); }
   if (g === 'view'){ rp.view = v; redraw('rpMap', rpMapHtml); }
+});
+
+/* AI Questions. Jose 04/11/2026: the client approves or adds questions, the team reviews, and only
+   then does a question join the month-end run. 'added' questions never move the trend figures. */
+const RP_Q_CAP = 30;
+const rpAdded = () => new Set((RAW.aiq || []).filter(q => q.question_set === 'added').map(q => q.question));
+const rpCoreOnly = rows => { const a = rpAdded(); return a.size ? rows.filter(r => !a.has(r.prompt)) : rows; };
+function rpQHtml(){
+  const all = RAW.aiq || [], by = (...s) => all.filter(q => s.includes(q.status));
+  const team = ['admin', 'editor'].includes(state.role);
+  const used = by('tracking', 'client_approved', 'client_added').length, full = used >= RP_Q_CAP;
+  const chips = q => (q.competitors || []).length ? `<div class="rp-q-comp"><span class="mlbl">Named on your closest question</span> ${q.competitors.map(c => `<span class="rp-chip">${esc(c)}</span>`).join('')}</div>` : '';
+  const sug = by('suggested').map(q => `<article class="rp-q"><label class="mlbl" for="q-${q.id}">Suggested question</label>
+      <textarea id="q-${q.id}" rows="2" maxlength="200">${esc(q.question)}</textarea>
+      ${q.reason ? `<p class="sub">${esc(q.reason)}</p>` : ''}${chips(q)}
+      <div class="rp-q-act"><button type="button" class="rp-btn on" data-rpq="approve" data-id="${q.id}"${full ? ' disabled' : ''}>Approve</button><button type="button" class="rp-btn" data-rpq="decline" data-id="${q.id}">Decline</button></div></article>`).join('');
+  const wait = by('client_approved', 'client_added').map(q => `<article class="rp-q"><p class="rp-q-text">${esc(q.question)}</p>
+      <p class="sub">${q.status === 'client_added' ? 'Added by you' : 'Approved by you'}${q.client_note ? ': ' + esc(q.client_note) : ''}. Our team checks it before tracking starts.</p>
+      ${team ? `<input type="text" id="n-${q.id}" maxlength="200" placeholder="Note to the client (optional)" aria-label="Note to the client"><div class="rp-q-act"><button type="button" class="rp-btn on" data-rpq="review-approve" data-id="${q.id}">Start tracking</button><button type="button" class="rp-btn" data-rpq="review-reject" data-id="${q.id}">Don’t track</button></div>` : ''}</article>`).join('');
+  const snap = V.geoSnapAll || V.geoSnap || [];
+  const rows = by('tracking').map(q => { const a = snap.filter(r => r.prompt === q.question), named = a.filter(rpNamed).map(r => r.engine);
+    const others = [...new Set(a.flatMap(r => r.mentioned || []))].filter(n => n.toLowerCase() !== CFG.name.toLowerCase());
+    return { question:q.question, set:q.question_set === 'core' ? 'Core' : 'Added', named:a.length ? (named.length ? named.join(', ') : 'Not named') : 'First reading at the next month end', others:others.slice(0, 5).join(', ') || '—', sort:a.length && !named.length ? 0 : 1 }; });
+  const closed = by('declined', 'rejected').map(q => `<li>${esc(q.question)} <span class="sub">${q.status === 'declined' ? 'Declined' : 'Not tracked' + (q.review_note ? ': ' + esc(q.review_note) : '')}</span></li>`).join('');
+  return `<div class="cardhead"><div><h3>AI Questions</h3><p class="sub">The questions we ask ChatGPT, Claude, Gemini and Perplexity each month, aiming to get ${esc(CFG.name)} named ahead of competitors. Assistants don’t rank businesses like Google does and their answers vary, so results can’t be guaranteed.</p></div>
+      <div class="rp-q-count tnum"><b>${fmt(used)}</b> of ${RP_Q_CAP} in use</div></div>
+    <p class="rp-q-msg" id="rpqMsg" role="status"></p>
+    ${sug ? `<h4 class="rp-q-h">Waiting for your approval</h4><p class="sub">Change the wording if it isn’t how your customers would ask.</p><div class="rp-q-grid">${sug}</div>` : ''}
+    <h4 class="rp-q-h">Add your own question</h4>
+    ${full ? '<p class="sub">You’ve reached the limit of 30 questions. Talk to your account manager about swapping one.</p>' : `<div class="rp-q-add"><label class="mlbl" for="rpqNew">Your question</label><textarea id="rpqNew" rows="2" maxlength="200" placeholder="How would a customer ask an AI assistant for what you do?"></textarea><label class="mlbl" for="rpqNote">Anything we should know (optional)</label><input type="text" id="rpqNote" maxlength="200"><div class="rp-q-act"><button type="button" class="rp-btn on" data-rpq="add">Send for review</button></div></div>`}
+    ${wait ? `<h4 class="rp-q-h">With our team</h4><div class="rp-q-grid">${wait}</div>` : ''}
+    <h4 class="rp-q-h">Being tracked</h4>
+    <p class="sub">“Core” questions drive the trend figures above. “Added” questions are measured here so new ones never change that trend.</p>
+    ${dataTable('aiq', [{ k:'question', label:'Question' }, { k:'set', label:'Set' }, { k:'named', label:'Named you' }, { k:'others', label:'Also named' }], rows, { sort:{ k:'sort', dir:1 }, maxH:460 })}
+    ${closed ? `<details class="rp-q-closed"><summary>Declined or not tracked</summary><ul>${closed}</ul></details>` : ''}`;
+}
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest && ev.target.closest('[data-rpq]'); if (!b || !RP()) return;
+  const a = b.dataset.rpq, id = b.dataset.id, msg = t => { const m = document.getElementById('rpqMsg'); if (m) m.textContent = t; };
+  const val = i => (document.getElementById(i)?.value || '').trim();
+  let call;
+  if (a === 'approve') call = ['md_ai_question_respond', { p_id:id, p_action:'approve', p_question:val('q-' + id), p_note:null }];
+  if (a === 'decline') call = ['md_ai_question_respond', { p_id:id, p_action:'decline', p_question:null, p_note:null }];
+  if (a === 'add'){ const t = val('rpqNew'); if (t.length < 10){ msg('Please type the full question first.'); return; } call = ['md_ai_question_add', { p_slug:CFG.slug, p_question:t, p_note:val('rpqNote') || null }]; }
+  if (a === 'review-approve') call = ['md_ai_question_review', { p_id:id, p_action:'approve', p_note:val('n-' + id) || null }];
+  if (a === 'review-reject') call = ['md_ai_question_review', { p_id:id, p_action:'reject', p_note:val('n-' + id) || null }];
+  if (!call) return;
+  b.disabled = true; msg('Saving…');
+  const { error } = await sb.rpc(call[0], call[1]);
+  if (error){ b.disabled = false; msg('That didn’t save: ' + error.message); return; }
+  const { data } = await sb.from('md_ai_questions').select('*').eq('client_id', RAW.client.id).order('created_at');
+  RAW.aiq = data || [];
+  const el = document.getElementById('rpQ'); if (el){ el.innerHTML = rpQHtml(); wireTables(); }
+  msg('Saved.');
 });
 
 function viewSeo(){
@@ -1316,7 +1380,9 @@ function viewGbp(){
 function viewGeo(){
   let out = head('AI Visibility', 'Being named in AI answers',
     'Whether the business gets recommended when someone asks an AI assistant, rather than typing a search.');
-  if (RP()) out += `<div class="card" id="rpAi">${rpAiHtml()}</div>` + rpAioTable();
+  /* Added questions are shown on their own and never move the trend figures. */
+  if (RP()){ V.geoSnapAll = V.geoSnapAll || V.geoSnap; V.geoSnap = rpCoreOnly(V.geoSnap); V.geoPrevSnap = rpCoreOnly(V.geoPrevSnap); }
+  if (RP()) out += `<div class="card" id="rpAi">${rpAiHtml()}</div>` + rpAioTable() + `<div class="card" id="rpQ">${rpQHtml()}</div>`;
   const snap = V.geoSnap;
   if (!snap.length)
     return out + emptyState('Baseline not captured yet',
@@ -1383,7 +1449,7 @@ function viewGeo(){
     ${dataTable('aiprompts', [{ k:'prompt', label:'Question asked' }, { k:'engine', label:'Assistant' },
       { k:'result', label:'Result', fmt:v => `<span class="rankpill ${/^named/i.test(v) ? 'win' : /source/i.test(v) ? 'mid' : 'out'}">${esc(v)}</span>` },
       { k:'src', label:'Cited page', fmt:(v, r) => (r.sources || []).map(u => /^https?:/.test(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(u.replace(/^https?:\/\/(www\.)?/,''))}</a>` : esc(u)).join('<br>') || '—' },
-      { k:'notes', label:'Other businesses named' }], snap.map(r => ({ ...r, src: (r.sources || []).join(' ') })), { sort:{ k:'prompt', dir:1 }, maxH:520 })}</div>`;
+      { k:'notes', label:'Other businesses named' }], (V.geoSnapAll || snap).map(r => ({ ...r, src: (r.sources || []).join(' ') })), { sort:{ k:'prompt', dir:1 }, maxH:520 })}</div>`;
   return out;
 }
 
