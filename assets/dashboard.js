@@ -908,7 +908,7 @@ function rpAiHtml(){
   const lastOf = (a, k) => { const x = a.filter(r => r[k] != null); return x.length ? x[x.length - 1][k] : null; };
   const tot = (a, k) => { const x = a.filter(r => r[k] != null); return x.length ? rpSum(x, k) : null; };
   const defs = [
-    { k:'aio', label:'AI Overview keywords', tag:'Google', v:lastOf(cur,'aio'), p:lastOf(prev,'aio'), f:x => fmt(x), c:'var(--accent)', note:'Searches where Google’s AI Overview cites your website' },
+    { k:'aio', label:'AI Overview keywords', tag:'Google', v:lastOf(cur,'aio'), p:lastOf(prev,'aio'), f:x => fmt(x), c:'#1E93C8', note:'Searches where Google’s AI Overview cites your website' },
     { k:'vis', label:'AI assistant visibility', tag:'AI', v:lastOf(cur,'vis'), p:lastOf(prev,'vis'), f:x => pct1(x), c:'var(--good)', axis:'r', note:'Share of ChatGPT, Claude, Gemini and Perplexity answers naming you', unit:'%', dp:1 },
     { k:'impr', label:'Impressions', tag:'Google', v:tot(cur,'impr'), p:tot(prev,'impr'), f:x => fmt(x), c:'var(--ink3)', note:'From Google Search Console' },
     { k:'clicks', label:'Clicks', tag:'Google', v:tot(cur,'clicks'), p:tot(prev,'clicks'), f:x => fmt(x), c:'var(--warn)', note:'From Google Search Console' },
