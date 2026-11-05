@@ -780,7 +780,7 @@ const RP = () => !!CFG.reportPlus;
 function brandPattern(){ return CFG.brandPattern || CFG.name.split(/\s+/)[0].replace(/[^a-z0-9]/gi, ''); }
 const RP_RANGES = [{ d:7, l:'7 days' }, { d:30, l:'1 month' }, { d:91, l:'3 months' }, { d:182, l:'6 months' }, { d:487, l:'16 months' }];
 const RP_AI_RANGES = [{ m:3, l:'3 months' }, { m:6, l:'6 months' }, { m:16, l:'16 months' }];
-const rp = { gsc:91, ga:91, aiRange:6, aiOn:{ aio:true, vis:false, impr:false, clicks:false, gen:false, e_ChatGPT:true, e_Gemini:true, e_Perplexity:true, e_Claude:true }, kw:null, view:'rank' };
+const rp = { gsc:91, ga:91, gscBy:'days', gaBy:'days', aiRange:6, aiOn:{ aio:true, vis:false, impr:false, clicks:false, gen:false, e_ChatGPT:true, e_Gemini:true, e_Perplexity:true, e_Claude:true }, kw:null, view:'rank' };
 const rpDay = s => new Date(s + 'T00:00:00');
 const rpYmd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const rpAdd = (s, n) => { const d = rpDay(s); d.setDate(d.getDate() + n); return rpYmd(d); };
@@ -850,7 +850,55 @@ const rpLegend = series => `<div class="legend">${series.map(s => `<span><i styl
 function rpNote(w, days, what){
   return `${rpAu(w.start < w.first ? w.first : w.start)} to ${rpAu(w.end)}${w.start < w.first ? `. ${what} history starts ${rpAu(w.first)}, so this period is shorter than selected` : ''}. ${days > 91 ? 'Plotted weekly. ' : ''}`;
 }
+/* Month on month: whole calendar months from the daily rows, up to 16. The month still running
+   is labelled "so far" and never given a change figure, because part of a month against a whole
+   one only ever looks like a drop. */
+function rpMonths(key){
+  const by = {};
+  (RAW.daily || []).forEach(r => { if (r[key] == null) return; const m = monthOf(r.date); (by[m] = by[m] || []).push(r); });
+  const t = rpYmd(new Date()).slice(0, 7);
+  return Object.keys(by).sort().slice(-16).map(m => ({ month:m, rows:by[m], days:by[m].length, running:m === t }));
+}
+const rpByBtns = (g, on) => `<div class="rp-range" role="group" aria-label="Days or months">${rpBtn(g, 'days', on === 'days', 'Days')}${rpBtn(g, 'months', on === 'months', 'Month on month')}</div>`;
+const rpChg = (c, p, r, lower) => r.running || p == null || c == null ? (r.running ? '<span class="chip flat">so far</span>' : '—')
+  : lower ? stepChip(c, p, '', { dp:1, lowerIsBetter:true }).replace(' vs </span>', '</span>') : chipFor(c, p);
+function rpGscMonthly(){
+  const posOf = a => { const x = a.filter(r => r.gsc_position != null && r.gsc_impressions); const t = rpSum(x,'gsc_impressions'); return t ? x.reduce((s, r) => s + Number(r.gsc_position) * Number(r.gsc_impressions), 0) / t : null; };
+  const M = rpMonths('gsc_impressions').map(m => ({ ...m, label:m.month, clicks:rpSum(m.rows,'gsc_clicks'), impr:rpSum(m.rows,'gsc_impressions'),
+    gen:m.rows.some(r => r.gen_ai != null) ? rpSum(m.rows.filter(r => r.gen_ai != null),'gen_ai') : null, pos:posOf(m.rows) }));
+  M.forEach((m, i) => { m.ctr = m.impr ? m.clicks / m.impr * 100 : null; const p = M[i - 1];
+    m.dClicks = rpChg(m.clicks, p && p.clicks, m); m.dImpr = rpChg(m.impr, p && p.impr, m); m.dPos = rpChg(m.pos, p && p.pos, m, true); m.name = rpMon(m.month) + (m.running ? ' (so far)' : ''); });
+  const hasGen = M.some(m => m.gen != null);
+  const series = [{ k:'impr', name:'Impressions', color:'var(--ink3)' }, { k:'clicks', name:'Clicks', color:'var(--accent)', axis:'r' }];
+  if (hasGen) series.push({ k:'gen', name:'AI impressions', color:'var(--warn)' });
+  const cols = [{ k:'name', label:'Month' }, { k:'clicks', label:'Clicks', num:1, fmt:v => fmt(v) }, { k:'dClicks', label:'vs month before', fmt:v => v },
+    { k:'impr', label:'Impressions', num:1, fmt:v => fmt(v) }, { k:'dImpr', label:'vs month before', fmt:v => v }];
+  if (hasGen) cols.push({ k:'gen', label:'AI impressions', num:1, fmt:v => fmt(v) });
+  cols.push({ k:'ctr', label:'Click rate', num:1, fmt:v => v == null ? '—' : pct1(v) }, { k:'pos', label:'Avg position', num:1, fmt:v => v == null ? '—' : fmt(v, 1) }, { k:'dPos', label:'Position change', fmt:v => v });
+  const first = M[0], last = M[M.length - 1];
+  return `<div class="cardhead"><div><h3>Google Search Console Data</h3><p class="sub">Month on month, ${rpMon(first.month)} to ${rpMon(last.month)}${last.running ? ' (month in progress)' : ''}. Each month is the whole calendar month. Google reports this about two days behind.</p></div>
+      ${rpByBtns('gscby', 'months')}</div>
+    ${rpLegend(series)}${rpLines(M, series, { labelFmt:rpMon })}
+    ${dataTable('rpgscm', cols, M, { sort:{ k:'label', dir:-1 }, filter:false, maxH:560 })}`;
+}
+function rpGaMonthly(){
+  const M = rpMonths('sessions').map(m => { const u = m.rows.filter(r => r.users != null), e = m.rows.filter(r => r.engaged_sessions != null && r.sessions != null), es = rpSum(e,'sessions');
+    return { ...m, label:m.month, sessions:rpSum(m.rows,'sessions'), adu:u.length ? rpSum(u,'users') / u.length : null, er:es ? rpSum(e,'engaged_sessions') / es * 100 : null,
+      pv:m.rows.some(r => r.pageviews != null) ? rpSum(m.rows,'pageviews') : null, ke:m.rows.some(r => r.key_events != null) ? rpSum(m.rows,'key_events') : null }; });
+  M.forEach((m, i) => { const p = M[i - 1]; m.dS = rpChg(m.sessions, p && p.sessions, m); m.dU = rpChg(m.adu, p && p.adu, m); m.dK = rpChg(m.ke, p && p.ke, m); m.name = rpMon(m.month) + (m.running ? ' (so far)' : ''); });
+  const series = [{ k:'sessions', name:'Sessions', color:'var(--accent)' }, { k:'adu', name:'Average daily users', color:'var(--ink3)', axis:'r', dp:1 }];
+  const cols = [{ k:'name', label:'Month' }, { k:'sessions', label:'Sessions', num:1, fmt:v => fmt(v) }, { k:'dS', label:'vs month before', fmt:v => v },
+    { k:'adu', label:'Avg daily users', num:1, fmt:v => v == null ? '—' : fmt(v, 1) }, { k:'dU', label:'vs month before', fmt:v => v },
+    { k:'er', label:'Engagement rate', num:1, fmt:v => v == null ? '—' : pct1(v) }, { k:'pv', label:'Page views', num:1, fmt:v => fmt(v) },
+    { k:'ke', label:'Key events', num:1, fmt:v => fmt(v) }, { k:'dK', label:'vs month before', fmt:v => v }];
+  const first = M[0], last = M[M.length - 1];
+  return `<div class="cardhead"><div><h3>Google Analytics 4 Data</h3><p class="sub">Month on month, ${rpMon(first.month)} to ${rpMon(last.month)}${last.running ? ' (month in progress)' : ''}. Each month is the whole calendar month.</p></div>
+      ${rpByBtns('gaby', 'months')}</div>
+    ${rpLegend(series)}${rpLines(M, series, { labelFmt:rpMon })}
+    ${dataTable('rpgam', cols, M, { sort:{ k:'label', dir:-1 }, filter:false, maxH:560 })}`;
+}
 function rpGscHtml(){
+  if (rp.gscBy === 'months' && rpMonths('gsc_impressions').length) return rpGscMonthly();
   const w = rpWindow('gsc_impressions', rp.gsc);
   const btns = RP_RANGES.map(r => rpBtn('gsc', r.d, r.d === rp.gsc, r.l)).join('');
   if (!w) return emptyState('No Search Console data yet', 'Google has not reported search data for this website yet.');
@@ -863,7 +911,7 @@ function rpGscHtml(){
   if (gen.length) series.push({ k:'gen_ai', name:'AI impressions', color:'var(--warn)' });
   const rows = rpBuckets(w.cur, rp.gsc, ['gsc_clicks','gsc_impressions','gen_ai']);
   return `<div class="cardhead"><div><h3>Google Search Console Data</h3><p class="sub">${rpNote(w, rp.gsc, 'Search Console')}Google reports this about two days behind.</p></div>
-      <div class="rp-range" role="group" aria-label="Search Console period">${btns}</div></div>
+      <div class="rp-ctl">${rpByBtns('gscby', 'days')}<div class="rp-range" role="group" aria-label="Search Console period">${btns}</div></div></div>
     <div class="kpis">${kpi('Clicks', fmt(c), foot(c, pc))}${kpi('Impressions', fmt(i), foot(i, pi))}
       ${gen.length ? kpi('AI impressions', fmt(rpSum(gen,'gen_ai')), genP.length ? chipFor(rpSum(gen,'gen_ai'), rpSum(genP,'gen_ai')) + ' vs previous period' : 'AI Overviews and AI Mode') : ''}
       ${kpi('Click rate', i ? pct1(c / i * 100) : '—', 'Clicks ÷ impressions')}
@@ -872,6 +920,7 @@ function rpGscHtml(){
     ${gen.length ? '<p class="sub">Google counts AI impressions as part of total impressions, so the AI line is not extra on top.</p>' : ''}`;
 }
 function rpGaHtml(){
+  if (rp.gaBy === 'months' && rpMonths('sessions').length) return rpGaMonthly();
   const w = rpWindow('sessions', rp.ga);
   if (!w) return emptyState('No Google Analytics data yet', 'Google Analytics has not reported any visits for this website yet.');
   const btns = RP_RANGES.map(r => rpBtn('ga', r.d, r.d === rp.ga, r.l)).join('');
@@ -883,7 +932,7 @@ function rpGaHtml(){
   const series = [{ k:'sessions', name:'Sessions', color:'var(--accent)' }, { k:'users', name:'Users', color:'var(--ink3)' }];
   const rows = rpBuckets(w.cur, rp.ga, ['sessions','users']);
   return `<div class="cardhead"><div><h3>Google Analytics 4 Data</h3><p class="sub">${rpNote(w, rp.ga, 'Analytics')}</p></div>
-      <div class="rp-range" role="group" aria-label="Analytics period">${btns}</div></div>
+      <div class="rp-ctl">${rpByBtns('gaby', 'days')}<div class="rp-range" role="group" aria-label="Analytics period">${btns}</div></div></div>
     <div class="kpis">${kpi('Sessions', fmt(S(w.cur)), foot(S(w.cur), S(w.prev)))}
       ${kpi('Average daily users', adu(w.cur) != null ? fmt(adu(w.cur), 1) : '—', foot(adu(w.cur), adu(w.prev)))}
       ${kpi('Engagement rate', er(w.cur) != null ? pct1(er(w.cur)) : '—', 'Share of sessions that were engaged')}
@@ -1081,9 +1130,11 @@ function rpGbpExtras(){
 document.addEventListener('click', ev => {
   const b = ev.target.closest && ev.target.closest('[data-rp]'); if (!b || !RP()) return;
   const g = b.dataset.rp, v = b.dataset.v;
-  const redraw = (id, fn) => { const el = document.getElementById(id); if (el) el.innerHTML = fn(); };
+  const redraw = (id, fn) => { const el = document.getElementById(id); if (el){ el.innerHTML = fn(); wireTables(); } };
   if (g === 'gsc'){ rp.gsc = +v; redraw('rpGsc', rpGscHtml); }
   if (g === 'ga'){ rp.ga = +v; redraw('rpGa', rpGaHtml); }
+  if (g === 'gscby'){ rp.gscBy = v; redraw('rpGsc', rpGscHtml); }
+  if (g === 'gaby'){ rp.gaBy = v; redraw('rpGa', rpGaHtml); }
   if (g === 'airange'){ rp.aiRange = +v; redraw('rpAi', rpAiHtml); }
   if (g === 'ai'){ rp.aiOn[v] = !rp.aiOn[v]; redraw('rpAi', rpAiHtml); }
   if (g === 'kw'){ rp.kw = v; redraw('rpMap', rpMapHtml); }
