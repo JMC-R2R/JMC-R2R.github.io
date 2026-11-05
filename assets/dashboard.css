@@ -474,3 +474,22 @@ html.rvopen{overflow:hidden}
 .rp-q-closed{margin-top:14px;font-size:13px;color:var(--ink2)}
 .rp-q-closed summary{cursor:pointer}
 .rp-q .mlbl,.rp-q-add .mlbl{font-size:9.5px}
+
+/* Social feed: every post as it looked, with its numbers on the tile. */
+.sfeed-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.sfeed-tabs button{font:600 12px var(--sans);background:transparent;color:var(--ink2);border:1px solid var(--bd);border-radius:99px;padding:5px 12px;cursor:pointer}
+.sfeed-tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.sfeed{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-top:14px}
+.sfeed[data-show="Facebook"] .stile:not([data-p="Facebook"]),.sfeed[data-show="Instagram"] .stile:not([data-p="Instagram"]){display:none}
+.stile{display:flex;flex-direction:column;background:var(--s2);border:1px solid var(--bd);border-radius:12px;overflow:hidden;color:inherit;text-decoration:none;transition:border-color .15s}
+.stile:hover{border-color:var(--accent)}
+.stile .simg{position:relative;aspect-ratio:4/5;background:var(--s3) center/cover no-repeat}
+.stile .simg .noimg{position:absolute;inset:0;display:grid;place-items:center;padding:12px;font-size:12px;color:var(--ink3);text-align:center}
+.stile .sbadge{position:absolute;top:8px;left:8px;display:flex;gap:4px}
+.stile .sbadge span{font:700 10px var(--mono);letter-spacing:.04em;padding:2px 7px;border-radius:99px;background:rgba(0,0,0,.65);color:#fff}
+.stile .sbadge .fb{background:var(--fb,#1877F2)}.stile .sbadge .ig{background:var(--ig,#C13584)}
+.stile .splay{position:absolute;left:8px;bottom:8px;font:700 13px var(--mono);padding:3px 8px;border-radius:8px;background:rgba(0,0,0,.7);color:#fff}
+.stile .smeta{padding:9px 10px 10px;display:grid;gap:3px}
+.stile .smeta b{font-size:12px;line-height:1.35;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.stile .smeta small{font:11px var(--mono);color:var(--ink3)}
+.stile .simg.vid{background-position:center top}
