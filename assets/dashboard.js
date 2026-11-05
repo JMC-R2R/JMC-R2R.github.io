@@ -125,7 +125,7 @@ async function loadData(){
     md_paid_keywords: 'month,campaign,ad_group,keyword,match_type', md_paid_segments: 'month,dimension,label',
     md_geo_share: 'checked_at,engine,brand', md_negative_requests: 'id', md_seo_queries: 'month,query',
     md_gbp_search_keywords: 'month,keyword', md_gbp_review_list: 'review_id', md_work_log: 'id', md_paid_calls: 'started_at,call_id',
-    md_report_history: 'date', md_ai_overview_keywords: 'month,keyword', md_gen_ai_daily: 'date' };
+    md_social_posts: 'post_date,platform,url', md_report_history: 'date', md_ai_overview_keywords: 'month,keyword', md_gen_ai_daily: 'date' };
   const ordered = (b, cols) => (cols || '').split(',').filter(Boolean).reduce((x, c) => x.order(c), b);
   const qAll = async (t, dateCol) => { let out = [], i = 0;
     for (;;) { const { data, error } = await ordered(q(t, dateCol), PK[t]).range(i, i + 999);
@@ -133,7 +133,7 @@ async function loadData(){
       if (data.length < 1000) return { data: out }; i += 1000; } };
 
   const [seo, gbp, rev, geo, paid, social, leads, ranks, scans, refresh,
-         pcm, pst, pkw, pseg, pconv, gshare, neg, sq, gkw, grl, wlog, notes, pcalls] = await Promise.all([
+         pcm, pst, pkw, pseg, pconv, gshare, neg, sq, gkw, grl, wlog, notes, pcalls, sposts] = await Promise.all([
     q('md_seo_daily','date'), q('md_gbp_daily','date'), q('md_gbp_reviews'), q('md_geo_visibility'),
     q('md_paid_daily','date'), q('md_social_daily','date'), q('md_leads_daily','date'),
     qAll('md_rankings'), q('md_mapgrid_scans'), q('md_refresh_log'),
@@ -145,6 +145,8 @@ async function loadData(){
     q('rpt_social_annotations'),
     /* Google forwarding number call log. Rows only exist for accounts the feed pulls. */
     qAll('md_paid_calls','started_at'),
+    /* Organic posts, for the Social tab. */
+    qAll('md_social_posts'),
   ]);
   /* Extended reporting: read only for clients it is switched on for. */
   if (RP()){
@@ -153,6 +155,7 @@ async function loadData(){
   }
   RAW.notes = notes.data || [];
   RAW.calls = pcalls.data || [];
+  RAW.sposts = sposts.data || [];
   RAW.seo = seo.data || []; RAW.gbp = gbp.data || []; RAW.reviews = rev.data || [];
   RAW.geo = geo.data || []; RAW.paid = paid.data || []; RAW.social = social.data || [];
   RAW.leads = leads.data || []; RAW.rankings = ranks.data || [];
@@ -195,7 +198,8 @@ function applyMonth(){
   V.gbp    = RAW.gbp.filter(r => inM(r,'date'));
   V.gbpPrev= RAW.gbp.filter(r => inP(r,'date'));
   V.paid   = RAW.paid.filter(r => inM(r,'date'));
-  V.social = RAW.social.filter(r => inM(r,'date'));
+  V.social = RAW.social.filter(r => inM(r,'date'));  V.socialPrev = RAW.social.filter(r => inP(r,'date'));
+  V.sposts = (RAW.sposts || []).filter(r => inM(r,'post_date'));
   V.leads  = RAW.leads.filter(r => inM(r,'date'));
   V.geo    = RAW.geo.filter(r => inM(r,'checked_at'));
   V.paidPrev = RAW.paid.filter(r => inP(r,'date'));
@@ -771,6 +775,9 @@ function showOffer(mod){
    deliberate exception to "the calendar month is the only scope control": they apply to the
    Search Console and GA4 graphs and their own tiles, and each states its dates. */
 const RP = () => !!CFG.reportPlus;
+/* What counts as a search for the business's own name. A first word like "Your" would catch
+   ordinary searches, so a client can set brand_pattern in its YAML (Your Body Hub, 06/11/2026). */
+function brandPattern(){ return CFG.brandPattern || CFG.name.split(/\s+/)[0].replace(/[^a-z0-9]/gi, ''); }
 const RP_RANGES = [{ d:7, l:'7 days' }, { d:30, l:'1 month' }, { d:91, l:'3 months' }, { d:182, l:'6 months' }, { d:487, l:'16 months' }];
 const RP_AI_RANGES = [{ m:3, l:'3 months' }, { m:6, l:'6 months' }, { m:16, l:'16 months' }];
 const rp = { gsc:91, ga:91, aiRange:6, aiOn:{ aio:true, vis:false, impr:false, clicks:false, gen:false, e_ChatGPT:true, e_Gemini:true, e_Perplexity:true, e_Claude:true }, kw:null, view:'rank' };
@@ -1061,7 +1068,7 @@ function rpGbpExtras(){
     <div class="rp-rvs">${latest.map(r => `<article class="rp-rv"><div class="rp-stars" aria-label="${fmt(r.rating)} stars">${'★'.repeat(r.rating || 0)}</div><p>${esc(r.comment)}</p><footer><b>${esc(r.reviewer || 'Google reviewer')}</b> · ${rpAu(String(r.created_at).slice(0, 10))}${r.replied ? ' · Replied' : ''}</footer></article>`).join('')}</div></div>`;
   const kwM = (RAW.gkw || []).filter(r => monthOf(r.month) <= state.month).map(r => monthOf(r.month)).sort().pop();
   if (kwM){
-    const brand = new RegExp(CFG.name.split(/\s+/)[0], 'i');
+    const brand = new RegExp(brandPattern(), 'i');
     const rows = RAW.gkw.filter(r => monthOf(r.month) === kwM).map(r => ({ ...r, val:r.users != null ? Number(r.users) : (r.below_threshold ? Number(r.below_threshold) - .5 : 0), b:brand.test(r.keyword) }))
       .sort((a, b) => b.val - a.val).slice(0, 24);
     const dis = rpSum(rows.filter(r => !r.b && r.users != null), 'users'), bra = rpSum(rows.filter(r => r.b && r.users != null), 'users');
@@ -1159,7 +1166,7 @@ function viewSeo(){
       {data:V.clicks, color:'var(--accent)'},{data:V.impressions, color:'var(--ink3)'}]})}'></div></div>`;
   /* Brand searches (the business's own name) are excluded: ranking #1 for your own name
      says nothing about winning new customers. The client name decides what counts. */
-  const brandRe = new RegExp(CFG.name.split(/\s+/)[0].replace(/[^a-z0-9]/gi, ''), 'i');
+  const brandRe = new RegExp(brandPattern(), 'i');
   if (V.rankings.length){
     const rows = V.rankings.filter(r => !brandRe.test(r.keyword)).map(r => ({ ...r,
       move: r.position != null && r.prev_position != null ? r.prev_position - r.position : null }));
@@ -1351,7 +1358,7 @@ function viewGbp(){
   const kwM = RAW.gkw.filter(r => monthOf(r.month) <= state.month).map(r => monthOf(r.month)).sort().pop();
   if (kwM){
     const rows = RAW.gkw.filter(r => monthOf(r.month) === kwM).map(r => ({ ...r, sortv: r.users ?? (r.below_threshold ? r.below_threshold - 0.5 : 0),
-      brand: new RegExp(CFG.name.split(/\s+/)[0], 'i').test(r.keyword) ? 'Your name' : 'Discovery' }));
+      brand: new RegExp(brandPattern(), 'i').test(r.keyword) ? 'Your name' : 'Discovery' }));
     out += `<div class="card"><div class="cardhead"><div><h3>Searches that showed the profile</h3>
       <p class="sub">What people typed on Google Search and Maps before seeing the profile — ${monthName(kwM)}${kwM !== state.month ? ' (Google releases this a few weeks after month end)' : ''}.
       “Discovery” searches are people who didn’t search the business by name</p></div></div>
@@ -1401,7 +1408,7 @@ function viewGeo(){
   const prevSov = pTot ? pMine / pTot * 100 : null;
 
   out += `<p class="lede">On ${asOf(V.geoAsOf)} we asked ${engines.length} AI assistant${engines.length === 1 ? '' : 's'} (${engines.join(', ')})
-    ${fmt(new Set(snap.map(r => r.prompt)).size)} questions a homeowner might ask. ${CFG.name} was named in ${fmt(named)} of ${fmt(snap.length)} answers${V.geoPrevAsOf
+    ${fmt(new Set(snap.map(r => r.prompt)).size)} questions ${esc(CFG.asker || 'a homeowner')} might ask. ${CFG.name} was named in ${fmt(named)} of ${fmt(snap.length)} answers${V.geoPrevAsOf
       ? `, against ${fmt(prevNamed)} of ${fmt(V.geoPrevSnap.length)} on ${asOf(V.geoPrevAsOf)}, the ${isPrevMonth(V.geoPrevAsOf, V.geoAsOf) ? 'end of last month' : 'last earlier check'}` : ''}.${sov != null
       ? ` Across every business the assistants recommended, ${CFG.name} took ${pct1(sov)} of the mentions${prevSov != null ? `, from ${pct1(prevSov)} the month before` : ''}.` : ''}</p>`;
   out += `<div class="kpis">
@@ -1790,18 +1797,59 @@ function viewNegatives(){
 }
 
 function viewSocial(){
-  let out = head('Social', 'Organic social', 'Reach, engagement and follower growth by platform.');
-  if (!V.social.length) return out + emptyState('No social data for this month', 'Nothing recorded in this period.');
-  const plats = [...new Set(V.social.map(r => r.platform))];
-  out += `<div class="kpis">${plats.map(p => { const rows = V.social.filter(r => r.platform === p);
-    const latest = rows.slice().sort((a,b) => String(a.date).localeCompare(String(b.date))).pop();
-    return kpi(p, fmt(latest?.followers), 'followers, current'); }).join('')}</div>`;
+  let out = head('Social', 'Organic social', 'Reach, engagement and follower growth by platform, and how every post performed.');
+  if (!V.social.length && !V.sposts.length) return out + emptyState('No social data for this month', CFG.emptyNotes?.social || 'Nothing recorded in this period.');
+  const pm = V.prevMonth ? monthName(V.prevMonth) : null, vs = (c, p) => `${chipFor(c, p)}${pm ? ` vs ${pm}` : ''}`;
+  /* A metric a platform does not report stays blank: it is never added in as a zero. */
+  const total = (rows, k) => { const v = rows.filter(r => r[k] != null); return v.length ? sum(v, k) : null; };
+  const plats = [...new Set(V.social.map(r => r.platform))].sort();
+  const reach = total(V.social,'reach'), views = total(V.social,'views'), eng = total(V.social,'engagement');
+  const reachP = total(V.socialPrev,'reach'), viewsP = total(V.socialPrev,'views'), engP = total(V.socialPrev,'engagement');
+  /* Followers are a running total, not a series: read the latest count on or before this month. */
+  const end = state.month, followersAt = (p, m) => { const r = RAW.social.filter(x => x.platform === p && x.followers != null && monthOf(x.date) <= m)
+    .sort((a, b) => String(a.date).localeCompare(String(b.date))).pop(); return r ? Number(r.followers) : null; };
+  const rows = plats.map(p => { const c = V.social.filter(r => r.platform === p), q = V.socialPrev.filter(r => r.platform === p);
+    return { platform:p, followers:followersAt(p, end), followersPrev:V.prevMonth ? followersAt(p, V.prevMonth) : null,
+      reach:total(c,'reach'), views:total(c,'views'), engagement:total(c,'engagement'),
+      posts:V.sposts.filter(r => r.platform === p).length, reachPrev:total(q,'reach'), engPrev:total(q,'engagement') }; });
+  const followers = rows.filter(r => r.followers != null).reduce((t, r) => t + r.followers, 0);
+  const lead = rows.filter(r => r.reach != null).sort((a, b) => b.reach - a.reach)[0];
+  const parts = [];
+  if (reach != null) parts.push(`total daily reach was ${fmt(reach)}${pm && reachP ? ` (${reach >= reachP ? 'up' : 'down'} from ${fmt(reachP)} in ${pm})` : ''}`);
+  if (eng != null) parts.push(`the accounts earned ${fmt(eng)} engagement${eng === 1 ? '' : 's'}`);
+  out += `<p class="lede">In ${monthName(state.month)} ${parts.join(' and ') || 'no reach or engagement was reported'}.${V.sposts.length ? ` ${fmt(V.sposts.length)} post${V.sposts.length === 1 ? ' is' : 's are'} listed below.` : ''}${followers ? ` Together they have ${fmt(followers)} followers.` : ''}</p>`;
+  out += `<div class="kpis">
+    ${reach != null ? kpi('Reach', fmt(reach), vs(reach, reachP)) : ''}
+    ${views != null ? kpi('Views', fmt(views), vs(views, viewsP)) : ''}
+    ${eng != null ? kpi('Engagement', fmt(eng), vs(eng, engP)) : ''}
+    ${V.sposts.length ? kpi('Posts', fmt(V.sposts.length), monthName(state.month)) : ''}
+    ${rows.filter(r => r.followers != null).map(r => kpi(`${esc(r.platform)} followers`, fmt(r.followers), r.followersPrev != null ? `${stepChip(r.followers, r.followersPrev, pm)}` : 'current')).join('')}</div>`;
+  const notes = [];
+  if (lead && reach && rows.filter(r => r.reach != null).length > 1) notes.push(callout('good', `${esc(lead.platform)} had the most reach`, `${fmt(lead.reach)} of the ${fmt(reach)} total daily reach in ${monthName(state.month)} came from ${esc(lead.platform)}.`));
+  out += notes.join('');
+  const days = [...new Set(V.social.map(r => r.date))].sort();
+  const daily = k => days.map(d => total(V.social.filter(r => r.date === d), k));
+  if (days.length > 1 && reach != null) out += `<div class="card"><div class="cardhead"><div><h3>Daily reach and engagement</h3><p class="sub">${monthName(state.month)}, all platforms that report them. Reach is counted per day, so one person can count on more than one day</p></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Reach</span><span><i style="background:var(--ink3)"></i>Engagement</span></div></div>
+    <div data-chart='${JSON.stringify({ series: [{ data: daily('reach'), color:'var(--accent)' }, { data: daily('engagement'), color:'var(--ink3)' }] })}'></div></div>`;
+  if (rows.length) out += `<div class="card"><div class="cardhead"><div><h3>By platform</h3><p class="sub">A dash means the platform does not report that figure</p></div></div>
+    ${dataTable('socplat', [{ k:'platform', label:'Platform' }, { k:'followers', label:'Followers', num:1, fmt:v => fmt(v) },
+      { k:'reach', label:'Reach', num:1, fmt:v => fmt(v) }, { k:'views', label:'Views', num:1, fmt:v => fmt(v) },
+      { k:'engagement', label:'Engagement', num:1, fmt:v => fmt(v) }, { k:'posts', label:'Posts', num:1, fmt:v => fmt(v) }], rows, { sort:{ k:'reach', dir:-1 }, filter:false })}</div>`;
+  if (V.sposts.length){
+    const P = V.sposts.map(r => { const parts = [r.likes, r.comments, r.shares].filter(v => v != null);
+      return { ...r, eng: r.engagement != null ? Number(r.engagement) : parts.length ? parts.reduce((t, v) => t + Number(v), 0) : null, text:(r.caption || '').replace(/\s+/g, ' ').slice(0, 140) }; });
+    out += `<div class="card"><div class="cardhead"><div><h3>Every post</h3><p class="sub">${fmt(P.length)} posts in ${monthName(state.month)}. A dash means the platform does not report that figure</p></div></div>
+      ${dataTable('socposts', [{ k:'post_date', label:'Date', fmt:v => v ? rpAu(v) : '—' }, { k:'platform', label:'Platform' },
+        { k:'text', label:'Post', fmt:(v, r) => r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(v || 'View post')}</a>` : esc(v) },
+        { k:'reach', label:'Reach', num:1, fmt:v => fmt(v) }, { k:'eng', label:'Engagement', num:1, fmt:v => fmt(v) }], P, { sort:{ k:'post_date', dir:-1 }, maxH:520 })}</div>`;
+  }
   return out;
 }
 
 function viewLeads(){
   let out = head('Leads & CRM', 'Enquiries', 'Where enquiries came from this month.');
-  if (!V.leads.length) return out + emptyState('No leads recorded', 'Nothing has come through in this period.');
+  if (!V.leads.length) return out + emptyState(CFG.emptyNotes?.leads_crm ? 'Not connected yet' : 'No leads recorded', CFG.emptyNotes?.leads_crm || 'Nothing has come through in this period.');
   const bySrc = {}; V.leads.forEach(r => bySrc[r.source || 'Unknown'] = (bySrc[r.source||'Unknown']||0) + Number(r.count||0));
   out += `<div class="kpis">${Object.entries(bySrc).map(([s,n]) => kpi(s, fmt(n))).join('')}</div>`;
   return out;

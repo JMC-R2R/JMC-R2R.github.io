@@ -1,0 +1,6 @@
+/* YBH purple is too dark for small text on the dark canvas. Accent stays the logo purple for fills;
+   text uses a lighter tint. White text on purple fills. */
+.eyebrow,.lt-pill,.donecol .dlink a,.lt-art{color:#d39ad1}
+.mchip[aria-pressed="true"],.btn.primary,.gate-card button,button.primary,[type="submit"],.rp-btn.on{color:#fff}
+#panel a{color:#d39ad1}
+html.embed .monthbar{padding-left:22px}
