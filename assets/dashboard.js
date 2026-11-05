@@ -1796,6 +1796,70 @@ function viewNegatives(){
   return out;
 }
 
+/* Post-level social performance. Each piece shows only when the feed carries its field, so a client
+   whose posts have reach alone renders exactly as before. Videos are post_type 'Reel'; plays are their views. */
+const socIsVid = r => r.post_type === 'Reel';
+const socAvg = (a, k) => { const v = a.filter(r => r[k] != null); return v.length ? sum(v, k) / v.length : null; };
+const socTopics = () => (CFG.socialTopics || []).map(t => ({ label:t.label, re:new RegExp(t.pattern, 'i') }));
+const socTopicOf = (r, T) => { const t = T.find(x => x.re.test(r.caption || '')); return t ? t.label : 'Other'; };
+function socPerfHtml(P, T, running){
+  let out = '';
+  const vids = P.filter(r => socIsVid(r) && r.views != null);
+  /* Plays by month: the last six months up to the one selected, from every post on record. */
+  const mths = [...new Set((RAW.sposts || []).map(r => monthOf(r.post_date)))].filter(m => m <= state.month).sort().slice(-6);
+  const byM = mths.map(m => { const v = (RAW.sposts || []).filter(r => monthOf(r.post_date) === m && socIsVid(r) && r.views != null);
+    const pl = [...new Set(v.map(r => r.platform))].sort().map(p => `${p} ${fmt(sum(v.filter(r => r.platform === p), 'views'))}`).join(' · ');
+    return { label:rpMon(m) + (m === state.month && running ? ' (so far)' : ''), plays:sum(v, 'views'), n:v.length, pl }; }).filter(r => r.n);
+  if (byM.length > 1) out += `<div class="card"><div class="cardhead"><div><h3>Video plays by month</h3><p class="sub">Total plays of the videos posted each month, with how many videos and the average per video. Plays keep counting after a month ends, so recent videos have had less time to build up</p></div></div>
+    ${barList(byM, { value:r => r.plays, valueFmt:v => fmt(v), extra:r => ` <small>${fmt(r.n)} video${r.n === 1 ? '' : 's'} · ${fmt(r.plays / r.n)} avg</small>` })}
+    <p class="sub">${byM.map(r => `${esc(r.label)}: ${esc(r.pl)}`).join('. ')}.</p></div>`;
+  /* The five posts that did best this month: plays for videos, reach where there are none. */
+  const score = r => r.views != null && socIsVid(r) ? Number(r.views) : r.reach != null ? Number(r.reach) : null;
+  const top = P.filter(r => score(r) != null).sort((a, b) => score(b) - score(a)).slice(0, 5).map((r, i) => ({ ...r, rank:i + 1, text:(r.text || '').slice(0, 70) + ((r.text || '').length > 70 ? '…' : '') }));
+  const tcols = [{ k:'rank', label:'#', num:1 }, { k:'post_date', label:'Date', fmt:v => v ? rpAu(v) : '—' }, { k:'platform', label:'Platform' }, { k:'post_type', label:'Type', fmt:v => v === 'Reel' ? 'Video' : esc(v || '—') }];
+  if (T.length) tcols.push({ k:'topic', label:'Service' });
+  tcols.push({ k:'text', label:'Post', fmt:(v, r) => r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(v || 'View post')}</a>` : esc(v) },
+    { k:'views', label:'Plays', num:1, fmt:(v, r) => socIsVid(r) ? fmt(v) : '—' }, { k:'reach', label:'Reach', num:1, fmt:v => fmt(v) }, { k:'eng', label:'Engagement', num:1, fmt:v => fmt(v) });
+  /* The feed: every post as it looked, newest first, with its numbers on the tile. Only when posts carry images. */
+  if (P.some(r => r.thumbnail)){
+    const plats = [...new Set(P.map(r => r.platform))].sort();
+    const tiles = P.slice().sort((a, b) => String(b.post_date).localeCompare(String(a.post_date))).map(r => {
+      const vid = socIsVid(r), big = vid && r.views != null ? `▶ ${fmt(r.views)}` : r.reach != null ? `${fmt(r.reach)} reached` : '';
+      const img = r.thumbnail ? ` style="background-image:url('${esc(r.thumbnail)}')"` : '';
+      const tag = `<a class="stile" data-p="${esc(r.platform)}" href="${esc(r.url || '#')}" target="_blank" rel="noopener">
+        <div class="simg${vid ? ' vid' : ''}"${img}>${r.thumbnail ? '' : '<div class="noimg">No image from the platform</div>'}
+          <div class="sbadge"><span class="${r.platform === 'Facebook' ? 'fb' : r.platform === 'Instagram' ? 'ig' : ''}">${esc(r.platform)}</span>${vid ? '<span>Video</span>' : ''}</div>
+          ${big ? `<span class="splay">${big}</span>` : ''}</div>
+        <div class="smeta"><b>${esc((r.text || 'No caption').slice(0, 90))}</b>
+          <small>${r.post_date ? rpAu(r.post_date) : ''}${r.topic && r.topic !== 'Other' ? ' · ' + esc(r.topic) : ''}</small>
+          <small>${vid && r.reach != null ? fmt(r.reach) + ' reached · ' : ''}${r.eng != null ? fmt(r.eng) + ' engagement' : ''}${r.clicks ? ' · ' + fmt(r.clicks) + ' clicks' : ''}</small></div></a>`;
+      return tag; }).join('');
+    const btns = plats.length > 1 ? `<div class="sfeed-tabs" role="group" aria-label="Show platform">${['All', ...plats].map((p, i) =>
+      `<button type="button" class="${i ? '' : 'on'}" aria-pressed="${!i}" onclick="const f=this.closest('.card').querySelector('.sfeed');f.dataset.show='${p}';this.parentNode.querySelectorAll('button').forEach(x=>{x.classList.toggle('on',x===this);x.setAttribute('aria-pressed',x===this)})">${p}</button>`).join('')}</div>` : '';
+    out += `<div class="card"><div class="cardhead"><div><h3>The feed</h3><p class="sub">Every post in ${monthName(state.month)}, newest first. Videos show their plays and other posts their reach. Tap a post to open it</p></div>${btns}</div>
+      <div class="sfeed" data-show="All">${tiles}</div></div>`;
+  }
+  if (top.length > 1) out += `<div class="card"><div class="cardhead"><div><h3>Top ${top.length} posts in ${monthName(state.month)}</h3><p class="sub">Ranked by plays for videos and by reach for other posts</p></div></div>
+    ${dataTable('soctop', tcols, top, { sort:{ k:'rank', dir:1 }, filter:false })}</div>`;
+  /* Videos against other posts, per platform: which format earns its place. */
+  const fm = [];
+  [...new Set(P.map(r => r.platform))].sort().forEach(p => ['Reel', 'Post'].forEach(t => { const a = P.filter(r => r.platform === p && (t === 'Reel' ? socIsVid(r) : !socIsVid(r)));
+    if (a.length) fm.push({ fmt:`${p} ${t === 'Reel' ? 'videos' : 'posts'}`, n:a.length, reach:socAvg(a, 'reach'), plays:t === 'Reel' ? socAvg(a, 'views') : null, eng:socAvg(a, 'eng') }); }));
+  if (P.some(socIsVid) && P.some(r => !socIsVid(r))) out += `<div class="card"><div class="cardhead"><div><h3>Videos against other posts</h3><p class="sub">Average per post in ${monthName(state.month)}. A dash means the figure does not apply or is not reported</p></div></div>
+    ${dataTable('socfmt', [{ k:'fmt', label:'Format' }, { k:'n', label:'Posts', num:1, fmt:v => fmt(v) }, { k:'reach', label:'Avg reach', num:1, fmt:v => fmt(v) },
+      { k:'plays', label:'Avg plays', num:1, fmt:v => fmt(v) }, { k:'eng', label:'Avg engagement', num:1, fmt:v => fmt(v, 1) }], fm, { sort:{ k:'reach', dir:-1 }, filter:false })}</div>`;
+  /* By service, from each caption. Only for a client whose config lists its services. */
+  if (T.length){
+    const svc = [...new Set(P.map(r => r.topic))].map(t => { const a = P.filter(r => r.topic === t), v = a.filter(r => socIsVid(r) && r.views != null);
+      return { topic:t, n:a.length, vids:v.length, plays:v.length ? sum(v, 'views') : null, avgPlays:v.length ? sum(v, 'views') / v.length : null, reach:sum(a.filter(r => r.reach != null), 'reach'), eng:sum(a.filter(r => r.eng != null), 'eng') }; });
+    out += `<div class="card"><div class="cardhead"><div><h3>By service</h3><p class="sub">Every post in ${monthName(state.month)}, grouped by the service its caption is about. Average plays per video is the fairest comparison, because some services posted more than others</p></div></div>
+      ${dataTable('socsvc', [{ k:'topic', label:'Service' }, { k:'n', label:'Posts', num:1, fmt:v => fmt(v) }, { k:'vids', label:'Videos', num:1, fmt:v => fmt(v) },
+        { k:'plays', label:'Plays', num:1, fmt:v => fmt(v) }, { k:'avgPlays', label:'Avg plays per video', num:1, fmt:v => fmt(v) },
+        { k:'reach', label:'Reach', num:1, fmt:v => fmt(v) }, { k:'eng', label:'Engagement', num:1, fmt:v => fmt(v) }], svc, { sort:{ k:'avgPlays', dir:-1 }, filter:false })}</div>`;
+  }
+  return out;
+}
+
 function viewSocial(){
   let out = head('Social', 'Organic social', 'Reach, engagement and follower growth by platform, and how every post performed.');
   if (!V.social.length && !V.sposts.length) return out + emptyState('No social data for this month', CFG.emptyNotes?.social || 'Nothing recorded in this period.');
@@ -1815,6 +1879,14 @@ function viewSocial(){
       reach:total(c,'reach'), views:total(c,'views'), engagement:total(c,'engagement'),
       posts:V.sposts.filter(r => r.platform === p).length, reachPrev:total(q,'reach'), engPrev:total(q,'engagement') }; });
   const followers = rows.filter(r => r.followers != null).reduce((t, r) => t + r.followers, 0);
+  const T = socTopics();
+  const P = V.sposts.map(r => { const parts = [r.likes, r.comments, r.shares].filter(v => v != null);
+    return { ...r, eng: r.engagement != null ? Number(r.engagement) : parts.length ? parts.reduce((t, v) => t + Number(v), 0) : null,
+      text:(r.caption || '').replace(/\s+/g, ' ').slice(0, 90), topic:T.length ? socTopicOf(r, T) : null }; });
+  const vidRows = P.filter(r => socIsVid(r) && r.views != null), nVid = vidRows.length, plays = nVid ? sum(vidRows, 'views') : null;
+  const follows = total(V.social,'new_follows'), visits = total(V.social,'page_visits');
+  const platsWith = k => [...new Set(V.social.filter(r => r[k] != null).map(r => r.platform))].join(' and ');
+  const followPlats = platsWith('new_follows'), visitPlats = platsWith('page_visits');
   const lead = rows.filter(r => r.reach != null).sort((a, b) => b.reach - a.reach)[0];
   const parts = [];
   if (reach != null) parts.push(`total daily reach was ${fmt(reach)}${pm && reachP ? ` (${reach >= reachP ? 'up' : 'down'} from ${fmt(reachP)} in ${pm})` : ''}`);
@@ -1825,9 +1897,20 @@ function viewSocial(){
     ${views != null ? kpi('Views', fmt(views), vs(views, viewsP)) : ''}
     ${eng != null ? kpi('Engagement', fmt(eng), vs(eng, engP)) : ''}
     ${V.sposts.length ? kpi('Posts', fmt(V.sposts.length), monthName(state.month)) : ''}
+    ${plays != null ? kpi('Video plays', fmt(plays), `${fmt(nVid)} video${nVid === 1 ? '' : 's'} · ${fmt(plays / nVid)} per video`) : ''}
+    ${follows != null ? kpi(`New ${esc(followPlats)} follows`, fmt(follows), vs(follows, total(V.socialPrev,'new_follows'))) : ''}
+    ${visits != null ? kpi(`${esc(visitPlats)} page visits`, fmt(visits), vs(visits, total(V.socialPrev,'page_visits'))) : ''}
     ${rows.filter(r => r.followers != null).map(r => kpi(`${esc(r.platform)} followers`, fmt(r.followers), r.followersPrev != null && pm ? `${stepChip(r.followers, r.followersPrev, pm)}` : 'current')).join('')}</div>`;
   const notes = [];
   if (lead && reach && rows.filter(r => r.reach != null).length > 1) notes.push(callout('good', `${esc(lead.platform)} had the most reach`, `${fmt(lead.reach)} of the ${fmt(reach)} total daily reach in ${monthName(state.month)} came from ${esc(lead.platform)}.`));
+  const vAvg = socAvg(P.filter(socIsVid), 'reach'), pAvg = socAvg(P.filter(r => !socIsVid(r)), 'reach');
+  if (vAvg && pAvg && P.filter(socIsVid).length > 1 && P.filter(r => !socIsVid(r)).length > 1){
+    const x = vAvg / pAvg;
+    if (x >= 1.5) notes.push(callout('good', `Videos reached ${fmt(x, 1)} times more people than other posts`, `On average each video reached ${fmt(vAvg)} people in ${monthName(state.month)}, against ${fmt(pAvg)} for photo and carousel posts.`));
+    else if (x <= 0.67) notes.push(callout('warn', 'Photo and carousel posts out-reached videos', `On average each video reached ${fmt(vAvg)} people in ${monthName(state.month)}, against ${fmt(pAvg)} for other posts.`));
+  }
+  const best = vidRows.slice().sort((a, b) => b.views - a.views)[0];
+  if (best && nVid > 1) notes.push(callout('good', `Most-played video: ${fmt(best.views)} plays`, `${esc(best.platform)}, ${rpAu(best.post_date)}${best.topic && best.topic !== 'Other' ? ` (${esc(best.topic)})` : ''}: “${esc((best.text || '').slice(0, 90))}${(best.text || '').length > 90 ? '…' : ''}”`));
   out += notes.join('');
   const days = [...new Set(V.social.map(r => r.date))].sort();
   const daily = k => days.map(d => total(V.social.filter(r => r.date === d), k));
@@ -1838,13 +1921,18 @@ function viewSocial(){
     ${dataTable('socplat', [{ k:'platform', label:'Platform' }, { k:'followers', label:'Followers', num:1, fmt:v => fmt(v) },
       { k:'reach', label:'Reach', num:1, fmt:v => fmt(v) }, { k:'views', label:'Views', num:1, fmt:v => fmt(v) },
       { k:'engagement', label:'Engagement', num:1, fmt:v => fmt(v) }, { k:'posts', label:'Posts', num:1, fmt:v => fmt(v) }], rows, { sort:{ k:'reach', dir:-1 }, filter:false })}</div>`;
-  if (V.sposts.length){
-    const P = V.sposts.map(r => { const parts = [r.likes, r.comments, r.shares].filter(v => v != null);
-      return { ...r, eng: r.engagement != null ? Number(r.engagement) : parts.length ? parts.reduce((t, v) => t + Number(v), 0) : null, text:(r.caption || '').replace(/\s+/g, ' ').slice(0, 140) }; });
+  out += socPerfHtml(P, T, running);
+  if (P.length){
+    const has = k => P.some(r => r[k] != null), cols = [{ k:'post_date', label:'Date', fmt:v => v ? rpAu(v) : '—' }, { k:'platform', label:'Platform' }];
+    if (has('post_type')) cols.push({ k:'post_type', label:'Type', fmt:v => v === 'Reel' ? 'Video' : esc(v || '—') });
+    if (T.length) cols.push({ k:'topic', label:'Service' });
+    cols.push({ k:'text', label:'Post', fmt:(v, r) => r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(v || 'View post')}</a>` : esc(v) });
+    if (has('views')) cols.push({ k:'views', label:'Plays', num:1, fmt:(v, r) => socIsVid(r) ? fmt(v) : '—' });
+    cols.push({ k:'reach', label:'Reach', num:1, fmt:v => fmt(v) }, { k:'eng', label:'Engagement', num:1, fmt:v => fmt(v) });
+    if (has('clicks')) cols.push({ k:'clicks', label:'Clicks', num:1, fmt:v => fmt(v) });
+    if (has('shares') && P.some(r => Number(r.shares) > 0)) cols.push({ k:'shares', label:'Shares', num:1, fmt:v => fmt(v) });
     out += `<div class="card"><div class="cardhead"><div><h3>Every post</h3><p class="sub">${fmt(P.length)} posts in ${monthName(state.month)}. A dash means the platform does not report that figure</p></div></div>
-      ${dataTable('socposts', [{ k:'post_date', label:'Date', fmt:v => v ? rpAu(v) : '—' }, { k:'platform', label:'Platform' },
-        { k:'text', label:'Post', fmt:(v, r) => r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(v || 'View post')}</a>` : esc(v) },
-        { k:'reach', label:'Reach', num:1, fmt:v => fmt(v) }, { k:'eng', label:'Engagement', num:1, fmt:v => fmt(v) }], P, { sort:{ k:'post_date', dir:-1 }, maxH:520 })}</div>`;
+      ${dataTable('socposts', cols, P, { sort:{ k:'post_date', dir:-1 }, maxH:520 })}</div>`;
   }
   return out;
 }
