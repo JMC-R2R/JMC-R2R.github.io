@@ -1012,7 +1012,7 @@ function rpMapHtml(){
   const pair = k => { const l = ser(k), c = l[l.length - 1], ps = l.slice(0, -1).filter(s => rpSame(s, c)); return [c, ps[ps.length - 1] || null]; };
   const [cur, prev] = pair(rp.kw);
   if (!prev && rp.view === 'move') rp.view = 'rank';
-  const A = rpStats(cur), P = prev ? rpStats(prev) : null, who = CFG.name.split(/\s+/)[0];
+  const A = rpStats(cur), P = prev ? rpStats(prev) : null, who = CFG.shortName || CFG.name.split(/\s+/)[0];
   const foot = (a, b, low) => { if (!P) return 'Baseline scan'; if (a == null || b == null) return 'Not comparable'; const d = a - b;
     if (Math.abs(d) < .05) return 'No change since ' + rpAu(prev.checked_at); const good = low ? d < 0 : d > 0;
     return `<span class="chip ${good ? 'up' : 'dn'}">${d > 0 ? '+' : ''}${fmt(d, Number.isInteger(d) ? 0 : 1)}</span> since ${rpAu(prev.checked_at)}`; };
@@ -1799,7 +1799,9 @@ function viewNegatives(){
 function viewSocial(){
   let out = head('Social', 'Organic social', 'Reach, engagement and follower growth by platform, and how every post performed.');
   if (!V.social.length && !V.sposts.length) return out + emptyState('No social data for this month', CFG.emptyNotes?.social || 'Nothing recorded in this period.');
-  const pm = V.prevMonth ? monthName(V.prevMonth) : null, vs = (c, p) => `${chipFor(c, p)}${pm ? ` vs ${pm}` : ''}`;
+  /* A month still running is not compared with a whole month: a few days against thirty only ever looks like a collapse. */
+  const nowD = new Date(), running = state.month === `${nowD.getFullYear()}-${String(nowD.getMonth() + 1).padStart(2, '0')}`;
+  const pm = V.prevMonth && !running ? monthName(V.prevMonth) : null, vs = (c, p) => running ? 'Month in progress' : `${chipFor(c, p)}${pm ? ` vs ${pm}` : ''}`;
   /* A metric a platform does not report stays blank: it is never added in as a zero. */
   const total = (rows, k) => { const v = rows.filter(r => r[k] != null); return v.length ? sum(v, k) : null; };
   const plats = [...new Set(V.social.map(r => r.platform))].sort();
@@ -1823,7 +1825,7 @@ function viewSocial(){
     ${views != null ? kpi('Views', fmt(views), vs(views, viewsP)) : ''}
     ${eng != null ? kpi('Engagement', fmt(eng), vs(eng, engP)) : ''}
     ${V.sposts.length ? kpi('Posts', fmt(V.sposts.length), monthName(state.month)) : ''}
-    ${rows.filter(r => r.followers != null).map(r => kpi(`${esc(r.platform)} followers`, fmt(r.followers), r.followersPrev != null ? `${stepChip(r.followers, r.followersPrev, pm)}` : 'current')).join('')}</div>`;
+    ${rows.filter(r => r.followers != null).map(r => kpi(`${esc(r.platform)} followers`, fmt(r.followers), r.followersPrev != null && pm ? `${stepChip(r.followers, r.followersPrev, pm)}` : 'current')).join('')}</div>`;
   const notes = [];
   if (lead && reach && rows.filter(r => r.reach != null).length > 1) notes.push(callout('good', `${esc(lead.platform)} had the most reach`, `${fmt(lead.reach)} of the ${fmt(reach)} total daily reach in ${monthName(state.month)} came from ${esc(lead.platform)}.`));
   out += notes.join('');
