@@ -359,6 +359,9 @@ function renderAll(){
   /* The admin tabs are not month-scoped, so the month bar would only mislead there. */
   const mb = $('.monthbar'); if (mb) mb.style.display = isAdm(state.tab) ? 'none' : '';
   $('#monthlabel').textContent = monthName(state.month);
+  /* Jose 06/11/2026: title, then the boxed numbers, then the paragraph that explains them. */
+  host.querySelectorAll('.lede').forEach(p => { const n = p.nextElementSibling; if (n && n.classList.contains('kpis')) n.after(p); });
+  teamBar(host);
   drawCharts(); wireTables();
   /* The refresh log is admin-only, so a client falls back to the newest dated row. */
   const newest = [...RAW.seo, ...RAW.gbp, ...RAW.paid].map(r => r.date).filter(Boolean).sort().pop();
@@ -741,6 +744,100 @@ const OFFER = {
   seo:       { label:'SEO', kicker:'Only if you want to grow organic traffic',
     p:['SEO reporting shows the searches you are found for, the keywords we target and how they move each month.'] },
 };
+/* ---------------------------------------------------------------- team nudges
+   Jose 06/11/2026. Two buttons only the team sees: remind the client about content waiting for
+   their approval (the content hub's own reminder email, ch_send_reminder), and ask them to check
+   their search terms for negative keywords (md_send_negatives_nudge). Each opens a preview with
+   the recipients ticked; clicking Send is the approval and the branded email goes straight out. */
+const isTeam = () => ['admin', 'editor'].includes(state.role);
+function teamBar(host){
+  if (!isTeam()) return;
+  const btns = [];
+  if (['overview', 'seo'].includes(state.tab)) btns.push(`<button type="button" class="rp-btn" data-nudge="content">Remind client: content to review</button>`);
+  if (['paid_ads', 'negatives'].includes(state.tab) && (RAW.pst || []).length) btns.push(`<button type="button" class="rp-btn" data-nudge="negatives">Ask client to check negative keywords</button>`);
+  if (!btns.length) return;
+  host.prepend(el(`<div class="teambar"><span class="mlbl">Team only</span>${btns.join('')}</div>`));
+}
+function nudgeBox(html){
+  const box = el(`<div class="lockwrap" role="dialog" aria-modal="true"><div class="lockbox nudgebox">${html}</div></div>`);
+  document.body.appendChild(box);
+  const v = EMBED && onScreen();
+  if (v) Object.assign(box.style, { position: 'absolute', top: v.top + 'px', height: v.height + 'px', bottom: 'auto' });
+  box.addEventListener('click', e => { if (e.target === box || e.target.hasAttribute('data-close')) box.remove(); });
+  return box;
+}
+const nudgePeople = list => list.length
+  ? list.map((r, i) => `<label class="nudgeto"><input type="checkbox" value="${esc(r.email)}" checked> ${esc(r.name || r.email)} <span class="sub">${esc(r.email)}</span></label>`).join('')
+  : '<p class="bad">There is nobody to send it to: the client has no active login yet.</p>';
+const nudgeRecips = box => $$('.nudgeto input:checked', box).map(i => i.value);
+const nudgeLast = l => l ? `<p class="sub">Last sent ${new Date(l.at).toLocaleDateString('en-AU')} by ${esc(l.by || 'the team')}.</p>` : '';
+async function nudgeContent(){
+  const box = nudgeBox('<span class="mlbl">Content to review</span><h3>Loading…</h3>');
+  const card = $('.nudgebox', box);
+  try {
+    const { data: tc } = await sb.from('tt_clients').select('id,name,is_test').eq('slug', CFG.slug).maybeSingle();
+    if (!tc) throw new Error('This client has no content hub yet.');
+    const [{ data: items, error: e1 }, { data: info, error: e2 }] = await Promise.all([
+      sb.from('ch_items').select('id,title,month_key,client_status,approved,not_approved,plan_batch_id,topic_approved,deliverable,sort_order').eq('client_id', tc.id),
+      sb.rpc('ch_reminder_info', { p_client: tc.id })]);
+    if (e1 || e2) throw new Error((e1 || e2).message);
+    /* Same rule as the database's ch_reminder_stage, so the preview lists exactly what is sent. */
+    const stage = i => i.not_approved ? null : i.plan_batch_id && !i.topic_approved && i.deliverable !== 'linkedin_article' ? 'topic'
+      : i.client_status === 'for_approval' && !i.approved ? 'content' : null;
+    const due = (items || []).filter(stage).sort((a, b) => (a.month_key || '').localeCompare(b.month_key || '') || (a.sort_order || 0) - (b.sort_order || 0));
+    if (!due.length){ card.innerHTML = `<span class="mlbl">Content to review</span><h3>Nothing is waiting on ${esc(tc.name)}</h3><p>Every topic and piece of content has been approved or declined.</p><div class="lockbtns"><button class="btn" type="button" data-close>Close</button></div>`; return; }
+    const hub = CFG.hubUrl || `https://update.readytorank.com.au/${CFG.slug}-hub/`;
+    card.innerHTML = `<span class="mlbl">Content to review${tc.is_test ? ' · test hub, emails Jhen only' : ''}</span>
+      <h3>Email ${esc(tc.name)} the ${fmt(due.length)} item${due.length === 1 ? '' : 's'} waiting for approval</h3>
+      <p>A branded Ready to Rank email listing each item below, each linked to it in their hub, with a Review and approve button.</p>
+      <div class="nudgelist">${['topic', 'content'].map(k => { const g = due.filter(i => stage(i) === k); return g.length ? `<b>${k === 'topic' ? 'Topics to approve' : 'Content to approve'} (${g.length})</b><ul>${g.map(i => `<li>${esc(i.title)} <span class="sub">${esc(i.month_key ? rpMon(i.month_key) : '')}</span></li>`).join('')}</ul>` : ''; }).join('')}</div>
+      <span class="mlbl">Send to</span>${nudgePeople(info.recipients || [])}
+      <label class="mlbl" for="nudgeNote">A note from the team (optional)</label><textarea id="nudgeNote" rows="2" maxlength="500"></textarea>
+      ${nudgeLast(info.last)}<p class="nudgemsg" role="status"></p>
+      <div class="lockbtns"><button class="btn primary" type="button" data-send${(info.recipients || []).length ? '' : ' disabled'}>Send email</button><button class="btn" type="button" data-close>Cancel</button></div>
+      <p class="sub">Their hub: <a href="${esc(hub)}" target="_blank" rel="noopener">${esc(hub.replace(/^https?:\/\//, ''))}</a></p>`;
+    $('[data-send]', card).addEventListener('click', async ev => {
+      const to = nudgeRecips(card), m = $('.nudgemsg', card); if (!to.length){ m.textContent = 'Tick at least one person.'; return; }
+      ev.target.disabled = true; m.textContent = 'Sending…';
+      const { error } = await sb.rpc('ch_send_reminder', { p_client: tc.id, p_items: due.map(i => i.id), p_note: $('#nudgeNote', card).value || null, p_recipients: to });
+      if (error){ ev.target.disabled = false; m.textContent = 'Not sent: ' + error.message; m.classList.add('bad'); return; }
+      m.classList.remove('bad'); m.textContent = `Sent to ${to.join(', ')}.`; ev.target.remove();
+    });
+  } catch (e) { card.innerHTML = `<span class="mlbl">Content to review</span><h3>Couldn’t load this</h3><p>${esc(e.message || String(e))}</p><div class="lockbtns"><button class="btn" type="button" data-close>Close</button></div>`; }
+}
+async function nudgeNegatives(){
+  const box = nudgeBox('<span class="mlbl">Negative keywords</span><h3>Loading…</h3>');
+  const card = $('.nudgebox', box);
+  /* The search terms that cost money and produced nothing, from the latest month with terms. */
+  const lastM = [...new Set((RAW.pst || []).map(r => monthOf(r.month)))].sort().pop();
+  const agg = {}; (RAW.pst || []).filter(r => monthOf(r.month) === lastM).forEach(r => { const k = r.search_term.toLowerCase();
+    const a = agg[k] = agg[k] || { term: r.search_term, cost: 0, clicks: 0, conv: 0 }; a.cost += +r.cost || 0; a.clicks += +r.clicks || 0; a.conv += +r.conversions || 0; });
+  const waste = Object.values(agg).filter(a => a.cost > 0 && !a.conv).sort((a, b) => b.cost - a.cost).slice(0, 10);
+  const { data: info, error } = await sb.rpc('md_nudge_info', { p_slug: CFG.slug, p_kind: 'negatives' });
+  if (error){ card.innerHTML = `<span class="mlbl">Negative keywords</span><h3>Couldn’t load this</h3><p>${esc(error.message)}</p><div class="lockbtns"><button class="btn" type="button" data-close>Close</button></div>`; return; }
+  card.innerHTML = `<span class="mlbl">Negative keywords</span>
+    <h3>Ask ${esc(CFG.name)} to check their search terms</h3>
+    <p>A branded Ready to Rank email asking them to tick any searches that aren’t their kind of customer, so the ads stop paying for them. It links straight to the search terms in their hub${waste.length ? ` and lists the ${fmt(waste.length)} searches below, which cost money in ${monthName(lastM)} and brought no leads` : ''}.</p>
+    ${waste.length ? `<div class="nudgelist"><ul>${waste.map(a => `<li>${esc(a.term)} <span class="sub">$${fmt(a.cost, 2)} · ${fmt(a.clicks)} click${a.clicks === 1 ? '' : 's'}</span></li>`).join('')}</ul></div>` : ''}
+    <span class="mlbl">Send to</span>${nudgePeople(info.recipients || [])}
+    <label class="mlbl" for="nudgeNote">A note from the team (optional)</label><textarea id="nudgeNote" rows="2" maxlength="500"></textarea>
+    ${nudgeLast(info.last)}<p class="nudgemsg" role="status"></p>
+    <div class="lockbtns"><button class="btn primary" type="button" data-send${(info.recipients || []).length ? '' : ' disabled'}>Send email</button><button class="btn" type="button" data-close>Cancel</button></div>`;
+  $('[data-send]', card).addEventListener('click', async ev => {
+    const to = nudgeRecips(card), m = $('.nudgemsg', card); if (!to.length){ m.textContent = 'Tick at least one person.'; return; }
+    ev.target.disabled = true; m.textContent = 'Sending…';
+    const { error } = await sb.rpc('md_send_nudge', { p_slug: CFG.slug, p_kind: 'negatives', p_note: $('#nudgeNote', card).value || null,
+      p_recipients: to, p_detail: { month: lastM, terms: waste.map(a => ({ term: a.term, cost: Math.round(a.cost * 100) / 100, clicks: a.clicks })) } });
+    if (error){ ev.target.disabled = false; m.textContent = 'Not sent: ' + error.message; m.classList.add('bad'); return; }
+    m.classList.remove('bad'); m.textContent = `Sent to ${to.join(', ')}.`; ev.target.remove();
+  });
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest && ev.target.closest('[data-nudge]'); if (!b || !isTeam()) return;
+  if (b.dataset.nudge === 'content') nudgeContent();
+  if (b.dataset.nudge === 'negatives') nudgeNegatives();
+});
+
 function showOffer(mod){
   const o = OFFER[mod] || { label: SOLD_AS[mod] || LABEL[mod] || mod, kicker:'Only if it would help', p:[] };
   const box = el(`<div class="lockwrap" role="dialog" aria-modal="true"><div class="lockbox">
@@ -804,16 +901,37 @@ function rpBuild(){
   (RAW.genai || []).forEach(r => { at(r.date).gen_ai = r.impressions; });
   RAW.daily = Object.values(m).sort((a, b) => a.date.localeCompare(b.date));
 }
+/* A period is a number of days, or a calendar month 'YYYY-MM' picked from the month list
+   (Jose 06/11/2026), which compares with the whole month before it. */
+const rpIsMonth = v => typeof v === 'string';
+function rpMonthsOf(key){
+  return [...new Set((RAW.daily || []).filter(r => rpHas(r, key)).map(r => r.date.slice(0, 7)))].sort().reverse().slice(0, 16);
+}
+function rpMonthSel(group, key, cur){
+  const ms = rpMonthsOf(key); if (!ms.length) return '';
+  return `<select class="rp-month${rpIsMonth(cur) ? ' on' : ''}" data-rpsel="${group}" aria-label="Show one calendar month">
+    <option value="">Month</option>${ms.map(m => `<option value="${m}"${m === cur ? ' selected' : ''}>${esc(rpMon(m))}</option>`).join('')}</select>`;
+}
 function rpWindow(key, days){
   const rows = (RAW.daily || []).filter(r => rpHas(r, key));
   if (!rows.length) return null;
+  if (rpIsMonth(days)){
+    const inR = (a, b) => (RAW.daily || []).filter(r => r.date >= a && r.date <= b);
+    const start = days + '-01', last = rpAdd(rpMonthAdd(days, 1) + '-01', -1), dataEnd = rows[rows.length - 1].date;
+    const end = last < dataEnd ? last : dataEnd, pm = rpMonthAdd(days, -1);
+    /* A month still running compares with the same days of the month before, never a whole month. */
+    const running = end < last, prevStart = pm + '-01', fullPrevEnd = rpAdd(start, -1);
+    const sameDays = rpAdd(prevStart, Number(end.slice(8)) - 1), prevEnd = running && sameDays < fullPrevEnd ? sameDays : fullPrevEnd;
+    return { end, start, first: rows[0].date, cur: inR(start, end), prev: inR(prevStart, prevEnd), prevStart, prevEnd,
+      month: days, running, vs: running ? `vs 1–${Number(end.slice(8))} ${rpMon(pm)}` : 'vs ' + rpMon(pm), vsShort: rpMon(pm) };
+  }
   const end = rows[rows.length - 1].date, start = rpAdd(end, -(days - 1)), prevEnd = rpAdd(start, -1), prevStart = rpAdd(prevEnd, -(days - 1));
   const inR = (a, b) => (RAW.daily || []).filter(r => r.date >= a && r.date <= b);
-  return { end, start, first: rows[0].date, cur: inR(start, end), prev: inR(prevStart, prevEnd), prevStart, prevEnd };
+  return { end, start, first: rows[0].date, cur: inR(start, end), prev: inR(prevStart, prevEnd), prevStart, prevEnd, vs: 'vs previous period', vsShort: 'previous' };
 }
 /* Daily up to three months; weekly beyond that, so 16 months stays readable. */
 function rpBuckets(rows, days, keys, avgKeys = []){
-  if (days <= 91) return rows.map(r => ({ label: r.date, ...r }));
+  if (rpIsMonth(days) || days <= 91) return rows.map(r => ({ label: r.date, ...r }));
   const out = []; let cur = null;
   rows.forEach((r, i) => { if (!cur || i % 7 === 0){ cur = { label: r.date, n: {} }; out.push(cur); }
     keys.forEach(k => { if (r[k] != null){ if (avgKeys.includes(k)){ cur.n[k] = (cur.n[k] || 0) + 1; } cur[k] = (cur[k] || 0) + Number(r[k]); } }); });
@@ -848,37 +966,38 @@ function rpLines(rows, series, { yL = '', yR = '', labelFmt } = {}){
 }
 const rpLegend = series => `<div class="legend">${series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('')}</div>`;
 function rpNote(w, days, what){
+  if (w.month) return `${monthName(w.month)}${w.running ? ' (month in progress)' : ''}: ${rpAu(w.start)} to ${rpAu(w.end)}, compared with ${w.running ? `the same days of ${monthName(rpMonthAdd(w.month, -1))}` : monthName(rpMonthAdd(w.month, -1))}. `;
   return `${rpAu(w.start < w.first ? w.first : w.start)} to ${rpAu(w.end)}${w.start < w.first ? `. ${what} history starts ${rpAu(w.first)}, so this period is shorter than selected` : ''}. ${days > 91 ? 'Plotted weekly. ' : ''}`;
 }
 function rpGscHtml(){
   const w = rpWindow('gsc_impressions', rp.gsc);
-  const btns = RP_RANGES.map(r => rpBtn('gsc', r.d, r.d === rp.gsc, r.l)).join('');
+  const btns = RP_RANGES.map(r => rpBtn('gsc', r.d, r.d === rp.gsc, r.l)).join('') + rpMonthSel('gsc', 'gsc_impressions', rp.gsc);
   if (!w) return emptyState('No Search Console data yet', 'Google has not reported search data for this website yet.');
   const c = rpSum(w.cur,'gsc_clicks'), i = rpSum(w.cur,'gsc_impressions'), pc = rpSum(w.prev,'gsc_clicks'), pi = rpSum(w.prev,'gsc_impressions');
   const posOf = a => { const x = a.filter(r => r.gsc_position != null && r.gsc_impressions); const t = rpSum(x,'gsc_impressions'); return t ? x.reduce((s, r) => s + Number(r.gsc_position) * Number(r.gsc_impressions), 0) / t : null; };
   const pos = posOf(w.cur), pp = posOf(w.prev), hasPrev = w.prev.some(r => r.gsc_impressions != null);
   const gen = w.cur.filter(r => r.gen_ai != null), genP = w.prev.filter(r => r.gen_ai != null);
-  const foot = (a, b) => hasPrev ? chipFor(a, b) + ' vs previous period' : 'No earlier period to compare';
+  const foot = (a, b) => hasPrev ? chipFor(a, b) + ' ' + w.vs : 'No earlier period to compare';
   const series = [{ k:'gsc_impressions', name:'Impressions', color:'var(--ink3)' }, { k:'gsc_clicks', name:'Clicks', color:'var(--accent)', axis:'r' }];
   if (gen.length) series.push({ k:'gen_ai', name:'AI impressions', color:'var(--warn)' });
   const rows = rpBuckets(w.cur, rp.gsc, ['gsc_clicks','gsc_impressions','gen_ai']);
   return `<div class="cardhead"><div><h3>Google Search Console Data</h3><p class="sub">${rpNote(w, rp.gsc, 'Search Console')}Google reports this about two days behind.</p></div>
       <div class="rp-range" role="group" aria-label="Search Console period">${btns}</div></div>
     <div class="kpis">${kpi('Clicks', fmt(c), foot(c, pc))}${kpi('Impressions', fmt(i), foot(i, pi))}
-      ${gen.length ? kpi('AI impressions', fmt(rpSum(gen,'gen_ai')), genP.length ? chipFor(rpSum(gen,'gen_ai'), rpSum(genP,'gen_ai')) + ' vs previous period' : 'AI Overviews and AI Mode') : ''}
+      ${gen.length ? kpi('AI impressions', fmt(rpSum(gen,'gen_ai')), genP.length ? chipFor(rpSum(gen,'gen_ai'), rpSum(genP,'gen_ai')) + ' ' + w.vs : 'AI Overviews and AI Mode') : ''}
       ${kpi('Click rate', i ? pct1(c / i * 100) : '—', 'Clicks ÷ impressions')}
-      ${kpi('Avg position', pos != null ? fmt(pos, 1) : '—', pp != null && pos != null ? stepChip(pos, pp, 'previous', { dp:1, lowerIsBetter:true }) : 'Lower is better')}</div>
+      ${kpi('Avg position', pos != null ? fmt(pos, 1) : '—', pp != null && pos != null ? stepChip(pos, pp, w.vsShort, { dp:1, lowerIsBetter:true }) : 'Lower is better')}</div>
     ${rpLegend(series)}${rpLines(rows, series)}
     ${gen.length ? '<p class="sub">Google counts AI impressions as part of total impressions, so the AI line is not extra on top.</p>' : ''}`;
 }
 function rpGaHtml(){
   const w = rpWindow('sessions', rp.ga);
   if (!w) return emptyState('No Google Analytics data yet', 'Google Analytics has not reported any visits for this website yet.');
-  const btns = RP_RANGES.map(r => rpBtn('ga', r.d, r.d === rp.ga, r.l)).join('');
+  const btns = RP_RANGES.map(r => rpBtn('ga', r.d, r.d === rp.ga, r.l)).join('') + rpMonthSel('ga', 'sessions', rp.ga);
   const S = a => rpSum(a,'sessions'), hasPrev = w.prev.some(r => r.sessions != null);
   const adu = a => { const x = a.filter(r => r.users != null); return x.length ? rpSum(x,'users') / x.length : null; };
   const er = a => { const x = a.filter(r => r.engaged_sessions != null && r.sessions != null), t = rpSum(x,'sessions'); return t ? rpSum(x,'engaged_sessions') / t * 100 : null; };
-  const foot = (a, b) => hasPrev && a != null && b != null ? chipFor(a, b) + ' vs previous period' : 'No earlier period to compare';
+  const foot = (a, b) => hasPrev && a != null && b != null ? chipFor(a, b) + ' ' + w.vs : 'No earlier period to compare';
   const ke = rpSum(w.cur,'key_events');
   const series = [{ k:'sessions', name:'Sessions', color:'var(--accent)' }, { k:'users', name:'Users', color:'var(--ink3)' }];
   const rows = rpBuckets(w.cur, rp.ga, ['sessions','users']);
@@ -957,11 +1076,46 @@ function rpAioTable(){
     months.forEach(m => { o['m' + m] = x.months[m] ? 1 : 0; }); return o; });
   const n = k => list.filter(r => r.status === k).length, nCur = list.filter(r => r.sort < 2).length;
   const pill = v => `<span class="rankpill ${v === 'New' ? 'win' : v === 'Kept' ? 'mid' : 'out'}">${v}</span>`;
-  const cols = [{ k:'keyword', label:'Search' }, { k:'page', label:'Page cited', fmt:v => `<span class="rvtext">${esc(v)}</span>` }, { k:'sort', label:'Status', fmt:(v, r) => pill(r.status) }]
+  const cols = [{ k:'keyword', label:'Search' }, { k:'page', label:'Page cited', fmt:v => rpPageLink(v) }, { k:'sort', label:'Status', fmt:(v, r) => pill(r.status) }]
     .concat(months.map(m => ({ k:'m' + m, label:rpDay(m + '-01').toLocaleDateString('en-AU', { month:'short' }), num:1, fmt:v => v ? '✓' : '—' })));
   return `<div class="card"><div class="cardhead"><div><h3>AI Overviews you are featured in</h3>
     <p class="sub">${fmt(nCur)} searches in ${monthName(cur)}${prv ? `, against ${fmt(months.length > 1 ? list.filter(r => r['m' + prv]).length : 0)} in ${monthName(prv)}: ${fmt(n('New'))} new, ${fmt(n('Dropped'))} dropped` : ''}. Google’s AI answer linked to your website for each of these.</p></div></div>
     ${dataTable('aio', cols, list, { sort:{ k:'sort', dir:1 }, maxH:560 })}</div>`;
+}
+
+/* Proof (Jose 06/11/2026): real screenshots of Google's AI Overview citing the client, captured
+   through SE Ranking and published beside the dashboard as aio/index.json, plus the assistants'
+   own answers as captured at the month-end run (md_geo_visibility.answer). The answers are shown
+   as text in a neutral card, never dressed up to look like the assistant's own screen. */
+let PROOF = null;
+async function rpLoadProof(){
+  try { const r = await fetch(new URL('aio/index.json', location.href), { cache: 'no-cache' });
+        PROOF = r.ok ? await r.json() : []; } catch (e) { PROOF = []; }
+  const el = document.getElementById('rpProof'); if (el) el.innerHTML = rpProofHtml();
+}
+function rpMark(text){
+  const names = [CFG.name, brandPattern()].filter(n => n && n.length > 2).map(n => esc(n).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  let h = esc(text); if (names.length) h = h.replace(new RegExp('(' + names.join('|') + ')', 'gi'), '<mark>$1</mark>');
+  return h.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
+}
+function rpProofHtml(){
+  if (PROOF === null){ rpLoadProof(); return ''; }
+  const shots = (PROOF || []).filter(x => x && x.file);
+  const latest = {}; (RAW.geo || []).filter(r => r.answer && rpNamed(r)).forEach(r => { const k = r.engine;
+    if (!latest[k] || r.checked_at > latest[k].checked_at) latest[k] = r; });
+  const answers = Object.values(latest).sort((a, b) => a.engine.localeCompare(b.engine));
+  if (!shots.length && !answers.length) return '';
+  let out = '';
+  if (shots.length) out += `<div class="card"><div class="cardhead"><div><h3>Seen in Google’s AI Overview</h3>
+      <p class="sub">Screenshots of Google’s AI answer citing your website, captured ${esc(rpAu(shots.map(x => x.captured).filter(Boolean).sort().pop() || ''))}. Your link is outlined.</p></div></div>
+    <div class="proofgrid">${shots.map(x => `<figure class="proofshot"><a href="${esc(new URL('aio/' + x.file, location.href).href)}" target="_blank" rel="noopener">
+      <img src="${esc(new URL('aio/' + x.file, location.href).href)}" alt="Google AI Overview for ${esc(x.keyword)} citing ${esc(CFG.name)}" loading="lazy"></a>
+      <figcaption><b>“${esc(x.keyword)}”</b>${x.cited_url ? `<br>${rpPageLink(x.cited_url)}` : ''}</figcaption></figure>`).join('')}</div></div>`;
+  if (answers.length) out += `<div class="card"><div class="cardhead"><div><h3>What the AI assistants said</h3>
+      <p class="sub">The latest answer from each assistant that named ${esc(CFG.name)}, word for word as we captured it. Answers vary from one person to the next, so treat these as examples.</p></div></div>
+    <div class="proofgrid">${answers.map(r => `<article class="proofans"><span class="mlbl">${esc(r.engine)} · ${esc(rpAu(String(r.checked_at).slice(0, 10)))}</span>
+      <p class="proofq">“${esc(r.prompt)}”</p><div class="proofbody"><p>${rpMark(r.answer)}</p></div></article>`).join('')}</div></div>`;
+  return out;
 }
 
 /* Map pack on a real map. One base image per client (CFG.mapBase), pins placed by coordinates. */
@@ -990,7 +1144,7 @@ function rpMapSvg(s, prev, movement){
   const colour = r => r <= 3 ? ['#2E9E5B', '#fff'] : r <= 10 ? ['#E2B934', '#17171C'] : r <= 20 ? ['#E8703A', '#17171C'] : ['#C94A4A', '#fff'];
   const size = B.pin || 15;
   const pins = rpPts(s).map(p => { const [x, y] = px(+p.lat, +p.lng), r = p.rank == null ? null : +p.rank, o = prior[p.idx], was = o && o.rank != null ? +o.rank : null;
-    const tip = `${r == null ? 'Not found here' : 'Rank #' + r} · ${km(+p.lat, +p.lng).toFixed(1)} km from the business${o ? ` · Last scan: ${was == null ? 'not found' : '#' + was}` : ''}${p.top_competitor ? ` · #1 here: ${p.top_competitor}` : ''}`;
+    const tip = `${r == null ? 'Not found here' : 'Rank #' + r} · ${km(+p.lat, +p.lng).toFixed(1)} km from the business${o ? ` · Last scan: ${was == null ? 'not found' : '#' + was}` : ''}${rpTop3(p)}`;
     let fill, ink, label;
     if (movement){
       if (r == null && was == null) return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="rgba(255,255,255,.25)"><title>${esc(tip)}</title></circle>`;
@@ -1090,8 +1244,30 @@ document.addEventListener('click', ev => {
   if (g === 'view'){ rp.view = v; redraw('rpMap', rpMapHtml); }
 });
 
+document.addEventListener('change', ev => {
+  const s = ev.target.closest && ev.target.closest('select[data-rpsel]'); if (!s || !RP()) return;
+  const g = s.dataset.rpsel, v = s.value || 30;
+  const redraw = (id, fn) => { const el = document.getElementById(id); if (el) el.innerHTML = fn(); };
+  if (g === 'gsc'){ rp.gsc = v; redraw('rpGsc', rpGscHtml); }
+  if (g === 'ga'){ rp.ga = v; redraw('rpGa', rpGaHtml); }
+});
+
 /* AI Questions. Jose 04/11/2026: the client approves or adds questions, the team reviews, and only
    then does a question join the month-end run. 'added' questions never move the trend figures. */
+/* Who holds 1st, 2nd and 3rd at a grid point, for the hover (Jose 06/11/2026). Scans from
+   06/11/2026 store the top three; older ones only stored first place. */
+function rpTop3(p){
+  const t = Array.isArray(p.top3) ? p.top3.filter(x => x && x.name).slice(0, 3) : [];
+  if (t.length) return '\nTop 3 here:\n' + t.map((x, i) => `${x.rank || i + 1}. ${x.name}${x.you ? ' (you)' : ''}`).join('\n');
+  return p.top_competitor ? '\n#1 here: ' + p.top_competitor : '';
+}
+/* The cited page opens on the client's own site (Jose 06/11/2026). */
+function rpPageLink(v){
+  const site = (RAW.client?.site_url || CFG.siteUrl || '').replace(/\/+$/, '');
+  if (!v || v === '—' || !site) return `<span class="rvtext">${esc(v || '—')}</span>`;
+  const u = /^https?:/.test(v) ? v : site + (v.startsWith('/') ? v : '/' + v);
+  return `<a href="${esc(u)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(v)}</a>`;
+}
 const RP_Q_CAP = 30;
 const rpAdded = () => new Set((RAW.aiq || []).filter(q => q.question_set === 'added').map(q => q.question));
 const rpCoreOnly = rows => { const a = rpAdded(); return a.size ? rows.filter(r => !a.has(r.prompt)) : rows; };
@@ -1115,7 +1291,13 @@ function rpQHtml(){
   return `<div class="cardhead"><div><h3>AI Questions</h3><p class="sub">The questions we ask ChatGPT, Claude, Gemini and Perplexity each month, aiming to get ${esc(CFG.name)} named ahead of competitors. Assistants don’t rank businesses like Google does and their answers vary, so results can’t be guaranteed.</p></div>
       <div class="rp-q-count tnum"><b>${fmt(used)}</b> of ${RP_Q_CAP} in use</div></div>
     <p class="rp-q-msg" id="rpqMsg" role="status"></p>
-    ${sug ? `<h4 class="rp-q-h">Waiting for your approval</h4><p class="sub">Change the wording if it isn’t how your customers would ask.</p><div class="rp-q-grid">${sug}</div>` : ''}
+    ${sug ? `<div class="rp-q-guide"><span class="mlbl">What we need from you</span>
+      <ol><li><b>Read each suggested question below.</b> We wrote them from your services, your area and the businesses AI assistants already name.</li>
+      <li><b>Change the wording</b> if it isn’t how your customers would ask.</li>
+      <li><b>Approve</b> the questions that matter to your business and <b>Decline</b> the rest. You have ${fmt(Math.max(0, RP_Q_CAP - used))} of ${RP_Q_CAP} places left.</li>
+      <li><b>Add your own</b> if a question is missing.</li>
+      <li>Our team checks each one, then tracking starts at the next month-end run and the results appear in the tracker above.</li></ol></div>` : ''}
+    ${sug ? `<h4 class="rp-q-h">Waiting for your approval (${fmt(by('suggested').length)})</h4><p class="sub">Change the wording if it isn’t how your customers would ask.</p><div class="rp-q-grid">${sug}</div>` : ''}
     <h4 class="rp-q-h">Add your own question</h4>
     ${full ? '<p class="sub">You’ve reached the limit of 30 questions. Talk to your account manager about swapping one.</p>' : `<div class="rp-q-add"><label class="mlbl" for="rpqNew">Your question</label><textarea id="rpqNew" rows="2" maxlength="200" placeholder="How would a customer ask an AI assistant for what you do?"></textarea><label class="mlbl" for="rpqNote">Anything we should know (optional)</label><input type="text" id="rpqNote" maxlength="200"><div class="rp-q-act"><button type="button" class="rp-btn on" data-rpq="add">Send for review</button></div></div>`}
     ${wait ? `<h4 class="rp-q-h">With our team</h4><div class="rp-q-grid">${wait}</div>` : ''}
@@ -1252,7 +1434,7 @@ function viewMapGrid(){
       ${Array.from({length:n*n}, (_, i) => { const p = pts.find(x => x.idx === i) || {};
         /* No top_competitor = Google returned no businesses at this point at all. */
         const none = p.rank == null && !p.top_competitor, d = s.depth || 20;
-        const tip = (p.rank != null ? 'Position ' + p.rank : none ? 'Google showed no businesses for this search here' : `Not in the top ${d} here`) + (p.top_competitor ? ' · #1 here: ' + p.top_competitor : '');
+        const tip = (p.rank != null ? 'Position ' + p.rank : none ? 'Google showed no businesses for this search here' : `Not in the top ${d} here`) + rpTop3(p);
         /* Not found = not ranking at that point either way, so every square carries a value. */
         const label = p.rank != null ? p.rank : `${d}+`;
         return `<div title="${esc(tip)}"
@@ -1389,7 +1571,7 @@ function viewGeo(){
     'Whether the business gets recommended when someone asks an AI assistant, rather than typing a search.');
   /* Added questions are shown on their own and never move the trend figures. */
   if (RP()){ V.geoSnapAll = V.geoSnapAll || V.geoSnap; V.geoSnap = rpCoreOnly(V.geoSnap); V.geoPrevSnap = rpCoreOnly(V.geoPrevSnap); }
-  if (RP()) out += `<div class="card" id="rpAi">${rpAiHtml()}</div>` + rpAioTable() + `<div class="card" id="rpQ">${rpQHtml()}</div>`;
+  if (RP()) out += `<div class="card" id="rpAi">${rpAiHtml()}</div>` + rpAioTable() + `<div id="rpProof">${rpProofHtml()}</div>` + `<div class="card" id="rpQ">${rpQHtml()}</div>`;
   const snap = V.geoSnap;
   if (!snap.length)
     return out + emptyState('Baseline not captured yet',
