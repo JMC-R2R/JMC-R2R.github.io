@@ -419,6 +419,9 @@ html.rvopen{overflow:hidden}
 /* extended reporting (reportPlus) */
 .rp-range{display:flex;flex-wrap:wrap;gap:6px}
 .rp-btn{font:700 10.5px var(--mono);color:var(--ink2);background:var(--s1);border:1px solid var(--bd2);border-radius:999px;padding:6px 12px;cursor:pointer;min-height:32px}
+.rp-month{font:700 10.5px var(--mono);color:var(--ink2);background:var(--s1);border:1px solid var(--bd2);border-radius:999px;padding:6px 12px;cursor:pointer;min-height:32px}
+.rp-month.on{background:var(--accent);border-color:var(--accent);color:#06212e}
+.rp-month:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rp-btn:hover{color:var(--ink);border-color:var(--ink3)}
 .rp-btn.on{background:var(--accent);border-color:var(--accent);color:#06212e}
 .rp-btn:focus-visible,.rp-ai-tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -493,5 +496,36 @@ html.rvopen{overflow:hidden}
 .stile .smeta b{font-size:12px;line-height:1.35;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .stile .smeta small{font:11px var(--mono);color:var(--ink3)}
 .stile .simg.vid{background-position:center top}
+
+/* AI Questions: what the client needs to do (Jose 06/11/2026) */
+.rp-q-guide{border:1px solid var(--bd2);border-left:3px solid var(--accent);background:var(--s1);border-radius:10px;padding:14px 16px;margin:0 0 16px}
+.rp-q-guide ol{margin:8px 0 0;padding-left:20px;color:var(--ink2);font-size:14px;line-height:1.6}
+.rp-q-guide b{color:var(--ink)}
+
+/* Team-only nudge buttons and their preview (Jose 06/11/2026) */
+.teambar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 18px;padding:10px 12px;border:1px dashed var(--bd2);border-radius:10px}
+.teambar .mlbl{margin-right:4px}
+.lockbox.nudgebox{max-width:620px;text-align:left;max-height:86vh;overflow:auto}
+.nudgebox .lockbtns{justify-content:flex-start;margin-top:14px}
+.nudgebox textarea{width:100%;background:var(--s1);color:var(--ink);border:1px solid var(--bd2);border-radius:8px;padding:8px;font:inherit;margin:4px 0 10px}
+.nudgelist{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;margin:0 0 14px;max-height:220px;overflow:auto;font-size:14px}
+.nudgelist ul{margin:4px 0 8px;padding-left:18px}
+.nudgeto{display:block;font-size:14px;margin:4px 0;color:var(--ink)}
+.nudgemsg{margin:8px 0 0;color:var(--good);font-weight:600}
+.nudgemsg.bad,.nudgebox .bad{color:var(--bad)}
+
+/* AI proof: AI Overview screenshots and assistant answers (Jose 06/11/2026) */
+.proofgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.proofshot{margin:0;background:var(--s1);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.proofshot img{display:block;width:100%;height:auto;max-height:420px;object-fit:cover;object-position:top;background:#fff}
+.proofshot figcaption{padding:10px 12px;font-size:13.5px;color:var(--ink2)}
+.proofans{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px 16px}
+.proofq{font-weight:700;margin:6px 0 8px;color:var(--ink)}
+.proofbody{max-height:260px;overflow:auto;font-size:14px;line-height:1.6;color:var(--ink2)}
+.proofbody p{margin:0 0 10px}
+.proofbody mark{background:rgba(30,147,200,.25);color:var(--ink);border-radius:3px;padding:0 2px}
+.teambar .mlbl,.rp-q-guide .mlbl{font:700 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+
+/* Search Console / GA4: days or month on month */
 .rp-ctl{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 @media (max-width:700px){.rp-ctl{align-items:flex-start}}
