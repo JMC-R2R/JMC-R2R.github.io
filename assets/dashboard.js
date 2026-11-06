@@ -37,8 +37,8 @@ const $   = (s, r = document) => r.querySelector(s);
 const $$  = (s, r = document) => [...r.querySelectorAll(s)];
 
 /* ---------------------------------------------------------------- modules */
-const ORDER  = ['overview','seo','map_grid','gbp','geo','paid_ads','negatives','social','leads_crm'];
-const LABEL  = { overview:'Overview', seo:'SEO', map_grid:'Map Pack Grid', gbp:'Google Business Profile',
+const ORDER  = ['overview','targets','seo','map_grid','gbp','geo','paid_ads','negatives','social','leads_crm'];
+const LABEL  = { overview:'Overview', targets:'Targets', seo:'SEO', map_grid:'Map Pack Grid', gbp:'Google Business Profile',
                  geo:'AI Visibility', paid_ads:'Paid Ads', negatives:'Negative Keywords', social:'Social', leads_crm:'Leads & CRM' };
 /* Plain-English package names for the upsell modal — never a module key. */
 const SOLD_AS = { seo:'SEO reporting', map_grid:'Map pack grid tracking', gbp:'Google Business Profile reporting',
@@ -152,6 +152,11 @@ async function loadData(){
   if (RP()){
     const [hist, aio, genai, aiq] = await Promise.all([qAll('md_report_history'), qAll('md_ai_overview_keywords'), qAll('md_gen_ai_daily'), sb.from('md_ai_questions').select('*').eq('client_id', id).order('created_at')]);
     RAW.hist = hist.data || []; RAW.aio = aio.data || []; RAW.genai = genai.data || []; RAW.aiq = aiq.data || [];
+  }
+  /* Targets: read only for clients it is switched on for (the tables are opt-in). */
+  if (tgOn()){
+    const { data: { session } } = await sb.auth.getSession(); RAW.me = session?.user?.id || null;
+    await tgReload();
   }
   RAW.notes = notes.data || [];
   RAW.calls = pcalls.data || [];
@@ -351,7 +356,7 @@ function renderAll(){
   const host = $('#panel');
   Object.keys(TABLES).forEach(k => delete TABLES[k]);
   host.innerHTML = ({
-    overview: viewOverview, seo: viewSeo, map_grid: viewMapGrid, gbp: viewGbp,
+    overview: viewOverview, targets: viewTargets, seo: viewSeo, map_grid: viewMapGrid, gbp: viewGbp,
     geo: viewGeo, paid_ads: viewPaid, negatives: viewNegatives, social: viewSocial, leads_crm: viewLeads,
     adm_onboarding: viewAdmOnboarding, adm_call: viewAdmCall, adm_discovery: viewAdmDiscovery,
     adm_brief: viewAdmBrief, adm_launch: viewAdmLaunch, adm_plan: viewAdmPlan, review: viewReview,
@@ -386,6 +391,7 @@ const TOUR_INTRO = {
   map_grid: ['Your Google Maps position', 'Where the business shows up on Google Maps across your service area.'],
   gbp: ['Your Google Business Profile', 'How people found your profile and what they did next, including every review.'],
   geo: ['Your AI visibility', 'Whether AI assistants name your business when people ask them for a recommendation.'],
+  targets: ['Your targets', 'Your monthly goals, what has come in so far and where the current pace is heading. Add the clinic’s new patient numbers at the bottom.'],
   paid_ads: ['Your Google Ads', 'This section is now live. It shows what was spent, what it bought and what people typed into Google before they clicked.'],
   negatives: ['Your blocked searches', 'Every search or suburb you have asked us to stop paying for, and where each one is up to.'],
   social: ['Your social media', 'How your organic posts performed this month.'],
@@ -514,6 +520,7 @@ function drawCharts(){
     lineChart(m, { series: spec.series, invert: !!spec.invert,
       yfmt: spec.yfmt === 'pos' ? (v => fmt(v,1)) : fmt });
   });
+  $$('[data-pace]').forEach(m => paceChart(m, JSON.parse(m.dataset.pace)));
 }
 
 /* ---------------------------------------------------------------- views */
@@ -2690,3 +2697,253 @@ document.addEventListener('click', e => {
   sendReview(box, d.dataset.rvdo === 'send' ? 'changes' : 'approved');
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeReview(); });
+
+
+/* ================================================================ targets (client)
+   Jose 06/11/2026, S Dental Care first: the client's monthly goals, what has happened so far
+   and a straight run-rate projection to month end. Opt-in per client: CFG.modules.targets.
+   - Google Ads leads come from md_paid_daily (the nightly pull), so the tab moves every morning.
+   - New patients / family & friends are typed in by the clinic (md_clinic_counts) because we
+     cannot see the booking system. They are ALWAYS labelled "entered by the clinic".
+   - A projection is never shown as a result. It is actual ÷ days counted × days in the period.
+   CFG.targetsStart (YYYY-MM-DD, optional) is when clinic counts can start, e.g. opening day. */
+const TG_METRICS = {
+  ads_leads:      { label: 'Google Ads leads', short: 'Ads leads', src: 'ads' },
+  new_patients:   { label: 'New patients', short: 'New patients', src: 'clinic' },
+  family_friends: { label: 'Family & friends', short: 'Family & friends', src: 'clinic' },
+};
+const tgOn = () => !!CFG.modules?.targets?.enabled;
+const tgDays = m => new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)), 0).getDate();
+const tgDate = s => new Date(s + 'T00:00:00');
+const tgDiff = (a, b) => Math.round((tgDate(b) - tgDate(a)) / 864e5);           /* b - a, in days */
+const tgDmy = s => tgDate(s).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit' });
+const tgMonths = () => [...new Set((RAW.targets || []).map(t => monthOf(t.month)))].sort();
+const tgTarget = (m, k) => { const t = (RAW.targets || []).find(r => monthOf(r.month) === m && r.metric === k); return t ? Number(t.target) : null; };
+
+/* Daily counts for one metric in one month: { 'YYYY-MM-DD': n } */
+function tgDaily(m, k){
+  const out = {};
+  if (TG_METRICS[k].src === 'ads'){
+    (RAW.paid || []).filter(r => r.platform === 'google' && monthOf(r.date) === m)
+      .forEach(r => { out[r.date] = (out[r.date] || 0) + (Number(r.leads) || 0); });
+  } else {
+    (RAW.clinic || []).filter(r => r.metric === k && monthOf(r.entry_date) === m)
+      .forEach(r => { out[r.entry_date] = (out[r.entry_date] || 0) + (Number(r.value) || 0); });
+  }
+  return out;
+}
+
+/* Everything the tab says about one metric in one month. */
+function tgCalc(m, k){
+  const target = tgTarget(m, k), days = tgDays(m), first = m + '-01', last = `${m}-${String(days).padStart(2, '0')}`;
+  const today = ymd(new Date()), yest = ymd(new Date(Date.now() - 864e5));
+  const isClinic = TG_METRICS[k].src === 'clinic';
+  /* Clinic counts cannot start before opening day; ads count from the 1st. */
+  const start = isClinic && CFG.targetsStart && CFG.targetsStart > first && CFG.targetsStart <= last ? CFG.targetsStart : first;
+  const daily = tgDaily(m, k), actual = Object.values(daily).reduce((a, b) => a + b, 0);
+  const phase = last < today ? 'past' : first > today ? 'future' : 'current';
+  /* "As of": ads are complete to yesterday (the pull never takes today); clinic counts to
+     their latest entry, so a weekly entry does not read as a slump mid-week. */
+  let asOf = null;
+  if (phase === 'past') asOf = last;
+  else if (phase === 'current'){
+    const lastEntry = Object.keys(daily).sort().pop();
+    asOf = isClinic ? (lastEntry || null) : (yest < start ? null : yest);
+    if (asOf && asOf < start) asOf = null;
+  }
+  const span = tgDiff(start, last) + 1, counted = asOf ? tgDiff(start, asOf) + 1 : 0;
+  const projected = phase === 'past' ? actual : counted > 0 ? actual / counted * span : null;
+  const left = phase === 'current' ? Math.max(tgDiff(today, last) + 1, 0) : phase === 'future' ? span : 0;
+  const need = target != null ? Math.max(target - actual, 0) : null;
+  const perWeek = need != null && left > 0 ? need / left * 7 : null;
+  let status = null;
+  if (target != null && target > 0 && phase !== 'future'){
+    const v = phase === 'past' ? actual : projected;
+    status = v == null ? null : v >= target ? 'good' : v >= target * 0.8 ? 'warn' : 'bad';
+  }
+  return { m, k, target, actual, projected, phase, start, last, asOf, span, counted, left, need, perWeek, status, daily, early: counted > 0 && counted < 5 };
+}
+const TG_STATUS = { good: ['On track', 'up'], warn: ['Close', 'warnc'], bad: ['Behind', 'dn'] };
+const tgChip = c => c.phase === 'future' ? '<span class="chip flat">Not started</span>'
+  : c.status ? `<span class="chip ${TG_STATUS[c.status][1]}">${c.phase === 'past' ? (c.status === 'good' ? 'Hit' : 'Missed') : TG_STATUS[c.status][0]}</span>`
+  : '<span class="chip flat">Waiting for data</span>';
+
+/* Cumulative actual, the even pace to the target, and the projection to month end. */
+function tgChartSpec(c){
+  const days = tgDays(c.m), s0 = Number(c.start.slice(8)), act = [], pace = [], proj = [];
+  let run = 0;
+  for (let d = 1; d <= days; d++){
+    const key = `${c.m}-${String(d).padStart(2, '0')}`;
+    run += c.daily[key] || 0;
+    act.push(c.asOf && key <= c.asOf ? run : null);
+    pace.push(c.target != null && d >= s0 ? c.target * (d - s0 + 1) / (days - s0 + 1) : null);
+    proj.push(null);
+  }
+  if (c.phase === 'current' && c.asOf && c.projected != null){
+    const a = Number(c.asOf.slice(8)), base = act[a - 1];
+    for (let d = a; d <= days; d++) proj[d - 1] = base + (c.projected - base) * (d - a) / Math.max(days - a, 1);
+  }
+  return { act, pace, proj, target: c.target, days };
+}
+function paceChart(mount, spec){
+  const W = Math.max(mount.clientWidth || 600, 260), H = 210, P = { t: 14, r: 14, b: 26, l: 34 };
+  const vals = [...spec.act, ...spec.pace, ...spec.proj, spec.target].filter(v => v != null);
+  const hi = Math.max(...vals, 1) * 1.12, n = spec.days;
+  const X = i => P.l + (i / Math.max(n - 1, 1)) * (W - P.l - P.r), Y = v => P.t + (1 - v / hi) * (H - P.t - P.b);
+  let g = '';
+  for (let i = 0; i <= 4; i++){
+    const v = hi * i / 4, y = Y(v);
+    g += `<line x1="${P.l}" y1="${y}" x2="${W - P.r}" y2="${y}" stroke="var(--bd)"/><text x="${P.l - 7}" y="${y + 3.5}" text-anchor="end" font-family="Space Mono" font-size="9" fill="var(--ink3)">${fmt(v)}</text>`;
+  }
+  [1, 8, 15, 22, n].forEach(d => { g += `<text x="${X(d - 1)}" y="${H - 8}" text-anchor="middle" font-family="Space Mono" font-size="9" fill="var(--ink3)">${d}</text>`; });
+  if (spec.target != null) g += `<line x1="${P.l}" y1="${Y(spec.target)}" x2="${W - P.r}" y2="${Y(spec.target)}" stroke="var(--ink3)" stroke-dasharray="2 4"/>
+    <text x="${P.l + 6}" y="${Y(spec.target) - 6}" text-anchor="start" font-family="Space Mono" font-size="9" fill="var(--ink2)">TARGET ${fmt(spec.target)}</text>`;
+  const path = (arr, attrs) => { const pts = arr.map((v, i) => v == null ? null : `${X(i)},${Y(v)}`).filter(Boolean);
+    return pts.length > 1 ? `<path d="M${pts.join(' L')}" fill="none" ${attrs} stroke-linecap="round" stroke-linejoin="round"/>` : ''; };
+  const lastAct = spec.act.reduce((p, v, i) => v == null ? p : i, -1);
+  const dot = lastAct >= 0 ? `<circle cx="${X(lastAct)}" cy="${Y(spec.act[lastAct])}" r="3.5" fill="var(--accent)"/>` : '';
+  mount.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Progress towards the target">${g}
+    ${path(spec.pace, 'stroke="var(--ink3)" stroke-width="1.5" stroke-dasharray="6 5"')}
+    ${path(spec.proj, 'stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 4" opacity=".75"')}
+    ${path(spec.act, 'stroke="var(--accent)" stroke-width="2.6"')}${dot}</svg>`;
+}
+function tgLegend(){
+  return `<div class="tglegend"><span><i class="ln act"></i>Actual so far</span><span><i class="ln proj"></i>Projected at the current pace</span><span><i class="ln pace"></i>Even pace to the target</span></div>`;
+}
+
+function tgCard(c){
+  const meta = TG_METRICS[c.k], clinic = meta.src === 'clinic';
+  const sourceNote = clinic ? 'Entered by the clinic. Google Ads cannot see the booking system, so these are the clinic’s own counts.'
+    : 'Recorded by Google Ads conversion tracking, updated every morning.';
+  let line;
+  if (c.phase === 'future') line = `Starts ${tgDmy(c.start)}. Target ${fmt(c.target)}, about ${fmt(c.target / c.span * 7, 1)} a week.`;
+  else if (!c.asOf) line = clinic ? 'No counts entered yet this month. Add them below as patients come in.' : 'No Google Ads figures for this month yet.';
+  else if (c.phase === 'past') line = `${fmt(c.actual)} of ${fmt(c.target)} for the month.`;
+  else line = `${fmt(c.actual)} so far (to ${tgDmy(c.asOf)}). At this pace the month ends at about ${fmt(c.projected)}${c.target != null ? ` against a target of ${fmt(c.target)}` : ''}.`
+    + (c.need > 0 && c.perWeek != null ? ` Hitting it needs ${fmt(c.need)} more, about ${fmt(c.perWeek, 1)} a week for the ${fmt(c.left)} days left.` : c.target != null ? ' The target is already reached.' : '')
+    + (c.early ? ' Only a few days are counted, so treat the projection as rough.' : '');
+  return `<div class="card tgcard"><div class="cardhead"><div><h3>${meta.label}</h3><p class="sub">${sourceNote}</p></div>${tgChip(c)}</div>
+    <p class="tgline">${line}</p>
+    ${c.phase === 'future' ? '' : `<div data-pace='${JSON.stringify(tgChartSpec(c))}'></div>${tgLegend()}`}</div>`;
+}
+
+/* What the ads need to do, from this month's own click-to-lead rate. */
+function tgAdsWork(c){
+  const rows = (RAW.paid || []).filter(r => r.platform === 'google' && monthOf(r.date) === c.m);
+  const clicks = sum(rows, 'clicks'), impr = sum(rows, 'impressions'), spend = sum(rows, 'spend');
+  if (!rows.length) return '';
+  const rate = clicks ? c.actual / clicks : null, ctr = impr ? clicks / impr : null;
+  let txt;
+  if (c.actual < 3) txt = `${fmt(c.actual)} lead${c.actual === 1 ? '' : 's'} from ${fmt(clicks)} clicks is too few to work out a reliable click-to-lead rate. This box fills in once there are at least 3 leads.`;
+  else if (c.need > 0 && c.phase === 'current') txt = `This month ${pct1(rate * 100)} of clicks became a lead. At that rate the remaining ${fmt(c.need)} leads need about ${fmt(c.need / rate)} more clicks, roughly ${fmt(c.need / rate / Math.max(c.left, 1), 1)} a day.`;
+  else txt = `This month ${pct1(rate * 100)} of clicks became a lead.`;
+  return `<div class="card"><div class="cardhead"><div><h3>What the ads are doing</h3><p class="sub">Impressions are people who saw an ad, clicks are people who came through to the website or called.</p></div></div>
+    <div class="kpis">${kpi('Impressions', fmt(impr))}${kpi('Clicks', fmt(clicks), ctr != null ? pct1(ctr * 100) + ' of impressions' : '')}${kpi('Leads', fmt(c.actual), rate != null ? pct1(rate * 100) + ' of clicks' : '')}${kpi('Spend', money(spend))}</div>
+    <p class="tgline">${txt}</p></div>`;
+}
+
+function tgEntryCard(m){
+  const ks = Object.keys(TG_METRICS).filter(k => TG_METRICS[k].src === 'clinic' && tgMonths().some(x => tgTarget(x, k) != null));
+  if (!ks.length) return '';
+  const today = ymd(new Date()), min = CFG.targetsStart || tgMonths()[0] + '-01';
+  const list = (RAW.clinic || []).filter(r => monthOf(r.entry_date) === m).sort((a, b) => b.entry_date.localeCompare(a.entry_date) || b.created_at.localeCompare(a.created_at));
+  const mine = r => r.entered_by === RAW.me || state.realRole === 'admin';
+  return `<div class="card" id="tgEntry"><div class="cardhead"><div><h3>Add the clinic’s numbers</h3>
+      <p class="sub">Enter new patients as they come in, daily or once a week. Pick the day they were seen (or the last day of the week). The chart and projection above update straight away.</p></div></div>
+    <form class="tgform" data-tgform>
+      <label>Date<input type="date" name="d" value="${today}" min="${min}" max="${today}" required></label>
+      <label>Type<select name="k">${ks.map(k => `<option value="${k}">${TG_METRICS[k].label}</option>`).join('')}</select></label>
+      <label>How many<input type="number" name="n" min="1" max="1000" step="1" inputmode="numeric" required></label>
+      <button class="btn primary" type="submit">Add</button>
+    </form>
+    ${list.length ? `<div class="tscroll"><table class="tgtable"><thead><tr><th>Date</th><th>Type</th><th class="r">Number</th><th>Entered by</th><th></th></tr></thead><tbody>
+      ${list.map(r => `<tr><td>${tgDmy(r.entry_date)}</td><td>${esc(TG_METRICS[r.metric]?.label || r.metric)}</td><td class="r tnum">${fmt(r.value)}</td>
+        <td>${esc(r.entered_by_name || '')}</td><td class="r">${mine(r) ? `<button class="btn sm" type="button" data-tgdel="${esc(r.id)}">Remove</button>` : ''}</td></tr>`).join('')}
+      </tbody></table></div>` : `<p class="tgline">Nothing entered for ${monthName(m)} yet.</p>`}</div>`;
+}
+
+function tgPlanTable(){
+  const ms = tgMonths(), ks = Object.keys(TG_METRICS).filter(k => ms.some(m => tgTarget(m, k) != null));
+  const cell = c => c.target == null ? '<td class="r">—</td>'
+    : `<td class="r tnum">${c.phase === 'future' ? '' : `<b>${fmt(c.actual)}</b> / `}${fmt(c.target)}${c.phase === 'current' && c.projected != null ? `<span class="tgproj">on pace for ${fmt(c.projected)}</span>` : ''}</td>`;
+  return `<div class="card"><div class="cardhead"><div><h3>The plan</h3><p class="sub">Actual / target for each month. The current month also shows where the pace is heading.</p></div></div>
+    <div class="tscroll"><table class="tgtable"><thead><tr><th>Month</th>${ks.map(k => `<th class="r">${TG_METRICS[k].short}</th>`).join('')}<th>Status</th></tr></thead><tbody>
+    ${ms.map(m => { const cs = ks.map(k => tgCalc(m, k)), lead = cs.find(c => c.k === 'new_patients') || cs[0];
+      return `<tr${m === state.month ? ' class="tgcur"' : ''}><td>${monthName(m)}</td>${cs.map(cell).join('')}<td>${tgChip(lead)}</td></tr>`; }).join('')}
+    </tbody></table></div></div>`;
+}
+
+/* Team only: change a target without a code change. */
+function tgEditCard(){
+  if (!isTeam() || previewOnly()) return '';
+  const ms = tgMonths(), ks = Object.keys(TG_METRICS);
+  return `<details class="card tgedit"><summary><b>Edit targets</b> <span class="sub">Team only. The client never sees this box.</span></summary>
+    <form data-tgedit><div class="tscroll"><table class="tgtable"><thead><tr><th>Month</th>${ks.map(k => `<th>${TG_METRICS[k].short}</th>`).join('')}</tr></thead><tbody>
+    ${ms.map(m => `<tr><td>${monthName(m)}</td>${ks.map(k => `<td><input type="number" min="0" step="1" data-m="${m}" data-k="${k}" value="${tgTarget(m, k) ?? ''}" placeholder="none"></td>`).join('')}</tr>`).join('')}
+    </tbody></table></div><p><button class="btn primary" type="submit">Save targets</button></p></form></details>`;
+}
+
+function viewTargets(){
+  const ms = tgMonths();
+  let out = head('Targets', `${monthName(state.month)}: are we on track?`,
+    `${CFG.name}’s monthly goals, what has come in so far and where the current pace is heading. A projection is an estimate from the pace so far, not a result.`);
+  if (!ms.length) return out + emptyState('No targets set yet', 'Once the monthly goals are agreed they appear here.') + tgEditCard();
+  /* The month chips follow the data; if the chosen month has no targets, show the nearest target month. */
+  const m = ms.includes(state.month) ? state.month : (ms.find(x => x >= state.month) || ms[ms.length - 1]);
+  if (m !== state.month) out += `<p class="tgline">No targets for ${monthName(state.month)}. Showing ${monthName(m)}.</p>`;
+  const cs = Object.keys(TG_METRICS).map(k => tgCalc(m, k)).filter(c => c.target != null);
+  out += `<div class="kpis">${cs.map(c => kpi(TG_METRICS[c.k].short,
+    `${c.phase === 'future' ? '—' : fmt(c.actual)}<span class="tgof"> / ${fmt(c.target)}</span>`,
+    c.phase === 'current' && c.projected != null ? `On pace for ${fmt(c.projected)} ${tgChip(c)}` : tgChip(c))).join('')}</div>`;
+  const ads = cs.find(c => c.k === 'ads_leads');
+  const lede = ads && ads.phase === 'current' && ads.projected != null
+    ? `Google Ads has brought ${fmt(ads.actual)} lead${ads.actual === 1 ? '' : 's'} this month and is on pace for about ${fmt(ads.projected)} against a target of ${fmt(ads.target)}.`
+    : '';
+  if (lede) out += `<p class="lede">${lede}</p>`;
+  out += tgPlanTable();
+  cs.forEach(c => { out += tgCard(c); if (c.k === 'ads_leads' && c.phase !== 'future') out += tgAdsWork(c); });
+  out += tgEntryCard(m) + tgEditCard();
+  return out;
+}
+
+async function tgReload(){
+  const id = RAW.client.id;
+  const [t, c] = await Promise.all([sb.from('md_targets').select('*').eq('client_id', id).order('month'),
+    sb.from('md_clinic_counts').select('*').eq('client_id', id).order('entry_date')]);
+  RAW.targets = t.data || []; RAW.clinic = c.data || [];
+}
+document.addEventListener('submit', async ev => {
+  const f = ev.target;
+  if (f.matches && f.matches('[data-tgform]')){
+    ev.preventDefault();
+    if (previewOnly()) return toast('Client view is a preview. Switch to Admin view to change anything.', 'bad');
+    const d = f.d.value, k = f.k.value, n = parseInt(f.n.value, 10);
+    if (!d || !TG_METRICS[k] || !(n >= 1)) return toast('Enter a date and a number of patients.', 'bad');
+    const btn = f.querySelector('button'); btn.disabled = true;
+    const { data: { session } } = await sb.auth.getSession();
+    const { error } = await sb.from('md_clinic_counts').insert({ client_id: RAW.client.id, entry_date: d, metric: k, value: n,
+      entered_by: session?.user?.id, entered_by_name: session?.user?.user_metadata?.full_name || session?.user?.email || null });
+    btn.disabled = false;
+    if (error) return toast('Could not save: ' + error.message, 'bad');
+    await tgReload(); toast(`${fmt(n)} ${TG_METRICS[k].label.toLowerCase()} added for ${tgDmy(d)}`); renderAll();
+  } else if (f.matches && f.matches('[data-tgedit]')){
+    ev.preventDefault();
+    const ups = [], dels = [];
+    $$('input[data-m]', f).forEach(i => { const v = i.value.trim();
+      if (v === '') { if (tgTarget(i.dataset.m, i.dataset.k) != null) dels.push(i); }
+      else ups.push({ client_id: RAW.client.id, month: i.dataset.m + '-01', metric: i.dataset.k, target: Number(v), updated_at: new Date().toISOString() }); });
+    let err = null;
+    if (ups.length) ({ error: err } = await sb.from('md_targets').upsert(ups, { onConflict: 'client_id,month,metric' }));
+    for (const i of dels) { if (err) break; ({ error: err } = await sb.from('md_targets').delete().eq('client_id', RAW.client.id).eq('month', i.dataset.m + '-01').eq('metric', i.dataset.k)); }
+    if (err) return toast('Could not save: ' + err.message, 'bad');
+    await tgReload(); toast('Targets saved'); renderAll();
+  }
+});
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest && ev.target.closest('[data-tgdel]'); if (!b) return;
+  if (previewOnly()) return toast('Client view is a preview. Switch to Admin view to change anything.', 'bad');
+  b.disabled = true;
+  const { error } = await sb.from('md_clinic_counts').delete().eq('id', b.dataset.tgdel);
+  if (error) { b.disabled = false; return toast('Could not remove: ' + error.message, 'bad'); }
+  await tgReload(); toast('Entry removed'); renderAll();
+});
