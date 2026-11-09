@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Content Writer - Ready to Rank</title>
+<!--
+  Content writer control page - published to update.readytorank.com.au/operations/writer/
+  Source: Ready-to-Rank/r2r-operations  operations-apps/writer/index.html
+  The page holds no data. After sign-in it calls ch_writer_* functions in Supabase
+  (tjgrtrazyepvbcmmdhet). Every function checks ch_is_writer_admin() itself: Jhen only
+  (Jose 09/11/2026). SQL: ~/.claude/skills/content-hub/reference/sql_writer_control.sql
+  The three routines (blog writer, LinkedIn writer, release emails) read ch_writer_brief()
+  every run, so a save here changes the next run. Safety rules live in the routine prompts.
+-->
+<style>
+@font-face{font-family:"Archivo";src:url("/operations/assets/Archivo-var.ttf") format("truetype");font-weight:100 900;font-style:normal;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("/operations/assets/SpaceMono-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:"Space Mono";src:url("/operations/assets/SpaceMono-Bold.ttf") format("truetype");font-weight:700;font-style:normal;font-display:swap;}
+:root{
+  --bg:#0F0F12; --surface:#17171C; --card:#1B1B21; --card2:#202028;
+  --line:#2A2A32; --line-soft:#22222A;
+  --white:#fff; --text:#D8D8E0; --muted:#9B9BA6; --faint:#6E6E7A;
+  --accent:#17B4F0; --green:#2BD9A6; --amber:#F5B02E; --red:#E04B4B;
+  --mono:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Archivo",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);}
+body{color:var(--text);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;padding:0 0 90px;overflow-x:hidden;}
+button,input,select,textarea{font:inherit;color:inherit;}
+.hide{display:none!important;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+.eyebrow{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);}
+a{color:var(--accent);}
+code{font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--line-soft);border-radius:4px;padding:1px 5px;color:var(--white);}
+
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.gate .box{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:28px;}
+.gate h1{font-size:30px;font-weight:900;color:var(--white);letter-spacing:-.02em;margin-bottom:6px;}
+.gate h1 em,h1.big em{font-style:normal;color:var(--accent);}
+.gate p{font-size:13.5px;color:var(--muted);margin-bottom:16px;}
+.fl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:12px 0 5px;}
+.in{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--white);padding:10px 12px;font-size:14px;font-family:var(--sans);}
+.in:focus{outline:none;border-color:var(--accent);}
+textarea.in{min-height:120px;resize:vertical;line-height:1.45;}
+textarea.big{min-height:420px;font-size:13.5px;}
+select.in{padding:9px 10px;}
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#04121A;border:0;border-radius:7px;padding:9px 14px;font-weight:800;font-size:13.5px;cursor:pointer;}
+.gate .btn{margin-top:16px;width:100%;justify-content:center;}
+.btn:disabled{opacity:.5;cursor:default;}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line);font-weight:600;}
+.btn.ghost:hover{border-color:var(--accent);color:var(--white);}
+.btn.danger{background:transparent;color:var(--red);border:1px solid rgba(224,75,75,.45);font-weight:600;}
+.btn.small{padding:5px 10px;font-size:12px;}
+.linkbtn{background:none;border:0;color:var(--muted);font-size:12.5px;margin-top:12px;cursor:pointer;text-decoration:underline;}
+.msg{font-size:13px;margin-bottom:10px;}
+.msg.bad{color:var(--red);} .msg.ok{color:var(--green);}
+
+.top{border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(23,180,240,.09),rgba(23,180,240,0));}
+.top .wrap{padding:26px 24px;}
+.crumb{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--faint);}
+.crumb a{color:var(--faint);text-decoration:none;} .crumb a:hover{color:var(--accent);}
+.crumb .sp{flex:1;}
+.crumb button{background:none;border:0;color:var(--faint);cursor:pointer;font-family:var(--mono);font-size:11px;}
+.crumb button:hover{color:var(--accent);}
+.head{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap;margin-top:22px;}
+.head .t{flex:1;min-width:240px;}
+h1.big{font-size:clamp(34px,5vw,54px);font-weight:900;letter-spacing:-.03em;line-height:1;color:var(--white);margin-top:10px;}
+.lede{font-size:14.5px;color:var(--muted);max-width:64ch;margin-top:10px;}
+.switchbox{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:270px;display:grid;gap:9px;}
+.switchbox .row{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);}
+.switchbox b{color:var(--white);}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--faint);display:inline-block;flex:none;}
+.dot.on{background:var(--green);box-shadow:0 0 0 3px rgba(43,217,166,.15);}
+.dot.off{background:var(--red);}
+.dot.warn{background:var(--amber);}
+.tog{position:relative;width:40px;height:22px;border-radius:11px;background:var(--line);border:0;cursor:pointer;flex:none;}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--white);transition:left .15s;}
+.tog.on{background:var(--green);} .tog.on::after{left:21px;}
+.tog:disabled{opacity:.45;cursor:default;}
+
+.nav{position:sticky;top:0;z-index:5;background:rgba(15,15,18,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);}
+.nav .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;}
+.nav .wrap::-webkit-scrollbar{display:none;}
+.nav a{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:13px 10px;white-space:nowrap;border-bottom:2px solid transparent;}
+.nav a:hover{color:var(--white);}
+.nav a.on{color:var(--accent);border-bottom-color:var(--accent);}
+
+section{padding-top:38px;scroll-margin-top:50px;}
+section > h2{font-size:clamp(20px,2.6vw,26px);font-weight:900;color:var(--white);letter-spacing:-.02em;}
+section > p.sub{font-size:13.5px;color:var(--muted);margin:4px 0 16px;max-width:76ch;}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;}
+.panel + .panel{margin-top:12px;}
+.panel h3{font-size:14.5px;font-weight:800;color:var(--white);margin-bottom:3px;}
+.panel p.hint,.hint{font-size:12.6px;color:var(--muted);}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 14px;}
+.grid2 > .panel{margin-top:0;}
+.addrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;}
+.cnt{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-align:right;margin-top:4px;}
+.lock{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--amber);text-transform:uppercase;}
+.days{display:flex;gap:6px;flex-wrap:wrap;}
+.days label{display:inline-flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--line);border-radius:7px;padding:6px 10px;font-size:13px;cursor:pointer;}
+.days input{accent-color:var(--accent);}
+.status{display:flex;gap:9px;align-items:center;font-size:13px;color:var(--muted);}
+.status b{color:var(--white);}
+
+.rows{display:grid;gap:8px;margin-top:10px;}
+.rowc{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;}
+.rowc .main{flex:1 1 260px;min-width:0;}
+.rowc h4{font-size:14px;font-weight:800;color:var(--white);overflow-wrap:anywhere;}
+.rowc p{font-size:12.8px;color:var(--muted);overflow-wrap:anywhere;}
+.rowc .meta{font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.04em;margin-top:5px;}
+.rowc .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.pill{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;}
+.pill.live{color:var(--green);border-color:rgba(43,217,166,.4);}
+.pill.warn{color:var(--amber);border-color:rgba(245,176,46,.4);}
+.pill.bad{color:var(--red);border-color:rgba(224,75,75,.45);}
+.pill.kind{color:var(--accent);border-color:rgba(23,180,240,.4);}
+.grouphead{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:20px 0 2px;}
+.pair{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;margin-top:6px;align-items:center;}
+.pair.links{grid-template-columns:1.4fr 1fr auto;}
+.pair button{background:var(--line);border:0;border-radius:6px;width:30px;height:34px;cursor:pointer;color:var(--muted);}
+.pair button:hover{background:var(--red);color:var(--white);}
+.fixed li{font-size:13px;color:var(--text);margin:6px 0 0 18px;}
+.ph{font-family:var(--mono);font-size:11.5px;color:var(--accent);}
+pre.v{white-space:pre-wrap;font-family:var(--sans);font-size:12.8px;color:var(--text);background:var(--bg);border:1px solid var(--line-soft);border-radius:7px;padding:10px 12px;margin-top:6px;max-height:340px;overflow:auto;}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:20;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
+.modal .box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;width:100%;max-width:700px;}
+.modal h3{font-size:19px;font-weight:900;color:var(--white);}
+.modal .foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
+.modal iframe{width:100%;height:70vh;border:1px solid var(--line);border-radius:8px;background:#fff;margin-top:12px;}
+
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--card2);border:1px solid var(--accent);color:var(--white);padding:10px 16px;border-radius:8px;font-size:13.5px;z-index:30;max-width:calc(100vw - 32px);}
+#toast:empty{display:none;}
+#toast.bad{border-color:var(--red);}
+@media (max-width:640px){
+  .wrap{padding:0 16px;}
+  .top .wrap{padding:22px 16px;}
+  .switchbox{min-width:0;width:100%;}
+  .pair,.pair.links{grid-template-columns:1fr auto;}
+  .pair > :nth-child(2){grid-column:1;}
+}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate hide">
+  <div class="box">
+    <h1>Content <em>writer</em></h1>
+    <p>Ready to Rank internal. Jhen signs in here to manage the content writers and the monthly release.</p>
+    <div id="gateMsg" class="msg hide"></div>
+    <form id="loginForm">
+      <label class="fl" for="email">Email</label>
+      <input class="in" id="email" type="email" autocomplete="username" required>
+      <label class="fl" for="pw">Password</label>
+      <input class="in" id="pw" type="password" autocomplete="current-password">
+      <button class="btn" id="loginBtn" type="submit">Sign in</button>
+    </form>
+    <button class="linkbtn" id="magicBtn" type="button">No password? Email me a sign-in link</button>
+  </div>
+</div>
+
+<div id="app" class="hide">
+  <div class="top"><div class="wrap">
+    <div class="crumb">
+      <a href="/operations/">&larr;&nbsp; Operations</a>
+      <span class="sp"></span>
+      <span id="whoami"></span>
+      <button id="reload" type="button">Refresh</button>
+      <button id="signout" type="button">Sign out</button>
+    </div>
+    <div class="head">
+      <div class="t">
+        <span class="eyebrow">Internal &middot; Content</span>
+        <h1 class="big">Content <em>writer</em></h1>
+        <p class="lede">How the automatic writers write every client's blogs and LinkedIn articles, and what goes to clients on release day. Save a change and the next run uses it. Every version is kept, so you can always go back.</p>
+      </div>
+      <div class="switchbox">
+        <div class="row"><button class="tog" id="togBlog" type="button" aria-label="Blog writer on or off"></button><span id="lineBlog"></span></div>
+        <div class="row"><button class="tog" id="togLi" type="button" aria-label="LinkedIn writer on or off"></button><span id="lineLi"></span></div>
+        <div class="row"><button class="tog" id="togRel" type="button" aria-label="Monthly release on or off"></button><span id="lineRel"></span></div>
+      </div>
+    </div>
+  </div></div>
+
+  <nav class="nav"><div class="wrap" id="navlinks">
+    <a href="#blog">Blog writer</a>
+    <a href="#linkedin">LinkedIn writer</a>
+    <a href="#release">Release day</a>
+    <a href="#clients">Clients</a>
+    <a href="#fixed">Fixed rules</a>
+    <a href="#history">History</a>
+  </div></nav>
+
+  <div class="wrap">
+
+    <section id="blog">
+      <h2>Blog writer</h2>
+      <p class="sub">Writes blogs and pages through Surfer once the client approves the topic. Each new article uses 1 Surfer credit and counts towards the client's monthly cap. Rewrites are free.</p>
+      <div class="panel"><div class="status" id="stBlog"></div></div>
+      <div class="panel">
+        <h3>Writing instructions</h3>
+        <p class="hint">Voice, structure, calls to action, links, photos and style. Plain English. The writer follows these for every blog, then each client's own rules on top (set under <a href="#clients">Clients</a>).</p>
+        <textarea class="in big" id="insBlog" data-max="30000" style="margin-top:8px"></textarea><div class="cnt" data-for="insBlog"></div>
+      </div>
+      <div class="panel">
+        <h3>When and how much</h3>
+        <label class="fl">Writing days</label><div class="days" id="daysBlog"></div>
+        <div class="grid4">
+          <div><label class="fl" for="bStart">From (Melbourne time)</label><select class="in" id="bStart"></select></div>
+          <div><label class="fl" for="bEnd">Until</label><select class="in" id="bEnd"></select></div>
+          <div><label class="fl" for="bArticles">New articles per run (0 to 4)</label><input class="in" id="bArticles" type="number" min="0" max="4"></div>
+          <div><label class="fl" for="bRevisions">Rewrites per run (0 to 6)</label><input class="in" id="bRevisions" type="number" min="0" max="6"></div>
+          <div><label class="fl" for="bScore">Surfer score to reach (40 to 100)</label><input class="in" id="bScore" type="number" min="40" max="100"></div>
+          <div><label class="fl" for="bRounds">Tries to reach it (1 to 6)</label><input class="in" id="bRounds" type="number" min="1" max="6"></div>
+          <div><label class="fl" for="bCap">Default monthly cap (1 to 10)</label><input class="in" id="bCap" type="number" min="1" max="10"></div>
+        </div>
+        <p class="hint" style="margin-top:8px">The writer runs every hour at :22. Outside these days and hours it skips the run. The default cap applies to any client without their own cap.</p>
+      </div>
+      <div class="panel">
+        <label class="fl" for="noteBlog" style="margin-top:0">What changed (shows in the history)</label>
+        <input class="in" id="noteBlog" maxlength="200" placeholder="e.g. Shorter intros, three FAQs instead of four to six">
+        <div class="addrow"><button class="btn" type="button" data-save="blog">Save blog writer</button><span class="hint">Takes effect on the next run.</span></div>
+      </div>
+    </section>
+
+    <section id="linkedin">
+      <h2>LinkedIn writer</h2>
+      <p class="sub">Writes every LinkedIn article ahead of time, with its promo post and banner, so the client approves topic and article together. Uses no Surfer credits.</p>
+      <div class="panel"><div class="status" id="stLi"></div></div>
+      <div class="panel">
+        <h3>Writing instructions</h3>
+        <p class="hint">Article, meta title and description, promo post and hashtags. The client's own rules apply on top.</p>
+        <textarea class="in big" id="insLi" data-max="30000" style="margin-top:8px"></textarea><div class="cnt" data-for="insLi"></div>
+      </div>
+      <div class="panel">
+        <h3>When and how much</h3>
+        <label class="fl">Writing days</label><div class="days" id="daysLi"></div>
+        <div class="grid4">
+          <div><label class="fl" for="lStart">From (Melbourne time)</label><select class="in" id="lStart"></select></div>
+          <div><label class="fl" for="lEnd">Until</label><select class="in" id="lEnd"></select></div>
+          <div><label class="fl" for="lPer">Pieces per run (1 to 6)</label><input class="in" id="lPer" type="number" min="1" max="6"></div>
+          <div><label class="fl" for="lMin">Words, at least</label><input class="in" id="lMin" type="number" min="300" max="2000"></div>
+          <div><label class="fl" for="lMax">Words, at most</label><input class="in" id="lMax" type="number" min="300" max="2500"></div>
+        </div>
+        <p class="hint" style="margin-top:8px">Word counts are for articles made from a blog. A monthly series uses its own word counts. The writer runs every hour at :52.</p>
+      </div>
+      <div class="panel">
+        <label class="fl" for="noteLi" style="margin-top:0">What changed (shows in the history)</label>
+        <input class="in" id="noteLi" maxlength="200" placeholder="e.g. Hooks must open with a question">
+        <div class="addrow"><button class="btn" type="button" data-save="linkedin">Save LinkedIn writer</button><span class="hint">Takes effect on the next run.</span></div>
+      </div>
+    </section>
+
+    <section id="release">
+      <h2>Release day</h2>
+      <p class="sub">On release day, everything QC-approved goes to the client to review, and each contact gets their own "ready to review" email. When every blog in a month is live on their site, they get a "blogs are live" email. The email layout and logos stay as they are. You set the day, what goes out and the wording.</p>
+      <div class="panel"><div class="status" id="stRel"></div></div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="panel">
+          <h3>What goes out, and when</h3>
+          <label class="fl" for="rDay">Release day of the month</label><select class="in" id="rDay"></select>
+          <label class="fl">Content released on that day</label>
+          <div class="days" id="rTypes"></div>
+          <label class="fl">"Blogs are live" email</label>
+          <div class="status"><button class="tog" id="togPub" type="button" aria-label="Blogs are live email on or off"></button><span id="linePub"></span></div>
+        </div>
+        <div class="panel">
+          <h3>Words you can use</h3>
+          <p class="hint">Type these in any wording box and they're filled in for each client: <span class="ph">{first_name}</span> the contact's first name · <span class="ph">{client}</span> the business name · <span class="ph">{month}</span> the month · <span class="ph">{count}</span> how many blogs.</p>
+          <label class="fl" for="rSign">Signed off by</label><input class="in" id="rSign" maxlength="200">
+          <label class="fl" for="rPrevClient">Preview as</label><select class="in" id="rPrevClient"></select>
+          <div class="addrow"><button class="btn small ghost" type="button" data-preview="review">Preview "ready to review"</button><button class="btn small ghost" type="button" data-preview="live">Preview "blogs are live"</button></div>
+          <p class="hint" style="margin-top:6px">The preview shows saved wording, so save first. It's never sent.</p>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="panel">
+          <h3>"Ready to review" email</h3>
+          <label class="fl" for="rRevSubj">Subject</label><input class="in" id="rRevSubj" maxlength="200">
+          <label class="fl" for="rRevHead">Heading</label><input class="in" id="rRevHead" maxlength="200">
+          <label class="fl" for="rRevIntro">Opening line</label><textarea class="in" id="rRevIntro" maxlength="800" style="min-height:80px"></textarea>
+          <p class="hint" style="margin-top:6px">The blog list, the three "how to review" steps and the button follow automatically.</p>
+        </div>
+        <div class="panel">
+          <h3>"Blogs are live" email</h3>
+          <label class="fl" for="rLiveSubj">Subject</label><input class="in" id="rLiveSubj" maxlength="200">
+          <label class="fl" for="rLiveHead">Heading</label><input class="in" id="rLiveHead" maxlength="200">
+          <label class="fl" for="rLiveIntro">Opening line</label><textarea class="in" id="rLiveIntro" maxlength="800" style="min-height:80px"></textarea>
+          <label class="fl" for="rLiveClose">Closing line</label><textarea class="in" id="rLiveClose" maxlength="800" style="min-height:60px"></textarea>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <label class="fl" for="noteRel" style="margin-top:0">What changed (shows in the history)</label>
+        <input class="in" id="noteRel" maxlength="200" placeholder="e.g. Release moved to the 20th">
+        <div class="addrow"><button class="btn" type="button" data-save="release">Save release settings</button><span class="hint" id="relNext"></span></div>
+      </div>
+    </section>
+
+    <section id="clients">
+      <h2>Clients</h2>
+      <p class="sub">Turn each writer on or off per client, set their monthly blog cap, and keep what the writer knows about them up to date. Their rules here apply on top of the writing instructions.</p>
+      <div class="panel">
+        <label class="fl" for="clientSel" style="margin-top:0">Client</label>
+        <select class="in" id="clientSel"></select>
+      </div>
+      <div id="clientBody" class="hide">
+        <div class="grid2" style="margin-top:12px">
+          <div class="panel">
+            <h3>Writers</h3>
+            <div class="status" style="margin-top:10px"><button class="tog" id="cBlogOn" type="button" aria-label="Blog writer for this client"></button><span>Blog writer</span></div>
+            <div class="status" style="margin-top:10px"><button class="tog" id="cLiOn" type="button" aria-label="LinkedIn writer for this client"></button><span>LinkedIn writer</span></div>
+            <label class="fl" for="cCap">Monthly blog cap (1 to 10)</label>
+            <input class="in" id="cCap" type="number" min="1" max="10" placeholder="Default">
+            <p class="hint" id="cCapHint" style="margin-top:6px"></p>
+          </div>
+          <div class="panel">
+            <h3>Business</h3>
+            <label class="fl" for="cSite">Website</label><input class="in" id="cSite" placeholder="https://">
+            <label class="fl" for="cContact">Contact page (every call to action links here)</label><input class="in" id="cContact" placeholder="https://">
+            <label class="fl" for="cBlogUrl">Blog page (used in the "blogs are live" email)</label><input class="in" id="cBlogUrl" placeholder="https://">
+            <label class="fl" for="cAuthor">Author byline</label><input class="in" id="cAuthor">
+            <label class="fl" for="cRole">Author role (optional)</label><input class="in" id="cRole">
+            <label class="fl" for="cLoc">Surfer location</label><input class="in" id="cLoc" placeholder="e.g. Adelaide, South Australia, Australia">
+          </div>
+        </div>
+        <div class="grid2" style="margin-top:12px">
+          <div class="panel">
+            <h3>Services</h3><p class="hint">One per line.</p>
+            <textarea class="in" id="cServices" style="margin-top:8px"></textarea>
+          </div>
+          <div class="panel">
+            <h3>Service areas</h3><p class="hint">One per line. Only areas the client has confirmed they work in.</p>
+            <textarea class="in" id="cAreas" style="margin-top:8px"></textarea>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:12px">
+          <h3>Facts the writer may use</h3>
+          <p class="hint">The only personal facts the writer can state (years in business, licences, team, awards, prices). Each one needs a source, e.g. "kickoff call 03/10". With no facts, the writer says nothing personal.</p>
+          <div id="cFacts"></div>
+          <div class="addrow"><button class="btn small ghost" type="button" id="addFact">+ Add a fact</button></div>
+        </div>
+        <div class="panel">
+          <h3>Pages to link to</h3>
+          <p class="hint">The only pages on the client's site the writer may link to. Full URLs.</p>
+          <div id="cLinks"></div>
+          <div class="addrow"><button class="btn small ghost" type="button" id="addLink">+ Add a page</button></div>
+        </div>
+        <div class="panel">
+          <h3>Client rules</h3>
+          <p class="hint">Anything specific to this client. These override the general writing instructions, e.g. "Residential only, never mention car lockouts".</p>
+          <textarea class="in" id="cRules" style="margin-top:8px"></textarea>
+          <div class="addrow"><button class="btn" type="button" id="saveClient">Save client</button></div>
+        </div>
+
+        <div class="grouphead">Waiting to be written</div>
+        <p class="hint">Approved blog and page topics, and queued LinkedIn pieces. <b>Write next</b> moves a piece to the front of the queue for the next run. A blog still needs a credit under the cap.</p>
+        <div class="rows" id="cWaiting"></div>
+        <div class="grouphead">Written</div>
+        <p class="hint"><b>Rewrite</b> sends a piece back to the writer with your note. Same as Send back in the hub, and free.</p>
+        <div class="rows" id="cWritten"></div>
+      </div>
+    </section>
+
+    <section id="fixed">
+      <h2>Fixed rules</h2>
+      <p class="sub">These are built into the writers and stay on whatever the instructions say. If an instruction conflicts with one of them, the writer follows the rule below.</p>
+      <div class="panel">
+        <h3>Always <span class="lock">Locked</span></h3>
+        <ul class="fixed">
+          <li>One Surfer credit per article, ever. Never Surfer's AI Article, Auto-Optimize or paid recommendations.</li>
+          <li>Monthly caps: you can set 1 to 10 blogs per client. Anything above 10 needs Jose.</li>
+          <li>Personal facts (years, licences, team, awards, prices, reviews, promises) only from the client's sourced facts. No source, no claim.</li>
+          <li>No invented bylines. Only the client's real photos, never someone else's.</li>
+          <li>Links only to the client's listed pages and their website. Outside links are recorded for QC to check.</li>
+          <li>Nothing reaches a client until Janice or Jhen QC-approve it and it's released.</li>
+          <li>Release emails go only to the client's own contacts on file, one email per person.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="history">
+      <h2>History</h2>
+      <p class="sub">Every saved version of each writer, and every change made on this page.</p>
+      <div class="grouphead">Versions</div>
+      <div class="rows" id="versions"></div>
+      <div class="grouphead">Changes</div>
+      <div class="rows" id="changelog"></div>
+    </section>
+
+  </div>
+</div>
+
+<div id="modal" class="modal hide"><div class="box" id="modalBox"></div></div>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = "https://tjgrtrazyepvbcmmdhet.supabase.co";
+const SB_KEY = "sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const $ = id => document.getElementById(id);
+const TZ = "Australia/Melbourne";
+const DAYS = [[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"],[6,"Sat"],[7,"Sun"]];
+const TYPES = [["blog","Blogs"],["page","Pages"],["linkedin_article","LinkedIn articles"]];
+const KIND = { blog: "Blog", page: "Page", linkedin_article: "LinkedIn" };
+let D = null, C = null, CLIENT = null, DIRTY = false;
+
+function toast(msg, bad) { const t = $("toast"); t.textContent = msg; t.className = bad ? "bad" : ""; clearTimeout(toast.h); toast.h = setTimeout(() => t.textContent = "", 6000); }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function gateMsg(m, bad) { const g = $("gateMsg"); g.textContent = m; g.className = "msg " + (bad ? "bad" : "ok"); }
+function when(iso) { if (!iso) return ""; return new Intl.DateTimeFormat("en-AU", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(iso)).replace(",", ""); }
+function ddmm(d) { if (!d) return ""; const [y, m, dd] = d.split("-"); return `${dd}/${m}/${y}`; }
+const hourLabel = h => (h % 12 || 12) + (h < 12 ? "am" : "pm");
+const errText = e => (e && (e.message || e.details)) || String(e);
+async function rpc(fn, args) { const { data, error } = await sb.rpc(fn, args || {}); if (error) throw new Error(errText(error)); return data; }
+
+// ---------------------------------------------------------------- auth
+$("loginForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const pw = $("pw").value;
+  if (!pw) { gateMsg("Type your password, or use the sign-in link below.", true); return; }
+  $("loginBtn").disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: pw });
+  $("loginBtn").disabled = false;
+  if (error) gateMsg(error.message, true); else boot();
+});
+$("magicBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim();
+  if (!email) { gateMsg("Type your email first.", true); return; }
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
+  gateMsg(error ? error.message : "Check your email for the sign-in link.", !!error);
+});
+$("signout").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
+$("reload").addEventListener("click", () => { if (DIRTY && !confirm("You have unsaved changes. Refresh anyway?")) return; DIRTY = false; load(true).then(() => toast("Up to date.")); });
+window.addEventListener("beforeunload", e => { if (DIRTY) { e.preventDefault(); e.returnValue = ""; } });
+
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $("gate").classList.remove("hide"); $("app").classList.add("hide"); return; }
+  try { await load(true); }
+  catch (e) {
+    gateMsg(/Only Jhen/.test(e.message) ? "This page is for Jhen only. Ask Jose if you need a change made." : e.message, true);
+    $("gate").classList.remove("hide"); $("app").classList.add("hide");
+    await sb.auth.signOut();
+    return;
+  }
+  $("gate").classList.add("hide"); $("app").classList.remove("hide");
+}
+sb.auth.onAuthStateChange((ev) => { if (ev === "SIGNED_IN" && $("app").classList.contains("hide")) boot(); });
+
+// ---------------------------------------------------------------- load + render
+async function load(fillForms) {
+  D = await rpc("ch_writer_overview");
+  render(fillForms);
+  if (CLIENT) await loadClient(CLIENT, fillForms);
+}
+const cfg = w => (D.config[w] || { settings: {}, instructions: "" });
+const S = w => cfg(w).settings || {};
+
+function hourOpts(sel, val) { $(sel).innerHTML = Array.from({ length: 24 }, (_, h) => `<option value="${h}"${h === val ? " selected" : ""}>${hourLabel(h)}</option>`).join(""); }
+function dayBoxes(id, vals) { $(id).innerHTML = DAYS.map(([n, l]) => `<label><input type="checkbox" value="${n}"${vals.includes(n) ? " checked" : ""}> ${l}</label>`).join(""); }
+function checked(id) { return [...$(id).querySelectorAll("input:checked")].map(i => isNaN(+i.value) ? i.value : +i.value); }
+function setTog(id, on) { $(id).classList.toggle("on", !!on); }
+
+function render(fill) {
+  $("whoami").textContent = D.me?.email || "";
+  const b = S("blog"), l = S("linkedin"), r = S("release");
+  setTog("togBlog", !b.paused); $("lineBlog").innerHTML = b.paused ? "Blog writer: <b>paused</b>" : "Blog writer: <b>on</b>";
+  setTog("togLi", !l.paused); $("lineLi").innerHTML = l.paused ? "LinkedIn writer: <b>paused</b>" : "LinkedIn writer: <b>on</b>";
+  setTog("togRel", r.release_on !== false);
+  $("lineRel").innerHTML = r.release_on === false ? "Monthly release: <b>off</b>" : `Next release: <b>${ddmm(D.next_release)}</b>`;
+  const st = (w, label) => { const c = cfg(w); return `<span class="dot ${c.settings?.paused || (w === "release" && c.settings?.release_on === false) ? "warn" : "on"}"></span><span><b>${label}</b> · version ${c.version || "-"}, saved by ${esc(c.updated_by || "")} ${when(c.updated_at)}</span>`; };
+  $("stBlog").innerHTML = st("blog", b.paused ? "Paused" : "On");
+  $("stLi").innerHTML = st("linkedin", l.paused ? "Paused" : "On");
+  $("stRel").innerHTML = st("release", r.release_on === false ? "Release off" : "Release on");
+  $("relNext").textContent = r.release_on === false ? "The release is off: nothing goes to clients until it's back on." : `Next release: ${ddmm(D.next_release)}.`;
+
+  if (fill) {
+    $("insBlog").value = cfg("blog").instructions || "";
+    dayBoxes("daysBlog", b.run_days || [1,2,3,4,5,6,7]);
+    hourOpts("bStart", b.start_hour ?? 0); hourOpts("bEnd", b.end_hour ?? 23);
+    $("bArticles").value = b.max_articles ?? 2; $("bRevisions").value = b.max_revisions ?? 2;
+    $("bScore").value = b.score_target ?? 70; $("bRounds").value = b.score_rounds ?? 4; $("bCap").value = b.default_cap ?? D.default_cap ?? 5;
+
+    $("insLi").value = cfg("linkedin").instructions || "";
+    dayBoxes("daysLi", l.run_days || [1,2,3,4,5,6,7]);
+    hourOpts("lStart", l.start_hour ?? 0); hourOpts("lEnd", l.end_hour ?? 23);
+    $("lPer").value = l.per_run ?? 6; $("lMin").value = l.word_min ?? 600; $("lMax").value = l.word_max ?? 900;
+
+    $("rDay").innerHTML = Array.from({ length: 28 }, (_, i) => i + 1).map(d => `<option value="${d}"${d === (r.release_day ?? 15) ? " selected" : ""}>${d}</option>`).join("");
+    const types = r.release_types || TYPES.map(t => t[0]);
+    $("rTypes").innerHTML = TYPES.map(([v, lab]) => `<label><input type="checkbox" value="${v}"${types.includes(v) ? " checked" : ""}> ${lab}</label>`).join("");
+    setTog("togPub", r.published_email_on !== false); pubLine();
+    $("rSign").value = r.sign_off_name || "";
+    $("rRevSubj").value = r.review_subject || ""; $("rRevHead").value = r.review_heading || ""; $("rRevIntro").value = r.review_intro || "";
+    $("rLiveSubj").value = r.live_subject || ""; $("rLiveHead").value = r.live_heading || ""; $("rLiveIntro").value = r.live_intro || ""; $("rLiveClose").value = r.live_closing || "";
+    $("noteBlog").value = $("noteLi").value = $("noteRel").value = "";
+    DIRTY = false;
+  }
+  counts();
+
+  const sel = $("clientSel"), prev = sel.value;
+  sel.innerHTML = `<option value="">Choose a client</option>` + D.clients.map(c =>
+    `<option value="${c.id}">${esc(c.name)}${c.blog_on ? " · blogs" : ""}${c.linkedin_on ? " · LinkedIn" : ""}</option>`).join("");
+  sel.value = CLIENT || prev || "";
+  $("rPrevClient").innerHTML = D.clients.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("");
+
+  $("versions").innerHTML = D.versions.length ? D.versions.map(v => {
+    const live = cfg(v.writer).version === v.id;
+    return `<div class="rowc"><div class="main"><h4>${{ blog: "Blog writer", linkedin: "LinkedIn writer", release: "Release day" }[v.writer]} · version ${v.id} ${live ? '<span class="pill live">in use</span>' : ""}</h4>
+      ${v.note ? `<p>${esc(v.note)}</p>` : ""}<div class="meta">Saved by ${esc(v.by || "")} ${when(v.at)}</div></div>
+      <div class="acts"><button class="btn small ghost" type="button" data-view="${v.id}">View</button>${live ? "" : `<button class="btn small ghost" type="button" data-restore="${v.id}">Use this version again</button>`}</div></div>`;
+  }).join("") : `<p class="hint">No versions yet.</p>`;
+
+  $("changelog").innerHTML = D.log.length ? D.log.map(l => `<div class="rowc"><div class="main"><h4>${esc(l.action)}${l.client ? " · " + esc(l.client) : ""}</h4>
+      ${l.detail?.note ? `<p>${esc(l.detail.note)}</p>` : ""}${l.detail?.title ? `<p>${esc(l.detail.title)}</p>` : ""}
+      <div class="meta">${esc(l.actor || "")} · ${when(l.at)}</div></div></div>`).join("") : `<p class="hint">No changes yet.</p>`;
+}
+function pubLine() { $("linePub").innerHTML = $("togPub").classList.contains("on") ? "<b>On</b>: sent when all of a month's blogs are live" : "<b>Off</b>: not sent"; }
+function counts() { document.querySelectorAll(".cnt").forEach(c => { const t = $(c.dataset.for), n = t.value.length, max = +t.dataset.max; c.textContent = `${n.toLocaleString()} / ${max.toLocaleString()}`; c.style.color = n > max ? "var(--red)" : ""; }); }
+document.addEventListener("input", e => { if (e.target.closest("#app")) DIRTY = true; if (e.target.matches("textarea")) counts(); });
+document.addEventListener("change", e => { if (e.target.closest("#app") && e.target.id !== "clientSel" && e.target.id !== "rPrevClient") DIRTY = true; });
+
+// ---------------------------------------------------------------- save a writer
+const num = id => { const v = $(id).value.trim(); return v === "" ? null : Number(v); };
+function settingsFor(w) {
+  const cur = S(w);
+  if (w === "blog") return { paused: !!cur.paused, run_days: checked("daysBlog"), start_hour: +$("bStart").value, end_hour: +$("bEnd").value,
+    max_articles: num("bArticles"), max_revisions: num("bRevisions"), score_target: num("bScore"), score_rounds: num("bRounds"), default_cap: num("bCap") };
+  if (w === "linkedin") return { paused: !!cur.paused, run_days: checked("daysLi"), start_hour: +$("lStart").value, end_hour: +$("lEnd").value,
+    per_run: num("lPer"), word_min: num("lMin"), word_max: num("lMax") };
+  return { release_on: cur.release_on !== false, release_day: +$("rDay").value, release_types: checked("rTypes"),
+    published_email_on: $("togPub").classList.contains("on"), sign_off_name: $("rSign").value.trim(),
+    review_subject: $("rRevSubj").value.trim(), review_heading: $("rRevHead").value.trim(), review_intro: $("rRevIntro").value.trim(),
+    live_subject: $("rLiveSubj").value.trim(), live_heading: $("rLiveHead").value.trim(), live_intro: $("rLiveIntro").value.trim(), live_closing: $("rLiveClose").value.trim() };
+}
+const insFor = w => w === "blog" ? $("insBlog").value : w === "linkedin" ? $("insLi").value : null;
+const noteFor = w => ({ blog: "noteBlog", linkedin: "noteLi", release: "noteRel" })[w];
+async function saveWriter(w, settings, note) {
+  for (const [k, v] of Object.entries(settings)) if (v === null || (typeof v === "number" && isNaN(v))) throw new Error("Fill in every number before saving (" + k.replace(/_/g, " ") + ").");
+  if (w === "release" && !settings.release_types.length && settings.release_on) throw new Error("Tick at least one content type, or turn the release off.");
+  const id = await rpc("ch_writer_save", { p_writer: w, p_instructions: w === "release" ? null : (insFor(w)), p_settings: settings, p_note: note || null });
+  return id;
+}
+document.querySelectorAll("[data-save]").forEach(b => b.addEventListener("click", async () => {
+  const w = b.dataset.save; b.disabled = true;
+  try {
+    const id = await saveWriter(w, settingsFor(w), $(noteFor(w)).value.trim());
+    DIRTY = false; toast(`Saved as version ${id}. The next run uses it.`); await load(true);
+  } catch (e) { toast(e.message, true); }
+  b.disabled = false;
+}));
+
+// header switches save straight away, keeping everything else as it is in use
+async function flip(w, key, onValue) {
+  const c = cfg(w), s = { ...(c.settings || {}) };
+  s[key] = onValue;
+  const label = { paused: onValue ? "Paused" : "Turned back on", release_on: onValue ? "Release turned on" : "Release turned off" }[key];
+  if (!confirm(`${label}: ${{ blog: "blog writer", linkedin: "LinkedIn writer", release: "monthly release" }[w]}. Save now?`)) return;
+  try { await rpc("ch_writer_save", { p_writer: w, p_instructions: c.instructions || null, p_settings: s, p_note: label }); toast(label + ". Saved."); await load(!DIRTY); }
+  catch (e) { toast(e.message, true); }
+}
+$("togBlog").addEventListener("click", () => flip("blog", "paused", !S("blog").paused));
+$("togLi").addEventListener("click", () => flip("linkedin", "paused", !S("linkedin").paused));
+$("togRel").addEventListener("click", () => flip("release", "release_on", S("release").release_on === false));
+$("togPub").addEventListener("click", () => { $("togPub").classList.toggle("on"); pubLine(); DIRTY = true; });
+
+// ---------------------------------------------------------------- history
+document.addEventListener("click", async e => {
+  const v = e.target.closest("[data-view]"), r = e.target.closest("[data-restore]");
+  if (v) {
+    try {
+      const x = await rpc("ch_writer_version", { p_id: +v.dataset.view });
+      modal(`<h3>Version ${x.id}</h3><p class="hint">${esc(x.note || "")} · saved by ${esc(x.created_by || "")} ${when(x.created_at)}</p>
+        ${x.instructions ? `<div class="grouphead">Instructions</div><pre class="v">${esc(x.instructions)}</pre>` : ""}
+        <div class="grouphead">Settings</div><pre class="v">${esc(JSON.stringify(x.settings, null, 2))}</pre>
+        <div class="foot"><button class="btn ghost" type="button" data-close>Close</button></div>`);
+    } catch (err) { toast(err.message, true); }
+  }
+  if (r) {
+    if (DIRTY && !confirm("You have unsaved changes on this page. They'll be replaced. Carry on?")) return;
+    if (!confirm(`Use version ${r.dataset.restore} again? It's saved as a new version, so you can switch back.`)) return;
+    try { const id = await rpc("ch_writer_restore", { p_version: +r.dataset.restore }); DIRTY = false; toast(`Version ${r.dataset.restore} is back in use (saved as version ${id}).`); await load(true); }
+    catch (err) { toast(err.message, true); }
+  }
+  if (e.target.closest("[data-close]") || e.target.id === "modal") $("modal").classList.add("hide");
+});
+function modal(html) { $("modalBox").innerHTML = html; $("modal").classList.remove("hide"); }
+
+// ---------------------------------------------------------------- email preview
+document.querySelectorAll("[data-preview]").forEach(b => b.addEventListener("click", async () => {
+  try {
+    if (DIRTY) toast("Showing the saved wording. Save first to preview your changes.");
+    const r = await rpc("ch_writer_preview_email", { p_kind: b.dataset.preview, p_client: $("rPrevClient").value });
+    modal(`<h3>${esc(r.subject)}</h3><p class="hint">Preview with example blogs and a made-up contact. Never sent.</p><iframe sandbox="" id="prevFrame"></iframe>
+      <div class="foot"><button class="btn ghost" type="button" data-close>Close</button></div>`);
+    $("prevFrame").srcdoc = r.html;
+  } catch (e) { toast(e.message, true); }
+}));
+
+// ---------------------------------------------------------------- clients
+$("clientSel").addEventListener("change", async e => {
+  if (DIRTY && CLIENT && !confirm("You have unsaved changes. Switch client anyway?")) { e.target.value = CLIENT; return; }
+  CLIENT = e.target.value || null;
+  if (!CLIENT) { $("clientBody").classList.add("hide"); return; }
+  try { await loadClient(CLIENT, true); } catch (err) { toast(err.message, true); }
+});
+async function loadClient(id, fill) {
+  C = await rpc("ch_writer_client", { p_client: id });
+  const row = D.clients.find(c => c.id === id) || {};
+  $("clientBody").classList.remove("hide");
+  if (fill) {
+    const p = C.profile || {};
+    setTog("cBlogOn", row.blog_on); setTog("cLiOn", row.linkedin_on);
+    $("cCap").value = row.cap_own ?? "";
+    $("cSite").value = p.site_url || ""; $("cContact").value = p.contact_url || ""; $("cBlogUrl").value = p.blog_url || "";
+    $("cAuthor").value = p.author_name || ""; $("cRole").value = p.author_role || ""; $("cLoc").value = p.surfer_location || "";
+    $("cServices").value = (p.services || []).join("\n"); $("cAreas").value = (p.service_areas || []).join("\n");
+    $("cRules").value = p.rules || "";
+    $("cFacts").innerHTML = ""; (p.facts || []).forEach(f => addPair("cFacts", f.fact, f.source));
+    $("cLinks").innerHTML = ""; (p.link_pages || []).forEach(l => addPair("cLinks", l.url, l.title));
+    DIRTY = false;
+  }
+  $("cCapHint").textContent = `Used ${row.used ?? 0} of ${row.cap ?? D.default_cap} credits this month. Empty = the default (${D.default_cap}).` + (row.cap_own > 10 ? " Jose set this above 10, so leave it or lower it." : "");
+
+  $("cWaiting").innerHTML = C.waiting.length ? C.waiting.map(w => `<div class="rowc"><div class="main"><h4>${esc(w.title)}</h4>
+      <div class="meta"><span class="pill kind">${KIND[w.deliverable] || esc(w.deliverable)}</span> ${esc(w.month || "")}</div></div>
+      <div class="acts">${w.priority ? `<span class="pill live">next up</span><button class="btn small ghost" type="button" data-prio="${w.item_id}" data-on="0">Cancel</button>`
+                                     : `<button class="btn small ghost" type="button" data-prio="${w.item_id}" data-on="1">Write next</button>`}</div></div>`).join("")
+    : `<p class="hint">Nothing waiting. Blogs and pages appear here once the client approves the topic.</p>`;
+
+  const qcPill = w => w.released ? '<span class="pill live">with the client</span>' : w.qc === "approved" ? '<span class="pill live">QC approved</span>'
+    : w.qc === "changes" ? '<span class="pill warn">being rewritten</span>' : '<span class="pill">ready for QC</span>';
+  $("cWritten").innerHTML = C.written.length ? C.written.map(w => `<div class="rowc"><div class="main"><h4>${esc(w.title)}</h4>
+      ${w.qc === "changes" && w.qc_note ? `<p>Note: ${esc(w.qc_note)}</p>` : ""}
+      <div class="meta"><span class="pill kind">${KIND[w.deliverable] || esc(w.deliverable)}</span> ${qcPill(w)} ${esc(w.month || "")} · ${when(w.at)}</div></div>
+      <div class="acts">${w.qc === "changes" ? "" : `<button class="btn small ghost" type="button" data-rewrite="${w.item_id}">Rewrite</button>`}</div></div>`).join("")
+    : `<p class="hint">Nothing written yet.</p>`;
+}
+function addPair(box, a, b) {
+  const facts = box === "cFacts", d = document.createElement("div");
+  d.className = "pair" + (facts ? "" : " links");
+  d.innerHTML = facts
+    ? `<input class="in" data-a placeholder="Fact, e.g. Family owned since 2009" value="${esc(a || "")}"><input class="in" data-b placeholder="Source, e.g. kickoff call 03/10" value="${esc(b || "")}"><button type="button" aria-label="Remove">&times;</button>`
+    : `<input class="in" data-a placeholder="https://" value="${esc(a || "")}"><input class="in" data-b placeholder="Page title" value="${esc(b || "")}"><button type="button" aria-label="Remove">&times;</button>`;
+  d.querySelector("button").addEventListener("click", () => { d.remove(); DIRTY = true; });
+  $(box).appendChild(d);
+}
+$("addFact").addEventListener("click", () => addPair("cFacts"));
+$("addLink").addEventListener("click", () => addPair("cLinks"));
+const pairs = box => [...$(box).querySelectorAll(".pair")].map(p => [p.querySelector("[data-a]").value.trim(), p.querySelector("[data-b]").value.trim()]).filter(([a, b]) => a || b);
+const lines = id => $(id).value.split("\n").map(s => s.trim()).filter(Boolean);
+$("cBlogOn").addEventListener("click", () => { $("cBlogOn").classList.toggle("on"); DIRTY = true; });
+$("cLiOn").addEventListener("click", () => { $("cLiOn").classList.toggle("on"); DIRTY = true; });
+$("saveClient").addEventListener("click", async () => {
+  const capRaw = $("cCap").value.trim();
+  const patch = {
+    blog_on: $("cBlogOn").classList.contains("on"), linkedin_on: $("cLiOn").classList.contains("on"),
+    monthly_cap: capRaw === "" ? null : Number(capRaw),
+    site_url: $("cSite").value.trim(), contact_url: $("cContact").value.trim(), blog_url: $("cBlogUrl").value.trim(),
+    author_name: $("cAuthor").value.trim(), author_role: $("cRole").value.trim(), surfer_location: $("cLoc").value.trim(),
+    services: lines("cServices"), service_areas: lines("cAreas"), rules: $("cRules").value.trim(),
+    facts: pairs("cFacts").map(([fact, source]) => ({ fact, source })),
+    link_pages: pairs("cLinks").map(([url, title]) => ({ url, title }))
+  };
+  $("saveClient").disabled = true;
+  try { await rpc("ch_writer_client_save", { p_client: CLIENT, p_patch: patch }); DIRTY = false; toast("Client saved. The next run uses it."); await load(false); await loadClient(CLIENT, true); }
+  catch (e) { toast(e.message, true); }
+  $("saveClient").disabled = false;
+});
+document.addEventListener("click", async e => {
+  const p = e.target.closest("[data-prio]"), rw = e.target.closest("[data-rewrite]");
+  if (p) {
+    try { await rpc("ch_writer_prioritise", { p_item: p.dataset.prio, p_on: p.dataset.on === "1" }); toast(p.dataset.on === "1" ? "Moved to the front of the queue for the next run." : "Back in normal order."); await loadClient(CLIENT, false); }
+    catch (err) { toast(err.message, true); }
+  }
+  if (rw) {
+    const w = C.written.find(x => x.item_id === rw.dataset.rewrite);
+    modal(`<h3>Rewrite: ${esc(w?.title || "")}</h3><p class="hint">Say what should change. The writer keeps everything else, rewrites it on the next run, and it comes back to QC.${w?.released ? " <b>The client can already see this piece.</b>" : ""}</p>
+      <textarea class="in" id="rwNote" style="margin-top:10px" placeholder="e.g. Make the intro shorter and add a section on costs"></textarea>
+      <div class="foot"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="button" id="rwGo">Send to the writer</button></div>`);
+    $("rwGo").addEventListener("click", async () => {
+      const note = $("rwNote").value.trim();
+      if (note.length < 3) { toast("Say what should change.", true); return; }
+      try { await rpc("ch_writer_rewrite", { p_item: rw.dataset.rewrite, p_note: note }); $("modal").classList.add("hide"); toast("Sent to the writer. It's rewritten on the next run."); await loadClient(CLIENT, false); }
+      catch (err) { toast(err.message, true); }
+    });
+  }
+});
+
+// nav highlight
+const secs = [...document.querySelectorAll("section")];
+window.addEventListener("scroll", () => {
+  let cur = secs[0]?.id; for (const s of secs) if (s.getBoundingClientRect().top < 120) cur = s.id;
+  document.querySelectorAll("#navlinks a").forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + cur));
+}, { passive: true });
+
+boot();
+</script>
+</body>
+</html>
