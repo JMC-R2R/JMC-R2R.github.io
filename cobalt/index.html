@@ -585,6 +585,7 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
     </div>
     <div class="kpis" id="kpi-ai"></div>
     <div id="r-ai-trend"></div>
+    <div id="r-ai-kept"></div>
     <h2 class="h2">Month on month</h2>
     <p class="sub" id="mom-ai-sub">&mdash;</p>
     <div class="momgrid" id="mom-ai"></div>
@@ -2508,8 +2509,8 @@ function rRenderGbp(){
      <tr><td class="k">On desktop</td><td class="tnum">${fmt(cur.desk)}</td><td class="tnum">${Math.round(cur.desk/cur.impr*100)}%</td></tr></tbody></table></div>`:""}
    <h2 class="h2">Posts published to the listing &mdash; ${monthLong(MONTH)}</h2><p class="sub">Each post is live on the Cobalt Constructions Google Business Profile. <a href="${listing}" target="_blank" rel="noopener">Open the listing&nbsp;↗</a></p>
    ${mp.length?`<div class="card tscroll"><table class="tbl"><thead><tr><th>Published</th><th>Post</th></tr></thead><tbody>${mp.map(p=>`<tr><td class="tnum">${p.d}</td><td class="k"><a href="${p.href}" target="_blank" rel="noopener">${esc(p.title)}</a></td></tr>`).join("")}</tbody></table></div>`:`<div class="nodata">No Google Business Profile posts recorded for ${monthLong(MONTH)}.</div>`}
-   <h2 class="h2">Map pack</h2>
-   <div class="nodata"><b>Map pack grid coming next.</b> A scan of where Cobalt appears in the Google Maps top 3 across the Yarra Valley will show here once the first scan has run.</div>`;
+   <div id="r-grid"></div>`;
+  rRenderGrid();
   const lab=G.map(g=>rShortM(g.k)+(g.k===nowKey?"*":""));
   if(G.length){
     rCombo(document.getElementById("r-gbp-c1"),{title:"Profile views",sub:"Search + Maps, monthly · * month in progress",labels:lab,bar:{name:"Views",color:"var(--cobalt)",data:G.map(g=>g.impr)}});
@@ -2518,8 +2519,53 @@ function rRenderGbp(){
 }
 function rSyncAiMonth(){const ms=[...new Set(AI_OVERVIEW.map(r=>String(r.period_month).slice(0,10)))].sort();if(!ms.length||!MONTH)return;
   const upto=ms.filter(m=>m.slice(0,7)<=MONTH);AI_MONTH=upto.length?upto[upto.length-1]:ms[0];AI_PREV=ms[ms.indexOf(AI_MONTH)-1]||null;}
+
+let R_GRID=null;
+async function rLoadGrid(){try{const {data}=await sb.from('cobalt_mapgrid').select('*').order('scan_date');R_GRID=data||[];}catch(e){R_GRID=[];}rRenderGrid();}
+function rRenderGrid(){
+  const el=document.getElementById("r-grid");if(!el)return;
+  if(R_GRID===null){R_GRID=[];rLoadGrid();}
+  const sc=R_GRID[R_GRID.length-1];
+  if(!sc){el.innerHTML=`<h2 class="h2">Map pack grid</h2><div class="nodata">Loading the map pack scan…</div>`;return;}
+  const m=sc.meta,P=sc.points,n=m.grid_size,b=m.buckets||{};
+  const col=r=>r==null?"#3a3a44":r<=3?"#10B981":r<=10?"#84CC16":r<=20?"#F59E0B":"#EF4444";
+  const cell=Math.min(58,Math.floor(((el.clientWidth||700)-40)/n));
+  const comp={};P.forEach(p=>{if(p[3]&&p[3]!=="Cobalt Constructions")comp[p[3]]=(comp[p[3]]||0)+1;});
+  const topc=Object.entries(comp).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const span=((n-1)*m.spacing_km).toFixed(0);
+  let g=`<div style="display:grid;grid-template-columns:repeat(${n},${cell}px);gap:6px;justify-content:center;padding:14px 0">`;
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){const p=P.find(x=>x[0]===i&&x[1]===j)||[i,j,null,null];const centre=i===(n-1)/2&&j===(n-1)/2;
+    g+=`<div title="${p[2]==null?"Not found in the results":"Rank "+p[2]}${p[3]?" · #1 here: "+esc(p[3]):""}" style="width:${cell}px;height:${cell}px;border-radius:50%;background:${col(p[2])};display:flex;align-items:center;justify-content:center;font:800 ${Math.round(cell/3)}px var(--mono);color:${p[2]!=null&&p[2]<=10?"#06131a":"#fff"};${centre?"outline:3px solid var(--r2r);outline-offset:3px":""}">${p[2]==null?"–":p[2]}</div>`;}
+  g+=`</div>`;
+  const leg=[["#10B981","1–3 (map pack)"],["#84CC16","4–10"],["#F59E0B","11–20"],["#EF4444","21+"],["#3a3a44","not found"]].map(([c,l])=>`<span><i style="background:${c}"></i>${l}</span>`).join("");
+  el.innerHTML=`<h2 class="h2">Map pack grid &mdash; &ldquo;${esc(m.keyword)}&rdquo;</h2>
+   <p class="sub">Where Cobalt ranks on Google Maps when someone searches &ldquo;${esc(m.keyword)}&rdquo; from each of ${m.total_points} points, ${m.spacing_km} km apart, covering about ${span} × ${span} km around the Kilsyth South office (outlined in blue, north at the top). Scanned ${rDM(m.date)}/${m.date.slice(0,4)} &mdash; the first scan, so this is the baseline.</p>
+   <div class="kpis">${kpi("In the map pack (top 3)",String(b["1-3"]||0),"of "+m.total_points+" points")}${kpi("Found in results",m.found_points+" / "+m.total_points,"points where Cobalt appears at all")}${kpi("Average rank",m.avg_rank==null?"—":(+m.avg_rank).toFixed(1),"across the "+m.found_points+" points found")}${kpi("Share of local visibility",(+m.solv).toFixed(1)+"%","top-3 points ÷ all points")}</div>
+   <div class="grid g2" style="margin-top:14px"><div class="card"><div class="cardhead"><div><h3>Rank at each point</h3><p class="ch3sub">Hover a circle for the business ranking #1 there</p></div></div>${g}<div class="legend" style="justify-content:center;flex-wrap:wrap">${leg}</div></div>
+   <div class="card"><div class="cardhead"><div><h3>Who holds #1 across the grid</h3><p class="ch3sub">Number of points where each business ranks first</p></div></div>
+   <table class="tbl"><tbody>${(b["1-3"]?`<tr><td class="k">Cobalt Constructions</td><td class="tnum">${P.filter(p=>p[3]==="Cobalt Constructions").length}</td></tr>`:"")+topc.map(([k,v])=>`<tr><td class="k">${esc(k)}</td><td class="tnum">${v}</td></tr>`).join("")}</tbody></table></div></div>`;
+}
+
+function rRenderAiKept(){
+  const el=document.getElementById("r-ai-kept");if(!el)return;
+  const cur=AI_MONTH&&String(AI_MONTH).slice(0,10),prv=AI_PREV&&String(AI_PREV).slice(0,10);
+  const at=m=>AI_PROMPTS.filter(r=>r.source==="se_ranking"&&r.engine==="ai-overview"&&String(r.period_month).slice(0,10)===m);
+  const C=cur?at(cur):[],Pv=prv?at(prv):[];
+  if(!C.length||!Pv.length){el.innerHTML="";return;}
+  const pk=new Set(Pv.map(r=>r.prompt)),ck=new Set(C.map(r=>r.prompt));
+  const urls=r=>{let u=r.cobalt_urls;if(typeof u==="string"){try{u=JSON.parse(u);}catch(e){u=u?[u]:[];}}return (u||[]).map(x=>String(x).replace(/#.*$/,"").replace(/^https?:\/\/(www\.)?cobaltconstructions\.com\.au/,"")||"/");};
+  const rows=[...C.map(r=>({st:pk.has(r.prompt)?"Kept":"New",r})),...Pv.filter(r=>!ck.has(r.prompt)).map(r=>({st:"Lost",r}))];
+  const ord={New:0,Kept:1,Lost:2};rows.sort((a,b)=>ord[a.st]-ord[b.st]||String(a.r.prompt).localeCompare(String(b.r.prompt)));
+  const n=k=>rows.filter(x=>x.st===k).length,cm=monthLong(cur.slice(0,7)),pm=monthLong(prv.slice(0,7));
+  const chip=st=>`<span class="chip ${st==="New"?"up":st==="Lost"?"dn":"flat"}">${st}</span>`;
+  el.innerHTML=`<h2 class="h2">Google AI Overview: kept, new and lost</h2>
+   <p class="sub">Questions where Google's AI Overview cites cobaltconstructions.com.au in ${cm}, compared with ${pm}. <b>Kept</b> = cited both months, <b>New</b> = cited for the first time, <b>Lost</b> = cited in ${pm} but not ${cm}. Source: SE Ranking.</p>
+   <div class="kpis">${kpi("Cited in "+cm,String(C.length),"questions")}${kpi("Kept",String(n("Kept")),"held from "+pm)}${kpi("New",String(n("New")),"won this month")}${kpi("Lost",String(n("Lost")),"dropped since "+pm)}</div>
+   <div class="card tscroll" style="margin-top:14px"><table class="tbl"><thead><tr><th>Question</th><th>Status</th><th>Cobalt page cited</th></tr></thead><tbody>
+   ${rows.map(x=>`<tr><td class="k">${esc(x.r.prompt)}</td><td>${chip(x.st)}</td><td class="small">${urls(x.r).map(esc).join("<br>")||"—"}</td></tr>`).join("")}</tbody></table></div>`;
+}
 const _rRenderAll=renderAll;renderAll=function(){try{rSyncAiMonth();}catch(e){}_rRenderAll.apply(this,arguments);try{rRenderDeliv();rRenderGbp();if(R_GBP===null){R_GBP=[];rLoadGbp();}}catch(e){console.error(e);}};
-const _rRenderCharts=renderCharts;renderCharts=function(){_rRenderCharts.apply(this,arguments);try{rRenderGsc();rRenderGa();rRenderAi();rRenderGbp();}catch(e){console.error(e);}};
+const _rRenderCharts=renderCharts;renderCharts=function(){_rRenderCharts.apply(this,arguments);try{rRenderGsc();rRenderGa();rRenderAi();rRenderGbp();rRenderAiKept();}catch(e){console.error(e);}};
 </script>
 </body>
 </html>
