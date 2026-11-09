@@ -89,6 +89,29 @@ section[hidden]{display:none}
 .sub{color:var(--ink2);font-size:13px;margin:0 0 16px;max-width:64ch}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px}
+.rtabs{display:inline-flex;gap:4px;background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:3px}
+.rtabs button{font:600 12px var(--sans);color:var(--ink2);background:none;border:0;border-radius:7px;padding:6px 12px;cursor:pointer}
+.rtabs button[aria-pressed=true]{background:var(--r2r);color:#06131a}
+.rhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:26px 0 12px}
+.rhead .h2{margin:0}
+.deliv{background:linear-gradient(135deg,rgba(23,180,240,.14),rgba(44,171,225,.04));border:1px solid rgba(23,180,240,.45);border-radius:14px;padding:18px 18px 14px;margin-bottom:22px}
+.deliv h2{margin:0 0 4px;font-size:22px}
+.deliv .dcounts{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.deliv .dc{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;min-width:110px}
+.deliv .dc b{display:block;font-size:26px;font-weight:800;line-height:1}
+.deliv .dc span{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3)}
+.deliv ol{margin:6px 0 0;padding-left:20px;columns:2;column-gap:28px}
+.deliv li{break-inside:avoid;padding:4px 0;font-size:13.5px;line-height:1.4}
+.deliv li a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--bd2)}
+.deliv li .dt{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-right:6px}
+.deliv li .ty{font-family:var(--mono);font-size:10px;text-transform:uppercase;color:var(--r2r);margin-left:6px}
+@media(max-width:720px){.deliv ol{columns:1}}
+.engcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.engcard{background:var(--s2);border:1px solid var(--bd);border-top:3px solid var(--ec);border-radius:12px;padding:12px 14px}
+.engcard .en{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
+.engcard .en i{width:9px;height:9px;border-radius:50%;background:var(--ec)}
+.engcard .ev{font-size:26px;font-weight:800;margin:6px 0 2px}
+.engcard .ef{font-size:11.5px;color:var(--ink3)}
 .kpi{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:15px 16px;display:flex;flex-direction:column;gap:7px;min-height:104px}
 .kpi .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
 .kpi .val{font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1}
@@ -446,6 +469,7 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
 <nav class="tabs"><div class="tabrow" role="tablist">
   <button class="tab" role="tab" aria-selected="true" data-tab="overview">Overview</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="seo">SEO</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="gbp">Google Business Profile</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="aisearch">AI Search</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="paid">Meta Ads</button>
   <button class="tab" role="tab" aria-selected="false" data-tab="google">Google Ads</button>
@@ -460,6 +484,7 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
 
 <main class="wrap">
   <section id="overview" data-anchor="sec:overview">
+    <div id="r-deliv"></div>
     <div class="eyebrow">Snapshot · <span id="snap-window">last 30 days</span></div>
     <div class="kpis" id="kpi-overview"></div>
     <div class="callouts">
@@ -479,6 +504,7 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
     <h2 class="h2">Website traffic</h2>
     <p class="sub">Daily sessions from all channels (GA4). The spikes on 25/06 and 09/07 line up with campaign activity.</p>
     <div class="card chart" id="c-sessions"></div>
+    <div id="r-ga4"></div>
     <div class="grid g2" style="margin-top:14px">
       <div class="card chart" id="c-ov-social"></div>
       <div class="card" id="c-ov-channels"></div>
@@ -489,6 +515,7 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
   <section id="seo" data-anchor="sec:seo" hidden>
     <div class="eyebrow">Organic search · Google</div>
     <div class="kpis" id="kpi-seo"></div>
+    <div id="r-gsc"></div>
     <h2 class="h2">Month on month</h2>
     <p class="sub" id="mom-seo-sub">&mdash;</p>
     <div class="momgrid" id="mom-seo"></div>
@@ -551,6 +578,7 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
       </div></div>
     </div>
     <div class="kpis" id="kpi-ai"></div>
+    <div id="r-ai-trend"></div>
     <h2 class="h2">Month on month</h2>
     <p class="sub" id="mom-ai-sub">&mdash;</p>
     <div class="momgrid" id="mom-ai"></div>
@@ -571,6 +599,11 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
     <div class="card tscroll"><table class="tbl" id="t-ai-domains"></table></div>
     <div id="ai-team"></div>
     <div class="inspanel" id="ins-aisearch"></div>
+  </section>
+
+  <section id="gbp" data-anchor="sec:gbp" hidden>
+    <div class="eyebrow">Google Business Profile · Cobalt Constructions</div>
+    <div id="r-gbp"></div>
   </section>
 
   <section id="paid" data-anchor="sec:paid" hidden>
@@ -2339,6 +2372,126 @@ document.getElementById("gateform").addEventListener("submit",async e=>{
 // Inside the hub the sign-in is the hub's, so signing out reloads the whole hub, not just this frame.
 document.getElementById("logout").addEventListener("click",async()=>{await sb.auth.signOut();(EMBED?window.top:window).location.reload();});
 checkSession();
+
+/* ===== Meeting build (10/11/2026): delivered-this-month banner, Search Console and GA4 range views,
+   Google Business Profile tab, AI engine chart. All figures come from the tables already loaded above. ===== */
+secs.gbp=document.getElementById("gbp");
+const R_RANGES=[["m","Month"],["3","3 months"],["6","6 months"],["16","16 months"]];
+let GSC_R="m",GA_R="m";
+const R_DELIV={"2026-10":"t-delivered-oct","2026-09":"t-delivered"};
+const R_ENG=[["chatgpt","ChatGPT","#10A37F"],["claude","Claude","#D97757"],["gemini","Gemini","#4285F4"],["perplexity","Perplexity","#20B8CD"]];
+const rMonthAdd=(k,n)=>{const[y,m]=k.split("-").map(Number);const d=new Date(y,m-1+n,1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
+const rShortM=k=>new Date(+k.slice(0,4),+k.slice(5,7)-1,1).toLocaleString("en-AU",{month:"short"})+" "+k.slice(2,4);
+const rDM=d=>d.slice(8,10)+"/"+d.slice(5,7);
+function rWindow(rng,end){const n=rng==="m"?1:+rng;return {from:rMonthAdd(end,1-n),to:end,n};}
+function rRows(w){return RAW.seo.filter(r=>{const k=r.period_date.slice(0,7);return k>=w.from&&k<=w.to;}).sort((a,b)=>a.period_date<b.period_date?-1:1);}
+function rMonday(d){const x=new Date(d+"T00:00:00");const g=(x.getDay()+6)%7;x.setDate(x.getDate()-g);return localISO(x);}
+function rBucket(rows,rng){
+  const gran=rng==="m"?"day":rng==="3"?"week":"month",B={},order=[];
+  rows.forEach(r=>{const k=gran==="day"?r.period_date:gran==="week"?rMonday(r.period_date):r.period_date.slice(0,7);
+    if(!B[k]){B[k]={k,clicks:0,impr:0,posw:0,sessions:0,users:0,conv:0,days:0};order.push(k);}
+    const b=B[k];b.clicks+=+r.clicks||0;b.impr+=+r.impressions||0;b.posw+=(+r.avg_position||0)*(+r.impressions||0);
+    b.sessions+=+r.sessions||0;b.users+=+r.users||0;b.conv+=+r.conversions||0;b.days++;});
+  const lab=k=>gran==="month"?rShortM(k):gran==="week"?"w/c "+rDM(k):rDM(k);
+  return {gran,list:order.map(k=>({...B[k],label:lab(k),pos:B[k].impr?B[k].posw/B[k].impr:null}))};
+}
+function rTot(rows){const t={clicks:0,impr:0,posw:0,sessions:0,users:0,conv:0};rows.forEach(r=>{t.clicks+=+r.clicks||0;t.impr+=+r.impressions||0;t.posw+=(+r.avg_position||0)*(+r.impressions||0);t.sessions+=+r.sessions||0;t.users+=+r.users||0;t.conv+=+r.conversions||0;});t.pos=t.impr?t.posw/t.impr:null;t.ctr=t.impr?t.clicks/t.impr*100:null;return t;}
+function rChip(now,was,lowerBetter,show){if(was==null||now==null||!was)return'<span class="small">no earlier period held</span>';
+  const pct=(now-was)/Math.abs(was)*100,good=lowerBetter?pct<0:pct>0,flat=Math.abs(pct)<0.5;
+  return`<span class="chip ${flat?"flat":good?"up":"dn"}">${flat?"&#9632;":pct>0?"&#9650;":"&#9660;"} ${Math.abs(pct).toFixed(0)}%</span> vs ${show(was)}`;}
+function rTabs(id,cur){return`<div class="rtabs" id="${id}">`+R_RANGES.map(([k,l])=>`<button type="button" data-r="${k}" aria-pressed="${k===cur}">${l}</button>`).join("")+`</div>`;}
+function rWinLabel(w){return w.n===1?monthLong(w.to):rShortM(w.from)+" – "+rShortM(w.to);}
+/* combo chart: bars (left axis) + line (right axis) */
+function rCombo(mount,{title,sub,labels,bar,line,lineInvert}){
+  if(!mount)return;const W=mount.clientWidth||560,H=260,P={t:16,r:44,b:30,l:44},iw=W-P.l-P.r,ih=H-P.t-P.b,n=labels.length;
+  const head=`<div class="cardhead"><div><h3>${title}</h3>${sub?`<p class="ch3sub">${sub}</p>`:""}</div><div class="legend"><span><i style="background:${bar.color}"></i>${bar.name}</span>${line?`<span><i style="background:${line.color}"></i>${line.name}</span>`:""}</div></div>`;
+  if(!n){mount.innerHTML=head+'<div class="nodata">No data held for this period.</div>';return;}
+  const bf=bar.fmt||fmt,bmax=Math.max(...bar.data,bar.fmt?0.01:1)*1.12,lv=line?line.data.filter(v=>v!=null):[];let l0=lv.length?Math.min(...lv):0,l1=lv.length?Math.max(...lv):1;const lp=(l1-l0)*.12||1;l0-=lp;l1+=lp;
+  const cx=i=>P.l+iw*(i+.5)/n,bw=Math.max(2,Math.min(46,iw/n*.62)),YB=v=>P.t+ih-(v/bmax)*ih,YL=v=>lineInvert?P.t+((v-l0)/(l1-l0))*ih:P.t+ih-((v-l0)/(l1-l0))*ih;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">`;
+  for(let t=0;t<=4;t++){const v=bmax*t/4,y=YB(v);svg+=`<line class="gridline" x1="${P.l}" y1="${y}" x2="${W-P.r}" y2="${y}"/><text class="axtxt" x="${P.l-6}" y="${y+3}" text-anchor="end">${bf(v)}</text>`;
+    if(line){const lvv=lineInvert?l1-(l1-l0)*t/4:l0+(l1-l0)*t/4;svg+=`<text class="axtxt" x="${W-P.r+6}" y="${y+3}">${(line.fmt||fmt)(lvv)}</text>`;}}
+  const step=Math.max(1,Math.ceil(n/10));
+  bar.data.forEach((v,i)=>{svg+=`<rect x="${cx(i)-bw/2}" y="${YB(v)}" width="${bw}" height="${Math.max(0,P.t+ih-YB(v))}" rx="3" fill="${bar.color}" opacity=".9"><title>${labels[i]} · ${bar.name}: ${bf(v)}${line&&line.data[i]!=null?" · "+line.name+": "+(line.fmt||fmt)(line.data[i]):""}</title></rect>`;
+    if(i%step===0)svg+=`<text class="axtxt" x="${cx(i)}" y="${H-9}" text-anchor="middle">${labels[i]}</text>`;
+    if(n<=8)svg+=`<text x="${cx(i)}" y="${YB(v)-5}" text-anchor="middle" fill="var(--ink)" font-family="var(--mono)" font-size="10.5" font-weight="700">${bf(v)}</text>`;});
+  if(line){let d="";line.data.forEach((v,i)=>{if(v==null)return;d+=(d?"L":"M")+cx(i)+" "+YL(v);});
+    svg+=`<path d="${d}" fill="none" stroke="${line.color}" stroke-width="2.2" stroke-linejoin="round"/>`;
+    if(n<=40)line.data.forEach((v,i)=>{if(v!=null)svg+=`<circle cx="${cx(i)}" cy="${YL(v)}" r="3" fill="${line.color}"><title>${labels[i]} · ${line.name}: ${(line.fmt||fmt)(v)}</title></circle>`;});}
+  mount.innerHTML=head+svg+"</svg>";
+}
+function rHeld(){const d=RAW.seo.map(r=>r.period_date).sort();return d.length?d[0]:null;}
+function rRenderDeliv(){
+  const el=document.getElementById("r-deliv");if(!el)return;const tid=R_DELIV[MONTH],t=tid&&document.getElementById(tid);
+  if(!t){el.innerHTML="";return;}
+  const rows=[...t.querySelectorAll("tbody tr")].map(tr=>{const td=tr.querySelectorAll("td"),a=td[2].querySelector("a");return{d:td[0].textContent.trim(),ty:td[1].textContent.trim(),title:a?a.textContent.trim():td[2].textContent.trim(),href:a?a.href:null};});
+  const c={};rows.forEach(r=>{const k=r.ty.replace(/ page$/i," page");c[k]=(c[k]||0)+1;});
+  const plural=(k,n)=>n===1?k:(k.endsWith("y")?k.slice(0,-1)+"ies":k+"s");
+  el.innerHTML=`<div class="deliv" data-anchor="sec:delivered"><div class="eyebrow" style="margin:0 0 6px">Delivered by Ready to Rank</div>
+   <h2>What we delivered in ${monthLong(MONTH)}</h2><p class="sub" style="margin:0">${rows.length} pieces published live. Click any item to open it.</p>
+   <div class="dcounts"><div class="dc"><b class="tnum">${rows.length}</b><span>Total</span></div>${Object.entries(c).map(([k,n])=>`<div class="dc"><b class="tnum">${n}</b><span>${plural(k,n)}</span></div>`).join("")}</div>
+   <ol>${rows.map(r=>`<li><span class="dt">${r.d}</span>${r.href?`<a href="${r.href}" target="_blank" rel="noopener">${esc(r.title)}</a>`:esc(r.title)}<span class="ty">${esc(r.ty)}</span></li>`).join("")}</ol></div>`;
+}
+function rRenderGsc(){
+  const el=document.getElementById("r-gsc");if(!el||!MONTH)return;
+  const w=rWindow(GSC_R,MONTH),pw=rWindow(GSC_R,rMonthAdd(MONTH,-w.n)),rows=rRows(w),prow=rRows(pw),T=rTot(rows),PT=prow.length?rTot(prow):null,held=rHeld();
+  const short=held&&held.slice(0,7)>w.from;
+  el.innerHTML=`<div class="rhead"><div><h2 class="h2">Google Search Console</h2><p class="sub" style="margin:4px 0 0">${rWinLabel(w)} · compared with the ${w.n===1?"previous month":"previous "+w.n+" months"}${short?` · <b>Search Console history held from ${rDM(held)}/${held.slice(0,4)}</b>, so this view shows everything held`:""}</p></div>${rTabs("gsc-tabs",GSC_R)}</div>
+   <div class="kpis">${kpi("Clicks",fmt(T.clicks),rChip(T.clicks,PT&&PT.clicks,false,fmt))}${kpi("Impressions",fmt(T.impr),rChip(T.impr,PT&&PT.impr,false,fmt))}${kpi("Click-through rate",T.ctr==null?"—":T.ctr.toFixed(2)+"%",rChip(T.ctr,PT&&PT.ctr,false,v=>v.toFixed(2)+"%"))}${kpi("Average position",T.pos==null?"—":T.pos.toFixed(1),rChip(T.pos,PT&&PT.pos,true,v=>v.toFixed(1))+" · lower is better")}</div>
+   <div class="grid g2" style="margin-top:14px"><div class="card" id="r-gsc-c1"></div><div class="card" id="r-gsc-c2"></div></div>`;
+  el.querySelectorAll("#gsc-tabs button").forEach(b=>b.onclick=()=>{GSC_R=b.dataset.r;rRenderGsc();});
+  const B=rBucket(rows,GSC_R),per={day:"daily",week:"weekly",month:"monthly"}[B.gran];
+  rCombo(document.getElementById("r-gsc-c1"),{title:"Clicks & impressions",sub:"Google organic · "+per,labels:B.list.map(x=>x.label),bar:{name:"Clicks",color:"var(--cobalt)",data:B.list.map(x=>x.clicks)},line:{name:"Impressions",color:"var(--r2r)",data:B.list.map(x=>x.impr)}});
+  rCombo(document.getElementById("r-gsc-c2"),{title:"CTR & average position",sub:"Position axis inverted · higher on the chart is better",labels:B.list.map(x=>x.label),bar:{name:"CTR %",color:"var(--f2)",fmt:v=>v.toFixed(2)+"%",data:B.list.map(x=>x.impr?+(x.clicks/x.impr*100).toFixed(2):0)},line:{name:"Avg position",color:"var(--warn)",data:B.list.map(x=>x.pos),fmt:v=>v.toFixed(1)},lineInvert:true});
+}
+function rRenderGa(){
+  const el=document.getElementById("r-ga4");if(!el||!MONTH)return;
+  const w=rWindow(GA_R,MONTH),pw=rWindow(GA_R,rMonthAdd(MONTH,-w.n)),rows=rRows(w),prow=rRows(pw),T=rTot(rows),PT=prow.length?rTot(prow):null,held=rHeld();
+  const gm=GAM.filter(r=>{const k=String(r.period_month).slice(0,7);return k>=w.from&&k<=w.to;}),pgm=GAM.filter(r=>{const k=String(r.period_month).slice(0,7);return k>=pw.from&&k<=pw.to;});
+  const os=gm.reduce((s,r)=>s+(+r.org_sessions||0),0),pos_=pgm.reduce((s,r)=>s+(+r.org_sessions||0),0),oe=gm.reduce((s,r)=>s+(+r.org_engaged_sessions||0),0);
+  el.innerHTML=`<div class="rhead"><div><h2 class="h2">Google Analytics (GA4)</h2><p class="sub" style="margin:4px 0 0">${rWinLabel(w)} · all channels unless marked organic${held&&held.slice(0,7)>w.from?` · GA4 history held from ${rDM(held)}/${held.slice(0,4)}`:""}</p></div>${rTabs("ga-tabs",GA_R)}</div>
+   <div class="kpis">${kpi("Sessions",fmt(T.sessions),rChip(T.sessions,PT&&PT.sessions,false,fmt))}${kpi("Users",fmt(T.users),rChip(T.users,PT&&PT.users,false,fmt))}${kpi("Conversions",fmt(T.conv),rChip(T.conv,PT&&PT.conv,false,fmt))}${kpi("Organic search sessions",gm.length?fmt(os):"—",gm.length?(os?Math.round(oe/os*100)+"% engaged · ":"")+(pgm.length?rChip(os,pos_,false,fmt):""):"not held for this period")}</div>
+   <div class="grid g2" style="margin-top:14px"><div class="card" id="r-ga-c1"></div><div class="card" id="r-ga-c2"></div></div>`;
+  el.querySelectorAll("#ga-tabs button").forEach(b=>b.onclick=()=>{GA_R=b.dataset.r;rRenderGa();});
+  const B=rBucket(rows,GA_R),per={day:"daily",week:"weekly",month:"monthly"}[B.gran];
+  rCombo(document.getElementById("r-ga-c1"),{title:"Sessions & users",sub:"All channels · "+per,labels:B.list.map(x=>x.label),bar:{name:"Sessions",color:"var(--cobalt)",data:B.list.map(x=>x.sessions)},line:{name:"Users",color:"var(--r2r)",data:B.list.map(x=>x.users)}});
+  rCombo(document.getElementById("r-ga-c2"),{title:"Conversions",sub:"GA4 key events · "+per,labels:B.list.map(x=>x.label),bar:{name:"Conversions",color:"var(--good)",data:B.list.map(x=>x.conv)}});
+}
+function rRenderAi(){
+  const el=document.getElementById("r-ai-trend");if(!el)return;
+  const D=AI_OVERVIEW.filter(r=>r.source==="dataforseo"),months=[...new Set(D.map(r=>String(r.period_month).slice(0,7)))].sort();
+  if(!months.length){el.innerHTML="";return;}
+  const last=months[months.length-1],prev=months[months.length-2],get=(m,e)=>D.find(r=>String(r.period_month).slice(0,7)===m&&r.engine===e);
+  const ov=m=>AI_OVERVIEW.find(r=>r.source==="se_ranking"&&r.engine==="ai-overview"&&String(r.period_month).slice(0,7)===m);
+  const card=(name,col,now,was,of,foot)=>`<div class="engcard" style="--ec:${col}"><div class="en"><i></i>${name}</div><div class="ev tnum">${now==null?"—":now}<span class="small" style="font-size:13px;font-weight:600;color:var(--ink3)"> ${of==="questions"?"questions":"/ "+of}</span></div><div class="ef">${was==null?foot:(now>was?`<span class="chip up">&#9650; ${now-was}</span>`:now<was?`<span class="chip dn">&#9660; ${was-now}</span>`:'<span class="chip flat">&#9632;</span>')+" vs "+rShortM(prev)}</div></div>`;
+  const o=ov(last),op=prev&&ov(prev);
+  el.innerHTML=`<h2 class="h2">AI visibility by engine</h2><p class="sub">Each AI assistant is asked the same ${(get(last,"chatgpt")||{}).prompt_count||20} questions a Yarra Valley home builder customer asks, every month. Cards show how many answers cite cobaltconstructions.com.au in ${monthLong(last)}.</p>
+   <div class="engcards">${R_ENG.map(([k,n,c])=>{const r=get(last,k),p=prev&&get(prev,k);return card(n,c,r?r.link_presence:null,p?p.link_presence:null,r?r.prompt_count:20,"cited answers");}).join("")}${o?card("Google AI Overview","#FBBC05",o.link_presence,op?op.link_presence:null,"questions","questions citing Cobalt"):""}</div>
+   <div class="grid g2"><div class="card" id="r-ai-c1"></div><div class="card" id="r-ai-c2"></div></div>`;
+  const grouped=(mount,field,title,sub)=>{if(!mount)return;const W=mount.clientWidth||560,H=250,P={t:18,r:12,b:30,l:32},iw=W-P.l-P.r,ih=H-P.t-P.b;
+    const vals=months.flatMap(m=>R_ENG.map(([k])=>((get(m,k)||{})[field])||0)),mx=Math.max(...vals,1)*1.2,gw=iw/months.length,bw=Math.min(26,gw*.8/R_ENG.length),Y=v=>P.t+ih-(v/mx)*ih;
+    let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">`;
+    for(let t=0;t<=4;t++){const v=mx*t/4;svg+=`<line class="gridline" x1="${P.l}" y1="${Y(v)}" x2="${W-P.r}" y2="${Y(v)}"/><text class="axtxt" x="${P.l-6}" y="${Y(v)+3}" text-anchor="end">${Math.round(v)}</text>`;}
+    months.forEach((m,mi)=>{const x0=P.l+gw*mi+(gw-bw*R_ENG.length)/2;R_ENG.forEach(([k,n,c],ei)=>{const r=get(m,k),v=r?r[field]||0:0,x=x0+ei*bw;
+      svg+=`<rect x="${x+1}" y="${Y(v)}" width="${bw-2}" height="${P.t+ih-Y(v)}" rx="3" fill="${c}"><title>${n} · ${monthLong(m)}: ${v} of ${r?r.prompt_count:20}</title></rect><text x="${x+bw/2}" y="${Y(v)-4}" text-anchor="middle" fill="var(--ink2)" font-family="var(--mono)" font-size="10">${v}</text>`;});
+      svg+=`<text class="axtxt" x="${P.l+gw*(mi+.5)}" y="${H-9}" text-anchor="middle">${monthLong(m)}</text>`;});
+    mount.innerHTML=`<div class="cardhead"><div><h3>${title}</h3><p class="ch3sub">${sub}</p></div><div class="legend">${R_ENG.map(([k,n,c])=>`<span><i style="background:${c}"></i>${n}</span>`).join("")}</div></div>`+svg+"</svg>";};
+  grouped(document.getElementById("r-ai-c1"),"link_presence","Cited (links to Cobalt's site)","Answers out of 20 that link to cobaltconstructions.com.au");
+  grouped(document.getElementById("r-ai-c2"),"brand_presence","Named (Cobalt mentioned)","Answers out of 20 that name Cobalt Constructions");
+}
+function rRenderGbp(){
+  const el=document.getElementById("r-gbp");if(!el)return;
+  const listing="https://local.google.com/place?id=13025178787273490446";
+  const posts=[];Object.entries(R_DELIV).forEach(([m,tid])=>{const t=document.getElementById(tid);if(!t)return;t.querySelectorAll("tbody tr").forEach(tr=>{const td=tr.querySelectorAll("td");if(/GBP/i.test(td[1].textContent)){const a=td[2].querySelector("a");posts.push({m,d:td[0].textContent.trim(),title:a?a.textContent.trim():"",href:a?a.href:listing});}});});
+  const mp=posts.filter(p=>p.m===MONTH);
+  el.innerHTML=`<div class="kpis">${kpi("GBP posts published",String(mp.length),monthLong(MONTH))}${kpi("GBP posts on record",String(posts.length),"tracked on this dashboard")}${kpi("Profile views, calls, directions","—","Google Business Profile metrics feed being connected")}${kpi("Map pack position","—","map pack grid scan being set up")}</div>
+   <h2 class="h2">Posts published to the listing &mdash; ${monthLong(MONTH)}</h2><p class="sub">Each post is live on the Cobalt Constructions Google Business Profile. <a href="${listing}" target="_blank" rel="noopener">Open the listing&nbsp;↗</a></p>
+   ${mp.length?`<div class="card tscroll"><table class="tbl"><thead><tr><th>Published</th><th>Post</th></tr></thead><tbody>${mp.map(p=>`<tr><td class="tnum">${p.d}</td><td class="k"><a href="${p.href}" target="_blank" rel="noopener">${esc(p.title)}</a></td></tr>`).join("")}</tbody></table></div>`:`<div class="nodata">No Google Business Profile posts recorded for ${monthLong(MONTH)}.</div>`}
+   <h2 class="h2">Profile performance &amp; map pack</h2>
+   <div class="nodata"><b>Coming next.</b> Searches, profile views, calls, website clicks, direction requests, reviews and a map pack grid across the Yarra Valley will show here once the profile's performance feed is connected.</div>`;
+}
+const _rRenderAll=renderAll;renderAll=function(){_rRenderAll.apply(this,arguments);try{rRenderDeliv();rRenderGbp();}catch(e){console.error(e);}};
+const _rRenderCharts=renderCharts;renderCharts=function(){_rRenderCharts.apply(this,arguments);try{rRenderGsc();rRenderGa();rRenderAi();}catch(e){console.error(e);}};
 </script>
 </body>
 </html>
