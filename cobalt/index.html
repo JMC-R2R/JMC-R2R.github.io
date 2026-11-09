@@ -2481,19 +2481,37 @@ function rRenderAi(){
   grouped(document.getElementById("r-ai-c1"),"link_presence","Cited (links to Cobalt's site)","Answers out of 20 that link to cobaltconstructions.com.au");
   grouped(document.getElementById("r-ai-c2"),"brand_presence","Named (Cobalt mentioned)","Answers out of 20 that name Cobalt Constructions");
 }
+let R_GBP=null;
+async function rLoadGbp(){try{const {data}=await sb.from('cobalt_gbp_monthly').select('*').order('period_month');R_GBP=data||[];}catch(e){R_GBP=[];}rRenderGbp();}
 function rRenderGbp(){
   const el=document.getElementById("r-gbp");if(!el)return;
   const listing="https://local.google.com/place?id=13025178787273490446";
   const posts=[];Object.entries(R_DELIV).forEach(([m,tid])=>{const t=document.getElementById(tid);if(!t)return;t.querySelectorAll("tbody tr").forEach(tr=>{const td=tr.querySelectorAll("td");if(/GBP/i.test(td[1].textContent)){const a=td[2].querySelector("a");posts.push({m,d:td[0].textContent.trim(),title:a?a.textContent.trim():"",href:a?a.href:listing});}});});
   const mp=posts.filter(p=>p.m===MONTH);
-  el.innerHTML=`<div class="kpis">${kpi("GBP posts published",String(mp.length),monthLong(MONTH))}${kpi("GBP posts on record",String(posts.length),"tracked on this dashboard")}${kpi("Profile views, calls, directions","—","Google Business Profile metrics feed being connected")}${kpi("Map pack position","—","map pack grid scan being set up")}</div>
+  const G=(R_GBP||[]).map(r=>({k:String(r.period_month).slice(0,7),ss:+r.impr_search_mobile+ +r.impr_search_desktop,mm:+r.impr_maps_mobile+ +r.impr_maps_desktop,mob:+r.impr_search_mobile+ +r.impr_maps_mobile,desk:+r.impr_search_desktop+ +r.impr_maps_desktop,calls:+r.calls,web:+r.website_clicks,dir:+r.direction_requests,rc:r.review_count,ar:r.avg_rating}));
+  G.forEach(g=>{g.impr=g.ss+g.mm;g.act=g.calls+g.web+g.dir;});
+  const cur=G.find(g=>g.k===MONTH),prv=G.find(g=>g.k===rMonthAdd(MONTH,-1)),rev=G.filter(g=>g.rc!=null).pop();
+  const ch=(f)=>cur&&prv?rChip(cur[f],prv[f],false,fmt):"";
+  const nowKey=localISO(new Date()).slice(0,7);
+  el.innerHTML=`<div class="kpis">${kpi("Profile views",cur?fmt(cur.impr):"—",cur?ch("impr"):"not held for this month")}${kpi("Website clicks",cur?fmt(cur.web):"—",ch("web"))}${kpi("Calls",cur?fmt(cur.calls):"—",ch("calls"))}${kpi("Direction requests",cur?fmt(cur.dir):"—",ch("dir"))}${kpi("Google reviews",rev?String(rev.rc):"—",rev?(+rev.ar).toFixed(1)+" ★ average · current":"")}</div>
+   <div class="grid g2" style="margin-top:14px"><div class="card" id="r-gbp-c1"></div><div class="card" id="r-gbp-c2"></div></div>
+   ${cur?`<div class="card tscroll" style="margin-top:14px"><table class="tbl"><thead><tr><th>${monthLong(MONTH)}: where people saw the profile</th><th>Views</th><th>Share</th></tr></thead><tbody>
+     <tr><td class="k">Google Search</td><td class="tnum">${fmt(cur.ss)}</td><td class="tnum">${Math.round(cur.ss/cur.impr*100)}%</td></tr>
+     <tr><td class="k">Google Maps</td><td class="tnum">${fmt(cur.mm)}</td><td class="tnum">${Math.round(cur.mm/cur.impr*100)}%</td></tr>
+     <tr><td class="k">On mobile</td><td class="tnum">${fmt(cur.mob)}</td><td class="tnum">${Math.round(cur.mob/cur.impr*100)}%</td></tr>
+     <tr><td class="k">On desktop</td><td class="tnum">${fmt(cur.desk)}</td><td class="tnum">${Math.round(cur.desk/cur.impr*100)}%</td></tr></tbody></table></div>`:""}
    <h2 class="h2">Posts published to the listing &mdash; ${monthLong(MONTH)}</h2><p class="sub">Each post is live on the Cobalt Constructions Google Business Profile. <a href="${listing}" target="_blank" rel="noopener">Open the listing&nbsp;↗</a></p>
    ${mp.length?`<div class="card tscroll"><table class="tbl"><thead><tr><th>Published</th><th>Post</th></tr></thead><tbody>${mp.map(p=>`<tr><td class="tnum">${p.d}</td><td class="k"><a href="${p.href}" target="_blank" rel="noopener">${esc(p.title)}</a></td></tr>`).join("")}</tbody></table></div>`:`<div class="nodata">No Google Business Profile posts recorded for ${monthLong(MONTH)}.</div>`}
-   <h2 class="h2">Profile performance &amp; map pack</h2>
-   <div class="nodata"><b>Coming next.</b> Searches, profile views, calls, website clicks, direction requests, reviews and a map pack grid across the Yarra Valley will show here once the profile's performance feed is connected.</div>`;
+   <h2 class="h2">Map pack</h2>
+   <div class="nodata"><b>Map pack grid coming next.</b> A scan of where Cobalt appears in the Google Maps top 3 across the Yarra Valley will show here once the first scan has run.</div>`;
+  const lab=G.map(g=>rShortM(g.k)+(g.k===nowKey?"*":""));
+  if(G.length){
+    rCombo(document.getElementById("r-gbp-c1"),{title:"Profile views",sub:"Search + Maps, monthly · * month in progress",labels:lab,bar:{name:"Views",color:"var(--cobalt)",data:G.map(g=>g.impr)}});
+    rCombo(document.getElementById("r-gbp-c2"),{title:"Customer actions",sub:"Website clicks + calls + directions, monthly",labels:lab,bar:{name:"Actions",color:"var(--good)",data:G.map(g=>g.act)},line:{name:"Direction requests",color:"var(--warn)",data:G.map(g=>g.dir)}});
+  }
 }
-const _rRenderAll=renderAll;renderAll=function(){_rRenderAll.apply(this,arguments);try{rRenderDeliv();rRenderGbp();}catch(e){console.error(e);}};
-const _rRenderCharts=renderCharts;renderCharts=function(){_rRenderCharts.apply(this,arguments);try{rRenderGsc();rRenderGa();rRenderAi();}catch(e){console.error(e);}};
+const _rRenderAll=renderAll;renderAll=function(){_rRenderAll.apply(this,arguments);try{rRenderDeliv();rRenderGbp();if(R_GBP===null){R_GBP=[];rLoadGbp();}}catch(e){console.error(e);}};
+const _rRenderCharts=renderCharts;renderCharts=function(){_rRenderCharts.apply(this,arguments);try{rRenderGsc();rRenderGa();rRenderAi();rRenderGbp();}catch(e){console.error(e);}};
 </script>
 </body>
 </html>
