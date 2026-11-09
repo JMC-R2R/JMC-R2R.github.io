@@ -585,6 +585,7 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
     </div>
     <div class="kpis" id="kpi-ai"></div>
     <div id="r-ai-trend"></div>
+    <div id="r-ai-kept"></div>
     <h2 class="h2">Month on month</h2>
     <p class="sub" id="mom-ai-sub">&mdash;</p>
     <div class="momgrid" id="mom-ai"></div>
@@ -2544,8 +2545,27 @@ function rRenderGrid(){
    <div class="card"><div class="cardhead"><div><h3>Who holds #1 across the grid</h3><p class="ch3sub">Number of points where each business ranks first</p></div></div>
    <table class="tbl"><tbody>${(b["1-3"]?`<tr><td class="k">Cobalt Constructions</td><td class="tnum">${P.filter(p=>p[3]==="Cobalt Constructions").length}</td></tr>`:"")+topc.map(([k,v])=>`<tr><td class="k">${esc(k)}</td><td class="tnum">${v}</td></tr>`).join("")}</tbody></table></div></div>`;
 }
+
+function rRenderAiKept(){
+  const el=document.getElementById("r-ai-kept");if(!el)return;
+  const cur=AI_MONTH&&String(AI_MONTH).slice(0,10),prv=AI_PREV&&String(AI_PREV).slice(0,10);
+  const at=m=>AI_PROMPTS.filter(r=>r.source==="se_ranking"&&r.engine==="ai-overview"&&String(r.period_month).slice(0,10)===m);
+  const C=cur?at(cur):[],Pv=prv?at(prv):[];
+  if(!C.length||!Pv.length){el.innerHTML="";return;}
+  const pk=new Set(Pv.map(r=>r.prompt)),ck=new Set(C.map(r=>r.prompt));
+  const urls=r=>{let u=r.cobalt_urls;if(typeof u==="string"){try{u=JSON.parse(u);}catch(e){u=u?[u]:[];}}return (u||[]).map(x=>String(x).replace(/#.*$/,"").replace(/^https?:\/\/(www\.)?cobaltconstructions\.com\.au/,"")||"/");};
+  const rows=[...C.map(r=>({st:pk.has(r.prompt)?"Kept":"New",r})),...Pv.filter(r=>!ck.has(r.prompt)).map(r=>({st:"Lost",r}))];
+  const ord={New:0,Kept:1,Lost:2};rows.sort((a,b)=>ord[a.st]-ord[b.st]||String(a.r.prompt).localeCompare(String(b.r.prompt)));
+  const n=k=>rows.filter(x=>x.st===k).length,cm=monthLong(cur.slice(0,7)),pm=monthLong(prv.slice(0,7));
+  const chip=st=>`<span class="chip ${st==="New"?"up":st==="Lost"?"dn":"flat"}">${st}</span>`;
+  el.innerHTML=`<h2 class="h2">Google AI Overview: kept, new and lost</h2>
+   <p class="sub">Questions where Google's AI Overview cites cobaltconstructions.com.au in ${cm}, compared with ${pm}. <b>Kept</b> = cited both months, <b>New</b> = cited for the first time, <b>Lost</b> = cited in ${pm} but not ${cm}. Source: SE Ranking.</p>
+   <div class="kpis">${kpi("Cited in "+cm,String(C.length),"questions")}${kpi("Kept",String(n("Kept")),"held from "+pm)}${kpi("New",String(n("New")),"won this month")}${kpi("Lost",String(n("Lost")),"dropped since "+pm)}</div>
+   <div class="card tscroll" style="margin-top:14px"><table class="tbl"><thead><tr><th>Question</th><th>Status</th><th>Cobalt page cited</th></tr></thead><tbody>
+   ${rows.map(x=>`<tr><td class="k">${esc(x.r.prompt)}</td><td>${chip(x.st)}</td><td class="small">${urls(x.r).map(esc).join("<br>")||"—"}</td></tr>`).join("")}</tbody></table></div>`;
+}
 const _rRenderAll=renderAll;renderAll=function(){try{rSyncAiMonth();}catch(e){}_rRenderAll.apply(this,arguments);try{rRenderDeliv();rRenderGbp();if(R_GBP===null){R_GBP=[];rLoadGbp();}}catch(e){console.error(e);}};
-const _rRenderCharts=renderCharts;renderCharts=function(){_rRenderCharts.apply(this,arguments);try{rRenderGsc();rRenderGa();rRenderAi();rRenderGbp();}catch(e){console.error(e);}};
+const _rRenderCharts=renderCharts;renderCharts=function(){_rRenderCharts.apply(this,arguments);try{rRenderGsc();rRenderGa();rRenderAi();rRenderGbp();rRenderAiKept();}catch(e){console.error(e);}};
 </script>
 </body>
 </html>
