@@ -2521,7 +2521,7 @@ function rSyncAiMonth(){const ms=[...new Set(AI_OVERVIEW.map(r=>String(r.period_
   const upto=ms.filter(m=>m.slice(0,7)<=MONTH);AI_MONTH=upto.length?upto[upto.length-1]:ms[0];AI_PREV=ms[ms.indexOf(AI_MONTH)-1]||null;}
 
 let R_GRID=null;
-async function rLoadGrid(){try{const {data}=await sb.from('cobalt_mapgrid').select('*').order('scan_date');R_GRID=data||[];}catch(e){R_GRID=[];}rRenderGrid();}
+async function rLoadGrid(){try{const {data}=await sb.from('cobalt_mapgrid').select('*').order('scan_date').order('created_at');R_GRID=data||[];}catch(e){R_GRID=[];}rRenderGrid();}
 function rRenderGrid(){
   const el=document.getElementById("r-grid");if(!el)return;
   if(R_GRID===null){R_GRID=[];rLoadGrid();}
