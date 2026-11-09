@@ -527,6 +527,7 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
     <h2 class="h2">Keyword rankings</h2>
     <p class="sub" id="rank-sub">Tracked in SE Ranking.</p>
     <div class="card tscroll"><table class="tbl" id="t-rank"></table></div>
+    <div hidden aria-hidden="true"><!-- source lists for the "What we delivered" banner and the GBP tab -->
     <h2 class="h2" data-anchor="sec:seo-delivered-oct">Content delivered &mdash; October 2026</h2>
     <p class="sub">12 pieces published: 4 blogs on cobaltconstructions.com.au and 8 Google Business Profile posts. Dates are the live publish dates.</p>
     <div class="card tscroll"><table class="tbl" id="t-delivered-oct">
@@ -567,6 +568,7 @@ html.embed .pinhint{bottom:calc(var(--embed-bottom,0px) + 20px)}
         <tr><td class="tnum">28/09</td><td>Landing page</td><td class="k"><a href="https://cobaltconstructions.com.au/thankyou-lp/" target="_blank" rel="noopener">Paid ads thank-you page</a></td></tr>
       </tbody>
     </table></div>
+    </div>
   </section>
 
   <section id="aisearch" data-anchor="sec:aisearch" hidden>
@@ -787,7 +789,7 @@ async function loadData(){
     sb.from('cobalt_google_search_terms').select('*'),
     sb.from('cobalt_ai_overview').select('*').order('period_month'),
     sb.from('cobalt_ai_prompts').select('*'),
-    sb.from('cobalt_ai_citations').select('*'),
+    rFetchAll('cobalt_ai_citations'),
     sb.from('cobalt_team_notes').select('*').order('sort'),
     sb.from('cobalt_ga_monthly').select('*').order('period_month')
   ]);
@@ -2373,6 +2375,8 @@ document.getElementById("gateform").addEventListener("submit",async e=>{
 document.getElementById("logout").addEventListener("click",async()=>{await sb.auth.signOut();(EMBED?window.top:window).location.reload();});
 checkSession();
 
+// Supabase returns at most 1,000 rows per request, so page through big tables.
+async function rFetchAll(t){let out=[],from=0;for(;;){const {data,error}=await sb.from(t).select('*').range(from,from+999);if(error)return {data:out,error};out=out.concat(data||[]);if(!data||data.length<1000)break;from+=1000;}return {data:out};}
 /* ===== Meeting build (10/11/2026): delivered-this-month banner, Search Console and GA4 range views,
    Google Business Profile tab, AI engine chart. All figures come from the tables already loaded above. ===== */
 secs.gbp=document.getElementById("gbp");
@@ -2461,14 +2465,14 @@ function rRenderAi(){
   const el=document.getElementById("r-ai-trend");if(!el)return;
   const D=AI_OVERVIEW.filter(r=>r.source==="dataforseo"),months=[...new Set(D.map(r=>String(r.period_month).slice(0,7)))].sort();
   if(!months.length){el.innerHTML="";return;}
-  const last=months[months.length-1],prev=months[months.length-2],get=(m,e)=>D.find(r=>String(r.period_month).slice(0,7)===m&&r.engine===e);
+  const last=(AI_MONTH&&months.includes(String(AI_MONTH).slice(0,7)))?String(AI_MONTH).slice(0,7):months[months.length-1],prev=months[months.indexOf(last)-1],get=(m,e)=>D.find(r=>String(r.period_month).slice(0,7)===m&&r.engine===e);
   const ov=m=>AI_OVERVIEW.find(r=>r.source==="se_ranking"&&r.engine==="ai-overview"&&String(r.period_month).slice(0,7)===m);
   const card=(name,col,now,was,of,foot)=>`<div class="engcard" style="--ec:${col}"><div class="en"><i></i>${name}</div><div class="ev tnum">${now==null?"—":now}<span class="small" style="font-size:13px;font-weight:600;color:var(--ink3)"> ${of==="questions"?"questions":"/ "+of}</span></div><div class="ef">${was==null?foot:(now>was?`<span class="chip up">&#9650; ${now-was}</span>`:now<was?`<span class="chip dn">&#9660; ${was-now}</span>`:'<span class="chip flat">&#9632;</span>')+" vs "+rShortM(prev)}</div></div>`;
-  const o=ov(last),op=prev&&ov(prev);
+  const o=ov(last),op=prev&&ov(prev),MS=months.filter(m=>m<=last);
   el.innerHTML=`<h2 class="h2">AI visibility by engine</h2><p class="sub">Each AI assistant is asked the same ${(get(last,"chatgpt")||{}).prompt_count||20} questions a Yarra Valley home builder customer asks, every month. Cards show how many answers cite cobaltconstructions.com.au in ${monthLong(last)}.</p>
    <div class="engcards">${R_ENG.map(([k,n,c])=>{const r=get(last,k),p=prev&&get(prev,k);return card(n,c,r?r.link_presence:null,p?p.link_presence:null,r?r.prompt_count:20,"cited answers");}).join("")}${o?card("Google AI Overview","#FBBC05",o.link_presence,op?op.link_presence:null,"questions","questions citing Cobalt"):""}</div>
    <div class="grid g2"><div class="card" id="r-ai-c1"></div><div class="card" id="r-ai-c2"></div></div>`;
-  const grouped=(mount,field,title,sub)=>{if(!mount)return;const W=mount.clientWidth||560,H=250,P={t:18,r:12,b:30,l:32},iw=W-P.l-P.r,ih=H-P.t-P.b;
+  const grouped=(mount,field,title,sub)=>{if(!mount)return;const months=MS;const W=mount.clientWidth||560,H=250,P={t:18,r:12,b:30,l:32},iw=W-P.l-P.r,ih=H-P.t-P.b;
     const vals=months.flatMap(m=>R_ENG.map(([k])=>((get(m,k)||{})[field])||0)),mx=Math.max(...vals,1)*1.2,gw=iw/months.length,bw=Math.min(26,gw*.8/R_ENG.length),Y=v=>P.t+ih-(v/mx)*ih;
     let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">`;
     for(let t=0;t<=4;t++){const v=mx*t/4;svg+=`<line class="gridline" x1="${P.l}" y1="${Y(v)}" x2="${W-P.r}" y2="${Y(v)}"/><text class="axtxt" x="${P.l-6}" y="${Y(v)+3}" text-anchor="end">${Math.round(v)}</text>`;}
@@ -2479,19 +2483,39 @@ function rRenderAi(){
   grouped(document.getElementById("r-ai-c1"),"link_presence","Cited (links to Cobalt's site)","Answers out of 20 that link to cobaltconstructions.com.au");
   grouped(document.getElementById("r-ai-c2"),"brand_presence","Named (Cobalt mentioned)","Answers out of 20 that name Cobalt Constructions");
 }
+let R_GBP=null;
+async function rLoadGbp(){try{const {data}=await sb.from('cobalt_gbp_monthly').select('*').order('period_month');R_GBP=data||[];}catch(e){R_GBP=[];}rRenderGbp();}
 function rRenderGbp(){
   const el=document.getElementById("r-gbp");if(!el)return;
   const listing="https://local.google.com/place?id=13025178787273490446";
   const posts=[];Object.entries(R_DELIV).forEach(([m,tid])=>{const t=document.getElementById(tid);if(!t)return;t.querySelectorAll("tbody tr").forEach(tr=>{const td=tr.querySelectorAll("td");if(/GBP/i.test(td[1].textContent)){const a=td[2].querySelector("a");posts.push({m,d:td[0].textContent.trim(),title:a?a.textContent.trim():"",href:a?a.href:listing});}});});
   const mp=posts.filter(p=>p.m===MONTH);
-  el.innerHTML=`<div class="kpis">${kpi("GBP posts published",String(mp.length),monthLong(MONTH))}${kpi("GBP posts on record",String(posts.length),"tracked on this dashboard")}${kpi("Profile views, calls, directions","—","Google Business Profile metrics feed being connected")}${kpi("Map pack position","—","map pack grid scan being set up")}</div>
+  const G=(R_GBP||[]).map(r=>({k:String(r.period_month).slice(0,7),ss:+r.impr_search_mobile+ +r.impr_search_desktop,mm:+r.impr_maps_mobile+ +r.impr_maps_desktop,mob:+r.impr_search_mobile+ +r.impr_maps_mobile,desk:+r.impr_search_desktop+ +r.impr_maps_desktop,calls:+r.calls,web:+r.website_clicks,dir:+r.direction_requests,rc:r.review_count,ar:r.avg_rating}));
+  G.forEach(g=>{g.impr=g.ss+g.mm;g.act=g.calls+g.web+g.dir;});
+  const cur=G.find(g=>g.k===MONTH),prv=G.find(g=>g.k===rMonthAdd(MONTH,-1)),rev=G.filter(g=>g.rc!=null).pop();
+  const ch=(f)=>cur&&prv?rChip(cur[f],prv[f],false,fmt):"";
+  const nowKey=localISO(new Date()).slice(0,7);
+  el.innerHTML=`<div class="kpis">${kpi("Profile views",cur?fmt(cur.impr):"—",cur?ch("impr"):"not held for this month")}${kpi("Website clicks",cur?fmt(cur.web):"—",ch("web"))}${kpi("Calls",cur?fmt(cur.calls):"—",ch("calls"))}${kpi("Direction requests",cur?fmt(cur.dir):"—",ch("dir"))}${kpi("Google reviews",rev?String(rev.rc):"—",rev?(+rev.ar).toFixed(1)+" ★ average · current":"")}</div>
+   <div class="grid g2" style="margin-top:14px"><div class="card" id="r-gbp-c1"></div><div class="card" id="r-gbp-c2"></div></div>
+   ${cur?`<div class="card tscroll" style="margin-top:14px"><table class="tbl"><thead><tr><th>${monthLong(MONTH)}: where people saw the profile</th><th>Views</th><th>Share</th></tr></thead><tbody>
+     <tr><td class="k">Google Search</td><td class="tnum">${fmt(cur.ss)}</td><td class="tnum">${Math.round(cur.ss/cur.impr*100)}%</td></tr>
+     <tr><td class="k">Google Maps</td><td class="tnum">${fmt(cur.mm)}</td><td class="tnum">${Math.round(cur.mm/cur.impr*100)}%</td></tr>
+     <tr><td class="k">On mobile</td><td class="tnum">${fmt(cur.mob)}</td><td class="tnum">${Math.round(cur.mob/cur.impr*100)}%</td></tr>
+     <tr><td class="k">On desktop</td><td class="tnum">${fmt(cur.desk)}</td><td class="tnum">${Math.round(cur.desk/cur.impr*100)}%</td></tr></tbody></table></div>`:""}
    <h2 class="h2">Posts published to the listing &mdash; ${monthLong(MONTH)}</h2><p class="sub">Each post is live on the Cobalt Constructions Google Business Profile. <a href="${listing}" target="_blank" rel="noopener">Open the listing&nbsp;↗</a></p>
    ${mp.length?`<div class="card tscroll"><table class="tbl"><thead><tr><th>Published</th><th>Post</th></tr></thead><tbody>${mp.map(p=>`<tr><td class="tnum">${p.d}</td><td class="k"><a href="${p.href}" target="_blank" rel="noopener">${esc(p.title)}</a></td></tr>`).join("")}</tbody></table></div>`:`<div class="nodata">No Google Business Profile posts recorded for ${monthLong(MONTH)}.</div>`}
-   <h2 class="h2">Profile performance &amp; map pack</h2>
-   <div class="nodata"><b>Coming next.</b> Searches, profile views, calls, website clicks, direction requests, reviews and a map pack grid across the Yarra Valley will show here once the profile's performance feed is connected.</div>`;
+   <h2 class="h2">Map pack</h2>
+   <div class="nodata"><b>Map pack grid coming next.</b> A scan of where Cobalt appears in the Google Maps top 3 across the Yarra Valley will show here once the first scan has run.</div>`;
+  const lab=G.map(g=>rShortM(g.k)+(g.k===nowKey?"*":""));
+  if(G.length){
+    rCombo(document.getElementById("r-gbp-c1"),{title:"Profile views",sub:"Search + Maps, monthly · * month in progress",labels:lab,bar:{name:"Views",color:"var(--cobalt)",data:G.map(g=>g.impr)}});
+    rCombo(document.getElementById("r-gbp-c2"),{title:"Customer actions",sub:"Website clicks + calls + directions, monthly",labels:lab,bar:{name:"Actions",color:"var(--good)",data:G.map(g=>g.act)},line:{name:"Direction requests",color:"var(--warn)",data:G.map(g=>g.dir)}});
+  }
 }
-const _rRenderAll=renderAll;renderAll=function(){_rRenderAll.apply(this,arguments);try{rRenderDeliv();rRenderGbp();}catch(e){console.error(e);}};
-const _rRenderCharts=renderCharts;renderCharts=function(){_rRenderCharts.apply(this,arguments);try{rRenderGsc();rRenderGa();rRenderAi();}catch(e){console.error(e);}};
+function rSyncAiMonth(){const ms=[...new Set(AI_OVERVIEW.map(r=>String(r.period_month).slice(0,10)))].sort();if(!ms.length||!MONTH)return;
+  const upto=ms.filter(m=>m.slice(0,7)<=MONTH);AI_MONTH=upto.length?upto[upto.length-1]:ms[0];AI_PREV=ms[ms.indexOf(AI_MONTH)-1]||null;}
+const _rRenderAll=renderAll;renderAll=function(){try{rSyncAiMonth();}catch(e){}_rRenderAll.apply(this,arguments);try{rRenderDeliv();rRenderGbp();if(R_GBP===null){R_GBP=[];rLoadGbp();}}catch(e){console.error(e);}};
+const _rRenderCharts=renderCharts;renderCharts=function(){_rRenderCharts.apply(this,arguments);try{rRenderGsc();rRenderGa();rRenderAi();rRenderGbp();}catch(e){console.error(e);}};
 </script>
 </body>
 </html>
