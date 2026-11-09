@@ -2525,7 +2525,9 @@ async function rLoadGrid(){try{const {data}=await sb.from('cobalt_mapgrid').sele
 function rRenderGrid(){
   const el=document.getElementById("r-grid");if(!el)return;
   if(R_GRID===null){R_GRID=[];rLoadGrid();}
-  const sc=R_GRID[R_GRID.length-1];
+  const kws=[...new Set(R_GRID.map(r=>r.keyword))];
+  if(!window.R_GRID_KW||!kws.includes(window.R_GRID_KW))window.R_GRID_KW=kws[0];
+  const sc=R_GRID.filter(r=>r.keyword===window.R_GRID_KW).pop();
   if(!sc){el.innerHTML=`<h2 class="h2">Map pack grid</h2><div class="nodata">Loading the map pack scan…</div>`;return;}
   const m=sc.meta,P=sc.points,n=m.grid_size,b=m.buckets||{};
   const col=r=>r==null?"#3a3a44":r<=3?"#10B981":r<=10?"#84CC16":r<=20?"#F59E0B":"#EF4444";
@@ -2538,12 +2540,38 @@ function rRenderGrid(){
     g+=`<div title="${p[2]==null?"Not found in the results":"Rank "+p[2]}${p[3]?" · #1 here: "+esc(p[3]):""}" style="width:${cell}px;height:${cell}px;border-radius:50%;background:${col(p[2])};display:flex;align-items:center;justify-content:center;font:800 ${Math.round(cell/3)}px var(--mono);color:${p[2]!=null&&p[2]<=10?"#06131a":"#fff"};${centre?"outline:3px solid var(--r2r);outline-offset:3px":""}">${p[2]==null?"–":p[2]}</div>`;}
   g+=`</div>`;
   const leg=[["#10B981","1–3 (map pack)"],["#84CC16","4–10"],["#F59E0B","11–20"],["#EF4444","21+"],["#3a3a44","not found"]].map(([c,l])=>`<span><i style="background:${c}"></i>${l}</span>`).join("");
-  el.innerHTML=`<h2 class="h2">Map pack grid &mdash; &ldquo;${esc(m.keyword)}&rdquo;</h2>
-   <p class="sub">Where Cobalt ranks on Google Maps when someone searches &ldquo;${esc(m.keyword)}&rdquo; from each of ${m.total_points} points, ${m.spacing_km} km apart, covering about ${span} × ${span} km around the Kilsyth South office (outlined in blue, north at the top). Scanned ${rDM(m.date)}/${m.date.slice(0,4)} &mdash; the first scan, so this is the baseline.</p>
+  const kwTabs=kws.length>1?`<div class="rtabs" id="grid-kw" style="flex-wrap:wrap;margin:4px 0 10px">${kws.map(k=>`<button type="button" data-k="${esc(k)}" aria-pressed="${k===window.R_GRID_KW}">${esc(k)}</button>`).join("")}</div>`:"";
+  el.innerHTML=`<h2 class="h2">Map pack grid &mdash; &ldquo;${esc(m.keyword)}&rdquo;</h2>${kwTabs}
+   <p class="sub">Where Cobalt ranks on Google Maps when someone searches &ldquo;${esc(m.keyword)}&rdquo; from each of ${m.total_points} points, ${m.spacing_km} km apart, covering about ${span} × ${span} km around the Kilsyth South office (outlined in blue, north at the top). Scanned ${rDM(m.date)}/${m.date.slice(0,4)}${R_GRID.filter(r=>r.keyword===m.keyword).length===1?" &mdash; the first scan for this keyword, so this is the baseline":""}.</p>
    <div class="kpis">${kpi("In the map pack (top 3)",String(b["1-3"]||0),"of "+m.total_points+" points")}${kpi("Found in results",m.found_points+" / "+m.total_points,"points where Cobalt appears at all")}${kpi("Average rank",m.avg_rank==null?"—":(+m.avg_rank).toFixed(1),"across the "+m.found_points+" points found")}${kpi("Share of local visibility",(+m.solv).toFixed(1)+"%","top-3 points ÷ all points")}</div>
-   <div class="grid g2" style="margin-top:14px"><div class="card"><div class="cardhead"><div><h3>Rank at each point</h3><p class="ch3sub">Hover a circle for the business ranking #1 there</p></div></div>${g}<div class="legend" style="justify-content:center;flex-wrap:wrap">${leg}</div></div>
+   <div class="grid g2" style="margin-top:14px"><div class="card"><div class="cardhead"><div><h3>Rank at each point</h3><p class="ch3sub">Tap or hover a circle for the business ranking #1 there</p></div></div><div id="r-gridmap" style="height:${Math.max(380,Math.min(560,(el.clientWidth||700)/2))}px;border-radius:10px;overflow:hidden;background:#1b1b21">${g}</div><div class="legend" style="justify-content:center;flex-wrap:wrap;margin-top:10px">${leg}</div></div>
    <div class="card"><div class="cardhead"><div><h3>Who holds #1 across the grid</h3><p class="ch3sub">Number of points where each business ranks first</p></div></div>
    <table class="tbl"><tbody>${(b["1-3"]?`<tr><td class="k">Cobalt Constructions</td><td class="tnum">${P.filter(p=>p[3]==="Cobalt Constructions").length}</td></tr>`:"")+topc.map(([k,v])=>`<tr><td class="k">${esc(k)}</td><td class="tnum">${v}</td></tr>`).join("")}</tbody></table></div></div>`;
+  el.querySelectorAll("#grid-kw button").forEach(b=>b.onclick=()=>{window.R_GRID_KW=b.dataset.k;rRenderGrid();});
+  rDrawGridMap(m,P,col);
+}
+function rLeaflet(cb){
+  if(window.L)return cb();
+  if(!document.getElementById("lf-css")){const l=document.createElement("link");l.id="lf-css";l.rel="stylesheet";l.href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";document.head.appendChild(l);}
+  (window._lfq=window._lfq||[]).push(cb);
+  if(!document.getElementById("lf-js")){const sc=document.createElement("script");sc.id="lf-js";sc.src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";sc.onload=()=>{(window._lfq||[]).splice(0).forEach(f=>f());};document.head.appendChild(sc);}
+}
+function rDrawGridMap(m,P,col){
+  const box=document.getElementById("r-gridmap");if(!box||!box.offsetWidth)return; // hidden tab: drawn when the tab opens
+  rLeaflet(()=>{
+    if(!document.body.contains(box))return;
+    box.innerHTML="";
+    const n=m.grid_size,c=(n-1)/2,dLat=m.spacing_km/110.574,dLng=m.spacing_km/(111.32*Math.cos(m.centre_lat*Math.PI/180));
+    const ll=(i,j)=>[m.centre_lat+(c-i)*dLat,m.centre_lng+(j-c)*dLng];
+    const map=L.map(box,{scrollWheelZoom:false,attributionControl:true,zoomControl:true});
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:18,attribution:"© OpenStreetMap contributors © CARTO"}).addTo(map);
+    const pts=[];
+    P.forEach(p=>{const pos=ll(p[0],p[1]);pts.push(pos);const r=p[2],isC=p[0]===c&&p[1]===c;
+      const html=`<div style="width:34px;height:34px;border-radius:50%;background:${col(r)};border:2px solid ${isC?"#17B4F0":"#fff"};box-shadow:0 1px 4px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font:800 13px 'Space Mono',monospace;color:${r!=null&&r<=10?"#06131a":"#fff"}">${r==null?"–":r}</div>`;
+      L.marker(pos,{icon:L.divIcon({html,className:"",iconSize:[34,34],iconAnchor:[17,17]})}).addTo(map)
+       .bindTooltip(`${r==null?"Cobalt not found here":"Cobalt ranks #"+r}${p[3]?"<br>#1 here: "+esc(p[3]):""}`,{direction:"top",offset:[0,-16]});});
+    map.fitBounds(L.latLngBounds(pts).pad(0.08));
+  });
 }
 
 function rRenderAiKept(){
