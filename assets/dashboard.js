@@ -521,6 +521,7 @@ function drawCharts(){
       yfmt: spec.yfmt === 'pos' ? (v => fmt(v,1)) : fmt });
   });
   $$('[data-pace]').forEach(m => paceChart(m, JSON.parse(m.dataset.pace)));
+  tgPlannerInit();
 }
 
 /* ---------------------------------------------------------------- views */
@@ -2900,7 +2901,7 @@ function viewTargets(){
     ? `Google Ads has brought ${fmt(ads.actual)} lead${ads.actual === 1 ? '' : 's'} this month and is on pace for about ${fmt(ads.projected)} against a target of ${fmt(ads.target)}.`
     : '';
   if (lede) out += `<p class="lede">${lede}</p>`;
-  out += tgPlanTable();
+  out += tgPlanTable() + tgPlannerCard(m);
   cs.forEach(c => { out += tgCard(c); if (c.k === 'ads_leads' && c.phase !== 'future') out += tgAdsWork(c); });
   out += tgEntryCard(m) + tgEditCard();
   return out;
@@ -2947,3 +2948,75 @@ document.addEventListener('click', async ev => {
   if (error) { b.disabled = false; return toast('Could not remove: ' + error.message, 'bad'); }
   await tgReload(); toast('Entry removed'); renderAll();
 });
+
+/* ---------------------------------------------------------------- spend planner
+   Jose 06/11/2026: Stanley wants to see what spend it takes to reach his patient goal.
+   Spend -> clicks at the LIVE cost per click -> impressions at the LIVE click-through rate ->
+   enquiries at an assumed click-to-enquiry rate (slider, starts at CFG.targetsPlanner.cvr,
+   S Dental's broker plan said 6%) -> new patients at CFG.targetsPlanner.close (1 in 3).
+   Every assumption is named on screen and the live rate sits beside it. An estimate, never a
+   result: cost per click usually rises as spend grows, which the note says. */
+const TGP = () => ({ cvr: 6, close: 1 / 3, budget: null, ...(CFG.targetsPlanner || {}) });
+function tgLive(){
+  const since = ymd(new Date(Date.now() - 90 * 864e5));
+  const rows = (RAW.paid || []).filter(r => r.platform === 'google' && r.date >= since);
+  const spend = sum(rows, 'spend'), clicks = sum(rows, 'clicks'), impr = sum(rows, 'impressions'), leads = sum(rows, 'leads');
+  return { spend, clicks, impr, leads, cpc: clicks ? spend / clicks : null, ctr: impr ? clicks / impr : null,
+           cvr: clicks ? leads / clicks : null, days: new Set(rows.map(r => r.date)).size };
+}
+function tgPlanMath(spend, cvrPct){
+  const L = tgLive(), P = TGP();
+  const clicks = spend / L.cpc, impr = L.ctr ? clicks / L.ctr : null, enq = clicks * cvrPct / 100, pts = enq * P.close;
+  return { clicks, impr, enq, pts };
+}
+/* Spend that reaches a patient number at a given click-to-enquiry rate. */
+const tgSpendFor = (patients, cvrPct) => { const L = tgLive(), P = TGP(); return patients / P.close / (cvrPct / 100) * L.cpc; };
+function tgPlannerCard(m){
+  const L = tgLive(), P = TGP();
+  const target = tgTarget(m, 'ads_leads') ?? tgTarget(m, 'new_patients');
+  if (!L.cpc || L.clicks < 20) return `<div class="card"><div class="cardhead"><div><h3>Spend planner</h3>
+    <p class="sub">Works out what spend it takes to reach the patient target.</p></div></div>
+    <p class="tgline">This fills in once the ads have at least 20 clicks to measure the cost per click from.</p></div>`;
+  const budget = Math.round((P.budget || L.spend / Math.max(L.days, 1) * 30.4) / 50) * 50;
+  /* Room to reach 1.5x the target even at a poor 2% enquiry rate, within $5k-$30k. */
+  const max = Math.min(Math.max(Math.ceil(tgSpendFor((target || 30) * 1.5, 2) / 1000) * 1000, 5000), 30000);
+  const closeTxt = Math.abs(P.close - 1 / 3) < 0.001 ? '1 in 3' : pct1(P.close * 100);
+  return `<div class="card tgplan" data-tgplan data-target="${target ?? ''}">
+    <div class="cardhead"><div><h3>Spend planner</h3>
+      <p class="sub">Move the sliders to see what a monthly budget could bring in${target != null ? `, against the ${monthName(m)} target of ${fmt(target)} new patients` : ''}. An estimate to plan with, not a promise.</p></div></div>
+    <div class="tgsliders">
+      <label><span class="mlbl">Monthly ad spend</span><b class="tnum" data-o="spend"></b><span class="fn" data-o="daily"></span>
+        <input type="range" min="500" max="${max}" step="50" value="${Math.min(Math.max(budget, 500), max)}" data-s="spend" aria-label="Monthly ad spend"></label>
+      <label><span class="mlbl">Clicks that become an enquiry</span><b class="tnum" data-o="cvr"></b><span class="fn">Live so far: ${pct1((L.cvr || 0) * 100)} (${fmt(L.leads)} from ${fmt(L.clicks)} clicks)</span>
+        <input type="range" min="0.5" max="15" step="0.5" value="${P.cvr}" data-s="cvr" aria-label="Clicks that become an enquiry"></label>
+    </div>
+    <div class="tgfunnel">
+      <div><span class="mlbl">Impressions</span><b class="tnum" data-o="impr"></b><span class="fn">at ${pct1(L.ctr * 100)} click-through</span></div>
+      <div><span class="mlbl">Clicks</span><b class="tnum" data-o="clicks"></b><span class="fn">at $${fmt(L.cpc, 2)} a click</span></div>
+      <div><span class="mlbl">Enquiries</span><b class="tnum" data-o="enq"></b><span class="fn" data-o="cvr2"></span></div>
+      <div class="tgpts"><span class="mlbl">New patients</span><b class="tnum" data-o="pts"></b><span class="fn">${closeTxt} enquiries book</span></div>
+    </div>
+    <div class="tgbar"><i data-o="bar"></i></div>
+    <p class="tgline" data-o="verdict"></p>
+    <p class="tgnote">Cost per click and click-through rate are the live figures from the last ${fmt(L.days)} days of ads. Cost per click usually rises as spend grows, so treat higher budgets as a best case. ${closeTxt} enquiries booking is the clinic’s own assumption, as the booking system is not connected.</p>
+  </div>`;
+}
+function tgPlannerUpdate(card){
+  const sp = Number(card.querySelector('[data-s="spend"]').value), cv = Number(card.querySelector('[data-s="cvr"]').value);
+  const r = tgPlanMath(sp, cv), target = card.dataset.target === '' ? null : Number(card.dataset.target);
+  const o = k => card.querySelector(`[data-o="${k}"]`);
+  o('spend').textContent = money(sp); o('daily').textContent = `about ${money(sp / 30.4)} a day`;
+  o('cvr').textContent = pct1(cv); o('cvr2').textContent = `${pct1(cv)} of clicks`;
+  o('impr').textContent = r.impr == null ? '—' : fmt(r.impr); o('clicks').textContent = fmt(r.clicks);
+  o('enq').textContent = fmt(r.enq); o('pts').textContent = fmt(r.pts);
+  if (target != null && target > 0){
+    const need = tgSpendFor(target, cv), hit = r.pts >= target - 0.5;
+    o('bar').style.width = Math.min(r.pts / target * 100, 100) + '%';
+    o('bar').className = hit ? 'good' : r.pts >= target * 0.8 ? 'warn' : 'bad';
+    o('verdict').innerHTML = hit
+      ? `<b>About ${fmt(r.pts)} new patients</b>, which reaches the target of ${fmt(target)}.`
+      : `<b>About ${fmt(r.pts)} new patients</b> against a target of ${fmt(target)}. At ${pct1(cv)} of clicks enquiring, reaching ${fmt(target)} takes about <b>${money(need)} a month</b> (${money(need / 30.4)} a day).`;
+  } else { o('bar').parentElement.hidden = true; o('verdict').innerHTML = `<b>About ${fmt(r.pts)} new patients</b> a month.`; }
+}
+function tgPlannerInit(){ $$('[data-tgplan]').forEach(tgPlannerUpdate); }
+document.addEventListener('input', ev => { const c = ev.target.closest && ev.target.closest('[data-tgplan]'); if (c && ev.target.matches('[data-s]')) tgPlannerUpdate(c); });
