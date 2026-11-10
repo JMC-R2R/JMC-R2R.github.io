@@ -233,6 +233,51 @@ footer img{height:15px;opacity:.75}
 .pfb-body{font-size:13.5px;color:var(--ink2);line-height:1.55;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
 .pfb-audio{margin-top:8px}.pfb-audio audio,#pfb-preview audio{width:100%;max-width:360px;height:36px}
 .pfb-empty{color:var(--ink3);font-size:13px;padding:10px 4px}
+/* Pinned insights (added 10/11/2026), Cobalt-style pins: photo on a pin with an arm to the point */
+#pins-layer{position:absolute;top:0;left:0;width:0;height:0;z-index:25}
+.pin-b{position:absolute;width:0;height:0}
+.pin-b .ring{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:#E8562A;box-shadow:0 0 0 0 rgba(232,86,42,.6);animation:pinpulse 2s infinite;cursor:pointer}
+.pin-b .arm{position:absolute;left:0;top:0;width:34px;height:2px;background:#E8562A;transform-origin:0 50%}
+.pin-b .av{position:absolute;width:38px;height:38px;border-radius:50%;border:2px solid #E8562A;overflow:hidden;background:var(--s3);cursor:pointer;display:grid;place-items:center;font-size:12px;font-weight:800;color:var(--ink2)}
+.pin-b .av img{width:100%;height:100%;object-fit:cover}
+.pin-b.ul .arm{transform:rotate(-135deg)}.pin-b.ul .av{left:-53px;top:-53px}
+.pin-b.ur .arm{transform:rotate(-45deg)}.pin-b.ur .av{left:15px;top:-53px}
+.pin-b.dl .arm{transform:rotate(135deg)}.pin-b.dl .av{left:-53px;top:15px}
+.pin-b.dr .arm{transform:rotate(45deg)}.pin-b.dr .av{left:15px;top:15px}
+@keyframes pinpulse{0%{box-shadow:0 0 0 0 rgba(232,86,42,.55)}70%{box-shadow:0 0 0 12px rgba(232,86,42,0)}100%{box-shadow:0 0 0 0 rgba(232,86,42,0)}}
+#pins-add{position:fixed;left:20px;bottom:20px;z-index:40;display:none;align-items:center;gap:6px;border-radius:40px;padding:10px 16px;font-size:13px;background:#E8562A;color:#fff}
+#pins-add.on{background:var(--ink);color:#111}
+body.pinmode main{cursor:crosshair}
+body.pinmode #pins-hint{display:block}
+#pins-hint{display:none;position:fixed;left:50%;transform:translateX(-50%);top:108px;z-index:41;background:#E8562A;color:#fff;font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:20px}
+#pins-pop{position:fixed;z-index:70;width:300px;max-width:calc(100vw - 20px);background:var(--s2);border:1px solid var(--bd2);border-radius:14px;padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.55);display:none}
+#pins-pop.show{display:block}
+.pp-head{display:flex;gap:10px;align-items:center;margin-bottom:8px;padding-right:18px}
+.pp-av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:0 0 34px;background:var(--s3);display:grid;place-items:center;font-size:12px;font-weight:800;color:var(--ink2)}
+.pp-who{font-size:13px;font-weight:700}.pp-role{font-size:11px;color:var(--ink3)}
+.pp-x{position:absolute;right:8px;top:6px;background:none;border:none;color:var(--ink3);font-size:20px;padding:2px 6px;border-radius:6px}
+.pp-body{font-size:13.5px;color:var(--ink2);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.pp-audio audio,#pp-preview audio,.pi-audio audio{width:100%;max-width:300px;height:34px;margin-top:8px}
+.pp-row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.pp-row button{border-radius:8px;padding:8px 12px;font-size:12px}
+.pp-ghost{background:transparent;border:1px solid var(--bd);color:var(--ink2)}
+.pp-del{background:transparent;border:1px solid rgba(239,68,68,.5);color:var(--bad)}
+.pp-save{margin-left:auto;background:#E8562A;color:#fff}
+.pp-time{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+#pins-pop textarea{width:100%;min-height:70px;resize:vertical;background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--ink);font-family:var(--sans);font-size:13.5px;padding:9px;outline:none}
+.pins-panel{background:var(--s2);border:1px solid var(--bd);border-left:3px solid #E8562A;border-radius:12px;padding:16px;margin-top:22px}
+.pins-panel h3{display:flex;align-items:center;gap:8px;font-size:14.5px}
+.pins-panel h3 img{width:20px;height:20px;border-radius:50%}
+.pins-panel .wt{margin-left:auto;border-radius:20px;padding:6px 12px;font-size:12px;background:#E8562A;color:#fff}
+.pins-panel .ps{color:var(--ink3);font-size:12.5px;margin:4px 0 6px}
+.pi-item{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--bd)}
+.pi-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pi-name{font-size:13px;font-weight:700}
+.pi-where{font-family:var(--mono);font-size:10px;color:#E8562A;background:rgba(232,86,42,.12);padding:2px 7px;border-radius:5px}
+.pi-when{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.pi-body{font-size:13.5px;color:var(--ink2);margin-top:3px;white-space:pre-wrap;overflow-wrap:anywhere}
+.pi-empty{color:var(--ink3);font-size:13px;padding:8px 0}
+@media (max-width:520px){#pins-add{left:14px;bottom:14px}}
 </style>
 </head>
 <body>
@@ -1282,6 +1327,180 @@ async function fbDelete(id){
   if(data) await sb.storage.from(FB_BUCKET).remove([data]);
   await fbLoad();
 }
+
+/* ---------- Pinned insights (added 10/11/2026, Jhen) ----------
+   Cobalt-style pins: Savvas Studio and the Ready to Rank team drop a note or voice message on any
+   spot of a tab; it shows as their photo on a pin, and every tab lists its pins at the bottom with a
+   Walkthrough. Anyone who can open the dashboard can read them (same as Cobalt, where the client sees
+   them); only partners and the team can add. Switched on per client in PINS_SLUGS. Added without
+   changing any existing line: it wraps renderAll. Database: pa_insights_* functions. */
+const PINS_SLUGS=['steve-pallas-jewellery'];
+const PINS_BUCKET='pa-feedback';
+const PINS_SAVVAS_ICON='https://update.readytorank.com.au/cobalt/assets/savvas-icon.png';
+const PINS_R2R_ICON='https://update.readytorank.com.au/cobalt/assets/r2r.png';
+let PINS={items:[],can_add:false,me:null,loaded:false},PINMODE=false,pinsRec=null,pinsBlob=null,pinsMime='',pinsTimer=null,pinsWT=null;
+function pinsOn(){ return !!D&&PINS_SLUGS.includes(D.slug); }
+const pinsBaseRenderAll=renderAll;
+renderAll=function(){ pinsBaseRenderAll(); pinsAfterRender(); };
+function pinsAfterRender(){
+  if(!pinsOn()) return;
+  pinsChrome();
+  if(!PINS.loaded){ pinsLoad(); return; }
+  pinsPanels(); pinsBeacons(); pinsAddBtn();
+  clearTimeout(window._pinsLate); window._pinsLate=setTimeout(pinsBeacons,400);
+}
+function pinsChrome(){
+  if(!$('pins-layer')){ const l=document.createElement('div'); l.id='pins-layer'; document.body.appendChild(l); }
+  if(!$('pins-pop')){ const p=document.createElement('div'); p.id='pins-pop'; document.body.appendChild(p); }
+  if(!$('pins-hint')){ const h=document.createElement('div'); h.id='pins-hint'; h.textContent='Click anywhere on this tab to pin an insight. Esc to cancel.'; document.body.appendChild(h); }
+  if(!$('pins-add')){ const b=document.createElement('button'); b.id='pins-add'; b.type='button'; b.innerHTML='✎ Add insight';
+    b.onclick=e=>{ e.stopPropagation(); pinsMode(!PINMODE); }; document.body.appendChild(b); }
+}
+async function pinsLoad(){
+  const {data,error}=await sb.rpc('pa_insights_list',{p_slug:D.slug});
+  if(error){ console.warn('insights',error.message); }
+  PINS.items=(data&&data.items)||[]; PINS.can_add=!!(data&&data.can_add); PINS.me=(data&&data.me)||null; PINS.loaded=true;
+  pinsPanels(); pinsBeacons(); pinsAddBtn();
+}
+function pinsAv(o,cls){
+  const url=o&&o.avatar_url, nm=(o&&(o.author_name||o.name))||'';
+  if(url) return `<img class="${cls}" src="${esc(url)}" alt="">`;
+  const ini=esc(nm.split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'?');
+  return `<span class="${cls}">${ini}</span>`;
+}
+const pinsTabName=t=>(TABS.find(x=>x[0]===t)||[t,t])[1];
+function pinsPanels(){
+  TABS.forEach(([k,,svc])=>{
+    if(k==='updates'||!bought(svc)) return;
+    const sec=$('sec-'+k); if(!sec) return;
+    let panel=sec.querySelector(':scope > .pins-panel');
+    if(!panel){ panel=document.createElement('div'); panel.className='pins-panel'; sec.appendChild(panel); }
+    const items=PINS.items.filter(o=>o.tab===k);
+    const savvas=k==='social';
+    const title=savvas?'Savvas Studio — insights':'Team insights';
+    const icon=savvas?PINS_SAVVAS_ICON:PINS_R2R_ICON;
+    const hint=PINS.can_add?' Click ✎ Add insight, then any spot on this tab.':'';
+    panel.innerHTML=`<h3><img src="${icon}" alt="">${title}${items.length?'<button type="button" class="wt">▶ Walkthrough</button>':''}</h3>
+      <p class="ps">Notes on what's moving the numbers.${hint}</p>`+
+      (items.length?items.map(o=>`<div class="pi-item">${pinsAv(o,'pp-av')}<div style="flex:1;min-width:0"><div class="pi-top"><span class="pi-name">${esc(o.author_name||o.author_email)}</span><span class="pi-where">On this page</span><span class="pi-when">${esc(new Date(o.created_at).toLocaleDateString('en-AU'))}</span></div>
+        ${o.body?`<div class="pi-body">${esc(o.body)}</div>`:''}<div class="pi-audio" data-audio="${esc(o.audio_path||'')}"></div></div></div>`).join(''):'<div class="pi-empty">No insights yet.</div>');
+    panel.querySelectorAll('.pi-audio[data-audio]').forEach(el=>pinsAudio(el,el.getAttribute('data-audio')));
+    const wt=panel.querySelector('.wt'); if(wt) wt.onclick=()=>pinsWalk(k);
+  });
+}
+async function pinsAudio(el,p){ if(!el||!p) return; const {data}=await sb.storage.from(PINS_BUCKET).createSignedUrl(p,3600);
+  if(data&&data.signedUrl) el.innerHTML=`<audio controls src="${data.signedUrl}"></audio>`; }
+function pinsBeacons(){
+  const layer=$('pins-layer'); if(!layer) return; layer.innerHTML='';
+  if(!pinsOn()) return;
+  PINS.items.filter(o=>o.tab===TAB&&o.target_id).forEach(o=>{
+    const sec=$('sec-'+o.tab); if(!sec||sec.hidden) return;
+    const r=sec.getBoundingClientRect(); if(!r.width||!r.height) return;
+    const xf=o.x_frac==null?0.5:o.x_frac, yf=o.y_frac==null?0.2:o.y_frac;
+    const px=r.left+xf*r.width, py=r.top+yf*r.height;
+    const b=document.createElement('div'); b.className='pin-b '+(py>160?'u':'d')+(px>120?'l':'r'); b.dataset.id=o.id;
+    b.style.left=(px+window.scrollX)+'px'; b.style.top=(py+window.scrollY)+'px';
+    b.innerHTML=`<div class="arm"></div><div class="av">${o.avatar_url?`<img src="${esc(o.avatar_url)}" alt="">`:esc((o.author_name||'?')[0])}</div><span class="ring"></span>`;
+    const open=ev=>{ ev.stopPropagation(); ev.preventDefault(); pinsShow(o,ev.clientX,ev.clientY); };
+    b.querySelector('.av').addEventListener('click',open); b.querySelector('.ring').addEventListener('click',open);
+    layer.appendChild(b);
+  });
+}
+function pinsAddBtn(){ const b=$('pins-add'); if(!b) return; const ok=pinsOn()&&PINS.can_add&&TAB!=='updates';
+  b.style.display=ok?'inline-flex':'none'; if(!ok&&PINMODE) pinsMode(false); }
+function pinsMode(on){ PINMODE=on; document.body.classList.toggle('pinmode',on); const b=$('pins-add'); if(b){ b.classList.toggle('on',on); b.innerHTML=on?'✕ Cancel':'✎ Add insight'; } }
+function pinsPos(x,y){ const p=$('pins-pop'), w=p.offsetWidth||300, h=p.offsetHeight||170;
+  let L=Math.min(Math.max(x-w/2,10),innerWidth-w-10), T=y+16; if(T+h>innerHeight-10) T=Math.max(10,y-h-16);
+  p.style.left=L+'px'; p.style.top=T+'px'; }
+function pinsClose(){ const p=$('pins-pop'); if(p){ p.classList.remove('show'); p.innerHTML=''; } pinsWT=null; }
+function pinsShow(o,x,y,nav){
+  const p=$('pins-pop'); const me=String(D.email||'').toLowerCase();
+  const mine=D.viewer==='team'||String(o.author_email||'').toLowerCase()===me;
+  p.innerHTML=`<button type="button" class="pp-x" aria-label="Close">&times;</button>
+    <div class="pp-head">${pinsAv(o,'pp-av')}<div><div class="pp-who">${esc(o.author_name||o.author_email)}</div><div class="pp-role">${esc(o.role_title||'')}</div></div></div>
+    ${o.body?`<div class="pp-body">${esc(o.body)}</div>`:''}<div class="pp-audio" id="pp-audio"></div>
+    <div class="pp-row">${mine?'<button type="button" class="pp-del">Delete</button>':''}${nav?`<span class="pp-time">${nav.i+1} of ${nav.n}</span>${nav.i>0?'<button type="button" class="pp-ghost" data-go="-1">Back</button>':''}<button type="button" class="pp-save" data-go="1">${nav.i<nav.n-1?'Next':'Done'}</button>`:''}</div>`;
+  p.classList.add('show'); pinsPos(x,y);
+  p.querySelector('.pp-x').onclick=pinsClose;
+  const d=p.querySelector('.pp-del'); if(d) d.onclick=()=>pinsDelete(o);
+  p.querySelectorAll('[data-go]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); pinsStep(Number(b.dataset.go)); });
+  pinsAudio($('pp-audio'),o.audio_path);
+}
+function pinsCompose(tab,xf,yf,x,y){
+  pinsBlob=null; const p=$('pins-pop'); const me=PINS.me||{name:D.email};
+  p.innerHTML=`<button type="button" class="pp-x" aria-label="Close">&times;</button>
+    <div class="pp-head">${pinsAv(me,'pp-av')}<div><div class="pp-who">${esc(me.name||'You')}</div><div class="pp-role">${esc(pinsTabName(tab))} tab</div></div></div>
+    <textarea id="pp-text" maxlength="4000" placeholder="What's happening here? Explain the spike, dip or campaign moment…"></textarea>
+    <div class="pp-row"><button type="button" class="pp-ghost" id="pp-rec">● Record</button><span class="pp-time" id="pp-time"></span>
+      <button type="button" class="pp-ghost" id="pp-cancel">Cancel</button><button type="button" class="pp-save" id="pp-save">Pin insight</button></div>
+    <div id="pp-preview"></div>`;
+  p.classList.add('show'); pinsPos(x,y); $('pp-text').focus();
+  const cancel=()=>{ pinsStopRec(); pinsBlob=null; pinsClose(); };
+  p.querySelector('.pp-x').onclick=cancel; $('pp-cancel').onclick=cancel;
+  $('pp-rec').onclick=pinsToggleRec;
+  $('pp-save').onclick=()=>pinsSave(tab,xf,yf);
+}
+async function pinsToggleRec(){
+  if(pinsRec&&pinsRec.state==='recording'){ pinsStopRec(); return; }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    pinsMime=['audio/webm','audio/mp4','audio/ogg'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t))||'';
+    pinsRec=new MediaRecorder(stream,pinsMime?{mimeType:pinsMime}:undefined); pinsMime=pinsRec.mimeType||pinsMime||'audio/webm';
+    const parts=[]; pinsRec.ondataavailable=e=>{ if(e.data&&e.data.size) parts.push(e.data); };
+    pinsRec.onstop=()=>{ stream.getTracks().forEach(t=>t.stop()); if(parts.length){ pinsBlob=new Blob(parts,{type:pinsMime}); const pv=$('pp-preview'); if(pv) pv.innerHTML=`<audio controls src="${URL.createObjectURL(pinsBlob)}"></audio>`; } };
+    pinsRec.start(); const st=Date.now(); const b=$('pp-rec'); if(b) b.textContent='■ Stop';
+    pinsTimer=setInterval(()=>{ const s=Math.round((Date.now()-st)/1000); const t=$('pp-time'); if(t) t.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; },500);
+  }catch(err){ const t=$('pp-time'); if(t) t.textContent='Microphone access was blocked'; }
+}
+function pinsStopRec(){ if(pinsTimer){ clearInterval(pinsTimer); pinsTimer=null; } if(pinsRec&&pinsRec.state==='recording') pinsRec.stop(); const b=$('pp-rec'); if(b) b.textContent='● Record'; }
+async function pinsSave(tab,xf,yf){
+  const btn=$('pp-save'), t=$('pp-time'); btn.disabled=true; btn.textContent='Saving…';
+  pinsStopRec(); await new Promise(r=>setTimeout(r,250));
+  const body=($('pp-text').value||'').trim();
+  if(!body&&!pinsBlob){ btn.disabled=false; btn.textContent='Pin insight'; t.textContent='Add a note or a recording'; return; }
+  let path=null;
+  try{
+    if(pinsBlob){ const ext=pinsMime.includes('mp4')?'mp4':pinsMime.includes('ogg')?'ogg':'webm';
+      path=`${D.slug}/ins/${crypto.randomUUID()}.${ext}`;
+      const up=await sb.storage.from(PINS_BUCKET).upload(path,pinsBlob,{contentType:pinsMime.split(';')[0]||'audio/webm'}); if(up.error) throw up.error; }
+    const {error}=await sb.rpc('pa_insights_add',{p_slug:D.slug,p_tab:tab,p_target_id:'sec:'+tab,p_x:xf,p_y:yf,p_body:body||null,p_audio_path:path});
+    if(error) throw error;
+    pinsBlob=null; pinsMode(false); pinsClose(); PINS.loaded=false; await pinsLoad();
+  }catch(err){ console.warn('insight save',err&&err.message); if(path) await sb.storage.from(PINS_BUCKET).remove([path]);
+    btn.disabled=false; btn.textContent='Pin insight'; t.textContent='Could not save, please try again'; }
+}
+async function pinsDelete(o){
+  if(!confirm('Delete this insight?')) return;
+  const {data,error}=await sb.rpc('pa_insights_delete',{p_id:o.id});
+  if(error){ alert('Could not delete: '+error.message); return; }
+  if(data) await sb.storage.from(PINS_BUCKET).remove([data]);
+  pinsClose(); await pinsLoad();
+}
+function pinsWalk(tab){
+  if(TAB!==tab) return;
+  const list=PINS.items.filter(o=>o.tab===tab);
+  if(!list.length) return; pinsWT={list,i:0}; pinsStep(0);
+}
+function pinsStep(d){
+  if(!pinsWT) return; const n=pinsWT.list.length; const i=pinsWT.i+d;
+  if(i>=n||i<0){ pinsClose(); return; }
+  pinsWT.i=i; const o=pinsWT.list[i];
+  const b=document.querySelector(`.pin-b[data-id="${o.id}"]`);
+  if(b) b.scrollIntoView({block:'center',behavior:'smooth'});
+  setTimeout(()=>{ const r=b?b.getBoundingClientRect():{left:innerWidth/2,top:innerHeight/2}; const keep=pinsWT; pinsShow(o,r.left,r.top,{i,n}); pinsWT=keep; },b?450:0);
+}
+document.addEventListener('click',e=>{
+  if(!PINMODE||!pinsOn()) return;
+  const sec=$('sec-'+TAB); if(!sec||!sec.contains(e.target)) return;
+  if(e.target.closest('#pins-pop,#pins-add,.pin-b,button,a,input,textarea,select')) return;
+  e.preventDefault(); e.stopPropagation();
+  const r=sec.getBoundingClientRect();
+  const xf=Math.min(Math.max((e.clientX-r.left)/r.width,0),1), yf=Math.min(Math.max((e.clientY-r.top)/r.height,0),1);
+  pinsCompose(TAB,xf,yf,e.clientX,e.clientY);
+},true);
+document.addEventListener('click',e=>{ const p=$('pins-pop'); if(p&&p.classList.contains('show')&&!PINMODE&&!pinsWT&&!p.contains(e.target)&&!e.target.closest('.pin-b')) pinsClose(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(PINMODE) pinsMode(false); pinsClose(); } });
+window.addEventListener('resize',()=>{ clearTimeout(window._pinsRz); window._pinsRz=setTimeout(pinsBeacons,180); });
 </script>
 </body>
 </html>
