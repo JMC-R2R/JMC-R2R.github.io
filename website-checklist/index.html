@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>40 Things to Fix So Customers Actually Find You — Ready to Rank</title>
+<meta name="description" content="A free 40-point website checklist for Australian trade businesses: getting found on Google, in the map results and in AI answers.">
+<meta name="robots" content="noindex,nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F0F12;--card:#17181e;--b:#17B4F0;--ink:#fff;--mut:rgba(255,255,255,.7);--line:#2a2c35}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Archivo,Arial,sans-serif;padding:32px 16px 48px}
+.w{max-width:1040px;margin:auto}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px}
+.top img{height:40px}
+.k{font-family:'Space Mono',monospace;color:var(--b);font-size:13px;letter-spacing:.18em;text-transform:uppercase}
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);grid-template-areas:"intro form" "cover form";gap:28px 40px;align-items:start}
+.intro{grid-area:intro}.side{grid-area:form}.cv{grid-area:cover}
+@media(max-width:860px){.grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"intro" "form" "cover"}.cover{max-width:240px;margin:auto}}
+h1{overflow-wrap:break-word}
+h1{font-size:clamp(34px,5vw,56px);font-weight:900;line-height:1.02;margin:10px 0 16px;text-transform:uppercase}
+h1 span{color:var(--b)}
+p.lead{color:var(--mut);font-size:18px;line-height:1.55;margin:0 0 18px}
+ul{color:var(--mut);line-height:1.7;padding-left:20px;margin:0 0 22px}
+.cover{width:100%;max-width:360px;border-radius:12px;box-shadow:0 30px 70px rgba(0,0,0,.6);transform:rotate(-2deg);display:block}
+form,.done{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
+label{display:block;font-weight:700;font-size:14px;margin:14px 0 6px}
+label small{font-weight:400;color:var(--mut)}
+input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid var(--line);background:#0c0d10;color:#fff;font:inherit;font-size:16px}
+input:focus{outline:2px solid var(--b);border-color:transparent}
+.hp{position:absolute;left:-9999px;height:0;overflow:hidden}
+button,.btn{margin-top:20px;width:100%;display:block;text-align:center;background:var(--b);color:#0F0F12;border:0;border-radius:999px;padding:16px;font:inherit;font-weight:900;font-size:17px;cursor:pointer;text-decoration:none}
+button[disabled]{opacity:.6;cursor:wait}
+.fine{font-size:12.5px;color:var(--mut);margin:14px 0 0;line-height:1.5}
+.err{color:#ff8a8a;font-size:14px;margin-top:12px;min-height:1em}
+.done h2{margin:0 0 8px;font-size:26px}
+.foot{margin-top:40px;color:var(--mut);font-size:13px}
+.foot a{color:var(--b)}
+</style>
+</head>
+<body><div class="w">
+<div class="top"><a href="https://readytorank.com.au/"><img src="../gbp-checklist/rtr-logo.png" alt="Ready to Rank"></a><span class="k">Free checklist</span></div>
+<div class="grid">
+<div class="intro">
+  <div class="k">For Australian trade businesses</div>
+  <h1>40 things to fix so customers <span>actually find you</span></h1>
+  <p class="lead">A plain-English checklist for getting found on Google, in the map results, and in the answers people now get from ChatGPT.</p>
+  <ul>
+    <li><b>Part one, items 1 to 20:</b> things you can check and fix yourself, each with a quick check.</li>
+    <li><b>Part two, items 21 to 40:</b> the work that needs a professional, and exactly what to ask for.</li>
+  </ul>
+</div>
+<div class="cv"><img class="cover" src="cover.jpg" alt="Cover of the 40-point website checklist"></div>
+<div class="side">
+  <form id="f" novalidate>
+    <div class="k">Get the checklist</div>
+    <label for="b">Business name</label><input id="b" name="b" autocomplete="organization" required maxlength="120">
+    <label for="s">Website</label><input id="s" name="s" inputmode="url" autocomplete="url" placeholder="yourbusiness.com.au" required maxlength="200">
+    <label for="e">Email</label><input id="e" name="e" type="email" autocomplete="email" required maxlength="200">
+    <label for="p">Phone <small>(optional)</small></label><input id="p" name="p" type="tel" autocomplete="tel" maxlength="30">
+    <div class="hp" aria-hidden="true"><label for="w">Leave this empty</label><input id="w" name="w" tabindex="-1" autocomplete="off"></div>
+    <button id="go" type="submit">Get the checklist</button>
+    <div class="err" id="err" role="alert"></div>
+    <p class="fine">We'll use your details to send you the checklist and the occasional tip about getting found online. No spam, and you can ask us to stop any time.</p>
+  </form>
+  <div class="done" id="done" hidden>
+    <div class="k">It's yours</div>
+    <h2>Thanks! Here's your checklist.</h2>
+    <p class="lead" style="font-size:16px">Work down it with your phone in your hand. Want us to look at your site for you? Reply to our DM or book a call.</p>
+    <a class="btn" id="dl" href="dl-1e15be78d037/R2R-40-Website-Fixes-For-Tradies.pdf" target="_blank" rel="noopener">Download the checklist (PDF)</a>
+    <a class="btn" style="background:#fff" href="https://calendly.com/jose_chavez/ready-to-rank-discovery-call-" target="_blank" rel="noopener">Book a free discovery call</a>
+  </div>
+</div>
+</div>
+<p class="foot">Ready to Rank · Melbourne local SEO · <a href="https://readytorank.com.au/">readytorank.com.au</a></p>
+</div>
+<script>
+const U="https://tjgrtrazyepvbcmmdhet.supabase.co/rest/v1/rpc/so_social_submit", K="sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8";
+const ch=(new URLSearchParams(location.search).get("src")||"web").toLowerCase();
+const okCh=["instagram","facebook","linkedin","tiktok","x","pinterest","gbp","web"].includes(ch)?ch:"web";
+const f=document.getElementById("f"), err=document.getElementById("err"), go=document.getElementById("go");
+f.addEventListener("submit", async e=>{
+  e.preventDefault(); err.textContent="";
+  const v=id=>document.getElementById(id).value.trim();
+  if(v("b").length<2) return err.textContent="Please add your business name.";
+  if(v("s").length<4) return err.textContent="Please add your website.";
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v("e"))) return err.textContent="Please check your email address.";
+  go.disabled=true; go.textContent="One moment...";
+  try{
+    const r=await fetch(U,{method:"POST",headers:{"apikey":K,"Authorization":"Bearer "+K,"Content-Type":"application/json"},
+      body:JSON.stringify({p_kind:"checklist",p_business:v("b"),p_website:v("s"),p_email:v("e"),p_phone:v("p")||null,p_channel:okCh,p_hp:v("w")||null})});
+    if(!r.ok) throw new Error(r.status);
+    f.hidden=true; document.getElementById("done").hidden=false; document.getElementById("done").scrollIntoView({behavior:"smooth"});
+  }catch(x){ go.disabled=false; go.textContent="Get the checklist"; err.textContent="Something went wrong. Please try again, or email hello@readytorank.com.au."; }
+});
+</script>
+</body></html>
