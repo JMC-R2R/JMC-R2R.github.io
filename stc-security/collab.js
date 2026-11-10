@@ -74,6 +74,8 @@ body.cb-pinmode #cb-hint{display:block}
 .cbf-main{flex:1;min-width:0}
 .cbf-row{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
 @media (max-width:520px){#cb-add{left:14px;bottom:14px}}
+/* While Updates is open, only Updates shows, whatever else the page does to its own panels. */
+html.cb-upd [role="tabpanel"]:not(#pn-updates){display:none!important}
 
 /* Cobalt look (10/11/2026): orange ring on photos, small caps role, pill buttons, tinted panel */
 .cb-av{border:2px solid #E4572E;width:36px;height:36px;flex:0 0 36px;box-sizing:border-box}
@@ -156,6 +158,7 @@ function ensureTab(){
 }
 function openUpdates(){
   OPEN = true; popClose(); setPinMode(false);
+  document.documentElement.classList.add('cb-upd'); window.scrollTo({ top: 0 });
   ENGINE_TABS.forEach(k => { const b = $('#tb-' + k), p = $('#pn-' + k); if (b){ b.setAttribute('aria-selected', 'false'); b.tabIndex = -1; } if (p) p.hidden = true; });
   const b = $('#tb-updates'); b.setAttribute('aria-selected', 'true'); b.tabIndex = 0; $('#pn-updates').hidden = false;
   renderUpdates(); paintPins(); addBtn();
@@ -163,6 +166,7 @@ function openUpdates(){
 }
 function closeUpdates(){
   if (!OPEN) return; OPEN = false;
+  document.documentElement.classList.remove('cb-upd');
   const b = $('#tb-updates'), p = $('#pn-updates'); if (b){ b.setAttribute('aria-selected', 'false'); b.tabIndex = -1; } if (p) p.hidden = true;
   paintPins(); addBtn();
 }
