@@ -293,6 +293,23 @@ body.pinmode #pins-hint{display:block}
 .pp-del{font-family:var(--mono);font-size:10px;border:none;background:none;padding:0}
 .pins-panel{border:1px solid rgba(228,87,46,.28);border-left:3px solid #E4572E;background:linear-gradient(100deg,rgba(228,87,46,.13),transparent 70%)}
 .pi-where{border-radius:20px}
+/* Monthly review (added 10/11/2026): the client's end-of-month meeting deck, shown exactly as presented */
+.rv-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 14px}
+.rv-bar .mchip{margin:0}
+.rv-btn{background:var(--s2);border:1px solid var(--bd);color:var(--ink2);border-radius:20px;padding:8px 14px;font-size:12.5px;font-weight:700}
+.rv-btn:hover{border-color:var(--client);color:var(--ink)}
+.rv-frame{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.rv-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.rv-frame .rv-wait{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink3);font-size:13px}
+.rv-log{margin-top:18px;background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px}
+.rv-log h3{font-size:14px;margin:0 0 6px}
+.rv-row{display:flex;gap:12px;align-items:baseline;padding:8px 0;border-top:1px solid var(--bd);font-size:13px}
+.rv-row:first-of-type{border-top:none}
+.rv-d{font-family:var(--mono);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.rv-d.yes{background:rgba(34,197,94,.14);color:#86efac}.rv-d.no{background:rgba(239,68,68,.14);color:#fca5a5}.rv-d.fix{background:rgba(245,158,11,.14);color:#fcd34d}
+.rv-who{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink3);white-space:nowrap}
+.rv-empty{color:var(--ink3);font-size:13px}
+@media (max-width:700px){.rv-frame{aspect-ratio:auto;height:62vw;min-height:220px}}
 </style>
 </head>
 <body>
@@ -1516,6 +1533,100 @@ document.addEventListener('click',e=>{
 document.addEventListener('click',e=>{ const p=$('pins-pop'); if(p&&p.classList.contains('show')&&!PINMODE&&!pinsWT&&!p.contains(e.target)&&!e.target.closest('.pin-b')) pinsClose(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(PINMODE) pinsMode(false); pinsClose(); } });
 window.addEventListener('resize',()=>{ clearTimeout(window._pinsRz); window._pinsRz=setTimeout(pinsBeacons,180); });
+
+/* ---------- Monthly review (added 10/11/2026) ----------
+   The client's end-of-month meeting deck, shown exactly as it was presented. The deck file, reels and PDF sit in the
+   PRIVATE bucket pa-reviews/<slug>/<YYYY-MM>/ and are only readable by people who can open this dashboard
+   (pa_review_allowed: the Ready to Rank team or an active pa_client_users login for the client). Reels are swapped in
+   as signed links after sign-in. Approvals made on the deck's buttons are saved for everyone via pa_review_decide.
+   The tab only appears once a review has been published (skill monthly-ads-review, publish_review.py).
+   Added without changing any existing line: it wraps renderAll and adds its own section and tab. */
+let RV=null,RV_SLUG='',RV_SEL='',RV_SHOWN='',RV_LOADING=null,RV_WIN=null;
+const rvBaseRenderAll=renderAll;
+renderAll=function(){ rvBaseRenderAll(); rvMount(); };
+const RV_LABELS={ext:'Product strip under the ads',list:'Customer list for Meta'};
+function rvLabel(k){ if(RV_LABELS[k]) return RV_LABELS[k]; const m=/^h(\d+)$/.exec(k); return m?'Held image '+m[1]:k; }
+function rvCur(){ return (RV||[]).find(r=>r.period===RV_SEL)||(RV||[])[0]; }
+function rvState(r){ const s={}; Object.entries((r&&r.decisions)||{}).forEach(([k,v])=>{ if(v&&v.decision) s[k]=v.decision; }); return s; }
+async function rvLoad(){
+  const slug=D.slug;
+  const {data,error}=await sb.rpc('pa_review_list',{p_slug:slug});
+  if(error){ console.warn('monthly review',error.message); }
+  RV=Array.isArray(data)?data:[]; RV_SLUG=slug;
+  if(!RV_SEL&&RV[0]) RV_SEL=RV[0].period;
+}
+async function rvMount(){
+  if(!D||!D.slug) return;
+  if(RV_SLUG!==D.slug){ if(!RV_LOADING) RV_LOADING=rvLoad().finally(()=>{RV_LOADING=null;}); await RV_LOADING; }
+  if(!RV||!RV.length) return;
+  if(!TABS.some(t=>t[0]==='review')){
+    const i=TABS.findIndex(t=>t[0]==='updates');
+    TABS.splice(i<0?TABS.length:i,0,['review','Monthly review',null]);
+    const sec=document.createElement('section'); sec.id='sec-review'; sec.hidden=true;
+    const after=$('sec-updates'); after.parentNode.insertBefore(sec,after);
+    renderTabs();
+  }
+  if(TAB==='review') rvRender();
+}
+function rvRender(){
+  const sec=$('sec-review'); if(!sec) return;
+  const r=rvCur(); if(!r) return;
+  if(RV_SHOWN!==r.period||!$('rv-frame')){
+    RV_SHOWN=r.period;
+    const chips=RV.length>1?RV.map(x=>`<button class="mchip" aria-pressed="${x.period===r.period}" data-p="${esc(x.period)}">${esc(new Date(x.period+'T00:00:00').toLocaleDateString('en-AU',{month:'long',year:'numeric'}))}</button>`).join(''):'';
+    sec.innerHTML=`<div class="eyebrow">Monthly review</div><h2 class="h2">${esc(r.title)}</h2>
+      <p class="sub">Your end-of-month meeting deck, exactly as we presented it. Use the arrows or click either side to move through it. Anything you approve on the slides is saved here for you and the team.</p>
+      <div class="rv-bar">${chips}<button class="rv-btn" id="rv-fs">⛶ Full screen</button>${r.pdf_path?'<button class="rv-btn" id="rv-pdf">Download PDF</button>':''}</div>
+      <div class="rv-frame" id="rv-frame"><div class="rv-wait">Loading your review…</div></div>
+      <div class="rv-log" id="rv-log"></div>`;
+    sec.querySelectorAll('.mchip[data-p]').forEach(b=>b.onclick=()=>{ RV_SEL=b.dataset.p; rvRender(); });
+    $('rv-fs').onclick=()=>{ const f=document.querySelector('#rv-frame iframe'); if(f&&f.requestFullscreen) f.requestFullscreen(); };
+    if($('rv-pdf')) $('rv-pdf').onclick=async()=>{
+      const {data,error}=await sb.storage.from('pa-reviews').createSignedUrl(r.pdf_path,600,{download:true});
+      if(!error&&data) location.href=data.signedUrl; };
+    rvFrame(r);
+  }
+  rvLog(r);
+}
+async function rvFrame(r){
+  const box=$('rv-frame'); if(!box) return;
+  try{
+    const {data:blob,error}=await sb.storage.from('pa-reviews').download(r.html_path);
+    if(error) throw error;
+    let html=await blob.text();
+    const media=Object.entries(r.media||{});
+    if(media.length){
+      const {data:signed,error:e2}=await sb.storage.from('pa-reviews').createSignedUrls(media.map(m=>m[1]),6*3600);
+      if(e2) throw e2;
+      media.forEach(([name],i)=>{ const u=(signed[i]||{}).signedUrl||''; html=html.split('__MEDIA_'+name+'__').join(u); });
+    }
+    if(RV_SHOWN!==r.period) return;
+    const f=document.createElement('iframe');
+    f.setAttribute('sandbox','allow-scripts allow-popups');
+    f.setAttribute('allow','fullscreen; autoplay');
+    f.title=r.title; f.srcdoc=html;
+    box.innerHTML=''; box.appendChild(f); RV_WIN=f.contentWindow;
+  }catch(e){ console.warn('monthly review',e&&e.message); box.innerHTML='<div class="rv-wait">This review could not be loaded. Refresh the page, or let Jose know.</div>'; }
+}
+function rvLog(r){
+  const el=$('rv-log'); if(!el) return;
+  const rows=Object.entries(r.decisions||{}).filter(([,v])=>v&&v.decision).sort((a,b)=>String(b[1].at).localeCompare(String(a[1].at)));
+  const word={yes:'Approved',no:'Not used',fix:'Needs a fix'};
+  el.innerHTML=`<h3>Approvals so far</h3>`+(rows.length?rows.map(([k,v])=>`<div class="rv-row"><span class="rv-d ${esc(v.decision)}">${esc(word[v.decision]||v.decision)}</span><span>${esc(rvLabel(k))}</span>
+      <span class="rv-who">${esc(v.by||'')} · ${esc(new Date(v.at).toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit'}))}</span></div>`).join('')
+    :'<div class="rv-empty">Nothing approved yet. Use the buttons on the approval slides in the deck.</div>');
+}
+window.addEventListener('message',async e=>{
+  const f=document.querySelector('#rv-frame iframe'); if(!f||e.source!==f.contentWindow) return;
+  const m=e.data||{}, r=rvCur(); if(!r) return;
+  if(m.type==='r2r-review-ready'){ f.contentWindow.postMessage({type:'r2r-review-state',state:rvState(r)},'*'); return; }
+  if(m.type==='r2r-review-decide'&&/^[a-z0-9_-]{1,40}$/.test(String(m.key||''))){
+    const {data,error}=await sb.rpc('pa_review_decide',{p_slug:D.slug,p_period:r.period,p_key:m.key,p_decision:m.value||null});
+    if(error){ console.warn('monthly review decide',error.message); }
+    else if(Array.isArray(data)){ RV=data; }
+    const now=rvCur(); f.contentWindow.postMessage({type:'r2r-review-state',state:rvState(now)},'*'); rvLog(now);
+  }
+});
 </script>
 </body>
 </html>
