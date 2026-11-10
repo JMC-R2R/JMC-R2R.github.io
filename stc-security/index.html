@@ -323,10 +323,13 @@ table.soc-t{min-width:720px}
 table.soc-t th{position:static;cursor:default}
 table.soc-t td a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 table.soc-t td a:hover{text-decoration-color:var(--r2r)}
-.soc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:12px}
-.soc-cr{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:var(--ink);min-width:0}
+.soc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px}
+.soc-cr{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:flex;flex-direction:column;color:var(--ink);min-width:0}
+.soc-cr .b a{color:var(--r2r);text-decoration:none;font-family:var(--mono);font-size:11.5px}
 .soc-cr:hover{border-color:var(--r2r)}
-.soc-cr .im{aspect-ratio:4/5;background:var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:12px;position:relative}
+.soc-cr .im{height:470px;background:#fff;display:flex;align-items:center;justify-content:center;color:#555;font-size:13px;position:relative;overflow:hidden}
+.soc-cr .im.ph{height:120px;background:var(--line);color:var(--ink-3)}
+.soc-cr iframe{border:0;width:100%;height:100%;display:block}
 .soc-cr img{width:100%;height:100%;object-fit:cover;display:block}
 .soc-cr .k{position:absolute;top:8px;left:8px}
 .soc-cr .b{padding:10px;font-size:12.5px;display:flex;flex-direction:column;gap:4px}
@@ -1086,10 +1089,16 @@ function renderSocial(){
   table("socIgP","ig",igPosts,"Views"); table("socFbP","fb",fbPosts,"Impressions");
   /* creative galleries: post image + headline figures, newest CDN link from the daily refresh */
   const gal=(id,key,posts,iLab)=>{const G=$(id);G.innerHTML="";if(!posts.length){G.innerHTML='<div class="empty">No posts published in this period.</div>';return}
-    const sorted=[...posts].sort((a,b)=>b.r-a.r),show=socAll[key]?sorted:sorted.slice(0,8);
-    G.innerHTML='<div class="soc-grid">'+show.map(x=>'<a class="soc-cr" href="'+esc(x.u||"#")+'" target="_blank" rel="noopener"><div class="im">'+(x.i?'<img loading="lazy" referrerpolicy="no-referrer" alt="" src="'+esc(x.i)+'">':'Preview unavailable')+'<span class="tag k">'+esc(x.k||"Post")+'</span></div><div class="b"><div class="num" style="color:var(--ink-3);font-size:11.5px">'+dmy(x.d)+'</div><div class="t">'+esc(x.t||"No caption")+'</div><div class="m">'+n0(x.r||0)+' reach · '+n0(inter(x))+' '+iLab+'</div></div></a>').join("")+'</div>';
-    G.querySelectorAll("img").forEach(im=>im.addEventListener("error",()=>{const w=im.parentNode;im.remove();w.insertAdjacentText("afterbegin","Preview unavailable")}));
-    if(sorted.length>8){const b=document.createElement("button");b.type="button";b.className="soc-more";b.textContent=socAll[key]?"Show top 8":"Show all "+sorted.length+" creatives";b.addEventListener("click",()=>{socAll[key]=!socAll[key];renderSocial()});G.appendChild(b)}};
+    const sorted=[...posts].sort((a,b)=>b.r-a.r),show=socAll[key+"G"]?sorted:sorted.slice(0,6);
+    const igSrc=u=>{const m=/instagram\.com\/(p|reel|tv)\/([^/?#]+)/.exec(u||"");return m?"https://www.instagram.com/"+m[1]+"/"+m[2]+"/embed/":null};
+    const igAll=S.ig.posts||[];
+    const near=(a,b)=>Math.abs(new Date(a)-new Date(b))<=864e5;
+    const src=x=>{ if(key==="ig") return {s:igSrc(x.u)};
+      if(/facebook\.com\/reel\//.test(x.u||"")) return {s:"https://www.facebook.com/plugins/video.php?show_text=false&width=320&href="+encodeURIComponent(x.u)};
+      const tw=(x.t||"").trim().toLowerCase(); const twin=tw&&igAll.find(y=>(y.t||"").trim().toLowerCase()===tw&&near(y.d,x.d));
+      return twin?{s:igSrc(twin.u),note:"Same creative as Instagram"}:{s:null}; };
+    G.innerHTML='<div class="soc-grid">'+show.map(x=>{const e=src(x);return '<div class="soc-cr">'+(e.s?'<div class="im"><iframe loading="lazy" scrolling="no" title="'+esc((key==="ig"?"Instagram":"Facebook")+" post "+dmy(x.d))+'" src="'+esc(e.s)+'"></iframe></div>':'<div class="im ph">Preview not available from Facebook</div>')+'<div class="b"><div style="display:flex;justify-content:space-between;gap:8px"><span class="num" style="color:var(--ink-3);font-size:11.5px">'+dmy(x.d)+' · '+esc(x.k||"Post")+'</span><a href="'+esc(x.u||"#")+'" target="_blank" rel="noopener">Open ↗</a></div><div class="t">'+esc(x.t||"No caption")+'</div><div class="m">'+n0(x.r||0)+' reach · '+n0(x.v||0)+' '+(key==="ig"?"views":"impressions")+' · '+n0(inter(x))+' '+iLab+'</div>'+(e.note?'<div style="color:var(--ink-3);font-size:11.5px">'+e.note+'</div>':'')+'</div></div>'}).join("")+'</div>';
+    if(sorted.length>6){const b=document.createElement("button");b.type="button";b.className="soc-more";b.textContent=socAll[key+"G"]?"Show top 6":"Show all "+sorted.length+" creatives";b.addEventListener("click",()=>{socAll[key+"G"]=!socAll[key+"G"];renderSocial()});G.appendChild(b)}};
   gal("socIgG","ig",igPosts,"interactions"); gal("socFbG","fb",fbPosts,"interactions");
   /* month on month: independent of the range switcher. The current month runs to asOf and is compared with the same days of the previous month. */
   (()=>{
@@ -1104,7 +1113,7 @@ function renderSocial(){
     const MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const cols=ms.map((k,i)=>{const f=k+"-01",e=mEnd(k),t=e<to?e:to,partial=t<e;let prev=null;
       if(i>0){const pk=ms[i-1],pf=pk+"-01",pe=mEnd(pk),days=Math.round((new Date(t)-new Date(f))/864e5);const pd=new Date(pf+"T00:00:00");pd.setDate(pd.getDate()+days);const pt=isoL(pd)<pe?isoL(pd):pe;prev=agg(pf,pt)}
-      const [y,m]=k.split("-").map(Number);return {lab:MN[m-1]+" "+String(y).slice(2)+(partial?" (to "+dmy(t).slice(0,5)+")":""),a:agg(f,t),prev,partial}});
+      const [y,m]=k.split("-").map(Number);return {lab:MN[m-1]+" "+y+(partial?" (to "+dmy(t).slice(0,5)+")":""),a:agg(f,t),prev,partial}});
     const ROWS=[["Instagram"],["Reach","igr"],["Views","igv"],["Interactions","ige"],["New followers","igf"],["Posts published","igp"],["Post interactions","igpi"],
       ["Facebook"],["Organic impressions","fbo"],["Page visits","fbv"],["Followers (end of month)","fbf",1],["Net new followers","fbn"],["Posts published","fbp"],["Post interactions","fbpi"]];
     const cell=(col,k,noChg)=>{const v=col.a[k];if(v==null)return '<td class="r num">–</td>';let ch="";
