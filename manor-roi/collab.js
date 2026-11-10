@@ -55,7 +55,7 @@
   #viewUpdates .cbf-row{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
   #viewUpdates .cbf-row button{border-radius:8px;padding:8px 14px;font:700 12.5px var(--sans);cursor:pointer}
   #viewUpdates .cb-ghost{background:transparent;border:1px solid var(--line,#3A3236);color:var(--muted,#bbb)}
-  #viewUpdates .cb-save{margin-left:auto;background:#E8562A;color:#fff;border:0}
+  #viewUpdates .cb-save{margin-left:auto;background:#E4572E;color:#fff;border:0}
   #viewUpdates .cb-save:disabled{opacity:.6}
   #viewUpdates .cb-time{font-family:var(--mono,monospace);font-size:11px;color:var(--muted,#9a9a9a)}
   #viewUpdates .cb-av{width:34px;height:34px;flex:0 0 34px;border-radius:50%;object-fit:cover;background:var(--panel-2,#2C2629);display:grid;place-items:center;font:800 12px var(--sans);color:var(--muted,#bbb)}
@@ -67,6 +67,13 @@
   #viewUpdates .cb-body{font-size:14px;line-height:1.55;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere;opacity:.9}
   #viewUpdates audio{width:100%;max-width:340px;height:34px;margin-top:8px}
   #viewUpdates .cb-empty{color:var(--muted,#9a9a9a);font-size:13.5px;padding:10px 4px}
+
+  /* Cobalt look (10/11/2026): orange ring on photos, pill buttons */
+  #viewUpdates .cb-av{border:2px solid #E4572E;box-sizing:border-box}
+  #viewUpdates .cb-item .cb-av{width:40px;height:40px;flex-basis:40px}
+  #viewUpdates #cbf-rec{font-family:var(--mono,monospace);font-size:11px;border-radius:20px;padding:7px 12px}
+  #viewUpdates .cb-save{border-radius:20px;padding:8px 16px}
+  #viewUpdates textarea:focus{border-color:#E4572E}
   </style>`);
 
   const AUTHORS = {};   /* email -> photo, from the same author list the pins use */
