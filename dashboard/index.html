@@ -211,6 +211,28 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 footer{border-top:1px solid var(--bd);margin-top:40px;padding:18px 0 46px;color:var(--ink3);font-size:11.5px}
 footer .flogos{display:flex;gap:12px;align-items:center;margin-bottom:8px}
 footer img{height:15px;opacity:.75}
+/* Updates & feedback (added 10/11/2026): partners and the R2R team only, per client in FB_SLUGS */
+.pfb-compose{display:flex;gap:12px;background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:15px 16px;margin:14px 0 18px}
+.pfb-av{flex:0 0 34px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;background:var(--s3);color:var(--ink2);border:1px solid var(--bd2)}
+.pfb-main{flex:1;min-width:0}
+.pfb-main textarea{width:100%;min-height:64px;resize:vertical;background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--ink);font-family:var(--sans);font-size:14px;padding:10px;outline:none}
+.pfb-main textarea:focus{border-color:var(--client)}
+.pfb-row{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.pfb-rec{display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:700;background:transparent;border:1px solid var(--bd);color:var(--ink2)}
+.pfb-rec .dot{width:8px;height:8px;border-radius:50%;background:var(--bad)}
+.pfb-rec.on{border-color:var(--bad);color:var(--ink)}
+.pfb-time{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.pfb-post{margin-left:auto;border-radius:8px;padding:9px 18px;font-size:13px}
+.pfb-post:disabled{opacity:.6;cursor:default}
+.pfb-item{display:flex;gap:12px;padding:14px 4px;border-top:1px solid var(--bd)}
+.pfb-top{display:flex;align-items:center;gap:10px}
+.pfb-name{font-size:13px;font-weight:700}
+.pfb-when{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.pfb-del{margin-left:auto;background:none;border:none;color:var(--ink3);font-size:14px;padding:2px 6px;border-radius:6px}
+.pfb-del:hover{color:var(--bad)}
+.pfb-body{font-size:13.5px;color:var(--ink2);line-height:1.55;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.pfb-audio{margin-top:8px}.pfb-audio audio,#pfb-preview audio{width:100%;max-width:360px;height:36px}
+.pfb-empty{color:var(--ink3);font-size:13px;padding:10px 4px}
 </style>
 </head>
 <body>
@@ -1176,6 +1198,90 @@ $('askForm').addEventListener('submit',e=>{e.preventDefault(); askSend($('askInp
 
 let rt; window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{ if(booted) drawAll(); },180);});
 boot();
+
+/* ---------- Updates & feedback (added 10/11/2026, Jhen) ----------
+   Savvas Studio (partners) and the Ready to Rank team leave a note or a voice message about the
+   dashboard itself, same as the Cobalt dashboard's Updates tab. Clients never see it, and the
+   database refuses them too (pa_feedback_* functions). Switched on per client in FB_SLUGS.
+   Added without changing any existing line: it wraps renderUpdates and adds below "What we changed". */
+const FB_SLUGS=['steve-pallas-jewellery'];
+const FB_BUCKET='pa-feedback';
+let FB=[],FB_LOADED=false,FB_DRAFT='',fbRec=null,fbBlob=null,fbMime='',fbTimer=null,fbStart=0;
+function fbOn(){ return !!D&&FB_SLUGS.includes(D.slug)&&(D.viewer==='team'||D.viewer==='partner'); }
+const fbBaseRenderUpdates=renderUpdates;
+renderUpdates=function(){ fbBaseRenderUpdates(); fbMount(); };
+function fbMount(){
+  if(!fbOn()) return;
+  const sec=$('sec-updates'); if(!sec) return;
+  const box=document.createElement('div'); box.id='pfb-wrap';
+  box.innerHTML=`<div class="eyebrow">Dashboard updates · Savvas Studio and Ready to Rank</div>
+    <h2 class="h2">Updates &amp; feedback</h2>
+    <p class="sub">Spot something to fix or improve on this dashboard? Leave a note or a voice message. Only Savvas Studio and the Ready to Rank team can see this section, and the Ready to Rank team reviews and actions every one.</p>
+    <div id="pfb-compose"></div><div id="pfb-list"></div>`;
+  sec.appendChild(box);
+  fbRender();
+  if(!FB_LOADED) fbLoad();
+}
+async function fbLoad(){
+  const {data,error}=await sb.rpc('pa_feedback_list',{p_slug:D.slug});
+  if(error){ console.warn('feedback',error.message); }
+  FB=Array.isArray(data)?data:[]; FB_LOADED=true; fbRender();
+}
+function fbInitials(name,email){ const s=String(name||email||'?').trim(); const p=s.split(/\s+/); return esc((((p[0]||'')[0]||'')+((p[1]||'')[0]||'')).toUpperCase())||'?'; }
+function fbRender(){
+  const comp=$('pfb-compose'),list=$('pfb-list'); if(!comp||!list) return;
+  comp.innerHTML=`<div class="pfb-compose"><div class="pfb-av">${fbInitials('',D.email)}</div>
+    <div class="pfb-main"><textarea id="pfb-text" maxlength="4000" placeholder="Share an update, edit request or idea about this dashboard…">${esc(FB_DRAFT)}</textarea>
+      <div class="pfb-row"><button type="button" class="pfb-rec" id="pfb-rec"><span class="dot"></span><span class="lbl">Record</span></button><span class="pfb-time" id="pfb-time"></span><span id="pfb-preview"></span>
+        <button type="button" class="pfb-post" id="pfb-post">Post</button></div></div></div>`;
+  $('pfb-text').addEventListener('input',e=>{ FB_DRAFT=e.target.value; });
+  $('pfb-rec').onclick=fbToggleRec; $('pfb-post').onclick=fbPost;
+  if(fbBlob){ $('pfb-preview').innerHTML=`<audio controls src="${URL.createObjectURL(fbBlob)}"></audio>`; }
+  const me=String(D.email||'').toLowerCase(), team=D.viewer==='team';
+  list.innerHTML=!FB_LOADED?'<div class="pfb-empty">Loading…</div>':FB.length?FB.map(o=>`<div class="pfb-item"><div class="pfb-av">${fbInitials(o.author_name,o.author_email)}</div>
+    <div class="pfb-main"><div class="pfb-top"><span class="pfb-name">${esc(o.author_name||o.author_email)}</span><span class="pfb-when">${esc(new Date(o.created_at).toLocaleString('en-AU'))}</span>${(team||String(o.author_email).toLowerCase()===me)?`<button type="button" class="pfb-del" data-id="${esc(o.id)}" title="Delete">✕</button>`:''}</div>
+    ${o.body?`<div class="pfb-body">${esc(o.body)}</div>`:''}<div class="pfb-audio" data-audio="${esc(o.audio_path||'')}"></div></div></div>`).join('')
+    :'<div class="pfb-empty">No updates yet. Be the first to post.</div>';
+  list.querySelectorAll('.pfb-audio[data-audio]').forEach(async el=>{ const p=el.getAttribute('data-audio'); if(!p) return;
+    const {data}=await sb.storage.from(FB_BUCKET).createSignedUrl(p,3600); if(data&&data.signedUrl) el.innerHTML=`<audio controls src="${data.signedUrl}"></audio>`; });
+  list.querySelectorAll('.pfb-del[data-id]').forEach(b=>b.onclick=()=>fbDelete(b.dataset.id));
+}
+function fbRecLabel(on){ const b=$('pfb-rec'); if(!b) return; b.classList.toggle('on',on); b.querySelector('.lbl').textContent=on?'Stop':'Record'; }
+async function fbToggleRec(){
+  if(fbRec&&fbRec.state==='recording'){ fbStopRec(); return; }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    fbMime=['audio/webm','audio/mp4','audio/ogg'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t))||'';
+    fbRec=new MediaRecorder(stream,fbMime?{mimeType:fbMime}:undefined); fbMime=fbRec.mimeType||fbMime||'audio/webm';
+    const parts=[]; fbRec.ondataavailable=e=>{ if(e.data&&e.data.size) parts.push(e.data); };
+    fbRec.onstop=()=>{ stream.getTracks().forEach(t=>t.stop()); if(parts.length){ fbBlob=new Blob(parts,{type:fbMime}); const pv=$('pfb-preview'); if(pv) pv.innerHTML=`<audio controls src="${URL.createObjectURL(fbBlob)}"></audio>`; } };
+    fbRec.start(); fbStart=Date.now(); fbRecLabel(true);
+    fbTimer=setInterval(()=>{ const s=Math.round((Date.now()-fbStart)/1000); const t=$('pfb-time'); if(t) t.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; },500);
+  }catch(err){ const t=$('pfb-time'); if(t) t.textContent='Microphone access was blocked'; }
+}
+function fbStopRec(){ if(fbTimer){ clearInterval(fbTimer); fbTimer=null; } if(fbRec&&fbRec.state==='recording') fbRec.stop(); fbRecLabel(false); }
+async function fbPost(){
+  const btn=$('pfb-post'), t=$('pfb-time'); btn.disabled=true; btn.textContent='Posting…';
+  fbStopRec(); await new Promise(r=>setTimeout(r,250));
+  const body=($('pfb-text').value||'').trim();
+  if(!body&&!fbBlob){ btn.disabled=false; btn.textContent='Post'; t.textContent='Type or record something first'; return; }
+  let path=null;
+  try{
+    if(fbBlob){ const ext=fbMime.includes('mp4')?'mp4':fbMime.includes('ogg')?'ogg':'webm';
+      path=`${D.slug}/${crypto.randomUUID()}.${ext}`;
+      const up=await sb.storage.from(FB_BUCKET).upload(path,fbBlob,{contentType:fbMime.split(';')[0]||'audio/webm'}); if(up.error) throw up.error; }
+    const {error}=await sb.rpc('pa_feedback_add',{p_slug:D.slug,p_body:body||null,p_audio_path:path}); if(error) throw error;
+    FB_DRAFT=''; fbBlob=null; await fbLoad();
+  }catch(err){ console.warn('feedback post',err&&err.message); if(path) await sb.storage.from(FB_BUCKET).remove([path]);
+    btn.disabled=false; btn.textContent='Post'; t.textContent='Could not post, please try again'; }
+}
+async function fbDelete(id){
+  if(!confirm('Delete this update?')) return;
+  const {data,error}=await sb.rpc('pa_feedback_delete',{p_id:id});
+  if(error){ alert('Could not delete: '+error.message); return; }
+  if(data) await sb.storage.from(FB_BUCKET).remove([data]);
+  await fbLoad();
+}
 </script>
 </body>
 </html>
