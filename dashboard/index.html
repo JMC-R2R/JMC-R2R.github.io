@@ -1627,6 +1627,61 @@ window.addEventListener('message',async e=>{
     const now=rvCur(); f.contentWindow.postMessage({type:'r2r-review-state',state:rvState(now)},'*'); rvLog(now);
   }
 });
+
+/* ---------- Month chips (added 11/11/2026) ----------
+   One chip per month from launch (or reporting_from) to now, next to "Since launch". A past month swaps in that
+   month's figures from pa_client_dashboard_month (same access rule as pa_client_dashboard); the current month and
+   "Since launch" use the figures the page loaded with. Wording that says "this month" or "last 30 days" follows the
+   chosen month. Added without changing any existing line: it wraps renderMonths, P, callout, momBand and renderAll. */
+const M_FIELDS=['month','totals','prev','days_this_month','by_campaign','daily','daily_by_campaign','actions'];
+let M_CUR=null,M_SEL=null,M_BUSY=false;const M_CACHE={};
+const mKey=d=>String(d||'').slice(0,7);
+const mName=(k,yr)=>new Date(k+'-01T00:00:00').toLocaleDateString('en-AU',yr?{month:'short',year:'2-digit'}:{month:'long'});
+function mPast(){ return !!(M_CUR&&VIEW==='month'&&M_SEL&&M_SEL!==mKey(M_CUR.month)); }
+function mList(){
+  const cur=mKey(M_CUR.month), start=mKey(D.reporting_from||D.launch_date||M_CUR.month);
+  const out=[]; let y=+start.slice(0,4), m=+start.slice(5,7);
+  for(let i=0;i<60;i++){ const k=y+'-'+String(m).padStart(2,'0'); if(k>cur) break; out.push(k); m++; if(m>12){m=1;y++;} }
+  return out.length?out:[cur];
+}
+function mSet(k){ const src=M_CACHE[k]; M_FIELDS.forEach(f=>{ if(src&&f in src) D[f]=src[f]; }); M_SEL=k; }
+async function mPick(v){
+  if(M_BUSY) return;
+  if(v==='launch'){ VIEW='launch'; mSet(mKey(M_CUR.month)); renderMonths(); renderAll(); return; }
+  if(!M_CACHE[v]){
+    M_BUSY=true; const b=document.querySelector('#months .mchip[data-v="'+v+'"]'); if(b) b.style.opacity='.5';
+    const {data,error}=await sb.rpc('pa_client_dashboard_month',{p_slug:D.slug,p_month:v+'-01'});
+    M_BUSY=false; if(b) b.style.opacity='';
+    if(error||!data){ console.warn('month',error&&error.message); return; }
+    M_CACHE[v]=data;
+  }
+  VIEW='month'; mSet(v); renderMonths(); renderAll();
+}
+const mBaseRenderMonths=renderMonths;
+renderMonths=function(){
+  if(DUMMY||!D||!D.month){ mBaseRenderMonths(); return; }
+  if(!M_CUR){ M_CUR={}; M_FIELDS.forEach(f=>M_CUR[f]=D[f]); M_CACHE[mKey(D.month)]=M_CUR; M_SEL=mKey(D.month); }
+  const canLaunch=!!(D.launch_totals&&D.launch_date);
+  VIEW=VIEW||(canLaunch&&Number(M_CUR.days_this_month||0)<7?'launch':'month');
+  const list=mList(), yrs=new Set(list.map(k=>k.slice(0,4))).size>1;
+  const chips=[];
+  if(canLaunch) chips.push(['launch','Since launch '+new Date(D.launch_date+'T00:00:00').toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit'})]);
+  list.forEach(k=>chips.push([k,mName(k,yrs)]));
+  const on=VIEW==='launch'?'launch':(M_SEL||mKey(M_CUR.month));
+  $('months').innerHTML=chips.map(([k,l])=>`<button class="mchip" aria-pressed="${k===on}" data-v="${k}">${esc(l)}</button>`).join('');
+  $('months').querySelectorAll('.mchip').forEach(b=>b.addEventListener('click',()=>mPick(b.dataset.v)));
+};
+const mBaseP=P;
+P=function(){ const r=mBaseP(); if(mPast()) r.label=mName(M_SEL); return r; };
+const mBaseCallout=callout;
+callout=function(){ const s=mBaseCallout(); return mPast()?s.replace('So far in ','In '):s; };
+const mBaseMomBand=momBand;
+momBand=function(){ const s=mBaseMomBand(); if(!mPast()) return s;
+  const prev=new Date(M_SEL+'-01T00:00:00'); prev.setMonth(prev.getMonth()-1);
+  return s.replace('This month against last month.',mName(M_SEL)+' against '+prev.toLocaleDateString('en-AU',{month:'long'})+'.'); };
+const mBaseRenderAll=renderAll;
+renderAll=function(){ mBaseRenderAll();
+  if(mPast()) document.querySelectorAll('.ch3sub').forEach(el=>{ el.textContent=el.textContent.replace('Last 30 days',mName(M_SEL)); }); };
 </script>
 </body>
 </html>
