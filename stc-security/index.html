@@ -295,8 +295,9 @@ table.cmp td:first-child{color:var(--ink-2)}
 .spark-lab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
 .tabs{position:sticky;top:0;z-index:5;background:var(--ground);border-bottom:1px solid var(--line);margin-inline:-20px;padding-inline:20px}
 .tabs-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
-.tablist{display:flex;gap:4px}
-.tab{font:inherit;font-weight:800;font-size:14.5px;background:none;border:0;border-bottom:3px solid transparent;color:var(--ink-2);padding:14px 12px 11px;cursor:pointer}
+.tablist{display:flex;gap:4px;min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.tablist::-webkit-scrollbar{display:none}
+.tab{flex:none;white-space:nowrap;font:inherit;font-weight:800;font-size:14.5px;background:none;border:0;border-bottom:3px solid transparent;color:var(--ink-2);padding:14px 12px 11px;cursor:pointer}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--stc)}
 .tab:focus-visible{outline:2px solid var(--r2r);outline-offset:-2px}
 .fresh{font-family:var(--mono);font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:8px}
@@ -306,6 +307,40 @@ table.cmp td:first-child{color:var(--ink-2)}
 .adn small{display:block;font-weight:400;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
 .tag{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 6px;border-radius:3px;background:var(--stc-soft);color:var(--ink);white-space:nowrap}
 .note{font-size:13px;color:var(--ink-3);max-width:80ch}
+.soc-plats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
+.soc-card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:4px}
+.soc-card.off{border-style:dashed}
+.soc-card h3{font-size:15px;font-weight:800;margin:0 0 4px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.soc-card .v{font-size:32px;font-weight:900;letter-spacing:-.02em;line-height:1.1}
+.soc-card .s{color:var(--ink-2);font-size:13.5px}
+.soc-h{font-size:clamp(20px,2.4vw,24px);font-weight:800;margin:0 0 14px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.soc-h a{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--r2r);text-decoration:none}
+.soc-h a:hover{text-decoration:underline}
+.soc-chart{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-top:16px}
+.soc-chart .eyebrow{margin:0 0 10px;font-weight:400}
+.soc-sub{margin:20px 0 10px;font-weight:400}
+table.soc-t{min-width:720px}
+table.soc-t th{position:static;cursor:default}
+table.soc-t td a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+table.soc-t td a:hover{text-decoration-color:var(--r2r)}
+.soc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px}
+.soc-cr{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:flex;flex-direction:column;color:var(--ink);min-width:0}
+.soc-cr .b a{color:var(--r2r);text-decoration:none;font-family:var(--mono);font-size:11.5px}
+.soc-cr:hover{border-color:var(--r2r)}
+.soc-cr .im{height:470px;background:#fff;display:flex;align-items:center;justify-content:center;color:#555;font-size:13px;position:relative;overflow:hidden}
+.soc-cr .im.ph{height:120px;background:var(--line);color:var(--ink-3)}
+.soc-cr iframe{border:0;width:100%;height:100%;display:block}
+.soc-cr img{width:100%;height:100%;object-fit:cover;display:block}
+.soc-cr .k{position:absolute;top:8px;left:8px}
+.soc-cr .b{padding:10px;font-size:12.5px;display:flex;flex-direction:column;gap:4px}
+.soc-cr .t{color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.soc-cr .m{font-family:var(--mono);font-size:11.5px}
+table.soc-m{min-width:560px}
+table.soc-m td.grp{font-weight:800;color:var(--ink);padding-top:14px}
+.soc-m .up{color:#3bd62b;font-family:var(--mono);font-size:11px;display:block}
+.soc-m .dn{color:var(--stc);font-family:var(--mono);font-size:11px;display:block}
+.soc-m .eq{color:var(--ink-3);font-family:var(--mono);font-size:11px;display:block}
+.soc-more{font:inherit;font-family:var(--mono);font-size:12px;background:none;border:0;color:var(--r2r);cursor:pointer;padding:8px 0 0}
 .excluded{margin-top:12px;font-size:13px;color:var(--ink-2)}
 footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3);display:flex;flex-direction:column;gap:6px}
 .empty{padding:28px;text-align:center;color:var(--ink-2)}
@@ -513,6 +548,7 @@ table.cr{min-width:1180px}
     <button class="tab" role="tab" id="tb-overview" aria-controls="pn-overview" aria-selected="true" type="button">Overview</button>
     <button class="tab" role="tab" id="tb-launch" aria-controls="pn-launch" aria-selected="false" type="button" tabindex="-1">Suburb launch</button>
     <button class="tab" role="tab" id="tb-ads" aria-controls="pn-ads" aria-selected="false" type="button" tabindex="-1">Ads &amp; creative</button>
+    <button class="tab" role="tab" id="tb-social" aria-controls="pn-social" aria-selected="false" type="button" tabindex="-1">Socials</button>
     <button class="tab" role="tab" id="tb-next" aria-controls="pn-next" aria-selected="false" type="button" tabindex="-1">What's next</button>
   </div>
   <div class="fresh" id="fresh"><i></i><span>Checking last refresh…</span></div>
@@ -647,6 +683,40 @@ table.cr{min-width:1180px}
 </section>
 
 </div>
+<div role="tabpanel" id="pn-social" aria-labelledby="tb-social" hidden>
+<section aria-labelledby="so-h">
+  <div class="ov-top"><h2 id="so-h">Socials</h2><div class="rng" role="group" aria-label="Date range" id="socRng"><button type="button" data-r="7">7 days</button><button type="button" data-r="14">14 days</button><button type="button" data-r="30">30 days</button><button type="button" data-r="all">All time</button></div></div>
+  <p class="ov-meta"><span id="socLab"></span></p>
+  <p class="ov-sum" id="socSum">Loading…</p>
+  <div class="soc-plats" id="socPlats" style="margin-top:18px"></div>
+</section>
+<section id="socMom" aria-labelledby="som-h" style="margin-top:30px" hidden>
+  <h2 class="soc-h" id="som-h">Month on month</h2>
+  <div id="socMomT"></div>
+  <p class="note" id="socMomN" style="margin-top:10px"></p>
+</section>
+<section id="socIg" aria-labelledby="soig-h" style="margin-top:30px" hidden>
+  <h2 class="soc-h" id="soig-h">Instagram <a href="https://www.instagram.com/stc.security/" target="_blank" rel="noopener">@stc.security ↗</a></h2>
+  <div class="kpis" id="socIgK"></div>
+  <div class="soc-chart"><h3 class="eyebrow">Reach by day</h3><div id="socIgC"></div></div>
+  <h3 class="eyebrow soc-sub">Creatives published in this period, by reach</h3>
+  <div id="socIgG"></div>
+  <h3 class="eyebrow soc-sub">All post figures</h3>
+  <div id="socIgP"></div>
+  <p class="note" id="socIgN" style="margin-top:10px"></p>
+</section>
+<section id="socFb" aria-labelledby="sofb-h" style="margin-top:30px" hidden>
+  <h2 class="soc-h" id="sofb-h">Facebook <a href="https://www.facebook.com/stc.security" target="_blank" rel="noopener">stc.security ↗</a></h2>
+  <div class="kpis" id="socFbK"></div>
+  <div class="soc-chart"><h3 class="eyebrow">Organic impressions by day</h3><div id="socFbC"></div></div>
+  <h3 class="eyebrow soc-sub">Creatives published in this period, by reach</h3>
+  <div id="socFbG"></div>
+  <h3 class="eyebrow soc-sub">All post figures</h3>
+  <div id="socFbP"></div>
+  <p class="note" id="socFbN" style="margin-top:10px"></p>
+</section>
+<p class="note" style="margin-top:26px">Reporting only: these are STC's own accounts, and this tab shows how they are tracking.</p>
+</div>
 <div role="tabpanel" id="pn-next" aria-labelledby="tb-next" hidden>
 <section aria-labelledby="nx-h">
   <div class="nx-head"><h2 id="nx-h">What's next: Phase 2</h2><span class="eyebrow">From December 2026 · 60 to 90 days</span></div>
@@ -683,7 +753,6 @@ table.cr{min-width:1180px}
     <div class="g gr"><div class="gl"><b>5</b>App download campaign</div><div class="bar" style="grid-column:7/15"></div></div>
     <div class="g gr"><div class="gl"><b>6</b>CAASie billboards</div><div class="bar cz" style="grid-column:7/15"></div></div>
     <div class="glg"><span><i style="background:var(--stc)"></i>Meta ads</span><span><i style="background:var(--stc-soft);border:1px solid var(--stc)"></i>Ads continue</span><span><i style="background:var(--warn)"></i>Meeting / checkpoint</span><span><i style="background:var(--r2r)"></i>App setup</span><span><i style="background:#3bd62b"></i>CAASie</span><span><i style="background:#8b7cf6"></i>Website</span></div>
-  </div>
   </div>
   <ol class="tl">
     <li><span class="dot">1</span><div class="card">
@@ -959,6 +1028,109 @@ function renderCreative(){
   $("crNote").textContent="Figures combine every campaign the video runs in. Green marks the best rate among videos with at least 1,000 impressions; smaller samples aren't ranked. Drop-off bars show the share of viewers still watching at each point of the video. Each ad is named by its opening line (the hook) and grouped by the idea behind it (the concept); the small grey text is the ad's name in Meta.";
 }
 
+/* Socials tab. Every figure comes from the social doc, refreshed daily from Windsor. TikTok shows a placeholder until its doc section exists. */
+let socialDoc=null; const socAll={ig:false,fb:false};
+function renderSocial(){
+  document.querySelectorAll("#socRng button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.r===ovR)));
+  const S=socialDoc, plats=$("socPlats");
+  const offCard=(name,msg)=>'<div class="soc-card off"><h3>'+name+'<span class="pill build">Not connected yet</span></h3><div class="s">'+msg+'</div></div>';
+  const TKMSG="Followers, views and posts will show here once STC's TikTok account is connected. TikTok ad results are on the Overview and Ads &amp; creative tabs.";
+  if(!S||!S.ig||!S.fb){
+    $("socLab").textContent=""; $("socSum").textContent="Social data isn't loaded yet."; plats.innerHTML=offCard("TikTok",TKMSG);
+    $("socIg").hidden=true; $("socFb").hidden=true; $("socMom").hidden=true; return;
+  }
+  const back=(iso,n)=>{const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()-n);return isoL(d)};
+  const to=S.asOf, isAll=ovR==="all", n=isAll?null:+ovR;
+  const igD=S.ig.days||[], fbD=(S.fb.days||[]);
+  const active=[...igD.filter(x=>x.r>0||x.v>0),...fbD.filter(x=>x.oi>0)].map(x=>x.d).sort();
+  const first=active[0]||to, from=isAll?first:back(to,n-1), pt=isAll?null:back(from,1), pf=isAll?null:back(pt,n-1);
+  const inR=d=>d>=from&&d<=to, inP=d=>!isAll&&d>=pf&&d<=pt, sum=(a,k)=>a.reduce((t,x)=>t+(x[k]||0),0);
+  const igR=igD.filter(x=>inR(x.d)), igP=igD.filter(x=>inP(x.d)), fbR=fbD.filter(x=>inR(x.d)), fbP=fbD.filter(x=>inP(x.d));
+  const igPosts=(S.ig.posts||[]).filter(x=>inR(x.d)), fbPosts=(S.fb.posts||[]).filter(x=>inR(x.d));
+  const chg=(cur,prev)=>{ if(isAll) return "Since "+dmy(from); if(pf<first) return "No earlier "+n+" days to compare"; if(!prev) return "None in the "+n+" days before"; const c=Math.round((cur-prev)/prev*100); return Math.abs(c)<1?"Same as the "+n+" days before":(c>0?"Up ":"Down ")+Math.abs(c)+"% on the "+n+" days before"; };
+  const inter=x=>(x.l||0)+(x.c||0)+(x.sh||0)+(x.s||0);
+  /* followers */
+  const igF=S.ig.followers, fbLast=fbD.length?fbD[fbD.length-1]:null, fbF=fbLast?fbLast.f:null;
+  const igHas=igD.filter(x=>x.f!=null), igFrom=igHas.length?igHas[0].d:null, igNew=sum(igR.filter(x=>x.f!=null),"f"), igPartial=igFrom&&from<igFrom;
+  const fbBefore=fbD.filter(x=>x.d<from).slice(-1)[0], fbStart=fbBefore?fbBefore.f:(fbR.length?fbR[0].f:null), fbEnd=fbR.length?fbR[fbR.length-1].f:null, fbNew=fbStart!=null&&fbEnd!=null?fbEnd-fbStart:null;
+  const signed=v=>(v>0?"+":"")+n0(v);
+  /* header */
+  $("socLab").textContent=(isAll?"All time: "+dmy(from)+" to "+dmy(to):dmy(from)+" to "+dmy(to)+", "+n+" full days")+"."+(()=>{const t=S.refreshedAt?new Date(S.refreshedAt):null; if(!t||isNaN(t)) return ""; const hrs=(Date.now()-t)/36e5; return hrs>30?" Overdue: social data last refreshed "+t.toLocaleDateString("en-AU",{timeZone:"Australia/Melbourne"})+".":" Updates daily.";})();
+  const best=[...igPosts.map(x=>({...x,pl:"Instagram"})),...fbPosts.map(x=>({...x,pl:"Facebook"}))].sort((a,b)=>b.r-a.r)[0];
+  const SUM=["Instagram has <strong>"+n0(igF)+" followers</strong> and Facebook has <strong>"+n0(fbF)+"</strong>.",
+    n0(igPosts.length)+" post"+(igPosts.length===1?"":"s")+" went out on Instagram and "+n0(fbPosts.length)+" on Facebook in this period."];
+  if(best) SUM.push("The top post reached <strong>"+n0(best.r)+" people</strong> on "+best.pl+": “"+esc(best.t||"No caption")+"”");
+  $("socSum").innerHTML=SUM.join(" ");
+  /* platform cards */
+  const card=(name,v,l,s)=>'<div class="soc-card"><h3>'+name+'</h3><div class="eyebrow">'+l+'</div><div class="v num">'+v+'</div><div class="s">'+s+'</div></div>';
+  plats.innerHTML=card("Instagram",n0(igF),"Followers",signed(igNew)+" new "+(igPartial?"since "+dmy(igFrom):"in this period")+" · "+n0(igPosts.length)+" posts")
+    +card("Facebook",fbF==null?"Not available":n0(fbF),"Followers",(fbNew==null?"":signed(fbNew)+" net in this period · ")+n0(fbPosts.length)+" posts")
+    +offCard("TikTok",TKMSG);
+  /* tiles */
+  const tiles=(id,arr)=>{const K=$(id);K.innerHTML="";arr.forEach(([v,l,sub],i)=>{const d=document.createElement("div");d.className="kpi"+(i===0?" lead":"");d.innerHTML='<div class="eyebrow"></div><div class="v num"></div><div class="s"></div>';d.children[0].textContent=l;d.children[1].textContent=v;d.children[2].textContent=sub;K.appendChild(d)})};
+  tiles("socIgK",[[n0(sum(igR,"r")),"Reach",chg(sum(igR,"r"),sum(igP,"r"))],[n0(sum(igR,"v")),"Views",chg(sum(igR,"v"),sum(igP,"v"))],[n0(sum(igR,"e")),"Interactions",chg(sum(igR,"e"),sum(igP,"e"))],[n0(igPosts.length),"Posts published",isAll?"Since "+dmy(from):"In this period"]]);
+  const fbInt=fbPosts.reduce((t,x)=>t+inter(x),0);
+  tiles("socFbK",[[n0(sum(fbR,"oi")),"Organic impressions",chg(sum(fbR,"oi"),sum(fbP,"oi"))],[n0(fbInt),"Post interactions","Reactions, comments and shares"],[n0(sum(fbR,"pv")),"Page visits",chg(sum(fbR,"pv"),sum(fbP,"pv"))],[n0(fbPosts.length),"Posts published",isAll?"Since "+dmy(from):"In this period"]]);
+  /* daily charts */
+  const chart=(id,rows,k,unit)=>{const T=$(id);T.innerHTML="";if(!rows.length||!rows.some(x=>x[k]>0)){T.innerHTML='<div class="empty">Nothing recorded in this period.</div>';return}
+    const mx=Math.max(1,...rows.map(x=>x[k]||0)),sp=document.createElement("div");sp.className="spark";sp.setAttribute("role","img");
+    const top=[...rows].sort((a,b)=>(b[k]||0)-(a[k]||0))[0];sp.setAttribute("aria-label",unit+" by day, "+dmy(rows[0].d)+" to "+dmy(rows[rows.length-1].d)+". Busiest day "+dmy(top.d)+": "+n0(top[k]));
+    rows.forEach(x=>{const b=document.createElement("i");b.style.height=Math.max(2,(x[k]||0)/mx*70)+"px";b.title=dmy(x.d)+": "+n0(x[k]||0)+" "+unit.toLowerCase();sp.appendChild(b)});
+    const lb=document.createElement("div");lb.className="spark-lab";lb.innerHTML="<span></span><span></span>";lb.children[0].textContent=dmy(rows[0].d).slice(0,5);lb.children[1].textContent=dmy(rows[rows.length-1].d).slice(0,5);
+    const tot=document.createElement("div");tot.className="s";tot.style.cssText="color:var(--ink-2);font-size:13px;margin-top:6px";tot.textContent="Busiest day "+dmy(top.d)+": "+n0(top[k])+".";T.append(sp,lb,tot)};
+  chart("socIgC",igR,"r","Reach"); chart("socFbC",fbR,"oi","Organic impressions");
+  /* post tables */
+  const table=(id,key,posts,vLab)=>{const T=$(id);T.innerHTML="";if(!posts.length){T.innerHTML='<div class="empty">No posts published in this period.</div>';return}
+    const sorted=[...posts].sort((a,b)=>b.r-a.r),show=socAll[key]?sorted:sorted.slice(0,5);
+    const sv=key==="ig";
+    const rows=show.map(x=>'<tr><td class="num">'+dmy(x.d)+'</td><td><a href="'+esc(x.u||"#")+'" target="_blank" rel="noopener">'+esc(x.t||"No caption")+'</a></td><td>'+esc(x.k||"")+'</td><td class="r num">'+n0(x.r||0)+'</td><td class="r num">'+n0(x.v||0)+'</td><td class="r num">'+n0(x.l||0)+'</td><td class="r num">'+n0(x.c||0)+'</td><td class="r num">'+n0(x.sh||0)+'</td>'+(sv?'<td class="r num">'+n0(x.s||0)+'</td>':'<td class="r num">'+n0(x.cl||0)+'</td>')+'</tr>').join("");
+    T.innerHTML='<div class="scroll"><table class="soc-t"><thead><tr><th>Date</th><th>Post</th><th>Type</th><th class="r">Reach</th><th class="r">'+vLab+'</th><th class="r">'+(sv?"Likes":"Reactions")+'</th><th class="r">Comments</th><th class="r">Shares</th><th class="r">'+(sv?"Saves":"Clicks")+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    if(sorted.length>5){const b=document.createElement("button");b.type="button";b.className="soc-more";b.textContent=socAll[key]?"Show top 5":"Show all "+sorted.length+" posts";b.addEventListener("click",()=>{socAll[key]=!socAll[key];renderSocial()});T.appendChild(b)}};
+  table("socIgP","ig",igPosts,"Views"); table("socFbP","fb",fbPosts,"Impressions");
+  /* creative galleries: post image + headline figures, newest CDN link from the daily refresh */
+  const gal=(id,key,posts,iLab)=>{const G=$(id);G.innerHTML="";if(!posts.length){G.innerHTML='<div class="empty">No posts published in this period.</div>';return}
+    const sorted=[...posts].sort((a,b)=>b.r-a.r),show=socAll[key+"G"]?sorted:sorted.slice(0,6);
+    const igSrc=u=>{const m=/instagram\.com\/(p|reel|tv)\/([^/?#]+)/.exec(u||"");return m?"https://www.instagram.com/"+m[1]+"/"+m[2]+"/embed/":null};
+    const igAll=S.ig.posts||[];
+    const near=(a,b)=>Math.abs(new Date(a)-new Date(b))<=864e5;
+    const src=x=>{ if(key==="ig") return {s:igSrc(x.u)};
+      if(/facebook\.com\/reel\//.test(x.u||"")) return {s:"https://www.facebook.com/plugins/video.php?show_text=false&width=320&href="+encodeURIComponent(x.u)};
+      const tw=(x.t||"").trim().toLowerCase(); const twin=tw&&igAll.find(y=>(y.t||"").trim().toLowerCase()===tw&&near(y.d,x.d));
+      return twin?{s:igSrc(twin.u),note:"Same creative as Instagram"}:{s:null}; };
+    G.innerHTML='<div class="soc-grid">'+show.map(x=>{const e=src(x);return '<div class="soc-cr">'+(e.s?'<div class="im"><iframe loading="lazy" scrolling="no" title="'+esc((key==="ig"?"Instagram":"Facebook")+" post "+dmy(x.d))+'" src="'+esc(e.s)+'"></iframe></div>':'<div class="im ph">Preview not available from Facebook</div>')+'<div class="b"><div style="display:flex;justify-content:space-between;gap:8px"><span class="num" style="color:var(--ink-3);font-size:11.5px">'+dmy(x.d)+' · '+esc(x.k||"Post")+'</span><a href="'+esc(x.u||"#")+'" target="_blank" rel="noopener">Open ↗</a></div><div class="t">'+esc(x.t||"No caption")+'</div><div class="m">'+n0(x.r||0)+' reach · '+n0(x.v||0)+' '+(key==="ig"?"views":"impressions")+' · '+n0(inter(x))+' '+iLab+'</div>'+(e.note?'<div style="color:var(--ink-3);font-size:11.5px">'+e.note+'</div>':'')+'</div></div>'}).join("")+'</div>';
+    if(sorted.length>6){const b=document.createElement("button");b.type="button";b.className="soc-more";b.textContent=socAll[key+"G"]?"Show top 6":"Show all "+sorted.length+" creatives";b.addEventListener("click",()=>{socAll[key+"G"]=!socAll[key+"G"];renderSocial()});G.appendChild(b)}};
+  gal("socIgG","ig",igPosts,"interactions"); gal("socFbG","fb",fbPosts,"interactions");
+  /* month on month: independent of the range switcher. The current month runs to asOf and is compared with the same days of the previous month. */
+  (()=>{
+    const igPA=S.ig.posts||[], fbPA=S.fb.posts||[];
+    const agg=(f,t)=>{const ir=igD.filter(x=>x.d>=f&&x.d<=t), fr=fbD.filter(x=>x.d>=f&&x.d<=t), ip=igPA.filter(x=>x.d>=f&&x.d<=t), fp=fbPA.filter(x=>x.d>=f&&x.d<=t);
+      const iff=ir.filter(x=>x.f!=null), fEnd=fr.filter(x=>x.f!=null).slice(-1)[0], fB=fbD.filter(x=>x.d<f&&x.f!=null).slice(-1)[0]||fr.filter(x=>x.f!=null)[0];
+      return {igr:sum(ir,"r"),igv:sum(ir,"v"),ige:sum(ir,"e"),igf:(igFrom&&f>=igFrom&&iff.length)?sum(iff,"f"):null,igp:ip.length,igpi:ip.reduce((a,x)=>a+inter(x),0),
+        fbo:sum(fr,"oi"),fbv:sum(fr,"pv"),fbf:fEnd?fEnd.f:null,fbn:(fEnd&&fB)?fEnd.f-fB.f:null,fbp:fp.length,fbpi:fp.reduce((a,x)=>a+inter(x),0)}};
+    const ms=[];let c=first.slice(0,7);const last=to.slice(0,7);
+    while(c<=last){ms.push(c);const [y,m]=c.split("-").map(Number);c=m===12?(y+1)+"-01":y+"-"+String(m+1).padStart(2,"0")}
+    const mEnd=k=>{const [y,m]=k.split("-").map(Number);return isoL(new Date(y,m,0))};
+    const MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const cols=ms.map((k,i)=>{const f=k+"-01",e=mEnd(k),t=e<to?e:to,partial=t<e;let prev=null;
+      if(i>0){const pk=ms[i-1],pf=pk+"-01",pe=mEnd(pk),days=Math.round((new Date(t)-new Date(f))/864e5);const pd=new Date(pf+"T00:00:00");pd.setDate(pd.getDate()+days);const pt=isoL(pd)<pe?isoL(pd):pe;prev=agg(pf,pt)}
+      const [y,m]=k.split("-").map(Number);return {lab:MN[m-1]+" "+y+(partial?" (to "+dmy(t).slice(0,5)+")":""),a:agg(f,t),prev,partial}});
+    const ROWS=[["Instagram"],["Reach","igr"],["Views","igv"],["Interactions","ige"],["New followers","igf"],["Posts published","igp"],["Post interactions","igpi"],
+      ["Facebook"],["Organic impressions","fbo"],["Page visits","fbv"],["Followers (end of month)","fbf",1],["Net new followers","fbn"],["Posts published","fbp"],["Post interactions","fbpi"]];
+    const cell=(col,k,noChg)=>{const v=col.a[k];if(v==null)return '<td class="r num">–</td>';let ch="";
+      if(!noChg&&col.prev&&col.prev[k]!=null){const p=col.prev[k];if(p>0){const pc=Math.round((v-p)/p*100);ch=Math.abs(pc)<1?'<span class="eq">same</span>':'<span class="'+(pc>0?"up":"dn")+'">'+(pc>0?"▲ ":"▼ ")+Math.abs(pc)+'%</span>'}}
+      return '<td class="r num">'+n0(v)+ch+'</td>'};
+    const body=ROWS.map(r=>r.length===1?'<tr><td class="grp" colspan="'+(cols.length+1)+'">'+r[0]+'</td></tr>':'<tr><td>'+r[0]+'</td>'+cols.map(c=>cell(c,r[1],r[2])).join("")+'</tr>').join("");
+    $("socMomT").innerHTML='<div class="scroll"><table class="soc-t soc-m"><thead><tr><th>Metric</th>'+cols.map(c=>'<th class="r">'+esc(c.lab)+'</th>').join("")+'</tr></thead><tbody>'+body+'</tbody></table></div>';
+    const pc=cols[cols.length-1];
+    $("socMomN").textContent="Changes compare each month with the one before."+(pc&&pc.partial?" The current month runs to "+dmy(to)+" and is compared with the same days of last month, so it's a like-for-like read.":"")+" Post figures are lifetime totals for posts published that month."+(igFrom?" Instagram new followers are only available from "+dmy(igFrom)+".":"")+" This table doesn't change with the date range buttons.";
+    $("socMom").hidden=false;
+  })();
+  /* notes, derived from the same figures */
+  $("socIgN").textContent="Reach and views are each day's figures added up, so someone seen on two days counts twice. Instagram's account totals can include people who saw STC's content through Meta ads, and it doesn't split them out. Post figures are lifetime totals for posts published in this period."+(igPartial?" Instagram only provides new followers from "+dmy(igFrom)+".":"");
+  const pi=sum(fbR,"pi");
+  $("socFbN").textContent="Page reach isn't shown because it's mostly ads: only organic impressions count here."+(pi?" Meta ads added "+n0(pi)+" paid impressions on the page over the same days, reported on the Ads & creative tab.":"")+" Followers and page visits can include people who saw an ad first. Post figures are lifetime totals for posts published in this period.";
+  $("socIg").hidden=false; $("socFb").hidden=false;
+}
 function renderFresh(){
   const F=$("fresh"),S=spendDoc;if(!S)return;
   const t=S.refreshedAt?new Date(S.refreshedAt):null;
@@ -1106,7 +1278,7 @@ function renderOverview(){
 function isoL(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function progTxt(r){const m=Math.round(r.exp);return "about "+(m<1?"under 1":n0(m))+" expected member"+(m===1?"":"s")+" of the "+n0(r.target)+" needed"}
 function esc(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
-function showTab(id,focus){["overview","launch","ads","next"].forEach(k=>{const on=k===id,b=$("tb-"+k);b.setAttribute("aria-selected",on);b.tabIndex=on?0:-1;$("pn-"+k).hidden=!on;if(on&&focus)b.focus()});try{localStorage.setItem("stcTab",id)}catch(e){}}
+function showTab(id,focus){["overview","launch","ads","social","next"].forEach(k=>{const on=k===id,b=$("tb-"+k);b.setAttribute("aria-selected",on);b.tabIndex=on?0:-1;$("pn-"+k).hidden=!on;if(on&&focus)b.focus()});try{localStorage.setItem("stcTab",id)}catch(e){}}
 function render(){
   $("convOut").textContent=scen.conv+"%";
   const be=$("breakeven");
@@ -1220,13 +1392,13 @@ $("q").addEventListener("input",render);
 document.querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",()=>{const k=th.dataset.k; if(sortK===k) sortDir*=-1; else {sortK=k; sortDir=(k==="pc"||k==="name"||k==="weeks")?1:-1} render()}));
 
 bindInputs(); render();
-document.querySelectorAll("#rng button").forEach(b=>b.addEventListener("click",()=>{ovR=b.dataset.r; try{localStorage.setItem("stcRange",ovR)}catch(e){} try{renderOverview()}catch(e){}}));
-const TABS=["overview","launch","ads","next"];
+document.querySelectorAll("#rng button,#socRng button").forEach(b=>b.addEventListener("click",()=>{ovR=b.dataset.r; try{localStorage.setItem("stcRange",ovR)}catch(e){} try{renderOverview()}catch(e){} try{renderSocial()}catch(e){}}));
+const TABS=["overview","launch","ads","social","next"];
 TABS.forEach(k=>$("tb-"+k).addEventListener("click",()=>showTab(k)));
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{showTab(b.dataset.go);window.scrollTo({top:0,behavior:"smooth"})}));
 document.querySelector(".tablist").addEventListener("keydown",e=>{if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft")return;e.preventDefault();const i=TABS.findIndex(k=>$("tb-"+k).getAttribute("aria-selected")==="true");showTab(TABS[(i+(e.key==="ArrowRight"?1:TABS.length-1))%TABS.length],true)});
 /* Always open on the overview: it is the page a busy owner should land on. */
-if(location.hash==="#ads")showTab("ads"); else if(location.hash==="#launch")showTab("launch"); else if(location.hash==="#next")showTab("next");
+if(location.hash==="#ads")showTab("ads"); else if(location.hash==="#launch")showTab("launch"); else if(location.hash==="#social")showTab("social"); else if(location.hash==="#next")showTab("next");
 
 /* Data lives in Supabase behind RLS. The page never holds figures itself: every load goes
    through stc_launch_load(), which refuses any email not on STC's access list. */
@@ -1297,6 +1469,7 @@ async function boot(){
   setState("Changes save for everyone");
   db.doc("config/leads").onSnapshot(s=>{ leadsDoc=s.exists?s.data():null; if(!leadsDoc){$("kpis").innerHTML='<div class="empty">No lead data loaded yet.</div>';$("chart").innerHTML='<div class="empty">No lead data loaded yet.</div>';} render(); renderSpend(); });
   db.doc("config/settings").onSnapshot(s=>{ if(s.exists){ const d=s.data(); settings={...DEF,...d}; scen={conv:settings.conv,pace:settings.pace}; bindInputs(); } render(); });
+  db.doc("config/social").onSnapshot(s=>{ socialDoc=s.exists?s.data():null; try{renderSocial()}catch(e){console.error(e)} },()=>{});
   db.doc("config/thumbs").onSnapshot(s=>{ thumbsDoc=s.exists?s.data():null; try{renderCreative()}catch(e){} },()=>{});
   db.doc("config/audiences").onSnapshot(s=>{ audDoc=s.exists?s.data():null; try{renderAud()}catch(e){} },()=>{});
   db.doc("config/spend").onSnapshot(s=>{ spendDoc=s.exists?s.data():null; if(!spendDoc){$("spK").innerHTML='<div class="empty">No spend data loaded yet.</div>';$("spChart").innerHTML='<div class="empty">No spend data loaded yet.</div>';} renderSpend(); renderDemo(); renderCreative(); renderFresh(); renderOverview(); });
