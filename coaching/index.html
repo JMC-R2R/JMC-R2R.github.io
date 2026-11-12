@@ -102,8 +102,14 @@ table.inp .src{font-size:12px;color:var(--mute);max-width:520px}
 .seat b{display:block;font-size:13.5px}.seat span{font-size:12px;color:var(--mute)}
 .seat.vacant{border-style:dashed;background:var(--soft)}.seat.planned{border-style:dotted;opacity:.8}
 .orgbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 12px}
-.treewrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:16px;max-height:80vh}
-.tree{transform-origin:0 0;width:max-content;margin:0 auto}
+.treewrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:16px;max-height:80vh;cursor:grab;touch-action:pan-x pan-y}
+.treewrap.drag{cursor:grabbing;user-select:none}
+.treesizer{position:relative;margin:0 auto}
+.zoombar{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.zoombar button{background:#fff;border:0;padding:6px 11px;cursor:pointer;color:var(--ink2);font-weight:700;min-width:34px}
+.zoombar button:hover{background:var(--soft)}
+.zoombar .zv{font:12px var(--mono);color:var(--mute);min-width:52px;text-align:center;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:6px 4px}
+.tree{transform-origin:0 0;width:max-content;position:absolute;top:0;left:0}
 .tree ul{display:flex;justify-content:center;margin:0;padding:22px 0 0;position:relative}
 .tree>ul{padding-top:0}
 .tree li{list-style:none;position:relative;padding:22px 5px 0;display:flex;flex-direction:column;align-items:center}
@@ -167,7 +173,7 @@ var SB_URL="https://tjgrtrazyepvbcmmdhet.supabase.co", SB_KEY="sb_publishable_Fe
 var OWNER="jose@readytorank.com.au";
 var sb=supabase.createClient(SB_URL,SB_KEY);
 var $=function(id){return document.getElementById(id)};
-var ME=null, IS_OWNER=false, PROGS=[], CUR=null, TAB="answers", DATA={}, SCEN="base", ORGV="tree", ORGFIT=true;
+var ME=null, IS_OWNER=false, PROGS=[], CUR=null, TAB="answers", DATA={}, SCEN="base", ORGV="tree", ORGZ=null;
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function money(n,dp){if(n==null||isNaN(n))return "";var neg=n<0,a=Math.abs(n);var s="$"+a.toLocaleString("en-AU",{minimumFractionDigits:dp||0,maximumFractionDigits:dp||0});return neg?"("+s+")":s}
@@ -419,7 +425,7 @@ function tOrg(){
   var filled=seats.filter(function(s){return s.status==="filled"||s.status==="starting"}).length,vac=seats.filter(function(s){return s.status==="vacant"}).length,pl=seats.filter(function(s){return s.status==="planned"}).length;
   var h='<div class="card org"><h3>'+esc(S.title)+'</h3><div class="k">'+esc(S.data.source)+'</div><div class="stats"><div class="stat"><div class="v">'+filled+'</div><div class="l">Seats filled</div></div><div class="stat"><div class="v">'+vac+'</div><div class="l">Vacant (Jose covers)</div></div><div class="stat"><div class="v">'+pl+'</div><div class="l">Planned</div></div></div>';
   h+='<div class="orgbar"><div class="seg"><button type="button" data-ov="tree" class="'+(ORGV==="tree"?"on":"")+'">Family tree</button><button type="button" data-ov="fn" class="'+(ORGV==="fn"?"on":"")+'">By function</button></div>'+
-    (ORGV==="tree"?'<div class="seg"><button type="button" data-fit="1" class="'+(ORGFIT?"on":"")+'">Bird\'s-eye</button><button type="button" data-fit="0" class="'+(ORGFIT?"":"on")+'">Full size</button></div>':'')+
+    (ORGV==="tree"?'<div class="zoombar"><button type="button" data-z="out" title="Zoom out">−</button><span class="zv" id="zv">Fit</span><button type="button" data-z="in" title="Zoom in">+</button><button type="button" data-z="fit" title="Fit the whole team on screen" style="border-left:1px solid var(--line);font-weight:600">Fit</button><button type="button" data-z="100" title="Actual size" style="border-left:1px solid var(--line);font-weight:600">100%</button></div>':'')+
     '<div class="legend"><span><i style="border-top:3px solid var(--blue)"></i>Filled</span><span><i style="border-top:3px solid var(--ok)"></i>Starting</span><span><i style="border:1px dashed var(--warn);background:#FFFCF2"></i>Vacant (Jose covers)</span><span><i style="border:1px dotted var(--mute)"></i>Planned</span></div></div>';
   if(ORGV==="tree"){h+=orgTree(seats)+cmtBlock("snapshot_key","org_chart")+'</div>';$("tab").innerHTML=h;wireOrg();return}
   keys.forEach(function(k){h+='<div class="fn"><h4>'+esc(k)+'</h4>'+groups[k].map(function(s){var rt=s.reports_to&&byId[s.reports_to]?byId[s.reports_to].role_title:"";
@@ -439,16 +445,32 @@ function orgTree(seats){
     var allLeaves=c.every(function(x){return !(kids[x.seat_id]||[]).length});
     if(allLeaves&&c.length>=3)return '<li>'+node(s)+'<div class="stack">'+c.map(node).join("")+'</div></li>';
     return '<li>'+node(s)+'<ul>'+c.map(li).join("")+'</ul></li>'}
-  return '<div class="treewrap" id="treewrap"><div class="tree" id="tree"><ul>'+roots.map(li).join("")+'</ul></div></div><p class="note">Lines show who reports to whom. Where one person holds two seats (for example Jhen, Jigar) they appear in both.</p>';
+  return '<div class="treewrap" id="treewrap"><div class="treesizer" id="treesizer"><div class="tree" id="tree"><ul>'+roots.map(li).join("")+'</ul></div></div></div><p class="note">Lines show who reports to whom. Where one person holds two seats (for example Jhen, Jigar) they appear in both. Zoom with − and +, pinch on a trackpad or phone, or hold Ctrl and scroll. Drag to move around.</p>';
 }
-function fitTree(){var w=$("treewrap"),t=$("tree");if(!w||!t)return;t.style.transform="";w.style.height="";
-  if(!ORGFIT)return;var avail=w.clientWidth-32,full=t.scrollWidth;var k=Math.min(1,avail/full);
-  t.style.transform="scale("+k+")";w.style.height=(t.offsetHeight*k+34)+"px";w.style.overflow="hidden"}
+function fitScale(){var w=$("treewrap"),t=$("tree");return Math.min(1,(w.clientWidth-32)/t.scrollWidth)}
+function applyZoom(cx,cy){var w=$("treewrap"),t=$("tree"),z=$("treesizer");if(!w||!t)return;
+  var old=parseFloat(t.dataset.k||"1"),k=ORGZ==null?fitScale():ORGZ;
+  var ax=(cx==null?w.clientWidth/2:cx),ay=(cy==null?w.clientHeight/2:cy),px=(w.scrollLeft+ax)/old,py=(w.scrollTop+ay)/old;
+  t.style.transform="scale("+k+")";t.dataset.k=k;z.style.width=(t.scrollWidth*k)+"px";z.style.height=(t.offsetHeight*k)+"px";
+  if(ORGZ!=null){w.scrollLeft=px*k-ax;w.scrollTop=py*k-ay}
+  var zv=$("zv");if(zv)zv.textContent=ORGZ==null?"Fit "+Math.round(k*100)+"%":Math.round(k*100)+"%"}
+function zoomBy(f,cx,cy){var cur=ORGZ==null?fitScale():ORGZ;ORGZ=Math.max(.25,Math.min(2.5,cur*f));applyZoom(cx,cy)}
+function fitTree(){applyZoom()}
 function wireOrg(){wireComments();
   Array.prototype.forEach.call(document.querySelectorAll("[data-ov]"),function(b){b.onclick=function(){ORGV=b.dataset.ov;render()}});
-  Array.prototype.forEach.call(document.querySelectorAll("[data-fit]"),function(b){b.onclick=function(){ORGFIT=b.dataset.fit==="1";render()}});
-  if(ORGV==="tree"){fitTree();if(!ORGFIT)$("treewrap").style.overflow="auto"}}
-window.addEventListener("resize",function(){if(TAB==="org"&&ORGV==="tree")fitTree()});
+  if(ORGV!=="tree")return;
+  Array.prototype.forEach.call(document.querySelectorAll("[data-z]"),function(b){b.onclick=function(){var z=b.dataset.z;
+    if(z==="in")zoomBy(1.25);else if(z==="out")zoomBy(0.8);else if(z==="fit"){ORGZ=null;applyZoom()}else{ORGZ=1;applyZoom()}}});
+  var w=$("treewrap");applyZoom();
+  w.addEventListener("wheel",function(e){if(!e.ctrlKey)return;e.preventDefault();var r=w.getBoundingClientRect();zoomBy(e.deltaY<0?1.1:0.9,e.clientX-r.left,e.clientY-r.top)},{passive:false});
+  var d=null;w.addEventListener("pointerdown",function(e){if(e.pointerType!=="mouse"||e.button!==0)return;d={x:e.clientX,y:e.clientY,l:w.scrollLeft,t:w.scrollTop};w.classList.add("drag")});
+  window.addEventListener("pointermove",function(e){if(!d)return;w.scrollLeft=d.l-(e.clientX-d.x);w.scrollTop=d.t-(e.clientY-d.y)});
+  window.addEventListener("pointerup",function(){if(d){d=null;w.classList.remove("drag")}});
+  var pd=null;w.addEventListener("touchmove",function(e){if(e.touches.length!==2)return;e.preventDefault();var a=e.touches[0],b=e.touches[1],dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    if(pd){var r=w.getBoundingClientRect();zoomBy(dist/pd,(a.clientX+b.clientX)/2-r.left,(a.clientY+b.clientY)/2-r.top)}pd=dist},{passive:false});
+  w.addEventListener("touchend",function(){pd=null});
+  w.addEventListener("gesturestart",function(e){e.preventDefault()});}
+window.addEventListener("resize",function(){if(TAB==="org"&&ORGV==="tree"&&ORGZ==null)applyZoom()});
 
 /* ---------- about ---------- */
 function tAbout(){
