@@ -1206,6 +1206,7 @@
   .qcrow .qcauto ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:3px}
   .qcrow .qa-ok{color:#1c7c54;font-weight:700}.qcrow .qa-bad{color:#b42318;font-weight:700}.qcrow .qa-na{color:var(--muted)}
   .qcrow .qclist{display:grid;gap:6px;padding-top:8px;border-top:1px solid var(--line)}
+  .qcsave{color:#1c7c54;font-style:italic}.qcsave:empty{display:none}.qcsave.qcsave-bad{color:#b42318;font-style:normal;font-weight:700}
   .qcrow .qcitem{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
   .qcrow .qcitem input{margin-top:3px;width:16px;height:16px;flex:none}
   .qcrow .btn.qcok:disabled{opacity:.45;cursor:not-allowed}
@@ -2107,7 +2108,26 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('gbpMod
    Author and name are set by ch_add_comment from the session, never sent by the page. */
 let ARTICLES = {}, OPENCOMMENTS = {}, ART = null, ARTCOMMENTS = [], PENDINGSEL = null;
 // QC checklist (Jhen 10/11/2026): the 10 human ticks per blog, the automatic check, and unsaved ticks.
-let QCCHECKS = {}, AUTOCHECKS = {}, QCITEMS = [], QCTICKS = {}, QCTICKVER = {}, QCNOTES = {};
+let QCCHECKS = {}, AUTOCHECKS = {}, QCITEMS = [], QCTICKS = {}, QCTICKVER = {}, QCNOTES = {}, QCDRAFTS = {};
+/* QC autosave (Janice 12/11/2026): every tick and the QC note save as a draft a moment after the change,
+   so a refresh keeps them. Drafts sit in ch_qc_checklist_drafts, apart from the final all-ticked record. */
+const QCSAVET = {};
+function qcAutosave(id){
+  if (!ME || ME.admin !== true || CLIENT_PREVIEW) return;
+  clearTimeout(QCSAVET[id]);
+  qcSavedMsg(id, 'Saving…');
+  QCSAVET[id] = setTimeout(async () => {
+    const checks = Object.assign({}, qcTicks(id)), note = (QCNOTES[id] || '').trim();
+    const { error } = await sb.rpc('ch_qc_checklist_draft_save', { p_item_id: id, p_checks: checks, p_note: note || null });
+    if (error) { qcSavedMsg(id, 'Not saved. Check your connection, your ticks are still here.', true); return; }
+    const a = ARTICLES[id];
+    QCDRAFTS[id] = { item_id: id, article_version: a ? a.version : null, checks, note, updated_at: new Date().toISOString() };
+    qcSavedMsg(id, 'Saved');
+  }, 700);
+}
+function qcSavedMsg(id, t, bad){
+  document.querySelectorAll('[data-qcsaved="' + id + '"]').forEach(x => { x.textContent = t; x.classList.toggle('qcsave-bad', !!bad); });
+}
 
 async function loadArticleIndex(){
   const [a, c] = await Promise.all([
@@ -2123,7 +2143,9 @@ async function loadArticleIndex(){
       sb.from('ch_article_auto_checks').select('item_id,article_version,results,failed,checked_at').eq('client_id', CLIENT_ID),
       QCITEMS.length ? { data: QCITEMS } : sb.rpc('ch_qc_checklist_items')
     ]);
-    QCCHECKS = {}; AUTOCHECKS = {};
+    const dr = await sb.from('ch_qc_checklist_drafts').select('item_id,article_version,checks,note,updated_at').eq('client_id', CLIENT_ID);
+    QCCHECKS = {}; AUTOCHECKS = {}; QCDRAFTS = {};
+    (dr.data || []).forEach(r => { QCDRAFTS[r.item_id] = r; });
     (q.data || []).forEach(r => { QCCHECKS[r.item_id] = r; });
     (x.data || []).forEach(r => { AUTOCHECKS[r.item_id] = r; });
     if (Array.isArray(li.data)) QCITEMS = li.data;
@@ -2174,13 +2196,15 @@ async function loadArtQC(itemId, ver){
   const box = $('artQC'), it = ITEMS.find(x => x.id === itemId);
   if (!ME || ME.kind !== 'internal' || !it || it.stream !== 'blog' || it.deliverable === 'linkedin_article') { box.hidden = true; box.innerHTML = ''; return; }
   if (ARTICLES[itemId]) ARTICLES[itemId].version = ver;
-  const [x, q] = await Promise.all([
+  const [x, q, d] = await Promise.all([
     sb.from('ch_article_auto_checks').select('item_id,article_version,results,failed,checked_at').eq('item_id', itemId).maybeSingle(),
-    sb.from('ch_qc_checklists').select('item_id,article_version,checks,note,checked_name,checked_at').eq('item_id', itemId).maybeSingle()
+    sb.from('ch_qc_checklists').select('item_id,article_version,checks,note,checked_name,checked_at').eq('item_id', itemId).maybeSingle(),
+    sb.from('ch_qc_checklist_drafts').select('item_id,article_version,checks,note,updated_at').eq('item_id', itemId).maybeSingle()
   ]);
   if (!ART || ART.id !== itemId) return;
   if (x.data) AUTOCHECKS[itemId] = x.data;
   if (q.data) QCCHECKS[itemId] = q.data;
+  if (d.data && !QCSAVET[itemId]) { QCDRAFTS[itemId] = d.data; delete QCTICKS[itemId]; delete QCNOTES[itemId]; }
   renderArtQC(itemId);
 }
 function qcPassedAfterRelease(a){
@@ -2202,9 +2226,9 @@ function renderArtQC(id){
       + '<div class="qcrow">' + qcFold(id, qcAutoHtml(id) + qcListHtml(id, canR))
       + (canR ? '<div class="qcbtns"><button class="btn qcok" type="button" data-artqcrel="' + rid + '"' + (qcAllTicked(id) ? '' : ' data-qcwait="1"') + '>QC approve</button></div>' : '')
       + '</div>';
-    box.querySelectorAll('[data-qcnotetext]').forEach(ta => ta.addEventListener('input', () => { QCNOTES[id] = ta.value; }));
+    box.querySelectorAll('[data-qcnotetext]').forEach(ta => ta.addEventListener('input', () => { QCNOTES[id] = ta.value; qcAutosave(id); }));
     box.querySelectorAll('[data-qctick]').forEach(cb => cb.addEventListener('change', () => {
-      qcTicks(id)[cb.dataset.qckey] = cb.checked;
+      qcTicks(id)[cb.dataset.qckey] = cb.checked; qcAutosave(id);
       const done = QCITEMS.filter(i => qcTicks(id)[i.key] === true).length;
       const c = box.querySelector('[data-qccount]'); if (c) c.textContent = done + ' of ' + QCITEMS.length + ' ticked';
       const ok = box.querySelector('[data-artqcrel]');
@@ -2240,9 +2264,9 @@ function renderArtQC(id){
            + '<div class="qcbox hide" data-artqcbox="' + sid + '"><textarea data-artqcnote="' + sid + '" rows="2" placeholder="What should the writer change?"></textarea>'
            + '<div><button class="btn" type="button" data-artqcsend="' + sid + '">Send back</button></div></div>' : '')
     + '</div>';
-  box.querySelectorAll('[data-qcnotetext]').forEach(ta => ta.addEventListener('input', () => { QCNOTES[id] = ta.value; }));
+  box.querySelectorAll('[data-qcnotetext]').forEach(ta => ta.addEventListener('input', () => { QCNOTES[id] = ta.value; qcAutosave(id); }));
   box.querySelectorAll('[data-qctick]').forEach(cb => cb.addEventListener('change', () => {
-    qcTicks(id)[cb.dataset.qckey] = cb.checked;
+    qcTicks(id)[cb.dataset.qckey] = cb.checked; qcAutosave(id);
     const done = QCITEMS.filter(i => qcTicks(id)[i.key] === true).length;
     const c = box.querySelector('[data-qccount]'); if (c) c.textContent = done + ' of ' + QCITEMS.length + ' ticked';
     const ok = box.querySelector('[data-artqcok]');
@@ -4763,7 +4787,11 @@ function qcTicks(id){
   const a = ARTICLES[id];
   if (QCTICKS[id] && a && QCTICKVER[id] !== a.version) { delete QCTICKS[id]; delete QCNOTES[id]; }
   if (!QCTICKS[id]) {
-    const saved = QCCHECKS[id];
+    let saved = QCCHECKS[id];
+    const d = QCDRAFTS[id];
+    // A draft for this version that is newer than the last QC save wins (QC autosave, 12/11/2026).
+    if (d && a && d.article_version === a.version && (!saved || saved.article_version !== a.version || new Date(d.updated_at) > new Date(saved.checked_at)))
+      saved = { article_version: d.article_version, checks: d.checks || {}, note: d.note || '' };
     const same = saved && a && saved.article_version === a.version;
     QCTICKS[id] = same ? Object.assign({}, saved.checks) : {};
     if (QCNOTES[id] === undefined) QCNOTES[id] = same ? (saved.note || '') : '';
@@ -4818,7 +4846,8 @@ function qcListHtml(id, can){
   const saved = QCCHECKS[id], a = ARTICLES[id];
   const note = saved && a && saved.article_version !== a.version
     ? '<div class="qcsc">Ticked by ' + esc(saved.checked_name || '') + ' on an earlier version. The blog has changed since, so tick again.</div>' : '';
-  return '<div class="qclist" data-qclist="' + esc(id) + '"><div><b>QC checklist</b> <span class="qcsc" data-qccount="' + esc(id) + '">' + done + ' of ' + QCITEMS.length + ' ticked</span></div>' + note
+  return '<div class="qclist" data-qclist="' + esc(id) + '"><div><b>QC checklist</b> <span class="qcsc" data-qccount="' + esc(id) + '">' + done + ' of ' + QCITEMS.length + ' ticked</span>'
+    + (can ? ' <span class="qcsc qcsave" data-qcsaved="' + esc(id) + '"></span>' : '') + '</div>' + note
     + QCITEMS.map(i => '<label class="qcitem"><input type="checkbox" data-qctick="' + esc(id) + '" data-qckey="' + esc(i.key) + '"'
         + (t[i.key] === true ? ' checked' : '') + (can ? '' : ' disabled') + '><span><b>' + esc(i.label) + ':</b> ' + esc(i.help) + '</span></label>').join('')
     + '<label class="qcnotelbl">QC note <span class="qcsc">(optional, team only, saved with your ticks)</span>'
@@ -6327,11 +6356,11 @@ function wireMonthBrief(el, t){
   el.querySelectorAll('[data-read]').forEach(b => b.addEventListener('click', () => openArticle(b.dataset.read)));
   el.querySelectorAll('[data-wppack]').forEach(b => b.addEventListener('click', () => buildWpPack(b.dataset.wppack, b)));
   el.querySelectorAll('[data-qcnotetext]').forEach(ta => ta.addEventListener('input', () => {
-    QCNOTES[ta.dataset.qcnotetext] = ta.value;
+    QCNOTES[ta.dataset.qcnotetext] = ta.value; qcAutosave(ta.dataset.qcnotetext);
   }));
   el.querySelectorAll('[data-qctick]').forEach(cb => cb.addEventListener('change', () => {
     const id = cb.dataset.qctick;
-    qcTicks(id)[cb.dataset.qckey] = cb.checked;
+    qcTicks(id)[cb.dataset.qckey] = cb.checked; qcAutosave(id);
     const done = QCITEMS.filter(i => qcTicks(id)[i.key] === true).length;
     const c = el.querySelector('[data-qccount="' + id + '"]'); if (c) c.textContent = done + ' of ' + QCITEMS.length + ' ticked';
     const ok = el.querySelector('[data-qcok="' + id + '"]');
