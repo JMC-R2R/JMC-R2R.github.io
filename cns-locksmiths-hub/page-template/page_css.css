@@ -180,3 +180,7 @@
  .pgframe .cn-btns{flex-direction:column;align-items:stretch}
  .pgframe .cn-band .cn-btns{align-items:stretch}
 }
+
+/* Embed stills (12/11/2026): live maps, video and tour replaced by snapshots for the mockup */
+.pgframe a.pg-snap{display:block;text-decoration:none}
+.pgframe img.cn-map{object-fit:cover;max-width:none;height:auto;aspect-ratio:1200/450}
