@@ -11,8 +11,8 @@
 <style>
   :root{
     --blue:#17B4F0; --ink:#0B0E12; --panel:#141A21; --panel2:#1B232C;
-    --line:#28323D; --text:#E8EDF2; --muted:#8A97A6; --faint:#5F6B79;
-    --green:#2ECC71; --amber:#F5C518; --orange:#FF8A3D; --red:#FF5A5F;
+    --line:#28323D; --text:#E8EDF2; --muted:#8A97A6; --faint:#5F6B79; --soft:#C5CED8;
+    --green:#2ECC71; --amber:#F5C518; --orange:#FF8A3D; --red:#FF5A5F; --redtxt:#FF7A7E;
     --r:12px;
   }
   *{box-sizing:border-box; margin:0; padding:0}
@@ -35,14 +35,23 @@
   .btn:hover{filter:brightness(1.08)}
   .btn.ghost{background:transparent; color:var(--muted); border:1px solid var(--line); font-weight:600}
   .btn.ghost:hover{color:var(--text); border-color:var(--blue)}
+  .btn.sm{padding:6px 10px; font-size:12px; border-radius:6px}
   .btn:disabled{opacity:.5; cursor:not-allowed}
-  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{
        outline:2px solid var(--blue); outline-offset:2px}
+
+  nav.tabs{display:flex; gap:4px; flex-wrap:wrap}
+  nav.tabs a{padding:8px 14px; border-radius:8px; color:var(--muted); font-weight:600; font-size:13.5px;
+       text-decoration:none; border:1px solid transparent}
+  nav.tabs a:hover{color:var(--text)}
+  nav.tabs a[aria-current="page"]{background:var(--panel2); color:var(--text); font-weight:700; border-color:var(--line)}
 
   main{max-width:1400px; margin:0 auto; padding:22px}
   .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+  h1.pg{font-size:22px; font-weight:800; letter-spacing:-.01em; margin-bottom:6px}
   h2{font-size:16px; font-weight:800; letter-spacing:-.01em; margin-bottom:2px}
-  .sub{font-size:12.5px; color:var(--muted); margin-bottom:14px; max-width:78ch}
+  .sub{font-size:12.5px; color:var(--muted); margin-bottom:14px; max-width:80ch}
+  .sub b{color:var(--text)}
   .onote{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; margin-bottom:12px}
   .onote .by{font-size:12px; color:var(--muted); margin-bottom:6px}
   .onote .bd{white-space:pre-wrap; font-size:13.5px; line-height:1.5}
@@ -54,13 +63,15 @@
   #login h1,#setpw h1{font-size:22px; font-weight:900; margin-bottom:5px}
   #login p,#setpw p{font-size:13px; color:var(--muted); margin-bottom:18px}
   .fld{display:flex; flex-direction:column; gap:5px; margin-bottom:12px}
-  .fld label{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--faint);
+  .fld label,.lbl-sm{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted);
              font-family:'Space Mono',monospace}
   .fld input,.fld select,.fld textarea{background:var(--ink); border:1px solid var(--line); color:var(--text);
              border-radius:8px; padding:9px 11px; font-size:13.5px; width:100%}
+  .fld .hint{font-size:11.5px; color:var(--soft); text-transform:none; letter-spacing:0; font-family:inherit}
+  .fld .hint b{color:var(--text)}
   .err{color:var(--red); font-size:12.5px; margin-top:8px; min-height:16px}
 
-  /* ---- standing cards ---- */
+  /* ---- stat cards ---- */
   .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px}
   .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:15px 16px;
         border-left:3px solid var(--line)}
@@ -69,16 +80,19 @@
   .card.behind{border-left-color:var(--orange)}
   .card.none{border-left-color:var(--red)}
   .card .nm{font-weight:800; font-size:14.5px; margin-bottom:9px}
-  .card .big{font-family:'Space Mono',monospace; font-size:25px; font-weight:700; line-height:1}
-  .card .big i{font-style:normal; color:var(--faint); font-size:15px}
-  .card .lbl{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);
-        font-family:'Space Mono',monospace; margin-top:4px}
+  .big{font-family:'Space Mono',monospace; font-size:25px; font-weight:700; line-height:1}
+  .big i{font-style:normal; color:var(--muted); font-size:15px}
+  .lbl{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+        font-family:'Space Mono',monospace; margin-top:6px}
+  .stats{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:16px}
   .chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:11px}
   .chip{font-family:'Space Mono',monospace; font-size:10.5px; padding:3px 7px; border-radius:4px;
-        border:1px solid var(--line); color:var(--muted)}
-  .chip.w{border-color:rgba(245,197,24,.4); color:var(--amber)}
-  .chip.d{border-color:rgba(255,90,95,.4); color:var(--red)}
-  .chip.o{border-color:rgba(23,180,240,.4); color:var(--blue)}
+        border:1px solid var(--line); color:var(--muted); white-space:nowrap; letter-spacing:.04em}
+  .chip.w{border-color:rgba(245,197,24,.4); color:var(--amber); background:rgba(245,197,24,.1)}
+  .chip.d{border-color:rgba(255,90,95,.4); color:var(--redtxt); background:rgba(255,90,95,.1)}
+  .chip.o{border-color:rgba(23,180,240,.4); color:var(--blue); background:rgba(23,180,240,.1)}
+  .chip.g{border-color:rgba(46,204,113,.35); color:var(--green); background:rgba(46,204,113,.12)}
 
   /* ---- form ---- */
   .form{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 19px}
@@ -92,6 +106,9 @@
   details.more[open] summary::before{content:"▾ "}
   .formfoot{display:flex; gap:10px; align-items:center; margin-top:15px; flex-wrap:wrap}
   .ok{color:var(--green); font-size:12.5px}
+  .checks{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; padding-top:4px}
+  .checks label{display:flex; gap:6px; align-items:center; text-transform:none; letter-spacing:0;
+        font-family:inherit; font-size:13px; color:var(--text)}
 
   /* ---- table ---- */
   .tw{overflow-x:auto; border:1px solid var(--line); border-radius:var(--r); background:var(--panel)}
@@ -99,17 +116,73 @@
   th,td{text-align:left; padding:9px 11px; border-bottom:1px solid var(--line); font-size:12.4px;
         vertical-align:middle; white-space:nowrap}
   thead th{font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:.11em; text-transform:uppercase;
-        color:var(--faint); background:var(--panel2); position:sticky; top:0}
+        color:var(--muted); background:var(--panel2); position:sticky; top:0; font-weight:400}
   tbody tr:last-child td{border-bottom:none}
   tbody tr:hover{background:rgba(255,255,255,.025)}
   td.u{max-width:230px; overflow:hidden; text-overflow:ellipsis}
-  td.n{font-family:'Space Mono',monospace; text-align:right}
-  select.st{background:var(--ink); border:1px solid var(--line); color:var(--text); border-radius:6px;
+  td.n,th.n{font-family:'Space Mono',monospace; text-align:right}
+  td.top{vertical-align:top}
+  td.wrap{white-space:normal}
+  select.st,.inl select,.inl input{background:var(--ink); border:1px solid var(--line); color:var(--text); border-radius:6px;
         padding:4px 7px; font-size:11.5px}
   .vf{font-family:'Space Mono',monospace; font-size:10px; padding:2px 6px; border-radius:3px; letter-spacing:.05em}
   .vf.y{background:rgba(46,204,113,.14); color:var(--green); border:1px solid rgba(46,204,113,.35)}
-  .vf.n{background:rgba(255,90,95,.12); color:var(--red); border:1px solid rgba(255,90,95,.35)}
+  .vf.n{background:rgba(255,90,95,.12); color:var(--redtxt); border:1px solid rgba(255,90,95,.35)}
   .vf.p{background:rgba(138,151,166,.1); color:var(--muted); border:1px solid var(--line)}
+  .vf.a{background:rgba(245,197,24,.14); color:var(--amber); border:1px solid rgba(245,197,24,.35)}
+
+  /* invoice cell */
+  .inv{display:flex; flex-direction:column; gap:6px; align-items:flex-start; min-width:210px}
+  .inv .r1{display:flex; gap:8px; align-items:center}
+  .timer{display:flex; align-items:center; gap:5px; font-family:'Space Mono',monospace; font-size:11px}
+  .timer.due{color:var(--amber)} .timer.over{color:var(--redtxt)} .timer.done{color:var(--muted)}
+  .fnote{font-size:11px; color:var(--muted)}
+  .inl{display:flex; flex-direction:column; gap:6px; padding:8px; background:var(--ink); border:1px solid var(--line);
+       border-radius:8px; min-width:240px}
+  .inl input{width:100%}
+  .linkbtn{background:none; border:0; color:var(--blue); font-size:11.5px; padding:0; text-decoration:underline}
+
+  /* partners */
+  .pills{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+  .pill{font-weight:700; font-size:12.5px; padding:7px 12px; border-radius:999px; background:transparent;
+        color:var(--soft); border:1px solid var(--line); min-height:36px}
+  .pill[aria-pressed="true"]{background:var(--blue); color:#04121A; border-color:var(--blue)}
+  .pill.sq{border-radius:8px}
+  .pill.sq[aria-pressed="true"]{background:var(--text); border-color:var(--text); color:var(--ink)}
+  .pill span{font-family:'Space Mono',monospace; font-size:11px; opacity:.8}
+  .niche{display:inline-block; font-size:12px; font-weight:800; padding:4px 10px; border-radius:999px; white-space:nowrap}
+  .niche.home{color:#6FD3F7; background:rgba(23,180,240,.12); border:1px solid rgba(23,180,240,.45)}
+  .niche.property{color:#FFB37A; background:rgba(255,138,61,.12); border:1px solid rgba(255,138,61,.45)}
+  .niche.food{color:#5FE39A; background:rgba(46,204,113,.12); border:1px solid rgba(46,204,113,.45)}
+  .niche.events{color:#D2B6FF; background:rgba(155,110,255,.14); border:1px solid rgba(155,110,255,.45)}
+  .niche.other{color:var(--soft); background:var(--panel2); border:1px solid var(--line)}
+  .tag{font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:4px; background:var(--panel2);
+       border:1px solid var(--line); white-space:nowrap}
+  .tags{display:flex; flex-wrap:wrap; gap:4px; max-width:210px}
+  .st-Active{color:var(--green)!important; background:rgba(46,204,113,.14)!important; border-color:rgba(46,204,113,.35)!important}
+  .st-Approved{color:var(--blue)!important; background:rgba(23,180,240,.12)!important; border-color:rgba(23,180,240,.4)!important}
+  .st-Maybe{color:var(--amber)!important; background:rgba(245,197,24,.1)!important; border-color:rgba(245,197,24,.4)!important}
+  .st-Declined{color:var(--redtxt)!important; background:rgba(255,90,95,.12)!important; border-color:rgba(255,90,95,.35)!important}
+  .kv{display:grid; grid-template-columns:110px minmax(0,1fr); gap:10px 12px; font-size:13px}
+  .kv span:nth-child(odd){color:var(--muted)}
+  .two{display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start}
+  .two > *{flex:1 1 340px}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px}
+
+  /* clients */
+  .ccards{display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px}
+  .chart{display:grid; height:150px; border-bottom:1px solid var(--line); margin-top:18px; gap:4px}
+  .col{position:relative; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; height:100%}
+  .col .v{font-family:'Space Mono',monospace; font-size:11.5px; font-weight:700}
+  .bar{width:70%; max-width:38px; border-radius:4px 4px 0 0}
+  .bar.hit{background:var(--blue)} .bar.miss{background:var(--orange)} .bar.hist{background:#5B6B7C}
+  .bar.prog{background:transparent; border:1.5px dashed var(--muted); border-bottom:0}
+  .tmark{position:absolute; left:8%; right:8%; border-top:2px dashed rgba(232,237,242,.6)}
+  .xl{display:grid; gap:4px; text-align:center}
+  .xl div{display:flex; flex-direction:column; gap:2px}
+  .legend{display:flex; flex-wrap:wrap; gap:14px; color:var(--soft); font-size:12px}
+  .legend span{display:flex; align-items:center; gap:6px}
+  .sw{width:12px; height:12px; border-radius:3px; display:inline-block}
 
   .note{background:var(--panel2); border-left:3px solid var(--blue); border-radius:0 8px 8px 0;
         padding:13px 15px; font-size:12.8px; color:var(--muted); line-height:1.55; margin-top:14px}
@@ -148,16 +221,23 @@
 <div id="app" class="hide">
   <header>
     <div class="brand"><span class="dot"></span> Link Tracker</div>
-    <div class="fld" style="margin:0; min-width:130px">
-      <select id="month" style="background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px"></select>
+    <div class="fld" style="margin:0; min-width:130px" id="monthWrap">
+      <select id="month" aria-label="Month" style="background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px"></select>
     </div>
+    <nav class="tabs" aria-label="Tracker sections">
+      <a href="#placements" data-tab="placements">Placements</a>
+      <a href="#partners" data-tab="partners">Partners</a>
+      <a href="#clients" data-tab="clients">Clients</a>
+    </nav>
     <div class="spacer"></div>
     <div class="who"><b id="whoName">—</b><span id="whoRole">—</span></div>
     <button class="btn ghost" id="signout">Sign out</button>
   </header>
 
   <main>
-    <section>
+  <!-- =============== PLACEMENTS =============== -->
+  <div id="v_placements" class="hide">
+    <section style="margin-top:4px">
       <h2>This month</h2>
       <p class="sub">What each client is owed, and how much of it is confirmed. <b>Only a link that has been fetched and found counts</b> &mdash; marking something Live records your claim, it doesn't tick the box.</p>
       <div class="cards" id="cards"></div>
@@ -174,10 +254,11 @@
           <div class="fld"><label for="f_status">Status</label><select id="f_status">
             <option>In Progress</option><option>Waiting</option><option>For Publication</option>
             <option selected>Live</option><option>Declined</option></select></div>
-          <div class="fld"><label for="f_targetdomain">Target Domain</label><input id="f_targetdomain" placeholder="example.com.au"></div>
+          <div class="fld"><label for="f_targetdomain">Target Domain</label><input id="f_targetdomain" placeholder="example.com.au" list="partnerList"></div>
           <div class="fld"><label for="f_dr">DR</label><input id="f_dr" type="number" min="0" max="100"></div>
-          <div class="fld"><label for="f_st">ST</label><input id="f_st" type="number" min="0" max="100"></div>
+          <div class="fld"><label for="f_st">ST</label><input id="f_st" type="number" min="0"></div>
         </div>
+        <datalist id="partnerList"></datalist>
         <div class="grid wide" style="margin-top:12px">
           <div class="fld"><label for="f_liveurl">Live URL</label><input id="f_liveurl" placeholder="https:// … the page the link sits on"></div>
           <div class="fld"><label for="f_targeturl">Target URL</label><input id="f_targeturl" placeholder="https:// … the client page it points to"></div>
@@ -189,18 +270,23 @@
           <div class="fld"><label for="f_category">Category</label><input id="f_category"></div>
         </div>
 
-        <details class="more">
+        <details class="more" id="moreBox">
           <summary>Outreach &amp; admin — publisher, content, invoice</summary>
           <div class="grid" style="margin-top:13px">
             <div class="fld"><label for="f_pubname">Publisher Name</label><input id="f_pubname"></div>
             <div class="fld"><label for="f_pubemail">Publisher Email</label><input id="f_pubemail" type="email"></div>
             <div class="fld"><label for="f_content">Content</label><input id="f_content" placeholder="e.g. Requested / Written / Sent"></div>
             <div class="fld"><label for="f_doc">Doc Link</label><input id="f_doc" placeholder="Google Doc of the article"></div>
-            <div class="fld"><label for="f_invref">Invoice ref</label><input id="f_invref"></div>
-            <div class="fld"><label for="f_invstatus">Invoice status</label><select id="f_invstatus">
-              <option value="">—</option><option>Not raised</option><option>Raised</option><option>Paid</option></select></div>
             <div class="fld"><label for="f_collab">Open to another collab?</label><select id="f_collab">
               <option value="">—</option><option value="true">Yes</option><option value="false">No</option></select></div>
+          </div>
+          <div class="grid" style="margin-top:12px">
+            <div class="fld"><label for="f_invref">PayPal invoice link</label><input id="f_invref" placeholder="https://www.paypal.com/invoice/…"></div>
+            <div class="fld"><label for="f_invstatus">Invoice status</label><select id="f_invstatus">
+              <option value="">—</option><option>Not raised</option><option>Raised</option><option class="payerOnly">Paid</option></select></div>
+            <div class="fld"><label for="f_due">Payment due</label><select id="f_due"></select>
+              <input id="f_duecustom" type="datetime-local" class="hide" aria-label="Pick a due date and time">
+              <span class="hint" id="f_duehint"></span></div>
           </div>
           <div class="fld" style="margin-top:12px"><label for="f_notes">Notes</label><textarea id="f_notes" rows="2"></textarea></div>
         </details>
@@ -216,13 +302,13 @@
 
     <section>
       <h2>Placements this month</h2>
-      <p class="sub">Change a status here as it moves. <b>Verified</b> is set by the checker, not by hand &mdash; that column is the one nobody can type.</p>
+      <p class="sub">Change a status here as it moves. <b>Verified</b> is set by the checker, not by hand &mdash; that column is the one nobody can type. The <b>Invoice</b> countdown starts when an invoice is Raised.</p>
       <div class="tw">
-        <table>
+        <table style="min-width:1400px">
           <thead><tr>
             <th>Client</th><th>Link Type</th><th>Target Domain</th><th>Live URL</th><th>Target URL</th>
-            <th>Anchor</th><th style="text-align:right">DR</th><th style="text-align:right">ST</th>
-            <th>Status</th><th>Verified</th><th style="text-align:right">Cost</th><th>Date</th>
+            <th>Anchor</th><th class="n">DR</th><th class="n">ST</th>
+            <th>Status</th><th>Verified</th><th class="n">Cost</th><th>Date</th><th>Invoice</th>
           </tr></thead>
           <tbody id="rows"></tbody>
         </table>
@@ -235,7 +321,7 @@
       <p class="sub">The roadblocks and per-client commentary you used to write at the top of the sheet. It was the most useful thing in there and it had nowhere to go.</p>
       <div id="otherNotes"></div>
       <div class="form">
-        <div class="fld"><textarea id="mnote" rows="5" placeholder="Roadblocks, what's slow, what's negotiating…"></textarea></div>
+        <div class="fld"><textarea id="mnote" rows="5" aria-label="Month note" placeholder="Roadblocks, what's slow, what's negotiating…"></textarea></div>
         <div class="formfoot">
           <button class="btn" id="saveNote">Save note</button>
           <span class="ok hide" id="noteOk">Saved.</span>
@@ -251,6 +337,83 @@
       complete because of an optimistic tick. <b>A shortfall carries into next month's target</b> rather
       than disappearing.
     </div>
+  </div>
+
+  <!-- =============== PARTNERS =============== -->
+  <div id="v_partners" class="hide">
+    <section style="margin-top:4px" class="row">
+      <div style="flex:1 1 420px">
+        <h1 class="pg">Partners &amp; Webmasters</h1>
+        <p class="sub" style="margin:0">Every site we've bought from or reviewed. <b>Our history</b> (links, verified, spend) comes from placements. <b>Niche and Suitable for</b> are set by hand, so you can find a site for a plumber, builder or electrician quickly.</p>
+      </div>
+      <button class="btn" id="addPartner" style="min-height:44px">+ Add partner</button>
+    </section>
+    <div id="partnerFormSlot"></div>
+
+    <section class="stats" id="pStats" aria-label="Totals"></section>
+
+    <section>
+      <div class="row" style="align-items:flex-end">
+        <div class="fld" style="margin:0; flex:1 1 260px; max-width:340px"><label for="pSearch">Search</label>
+          <input id="pSearch" type="search" placeholder="Domain, webmaster or email"></div>
+        <div class="pills" role="group" aria-label="Filter by status" id="pStatus"></div>
+        <div class="fld" style="margin:0 0 0 auto"><label for="pSort">Sort by</label>
+          <select id="pSort">
+            <option value="cpl">Cost per verified link</option>
+            <option value="dr">DR (high to low)</option>
+            <option value="traffic">Traffic (high to low)</option>
+            <option value="last">Last placed</option>
+            <option value="spend">Spend</option>
+          </select></div>
+      </div>
+      <div class="pills" role="group" aria-label="Filter by suitable for" id="pSuit" style="margin-top:12px"></div>
+      <div class="tw" style="margin-top:12px">
+        <table style="min-width:1380px">
+          <thead><tr>
+            <th>Partner</th><th>Niche</th><th>Suitable for</th><th>Webmaster</th><th>Status</th>
+            <th class="n">DR</th><th class="n">Traffic</th><th class="n">Price</th><th class="n">Verified</th>
+            <th>Clients</th><th class="n">Spend</th><th>Last placed</th>
+          </tr></thead>
+          <tbody id="pRows"></tbody>
+        </table>
+      </div>
+      <p class="sub" style="margin-top:8px">Click a partner for contact details, every placement and notes. Status, price and webmaster details are typed by hand. Everything else is calculated.</p>
+    </section>
+  </div>
+
+  <!-- =============== PARTNER DETAIL =============== -->
+  <div id="v_partner" class="hide"></div>
+
+  <!-- =============== CLIENTS =============== -->
+  <div id="v_clients" class="hide">
+    <section style="margin-top:4px" class="row">
+      <div style="flex:1 1 420px">
+        <h1 class="pg">Client targets &amp; spend</h1>
+        <p class="sub" style="margin:0">Did each client get the links they were due each month, and what did we spend? <b>Only verified links count.</b> The target is that month's links due, including any shortfall carried over.</p>
+      </div>
+      <div class="fld" style="margin:0"><label for="cPeriod">Period</label>
+        <select id="cPeriod"><option value="3">Last 3 months</option><option value="6">Last 6 months</option><option value="12">Last 12 months</option></select></div>
+    </section>
+    <section class="stats" id="cStats" aria-label="Totals"></section>
+    <section>
+      <div class="row" style="margin-bottom:12px">
+        <h2 style="margin:0">Links per month vs target</h2>
+        <div class="legend" style="margin-left:auto">
+          <span><i class="sw" style="background:var(--blue)"></i>Hit target</span>
+          <span><i class="sw" style="background:var(--orange)"></i>Missed target</span>
+          <span><i class="sw" style="background:#5B6B7C"></i>Before tracking (live links)</span>
+          <span><i class="sw" style="border:1.5px dashed var(--muted)"></i>Month in progress</span>
+          <span><i style="width:18px;border-top:2px dashed var(--text);display:inline-block"></i>Target</span>
+        </div>
+      </div>
+      <div class="ccards" id="cCards"></div>
+    </section>
+    <section>
+      <h2>Link spend per month, by client</h2>
+      <div class="tw" style="margin-top:10px"><table style="min-width:720px"><thead id="cHead"></thead><tbody id="cBody"></tbody></table></div>
+      <p class="sub" style="margin-top:8px">Built from the Placements tab, so nothing is typed twice. Months before September 2026 come from the old spreadsheet and have live links but no target.</p>
+    </section>
+  </div>
   </main>
 </div>
 
@@ -263,21 +426,46 @@ const $ = id => document.getElementById(id);
 const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-let CLIENTS = [], EMAIL = "";
+let CLIENTS = [], EMAIL = "", CAN_PAY = false, NAMES = {}, PARTNERS = [], ALL_LINKS = [], MONTH_ROWS = [];
 
-/* ---------- month options: this month ± a few ---------- */
+/* ---------- dates (local time, not UTC — toISOString drifts a day/month in AU) ---------- */
+const pad = n => String(n).padStart(2,'0');
+const mkey = d => d.getFullYear() + '-' + pad(d.getMonth()+1);
+const dkey = d => mkey(d) + '-' + pad(d.getDate());
 function monthKeys(){
   const out = [], now = new Date();
-  for (let d = -3; d <= 1; d++){
-    const x = new Date(now.getFullYear(), now.getMonth() + d, 1);
-    out.push(x.toISOString().slice(0,7));
-  }
+  for (let d = -3; d <= 1; d++) out.push(mkey(new Date(now.getFullYear(), now.getMonth() + d, 1)));
   return out.reverse();
 }
-function monthLabel(k){
+function monthLabel(k, opts){
   const [y,m] = k.split('-');
-  return new Date(y, m-1, 1).toLocaleDateString('en-AU',{month:'long', year:'numeric'});
+  return new Date(y, m-1, 1).toLocaleDateString('en-AU', opts || {month:'long', year:'numeric'});
 }
+const shortDate = d => new Date(d).toLocaleDateString('en-AU',{day:'numeric', month:'short'});
+const dueFmt = d => new Date(d).toLocaleString('en-AU',{weekday:'short', day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit'});
+const money = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-AU',{maximumFractionDigits:2});
+const kfmt = n => n == null ? '—' : n >= 1000 ? (n/1000).toFixed(1).replace(/\.0$/,'') + 'K' : String(n);
+const normDomain = s => (s||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/.*$/,'');
+const nameOf = em => {
+  if (!em) return '';
+  const n = NAMES[em.toLowerCase()];
+  if (n) return n;
+  const p = em.split('@')[0]; return p.charAt(0).toUpperCase() + p.slice(1);
+};
+const clientName = slug => (CLIENTS.find(c => c.client_slug === slug) || {}).client_name || slug;
+
+/* ---------- payment due options ---------- */
+const DUE_OPTS = [
+  ['', '— no due date —'],
+  ['Urgent', [['now','Immediately'],['2h','Within 2 hours'],['6h','Within 6 hours'],['12h','Within 12 hours'],['24h','Within 24 hours']]],
+  ['Days', [['3d','3 days'],['7d','7 days'],['14d','14 days'],['30d','30 days']]],
+  ['Other', [['custom','Pick a date and time…']]]
+];
+const DUE_MS = {now:0,'2h':2*36e5,'6h':6*36e5,'12h':12*36e5,'24h':24*36e5,'3d':3*864e5,'7d':7*864e5,'14d':14*864e5,'30d':30*864e5};
+const dueOptionsHtml = sel => DUE_OPTS.map(([g, list]) => Array.isArray(list)
+  ? `<optgroup label="${g}">${list.map(([v,l]) => `<option value="${v}"${v===sel?' selected':''}>${l}</option>`).join('')}</optgroup>`
+  : `<option value="${g}"${g===(sel||'')?' selected':''}>${list}</option>`).join('');
+const toLocalInput = d => { const x = new Date(d); return dkey(x) + 'T' + pad(x.getHours()) + ':' + pad(x.getMinutes()); };
 
 /* ---------- auth ---------- */
 $('signin').onclick = async () => {
@@ -301,22 +489,49 @@ async function boot(){
   $('whoName').textContent = EMAIL;
 
   const sel = $('month');
-  sel.innerHTML = monthKeys().map(k =>
-    `<option value="${k}">${esc(monthLabel(k))}</option>`).join('');
-  sel.value = new Date().toISOString().slice(0,7);
+  sel.innerHTML = monthKeys().map(k => `<option value="${k}">${esc(monthLabel(k))}</option>`).join('');
+  sel.value = mkey(new Date());
   sel.onchange = refresh;
 
-  const { data:cl, error } = await sb.from('lb_clients').select('*');
+  const [{ data:cl, error }, { data:payers }, { data:writers }] = await Promise.all([
+    sb.from('lb_clients').select('*'),
+    sb.from('lb_invoice_payers').select('*'),
+    sb.from('lb_writers').select('email,name')
+  ]);
   if (error){ $('whoRole').textContent = "no access — ask Jose"; return; }
-  CLIENTS = cl || [];
+  CLIENTS = (cl || []).sort((a,b) => a.client_name.localeCompare(b.client_name));
+  (writers || []).concat(payers || []).forEach(p => { if (p.email && p.name) NAMES[p.email.toLowerCase()] = p.name; });
+  CAN_PAY = (payers || []).some(p => p.email.toLowerCase() === EMAIL.toLowerCase());
+  document.querySelectorAll('.payerOnly').forEach(o => { if (!CAN_PAY) o.remove(); });
   $('whoRole').textContent = CLIENTS.length + " clients";
   $('f_client').innerHTML = CLIENTS.map(c =>
     `<option value="${esc(c.client_slug)}">${esc(c.client_name)}</option>`).join('');
-  $('f_date').value = new Date().toISOString().slice(0,10);
-  refresh();
+  $('f_date').value = dkey(new Date());
+  $('f_due').innerHTML = dueOptionsHtml('');
+  window.addEventListener('hashchange', route);
+  route();
 }
 
-/* ---------- read ---------- */
+/* ---------- routing ---------- */
+function route(){
+  const h = decodeURIComponent(location.hash.slice(1)) || 'placements';
+  const [tab, arg] = h.split('/');
+  const view = tab === 'partner' ? 'partner' : (['placements','partners','clients'].includes(tab) ? tab : 'placements');
+  ['placements','partners','partner','clients'].forEach(v => $('v_'+v).classList.toggle('hide', v !== view));
+  const navTab = view === 'partner' ? 'partners' : view;
+  document.querySelectorAll('nav.tabs a').forEach(a =>
+    a.dataset.tab === navTab ? a.setAttribute('aria-current','page') : a.removeAttribute('aria-current'));
+  $('monthWrap').classList.toggle('hide', view !== 'placements');
+  window.scrollTo(0,0);
+  if (view === 'placements') refresh();
+  else if (view === 'partners') loadPartners().then(drawPartners);
+  else if (view === 'partner') loadPartners().then(() => drawPartner(arg));
+  else if (view === 'clients') drawClients();
+}
+
+/* =================================================================
+   PLACEMENTS
+   ================================================================= */
 async function refresh(){
   const mk = $('month').value;
   const [{ data:st }, { data:links }, { data:notes }] = await Promise.all([
@@ -325,7 +540,11 @@ async function refresh(){
     sb.from('lb_month_notes').select('*').eq('month_key', mk).order('created_at')
   ]);
   drawCards(st || []);
-  drawRows(links || []);
+  MONTH_ROWS = links || [];
+  drawRows();
+  loadPartners().then(() => {
+    $('partnerList').innerHTML = PARTNERS.map(p => `<option value="${esc(p.domain)}">`).join('');
+  });
   // Internal staff get every note for the month (writers still only get their own,
   // the database enforces that). Yours goes in the box to edit; the rest show above it.
   const all = notes || [];
@@ -340,7 +559,6 @@ function drawCards(st){
   if (!st.length){ $('cards').innerHTML =
     '<div class="empty">No targets set for this month yet.</div>'; return; }
   $('cards').innerHTML = st.map(s => {
-    const name = (CLIENTS.find(c => c.client_slug === s.client_slug) || {}).client_name || s.client_slug;
     const pct = s.due ? s.verified / s.due : 0;
     const cls = s.hit ? 'hit' : pct >= .66 ? 'close' : pct > 0 ? 'behind' : 'none';
     const chips = [];
@@ -350,7 +568,7 @@ function drawCards(st){
     if (s.gone_dead > 0)    chips.push(`<span class="chip d">${s.gone_dead} dead</span>`);
     if (s.declined > 0)     chips.push(`<span class="chip">${s.declined} declined</span>`);
     return `<div class="card ${cls}">
-      <div class="nm">${esc(name)}</div>
+      <div class="nm">${esc(clientName(s.client_slug))}</div>
       <div class="big">${s.verified}<i> / ${s.due}</i></div>
       <div class="lbl">verified of due</div>
       <div class="chips">${chips.join('')}</div>
@@ -359,30 +577,68 @@ function drawCards(st){
 }
 
 const STATUSES = ['In Progress','Waiting','For Publication','Live','Declined'];
+const CLOCK = '<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2"></path><path d="M9 2h6"></path></svg>';
 
-function drawRows(rows){
+function countdown(r){
+  if (r.invoice_status === 'Paid')
+    return `<span class="timer done">${CLOCK}Paid${r.paid_at ? ' ' + esc(shortDate(r.paid_at)) : ''}${r.paid_by ? ' by ' + esc(nameOf(r.paid_by)) : ''}</span>`;
+  if (r.invoice_status !== 'Raised') return '';
+  if (!r.payment_due_at) return `<span class="timer done">${CLOCK}No due date set</span>`;
+  const due = new Date(r.payment_due_at), ms = due - Date.now(), abs = Math.abs(ms);
+  const span = abs < 864e5 ? Math.max(1, Math.round(abs/36e5)) + ' h'
+             : Math.round(abs/864e5) + (Math.round(abs/864e5) === 1 ? ' day' : ' days');
+  const when = due.toLocaleString('en-AU',{day:'numeric', month:'short', hour:'numeric', minute:'2-digit'});
+  return ms < 0
+    ? `<span class="timer over">${CLOCK}Overdue ${span} · was due ${esc(when)}</span>`
+    : `<span class="timer due">${CLOCK}Due in ${span} · ${esc(when)}</span>`;
+}
+
+function invoiceCell(r){
+  const st = r.invoice_status;
+  const chip = st === 'Paid' ? '<span class="vf y">paid</span>'
+             : st === 'Raised' ? '<span class="vf a">raised</span>'
+             : st === 'Not raised' ? '<span class="vf p">not raised</span>' : '';
+  const link = r.invoice_ref ? `<a href="${esc(r.invoice_ref)}" target="_blank" rel="noopener" class="mono" style="font-size:11px">PayPal ↗</a>` : '';
+  const follow = r.last_followed_up_at
+    ? `<span class="fnote">Followed up ${esc(shortDate(r.last_followed_up_at))} by ${esc(nameOf(r.last_followed_up_by))}</span>` : '';
+  const btns = st === 'Raised' ? `<div class="row" style="gap:6px">
+      <button class="btn sm" data-act="follow" data-id="${r.id}">Follow up</button>
+      ${CAN_PAY ? `<button class="btn sm ghost" data-act="paid" data-id="${r.id}">Mark paid</button>` : ''}</div>` : '';
+  const undo = st === 'Paid' && CAN_PAY ? `<button class="linkbtn" data-act="unpaid" data-id="${r.id}">Undo paid</button>` : '';
+  const editLabel = (!st && !r.invoice_ref) ? 'Add invoice' : 'Edit invoice';
+  const editor = st === 'Paid' && !CAN_PAY ? '' : `<button class="linkbtn" data-act="edit" data-id="${r.id}">${editLabel}</button>`;
+  return `<div class="inv" id="inv_${r.id}">
+    ${chip || link ? `<div class="r1">${chip}${link}</div>` : ''}
+    ${countdown(r)}${follow}${btns}
+    <div class="row" style="gap:10px">${editor}${undo}</div>
+  </div>`;
+}
+
+function drawRows(){
+  const rows = MONTH_ROWS;
   $('noRows').classList.toggle('hide', rows.length > 0);
   $('rows').innerHTML = rows.map(r => {
-    const name = (CLIENTS.find(c => c.client_slug === r.client_slug) || {}).client_name || r.client_slug;
     const vf = r.went_dead_on ? '<span class="vf n">dead</span>'
              : r.verified_live === true  ? '<span class="vf y">verified</span>'
              : r.verified_live === false ? '<span class="vf n">not found</span>'
              : '<span class="vf p">not checked</span>';
     const opts = STATUSES.map(s =>
       `<option${s === r.status ? ' selected' : ''}>${s}</option>`).join('');
+    const dom = normDomain(r.target_domain);
     return `<tr>
-      <td>${esc(name)}</td>
+      <td>${esc(clientName(r.client_slug))}</td>
       <td>${esc(r.link_type)}</td>
-      <td>${esc(r.target_domain)}</td>
+      <td>${dom ? `<a href="#partner/${encodeURIComponent(dom)}">${esc(r.target_domain)}</a>` : ''}</td>
       <td class="u">${r.live_url ? `<a href="${esc(r.live_url)}" target="_blank" rel="noopener">${esc(r.live_url)}</a>` : ''}</td>
       <td class="u">${esc(r.target_url)}</td>
       <td>${esc(r.anchor)}</td>
       <td class="n">${r.dr ?? ''}</td>
       <td class="n">${r.st ?? ''}</td>
-      <td><select class="st" data-id="${r.id}">${opts}</select></td>
+      <td><select class="st" data-id="${r.id}" aria-label="Status">${opts}</select></td>
       <td>${vf}</td>
       <td class="n">${r.cost_ex_gst != null ? '$' + Number(r.cost_ex_gst).toFixed(2) : ''}</td>
       <td>${esc(r.placed_on)}</td>
+      <td class="top">${invoiceCell(r)}</td>
     </tr>`;
   }).join('');
 
@@ -397,15 +653,104 @@ function drawRows(rows){
   });
 }
 
+// Invoice actions. One PayPal invoice can cover several placements, so Follow up
+// and Mark paid apply to every placement carrying the same invoice link.
+async function updateInvoiceGroup(r, patch, onlyUnpaid){
+  let q = sb.from('lb_links').update(patch);
+  if (r.invoice_ref){
+    q = q.eq('invoice_ref', r.invoice_ref);
+    if (onlyUnpaid) q = q.neq('invoice_status', 'Paid');
+  } else q = q.eq('id', r.id);
+  return q;
+}
+$('rows').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const r = MONTH_ROWS.find(x => x.id === b.dataset.id); if (!r) return;
+  const act = b.dataset.act;
+  if (act === 'edit') return openInvoiceEditor(r);
+  b.disabled = true;
+  let res;
+  if (act === 'follow') res = await updateInvoiceGroup(r, { last_followed_up_at: new Date().toISOString(), last_followed_up_by: EMAIL }, true);
+  if (act === 'paid')   res = await updateInvoiceGroup(r, { invoice_status: 'Paid' }, true);
+  if (act === 'unpaid') res = await updateInvoiceGroup(r, { invoice_status: 'Raised' }, false);
+  b.disabled = false;
+  if (res && res.error) alert(res.error.message); else refresh();
+});
+
+function openInvoiceEditor(r){
+  const box = $('inv_' + r.id);
+  const statuses = ['Not raised','Raised'].concat(CAN_PAY ? ['Paid'] : []);
+  const choice = r.payment_due_choice || '';
+  box.innerHTML = `<div class="inl">
+    <label class="lbl-sm" for="ie_ref_${r.id}">PayPal invoice link</label>
+    <input id="ie_ref_${r.id}" value="${esc(r.invoice_ref)}" placeholder="https://www.paypal.com/invoice/…">
+    <label class="lbl-sm" for="ie_st_${r.id}">Invoice status</label>
+    <select id="ie_st_${r.id}"><option value="">—</option>${statuses.map(s => `<option${s===r.invoice_status?' selected':''}>${s}</option>`).join('')}</select>
+    <label class="lbl-sm" for="ie_due_${r.id}">Payment due</label>
+    <select id="ie_due_${r.id}">${dueOptionsHtml(choice)}</select>
+    <input id="ie_dc_${r.id}" type="datetime-local" aria-label="Pick a due date and time" class="${choice==='custom'?'':'hide'}" value="${r.payment_due_at && choice==='custom' ? toLocalInput(r.payment_due_at) : ''}">
+    <div class="row" style="gap:6px"><button class="btn sm" id="ie_save_${r.id}">Save</button><button class="btn sm ghost" id="ie_x_${r.id}">Cancel</button></div>
+    <span class="err" id="ie_err_${r.id}" style="margin:0;min-height:0"></span>
+  </div>`;
+  $('ie_due_'+r.id).onchange = () => $('ie_dc_'+r.id).classList.toggle('hide', $('ie_due_'+r.id).value !== 'custom');
+  $('ie_x_'+r.id).onclick = drawRows;
+  $('ie_save_'+r.id).onclick = async () => {
+    const choice = $('ie_due_'+r.id).value || null;
+    const patch = { invoice_ref: $('ie_ref_'+r.id).value.trim() || null,
+                    invoice_status: $('ie_st_'+r.id).value || null,
+                    payment_due_choice: choice };
+    if (choice === 'custom'){
+      const v = $('ie_dc_'+r.id).value;
+      if (!v){ $('ie_err_'+r.id).textContent = 'Pick a date and time.'; return; }
+      patch.payment_due_at = new Date(v).toISOString();
+    }
+    if (patch.invoice_status === 'Raised' && !patch.invoice_ref){
+      $('ie_err_'+r.id).textContent = 'A raised invoice needs its PayPal link.'; return; }
+    const { error } = await sb.from('lb_links').update(patch).eq('id', r.id);
+    if (error){ $('ie_err_'+r.id).textContent = error.message; return; }
+    refresh();
+  };
+}
+
+// Live timers: re-draw the countdowns every minute without refetching.
+setInterval(() => {
+  if (!$('v_placements').classList.contains('hide') && !document.querySelector('.inl')) drawRows();
+}, 60000);
+
 /* ---------- write ---------- */
 const val = id => { const v = $(id).value.trim(); return v === "" ? null : v; };
 const num = id => { const v = $(id).value.trim(); return v === "" ? null : Number(v); };
 
+function dueHint(){
+  const c = $('f_due').value, st = $('f_invstatus').value;
+  $('f_duecustom').classList.toggle('hide', c !== 'custom');
+  let at = null;
+  if (c === 'custom' && $('f_duecustom').value) at = new Date($('f_duecustom').value);
+  else if (c && c !== 'custom') at = new Date(Date.now() + DUE_MS[c]);
+  $('f_duehint').innerHTML = !c ? '' :
+    st === 'Raised' && at ? `Due <b>${esc(dueFmt(at))}</b> · the timer starts when status is Raised`
+    : 'The timer starts when status is Raised';
+}
+['f_due','f_invstatus','f_duecustom'].forEach(i => $(i).addEventListener('input', dueHint));
+
 $('clear').onclick = () => {
   ['f_targetdomain','f_dr','f_st','f_liveurl','f_targeturl','f_anchor','f_cost','f_category',
-   'f_pubname','f_pubemail','f_content','f_doc','f_invref','f_notes'].forEach(i => $(i).value = "");
+   'f_pubname','f_pubemail','f_content','f_doc','f_invref','f_notes','f_duecustom'].forEach(i => $(i).value = "");
+  $('f_invstatus').value = ""; $('f_due').value = ""; dueHint();
   $('formErr').textContent = "";
 };
+
+// Picking a known partner fills in what we already know about it.
+$('f_targetdomain').addEventListener('change', () => {
+  const p = PARTNERS.find(x => x.domain === normDomain($('f_targetdomain').value));
+  if (!p) return;
+  if (!$('f_dr').value && p.dr != null) $('f_dr').value = p.dr;
+  if (!$('f_st').value && p.traffic != null) $('f_st').value = p.traffic;
+  if (!$('f_cost').value && p.price != null) $('f_cost').value = p.price;
+  if (!$('f_category').value && p.niche) $('f_category').value = p.niche;
+  if (!$('f_pubname').value && p.contact_name) $('f_pubname').value = p.contact_name;
+  if (!$('f_pubemail').value && p.contact_email) $('f_pubemail').value = p.contact_email;
+});
 
 $('save').onclick = async () => {
   $('formErr').textContent = ""; $('formOk').classList.add('hide');
@@ -416,12 +761,23 @@ $('save').onclick = async () => {
     $('formErr').textContent = "A Live link needs a Live URL — otherwise it can never be verified.";
     return;
   }
+  const invStatus = $('f_invstatus').value || null;
+  if (invStatus === 'Raised' && !val('f_invref')){
+    $('formErr').textContent = "A raised invoice needs its PayPal link.";
+    $('moreBox').open = true; return;
+  }
+  const choice = $('f_due').value || null;
+  let dueAt = null;
+  if (choice === 'custom'){
+    if (!$('f_duecustom').value){ $('formErr').textContent = "Pick the payment due date and time."; $('moreBox').open = true; return; }
+    dueAt = new Date($('f_duecustom').value).toISOString();
+  }
   const row = {
     client_slug: $('f_client').value,
     month_key:   $('month').value,
     link_type:   $('f_type').value,
     status:      status,
-    target_domain: val('f_targetdomain'),
+    target_domain: val('f_targetdomain') ? normDomain(val('f_targetdomain')) : null,
     live_url:    liveUrl,
     target_url:  val('f_targeturl'),
     anchor:      val('f_anchor'),
@@ -435,7 +791,9 @@ $('save').onclick = async () => {
     content_status:  val('f_content'),
     doc_link:    val('f_doc'),
     invoice_ref: val('f_invref'),
-    invoice_status: $('f_invstatus').value || null,
+    invoice_status: invStatus,
+    payment_due_choice: choice,
+    payment_due_at: dueAt,
     open_to_collab: $('f_collab').value === "" ? null : $('f_collab').value === "true",
     notes:       val('f_notes'),
     submitted_by: EMAIL
@@ -459,6 +817,310 @@ $('saveNote').onclick = async () => {
   $('noteOk').classList.remove('hide');
   setTimeout(() => $('noteOk').classList.add('hide'), 2500);
 };
+
+/* =================================================================
+   PARTNERS
+   ================================================================= */
+const SUITS = ['Plumbers','Electricians','Builders','Venues & events','Food & health'];
+const PSTAT = ['Active','Approved','Maybe','Declined'];
+const NICHE_GROUPS = [['home','Home & trades'],['property','Property'],['food','Food & health'],['events','Events'],['other','Other']];
+let pFilter = 'All', pSuit = 'All';
+
+async function loadPartners(){
+  const [{ data:ps }, { data:links }] = await Promise.all([
+    sb.from('lb_partners').select('*'),
+    sb.from('lb_links').select('id,client_slug,month_key,target_domain,live_url,anchor,cost_ex_gst,placed_on,verified_live,went_dead_on,status,link_type,dr,st,category,publisher_name,publisher_email')
+  ]);
+  ALL_LINKS = links || [];
+  const byDom = {};
+  ALL_LINKS.forEach(l => { const d = normDomain(l.target_domain); if (d) (byDom[d] = byDom[d] || []).push(l); });
+  const list = (ps || []).map(p => ({ ...p }));
+  // A site used in a placement but never added as a partner still shows up.
+  Object.keys(byDom).forEach(d => {
+    if (!list.find(p => p.domain === d)){
+      const l = byDom[d][0];
+      list.push({ domain: d, niche: l.category, niche_group: 'other', suitable_for: [], status: 'Active',
+                  status_note: 'Not in the partner list yet', contact_name: l.publisher_name, contact_email: l.publisher_email,
+                  dr: l.dr, traffic: l.st, _derived: true });
+    }
+  });
+  list.forEach(p => {
+    const ls = byDom[p.domain] || [];
+    const counted = ls.filter(l => l.status !== 'Declined');
+    p._links = ls;
+    p._placed = counted.length;
+    p._verified = counted.filter(l => l.verified_live === true && !l.went_dead_on).length;
+    p._dead = ls.filter(l => l.went_dead_on).length;
+    p._spend = counted.reduce((s,l) => s + Number(l.cost_ex_gst || 0), 0);
+    p._clients = [...new Set(counted.map(l => clientName(l.client_slug)))];
+    p._last = counted.map(l => l.placed_on).filter(Boolean).sort().pop() || null;
+    p._cpl = p._verified ? p._spend / p._verified : null;
+  });
+  PARTNERS = list;
+  return list;
+}
+
+function drawPartners(){
+  const all = PARTNERS;
+  const used = all.filter(p => p._placed > 0);
+  const placed = used.reduce((s,p) => s + p._placed, 0), ver = used.reduce((s,p) => s + p._verified, 0);
+  const spend = used.reduce((s,p) => s + p._spend, 0), dead = all.reduce((s,p) => s + p._dead, 0);
+  const waiting = all.filter(p => p.status === 'Maybe' || (p.status === 'Approved' && !p._placed)).length;
+  const stat = (big, lbl) => `<div class="stat"><div class="big">${big}</div><div class="lbl">${lbl}</div></div>`;
+  $('pStats').innerHTML = stat(used.length, 'Partners used') + stat(`${ver} <i>/ ${placed}</i>`, 'Links verified / placed')
+    + stat(money(spend), 'Spend to date (ex GST)') + stat(ver ? money(Math.round(spend/ver)) : '—', 'Avg per verified link')
+    + stat(dead, 'Links gone dead') + stat(waiting, 'Awaiting a decision');
+
+  $('pStatus').innerHTML = ['All'].concat(PSTAT).map(n =>
+    `<button class="pill sq" data-f="${n}" aria-pressed="${n===pFilter}">${n} <span>${n==='All'?all.length:all.filter(p=>p.status===n).length}</span></button>`).join('');
+  $('pSuit').innerHTML = '<span class="lbl-sm" style="margin-right:4px">Suitable for</span>' + ['All'].concat(SUITS).map(n =>
+    `<button class="pill" data-s="${esc(n)}" aria-pressed="${n===pSuit}">${esc(n)} <span>${n==='All'?all.length:all.filter(p=>(p.suitable_for||[]).includes(n)).length}</span></button>`).join('');
+
+  const q = $('pSearch').value.trim().toLowerCase();
+  const sort = $('pSort').value;
+  const rows = all.filter(p => (pFilter === 'All' || p.status === pFilter)
+      && (pSuit === 'All' || (p.suitable_for||[]).includes(pSuit))
+      && (!q || [p.domain, p.contact_name, p.contact_email].some(x => (x||'').toLowerCase().includes(q))))
+    .sort((a,b) => {
+      const nz = v => v == null ? -Infinity : v;
+      if (sort === 'cpl') return (a._cpl ?? Infinity) - (b._cpl ?? Infinity) || PSTAT.indexOf(a.status) - PSTAT.indexOf(b.status);
+      if (sort === 'dr') return nz(b.dr) - nz(a.dr);
+      if (sort === 'traffic') return nz(b.traffic) - nz(a.traffic);
+      if (sort === 'last') return (b._last||'').localeCompare(a._last||'');
+      return b._spend - a._spend;
+    });
+  $('pRows').innerHTML = rows.length ? rows.map(p => `<tr style="vertical-align:top">
+      <td><a href="#partner/${encodeURIComponent(p.domain)}" style="font-weight:700;font-size:13.5px">${esc(p.domain)}</a></td>
+      <td>${p.niche ? `<span class="niche ${esc(p.niche_group||'other')}">${esc(p.niche)}</span>` : ''}</td>
+      <td><div class="tags">${(p.suitable_for||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div></td>
+      <td><div style="font-weight:600">${esc(p.contact_name || '—')}</div><div style="color:var(--muted);font-size:11.5px;margin-top:3px">${esc(p.contact_email)}</div></td>
+      <td class="wrap"><span class="chip st-${esc(p.status)}">${esc(p.status)}</span>
+        <div style="color:var(--muted);font-size:11px;margin-top:5px;max-width:220px">${esc(p.status_note)}</div></td>
+      <td class="n">${p.dr ?? '—'}</td>
+      <td class="n">${kfmt(p.traffic)}</td>
+      <td class="n">${p.price != null ? money(p.price) : '—'}</td>
+      <td class="n">${p._verified} / ${p._placed}</td>
+      <td class="wrap" style="color:var(--soft);max-width:200px">${p._clients.length ? esc(p._clients.join(', ')) : 'Not used yet'}</td>
+      <td class="n">${money(p._spend)}</td>
+      <td class="mono" style="color:var(--soft)">${p._last ? esc(shortDate(p._last)) : '—'}</td>
+    </tr>`).join('') : '<tr><td colspan="12" class="empty">No partners match.</td></tr>';
+}
+$('pStatus').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (b){ pFilter = b.dataset.f; drawPartners(); } });
+$('pSuit').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (b){ pSuit = b.dataset.s; drawPartners(); } });
+$('pSearch').addEventListener('input', drawPartners);
+$('pSort').addEventListener('change', drawPartners);
+
+function partnerForm(p, slot, onDone){
+  p = p || { suitable_for: [], status: 'Maybe', niche_group: 'home' };
+  const isNew = !p.domain || p._derived;
+  const f = (id, label, v, type) => `<div class="fld"><label for="pf_${id}">${label}</label><input id="pf_${id}" ${type?`type="${type}"`:''} value="${esc(v)}"></div>`;
+  slot.innerHTML = `<div class="form" style="margin-top:16px">
+    <h2 style="margin-bottom:12px">${isNew ? 'Add a partner' : 'Edit ' + esc(p.domain)}</h2>
+    <div class="grid">
+      ${f('domain','Domain', p.domain || '')}
+      <div class="fld"><label for="pf_status">Status</label><select id="pf_status">${PSTAT.map(s => `<option${s===p.status?' selected':''}>${s}</option>`).join('')}</select></div>
+      ${f('note','Status note', p.status_note)}
+      ${f('niche','Niche', p.niche)}
+      <div class="fld"><label for="pf_ng">Niche colour</label><select id="pf_ng">${NICHE_GROUPS.map(([v,l]) => `<option value="${v}"${v===p.niche_group?' selected':''}>${l}</option>`).join('')}</select></div>
+    </div>
+    <div class="fld" style="margin-top:4px"><span class="lbl-sm">Suitable for</span><div class="checks">${SUITS.map(s =>
+      `<label><input type="checkbox" class="pf_suit" value="${esc(s)}"${(p.suitable_for||[]).includes(s)?' checked':''}> ${esc(s)}</label>`).join('')}</div></div>
+    <div class="grid" style="margin-top:8px">
+      ${f('cname','Webmaster name', p.contact_name)}
+      ${f('cemail','Webmaster email', p.contact_email, 'email')}
+      ${f('price','Price per link (ex GST)', p.price, 'number')}
+      ${f('dr','DR', p.dr, 'number')}
+      ${f('traffic','Organic traffic / mo', p.traffic, 'number')}
+      ${f('pay','Payment', p.payment_method)}
+      ${f('turn','Turnaround', p.turnaround)}
+      ${f('found','Found via', p.found_via)}
+    </div>
+    <div class="formfoot"><button class="btn" id="pf_save">Save partner</button><button class="btn ghost" id="pf_x">Cancel</button>
+      <span class="err" id="pf_err" style="margin:0"></span></div>
+  </div>`;
+  if (!isNew) $('pf_domain').disabled = true;
+  $('pf_x').onclick = () => { slot.innerHTML = ''; };
+  $('pf_save').onclick = async () => {
+    const n = id => { const v = $(id).value.trim(); return v === '' ? null : Number(v); };
+    const t = id => $(id).value.trim() || null;
+    const dom = normDomain($('pf_domain').value);
+    if (!dom){ $('pf_err').textContent = 'Domain is required.'; return; }
+    const row = { domain: dom, status: $('pf_status').value, status_note: t('pf_note'), niche: t('pf_niche'),
+      niche_group: $('pf_ng').value, suitable_for: [...document.querySelectorAll('.pf_suit:checked')].map(c => c.value),
+      contact_name: t('pf_cname'), contact_email: t('pf_cemail'), price: n('pf_price'), dr: n('pf_dr'),
+      traffic: n('pf_traffic'), payment_method: t('pf_pay'), turnaround: t('pf_turn'), found_via: t('pf_found'),
+      updated_at: new Date().toISOString() };
+    if (row.status === 'Approved' && p.status !== 'Approved'){ row.approved_by = nameOf(EMAIL); row.approved_on = dkey(new Date()); }
+    const { error } = isNew ? await sb.from('lb_partners').insert(row)
+                            : await sb.from('lb_partners').update(row).eq('domain', p.domain);
+    if (error){ $('pf_err').textContent = error.code === '23505' ? 'That partner is already in the list.' : error.message; return; }
+    slot.innerHTML = '';
+    onDone(dom);
+  };
+}
+$('addPartner').onclick = () => partnerForm(null, $('partnerFormSlot'),
+  dom => { location.hash = 'partner/' + encodeURIComponent(dom); });
+
+async function drawPartner(dom){
+  dom = normDomain(dom);
+  const p = PARTNERS.find(x => x.domain === dom);
+  const v = $('v_partner');
+  if (!p){ v.innerHTML = `<p style="margin-top:20px"><a href="#partners">← All partners</a></p><div class="empty">No partner called ${esc(dom)}.</div>`; return; }
+  const { data:notes } = p._derived ? { data: [] }
+    : await sb.from('lb_partner_notes').select('*').eq('domain', dom).order('created_at');
+  const types = [...new Set(p._links.map(l => l.link_type).filter(Boolean))];
+  const stat = (big, lbl) => `<div class="stat"><div class="big">${big}</div><div class="lbl">${lbl}</div></div>`;
+  v.innerHTML = `
+    <p style="margin-top:4px"><a href="#partners" style="font-weight:600;font-size:12.5px">← All partners</a></p>
+    <section class="row" style="align-items:flex-start;margin-top:16px">
+      <div style="flex:1 1 420px">
+        <div class="row" style="gap:10px"><h1 class="pg" style="margin:0;font-size:26px">${esc(p.domain)}</h1>
+          <span class="chip st-${esc(p.status)}">${esc(p.status)}</span>
+          ${p.status_note ? `<span class="chip o">${esc(p.status_note)}</span>` : ''}</div>
+        <div class="row" style="gap:8px;margin-top:12px">
+          ${p.niche ? `<span class="lbl-sm">Niche</span><span class="niche ${esc(p.niche_group||'other')}">${esc(p.niche)}</span>` : ''}
+          ${(p.suitable_for||[]).length ? `<span class="lbl-sm" style="margin-left:10px">Suitable for</span>${p.suitable_for.map(t => `<span class="tag">${esc(t)}</span>`).join('')}` : ''}
+        </div>
+        <p class="sub" style="margin:10px 0 0">${esc(types.join(', ') || 'No placements yet')}${p.approved_by ? ` · Approved by ${esc(p.approved_by)}${p.approved_on ? ' ' + esc(new Date(p.approved_on).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})) : ''}` : ''}</p>
+      </div>
+      <div class="row" style="gap:8px">
+        <a class="btn ghost" href="https://${esc(p.domain)}" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center;min-height:44px">Visit site</a>
+        <button class="btn" id="logHere" style="min-height:44px">Log a placement here</button>
+      </div>
+    </section>
+    <section class="stats" aria-label="Metrics">
+      ${stat(p.dr ?? '—','Domain rating')}${stat(kfmt(p.traffic),'Organic traffic / mo')}${stat(p.price != null ? money(p.price) : '—','Price per link')}
+      ${stat(`${p._verified} <i>/ ${p._placed}</i>`,'Verified / placed')}${stat(money(p._spend),'Total spend')}
+    </section>
+    <p class="sub" style="margin-top:8px">DR and traffic are typed by hand for now.</p>
+    <div class="two" style="margin-top:20px">
+      <section class="panel" style="margin:0">
+        <h2 style="margin-bottom:14px">Webmaster</h2>
+        <div class="kv">
+          <span>Name</span><span style="font-weight:600">${esc(p.contact_name || '—')}</span>
+          <span>Email</span><span>${p.contact_email ? `<a href="mailto:${esc(p.contact_email)}">${esc(p.contact_email)}</a>` : '—'}</span>
+          <span>Payment</span><span>${esc(p.payment_method || '—')}</span>
+          <span>Turnaround</span><span>${esc(p.turnaround || '—')}</span>
+          <span>Found via</span><span>${esc(p.found_via || '—')}</span>
+        </div>
+        <button class="btn ghost" id="editPartner" style="margin-top:14px;min-height:44px">${p._derived ? 'Add to partner list' : 'Edit details'}</button>
+      </section>
+      <section class="panel" style="margin:0">
+        <h2 style="margin-bottom:12px">Notes</h2>
+        <div id="pNotes">${(notes||[]).map(n => `<div style="border-bottom:1px solid var(--panel2);padding-bottom:10px;margin-bottom:10px">
+          <div style="font-size:13px;line-height:1.5;white-space:pre-wrap">${esc(n.body)}</div>
+          <div style="color:var(--muted);font-size:11.5px;margin-top:4px">${esc(nameOf(n.author))} · ${esc(shortDate(n.created_at))}</div></div>`).join('') || '<p class="sub">No notes yet.</p>'}</div>
+        ${p._derived ? '' : `<div class="fld" style="margin:0"><label for="pNote">Add a note</label><textarea id="pNote" rows="2"></textarea></div>
+        <div class="formfoot" style="margin-top:8px"><button class="btn sm" id="pNoteSave">Save note</button><span class="err" id="pNoteErr" style="margin:0"></span></div>`}
+      </section>
+    </div>
+    <div id="pEditSlot"></div>
+    <section>
+      <h2 style="margin-bottom:10px">Placements on this site</h2>
+      <div class="tw"><table style="min-width:900px">
+        <thead><tr><th>Client</th><th>Live URL</th><th>Anchor</th><th class="n">Cost</th><th>Placed</th><th>Status</th><th>Verified</th></tr></thead>
+        <tbody>${p._links.length ? p._links.slice().sort((a,b) => (b.placed_on||'').localeCompare(a.placed_on||'')).map(l => `<tr>
+          <td style="font-weight:600">${esc(clientName(l.client_slug))}</td>
+          <td class="u" style="max-width:320px">${l.live_url ? `<a href="${esc(l.live_url)}" target="_blank" rel="noopener">${esc(l.live_url.replace(/^https?:\/\/[^/]+/,'') || l.live_url)}</a>` : ''}</td>
+          <td>${esc(l.anchor)}</td><td class="n">${l.cost_ex_gst != null ? money(l.cost_ex_gst) : ''}</td>
+          <td class="mono" style="color:var(--soft)">${l.placed_on ? esc(shortDate(l.placed_on)) : ''}</td>
+          <td>${esc(l.status)}</td>
+          <td>${l.went_dead_on ? '<span class="vf n">dead</span>' : l.verified_live === true ? '<span class="vf y">verified</span>' : l.verified_live === false ? '<span class="vf n">not found</span>' : '<span class="vf p">not checked</span>'}</td>
+        </tr>`).join('') : '<tr><td colspan="7" class="empty">No placements on this site yet.</td></tr>'}</tbody>
+      </table></div>
+    </section>`;
+  $('editPartner').onclick = () => partnerForm(p, $('pEditSlot'), async d => { await loadPartners(); drawPartner(d); });
+  $('logHere').onclick = () => {
+    location.hash = 'placements';
+    setTimeout(() => {
+      $('f_targetdomain').value = p.domain;
+      $('f_targetdomain').dispatchEvent(new Event('change'));
+      $('f_client').focus();
+    }, 300);
+  };
+  if (!p._derived) $('pNoteSave').onclick = async () => {
+    const body = $('pNote').value.trim(); if (!body) return;
+    const { error } = await sb.from('lb_partner_notes').insert({ domain: p.domain, author: EMAIL, body });
+    if (error){ $('pNoteErr').textContent = error.message; return; }
+    drawPartner(p.domain);
+  };
+}
+
+/* =================================================================
+   CLIENTS
+   ================================================================= */
+$('cPeriod').addEventListener('change', drawClients);
+
+async function drawClients(){
+  const n = Number($('cPeriod').value), now = new Date(), cur = mkey(now);
+  const months = [];
+  for (let i = n - 1; i >= 0; i--) months.push(mkey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+  const [{ data:st }, { data:hist }] = await Promise.all([
+    sb.from('lb_month_standing').select('*').in('month_key', months),
+    sb.from('lb_history').select('*').in('month_key', months)
+  ]);
+  const S = {}, H = {};
+  (st||[]).forEach(r => S[r.client_slug + '|' + r.month_key] = r);
+  (hist||[]).forEach(r => H[r.client_slug + '|' + r.month_key] = r);
+
+  let hits = 0, judged = 0, grand = 0, grandLinks = 0;
+  const mSpend = months.map(() => 0), mLinks = months.map(() => 0);
+  const data = CLIENTS.map(c => {
+    let ch = 0, cj = 0, total = 0, links = 0;
+    const cells = months.map((m, i) => {
+      const s = S[c.client_slug + '|' + m], h = H[c.client_slug + '|' + m];
+      let cell;
+      if (s) cell = { v: Number(s.verified), due: s.due, spend: Number(s.spent_ex_gst || 0), prog: m === cur, hit: s.hit };
+      else if (h) cell = { v: h.live, due: null, spend: Number(h.spend_ex_gst || 0), hist: true };
+      else cell = null;
+      if (cell){
+        total += cell.spend; links += cell.v; mSpend[i] += cell.spend; mLinks[i] += cell.v;
+        if (cell.due != null && !cell.prog){ cj++; if (cell.hit) ch++; }
+      }
+      return cell;
+    });
+    hits += ch; judged += cj; grand += total; grandLinks += links;
+    return { c, cells, ch, cj, total, links };
+  });
+  const scale = Math.max(4, ...data.flatMap(d => d.cells.filter(Boolean).flatMap(x => [x.v, x.due || 0]))) * 1.15;
+
+  const stat = (big, lbl) => `<div class="stat"><div class="big">${big}</div><div class="lbl">${lbl}</div></div>`;
+  $('cStats').innerHTML = stat(`${hits} <i>/ ${judged}</i>`, 'Client-months on target')
+    + (n === 3 ? months.map((m,i) => stat(money(mSpend[i]), `${monthLabel(m,{month:'short'})}${m===cur?' (to date)':''} spend · ${mLinks[i]} links`)).join('') : '')
+    + stat(money(grand), 'Total spend (ex GST)') + stat(grandLinks ? money(Math.round(grand/grandLinks)) : '—', 'Per verified link');
+
+  const cols = `grid-template-columns:repeat(${months.length},minmax(0,1fr))`;
+  $('cCards').innerHTML = data.map(d => {
+    const chip = d.cj === 0 ? '<span class="chip">No finished months yet</span>'
+      : `<span class="chip ${d.ch === d.cj ? 'o' : 'w'}">${d.ch} of ${d.cj} months on target</span>`;
+    const lastDue = [...d.cells].reverse().find(x => x && x.due != null);
+    return `<article class="panel" style="display:flex;flex-direction:column;gap:8px">
+      <div class="row" style="gap:8px"><h3 style="font-size:14.5px;font-weight:800;flex:1 1 auto">${esc(d.c.client_name)}</h3>${chip}</div>
+      <div style="color:var(--muted);font-size:12px">Target ${lastDue ? lastDue.due + ' links this month' : (d.c.target_monthly ? d.c.target_monthly + ' links / month' : '[not set]')} · Spend <b class="mono" style="color:var(--text)">${money(d.total)}</b></div>
+      <div class="chart" style="${cols}">${d.cells.map(x => {
+        if (!x) return '<div class="col"><span class="v" style="color:var(--faint)">—</span></div>';
+        const h = Math.max(2, x.v / scale * 100);
+        const cls = x.prog ? 'prog' : x.hist ? 'hist' : x.hit ? 'hit' : 'miss';
+        const bh = x.prog ? Math.max(6, (x.due || 0) / scale * 100) : h;
+        return `<div class="col">
+          ${x.due != null ? `<div class="tmark" style="bottom:${x.due / scale * 100}%" title="Target ${x.due}"></div>` : ''}
+          <span class="v">${x.v}${x.prog ? ' so far' : ''}${x.due != null ? `<span style="color:var(--muted);font-weight:400"> / ${x.due}</span>` : ''}</span>
+          <div class="bar ${cls}" style="height:${bh}%"></div></div>`;
+      }).join('')}</div>
+      <div class="xl" style="${cols}">${months.map((m,i) => `<div>
+        <span class="lbl" style="margin:0">${esc(monthLabel(m,{month:'short'}))}</span>
+        <span class="mono" style="font-size:12px">${d.cells[i] ? money(d.cells[i].spend) + (m === cur ? '*' : '') : '—'}</span></div>`).join('')}</div>
+    </article>`;
+  }).join('');
+
+  $('cHead').innerHTML = `<tr><th>Client</th>${months.map(m => `<th class="n">${esc(monthLabel(m,{month:'short',year:'numeric'}))}${m===cur?' (to date)':''}</th>`).join('')}<th class="n">Total</th><th class="n">Per verified link</th></tr>`;
+  $('cBody').innerHTML = data.map(d => `<tr><td style="font-weight:600">${esc(d.c.client_name)}</td>
+      ${d.cells.map(x => `<td class="n">${x ? money(x.spend) : '—'}</td>`).join('')}
+      <td class="n" style="font-weight:700">${money(d.total)}</td>
+      <td class="n" style="color:var(--soft)">${d.links ? money(Math.round(d.total / d.links)) : '—'}</td></tr>`).join('')
+    + `<tr><td style="font-weight:800">All clients</td>${mSpend.map(s => `<td class="n" style="font-weight:700">${money(s)}</td>`).join('')}
+      <td class="n" style="font-weight:800">${money(grand)}</td><td class="n" style="color:var(--soft)">${grandLinks ? money(Math.round(grand/grandLinks)) : '—'}</td></tr>`;
+}
 
 
 /* ---------- setting a password ----------
