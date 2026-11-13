@@ -5993,6 +5993,20 @@ function socialStrip(){
    needs (Assign, Status, the CTA link to copy, the Drive photo) sits in a Team only strip that
    is simply not rendered for a client login. Reuses the month's existing handlers: the hidden
    data-reject tick drives the feedback box, data-note / data-notefor the comment. */
+/* Team only Download for the post's photo when it is not in the Drive library (Jhen 13/11/2026),
+   so the uploader can save the exact photo shown on the card and put it straight on the GBP post.
+   The file is named after the client, date and title. Wired by [data-dlimg] in the month wiring. */
+function imgDl(r){
+  if (!r.image_url) return '';
+  const name = [CFG.slug, r.publish_date, String(r.title || 'gbp-post').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60)].filter(Boolean).join('-');
+  const ext = (String(r.image_url).split('?')[0].match(/\.(jpe?g|png|webp|gif)$/i) || [, 'jpg'])[1].toLowerCase();
+  return '<div class="gcta"><span class="gctab">Image</span>'
+    + '<a class="gurl" href="' + esc(r.image_url) + '" target="_blank" rel="noopener" title="Open the photo">'
+    + esc(name + '.' + ext) + '</a>'
+    + '<button class="copybtn gctac" type="button" data-dlimg="' + esc(r.image_url) + '" data-dlname="' + esc(name + '.' + ext) + '"'
+    + ' title="Download the photo to upload to GBP">Download</button></div>';
+}
 const GPOPEN = {};
 function gpCard(r, staff){
   const id = esc(r.id);
@@ -6052,7 +6066,7 @@ function gpCard(r, staff){
                   + esc(String(r.image_source_id).split('/').pop()) + '</a>'
                   + '<a class="copybtn gctac" href="https://drive.google.com/uc?export=download&id=' + esc(DRIVEPICS[r.image_source_id]) + '"'
                   + ' target="_blank" rel="noopener">Download</a></div>'
-                : '')
+                : imgDl(r))
             + '</div>'
           : '')
       + '<div class="gp-acts">'
@@ -6127,7 +6141,7 @@ function gbpCard(r, staff){
           + ' title="Open the original in Drive to upload to GBP">' + esc(String(r.image_source_id).split('/').pop()) + '</a>'
           + '<a class="copybtn gctac" href="https://drive.google.com/uc?export=download&id=' + esc(DRIVEPICS[r.image_source_id]) + '"'
           + ' target="_blank" rel="noopener" title="Download the original">Download</a></div>'
-        : '')
+        : (staff ? imgDl(r) : ''))
     + '<div class="gactions">'
       + (r.post_body ? '<button class="notebtn seepost" type="button" data-gbp="' + id + '">See the post</button>' : '')
       + '<button class="notebtn" type="button" data-assignbtn="' + id + '">Assign'
@@ -6389,6 +6403,26 @@ function wireMonthBrief(el, t){
                 document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
     b.textContent = 'Copied'; b.classList.add('done');
     setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('done'); }, 1600);
+  }));
+  // GBP photo Download (team only). Fetch as a file so it saves rather than opens; if the host
+  // blocks that, open the photo in a new tab so it can still be saved.
+  el.querySelectorAll('[data-dlimg]').forEach(b => b.addEventListener('click', async () => {
+    const url = b.dataset.dlimg, name = b.dataset.dlname || 'gbp-photo.jpg';
+    b.textContent = 'Downloading…';
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      if (!res.ok) throw new Error(res.status);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      b.textContent = 'Downloaded'; b.classList.add('done');
+    } catch (e) {
+      window.open(url, '_blank', 'noopener');
+      b.textContent = 'Opened';
+    }
+    setTimeout(() => { b.textContent = 'Download'; b.classList.remove('done'); }, 1800);
   }));
   // Staff production fields on the month tab save directly (the Progress tab has its own wiring).
   el.querySelectorAll('[data-assign]').forEach(sel => sel.addEventListener('change', async () => {
