@@ -2170,7 +2170,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('gbpMod
    Author and name are set by ch_add_comment from the session, never sent by the page. */
 let ARTICLES = {}, OPENCOMMENTS = {}, ART = null, ARTCOMMENTS = [], PENDINGSEL = null;
 // QC checklist (Jhen 10/11/2026): the 10 human ticks per blog, the automatic check, and unsaved ticks.
-let QCCHECKS = {}, AUTOCHECKS = {}, QCITEMS = [], QCTICKS = {}, QCTICKVER = {}, QCNOTES = {}, QCDRAFTS = {};
+let QCCHECKS = {}, AUTOCHECKS = {}, QCITEMS = [], QCITEMS_PAGE = [], QCTICKS = {}, QCTICKVER = {}, QCNOTES = {}, QCDRAFTS = {};
 /* QC autosave (Janice 12/11/2026): every tick and the QC note save as a draft a moment after the change,
    so a refresh keeps them. Drafts sit in ch_qc_checklist_drafts, apart from the final all-ticked record. */
 const QCSAVET = {};
@@ -2210,7 +2210,7 @@ async function loadArticleIndex(){
     (dr.data || []).forEach(r => { QCDRAFTS[r.item_id] = r; });
     (q.data || []).forEach(r => { QCCHECKS[r.item_id] = r; });
     (x.data || []).forEach(r => { AUTOCHECKS[r.item_id] = r; });
-    if (Array.isArray(li.data)) QCITEMS = li.data;
+    if (Array.isArray(li.data)) QCITEMS = li.data; if (!QCITEMS_PAGE.length) { const lp = await sb.rpc('ch_qc_checklist_items', { p_kind: 'page' }); if (Array.isArray(lp.data)) QCITEMS_PAGE = lp.data; }
   }
 }
 
@@ -2293,8 +2293,8 @@ function renderArtQC(id){
     box.querySelectorAll('[data-qcnotetext]').forEach(ta => ta.addEventListener('input', () => { QCNOTES[id] = ta.value; qcAutosave(id); }));
     box.querySelectorAll('[data-qctick]').forEach(cb => cb.addEventListener('change', () => {
       qcTicks(id)[cb.dataset.qckey] = cb.checked; qcAutosave(id);
-      const done = QCITEMS.filter(i => qcTicks(id)[i.key] === true).length;
-      const c = box.querySelector('[data-qccount]'); if (c) c.textContent = done + ' of ' + QCITEMS.length + ' ticked';
+      const done = qcItems(id).filter(i => qcTicks(id)[i.key] === true).length;
+      const c = box.querySelector('[data-qccount]'); if (c) c.textContent = done + ' of ' + qcItems(id).length + ' ticked';
       const ok = box.querySelector('[data-artqcrel]');
       if (ok) { if (qcAllTicked(id)) ok.removeAttribute('data-qcwait'); else ok.setAttribute('data-qcwait', '1'); }
     }));
@@ -2331,8 +2331,8 @@ function renderArtQC(id){
   box.querySelectorAll('[data-qcnotetext]').forEach(ta => ta.addEventListener('input', () => { QCNOTES[id] = ta.value; qcAutosave(id); }));
   box.querySelectorAll('[data-qctick]').forEach(cb => cb.addEventListener('change', () => {
     qcTicks(id)[cb.dataset.qckey] = cb.checked; qcAutosave(id);
-    const done = QCITEMS.filter(i => qcTicks(id)[i.key] === true).length;
-    const c = box.querySelector('[data-qccount]'); if (c) c.textContent = done + ' of ' + QCITEMS.length + ' ticked';
+    const done = qcItems(id).filter(i => qcTicks(id)[i.key] === true).length;
+    const c = box.querySelector('[data-qccount]'); if (c) c.textContent = done + ' of ' + qcItems(id).length + ' ticked';
     const ok = box.querySelector('[data-artqcok]');
     if (ok) { if (qcAllTicked(id)) ok.removeAttribute('data-qcwait'); else ok.setAttribute('data-qcwait', '1'); }
   }));
@@ -5021,11 +5021,11 @@ function qcRefreshAfterClose(id){
   const t = it && TABLIST.find(x => x.monthKey === it.month_key);
   if (t) refreshMonth(t);
 }
-const qcAllTicked = id => QCITEMS.length > 0 && QCITEMS.every(i => qcTicks(id)[i.key] === true);
+const qcItems = id => { const it = ITEMS.find(x => x.id === id); return it && isPage(it) ? QCITEMS_PAGE : QCITEMS; }; /* Page QC list (Jhen 13/11/2026) */ const qcAllTicked = id => qcItems(id).length > 0 && qcItems(id).every(i => qcTicks(id)[i.key] === true);
 const qcMissingMsg = id => {
-  if (!QCITEMS.length) return 'The QC checklist did not load. Refresh the page.';
-  const m = QCITEMS.filter(i => qcTicks(id)[i.key] !== true).map(i => i.label);
-  return 'Tick all ' + QCITEMS.length + ' QC items first. Still open: ' + m.join(', ') + '.';
+  if (!qcItems(id).length) return 'The QC checklist did not load. Refresh the page.';
+  const m = qcItems(id).filter(i => qcTicks(id)[i.key] !== true).map(i => i.label);
+  return 'Tick all ' + qcItems(id).length + ' QC items first. Still open: ' + m.join(', ') + '.';
 };
 /* The automatic check and the 10 ticks, folded to three lines with a wiggling Expand (Jhen 10/11/2026).
    Open state is kept per item so a re-render after a tick does not snap it shut. */
@@ -5044,7 +5044,7 @@ document.addEventListener('click', e => {
   b.classList.toggle('jig', !open);
   b.innerHTML = open ? 'Collapse checklist &#9650;' : 'Expand checklist &#9660;';
 });
-function qcAutoHtml(id){
+function qcAutoHtml(id){ { const pit = ITEMS.find(y => y.id === id); if (pit && isPage(pit)) return '<div class="qcauto"><b>Automatic check:</b> not used for pages. Work through the page checklist below.</div>'; }
   const x = AUTOCHECKS[id], a = ARTICLES[id];
   if (!x) return '<div class="qcauto"><b>Automatic check:</b> not run yet. It runs whenever the blog is saved.</div>';
   const rows = Object.values(x.results || {}).map(c => {
@@ -5055,14 +5055,14 @@ function qcAutoHtml(id){
   return '<div class="qcauto"><b>Automatic check: ' + (x.failed ? x.failed + ' to look at' : 'all clear') + '</b>' + stale + '<ul>' + rows + '</ul></div>';
 }
 function qcListHtml(id, can){
-  if (!QCITEMS.length) return '<div class="qclist"><b>The QC checklist did not load.</b> Refresh the page before approving.</div>';
-  const t = qcTicks(id), done = QCITEMS.filter(i => t[i.key] === true).length;
+  if (!qcItems(id).length) return '<div class="qclist"><b>The QC checklist did not load.</b> Refresh the page before approving.</div>';
+  const t = qcTicks(id), done = qcItems(id).filter(i => t[i.key] === true).length;
   const saved = QCCHECKS[id], a = ARTICLES[id];
   const note = saved && a && saved.article_version !== a.version
     ? '<div class="qcsc">Ticked by ' + esc(saved.checked_name || '') + ' on an earlier version. The blog has changed since, so tick again.</div>' : '';
-  return '<div class="qclist" data-qclist="' + esc(id) + '"><div><b>QC checklist</b> <span class="qcsc" data-qccount="' + esc(id) + '">' + done + ' of ' + QCITEMS.length + ' ticked</span>'
+  return '<div class="qclist" data-qclist="' + esc(id) + '"><div><b>QC checklist</b> <span class="qcsc" data-qccount="' + esc(id) + '">' + done + ' of ' + qcItems(id).length + ' ticked</span>'
     + (can ? ' <span class="qcsc qcsave" data-qcsaved="' + esc(id) + '"></span>' : '') + '</div>' + note
-    + QCITEMS.map(i => '<label class="qcitem"><input type="checkbox" data-qctick="' + esc(id) + '" data-qckey="' + esc(i.key) + '"'
+    + qcItems(id).map(i => '<label class="qcitem"><input type="checkbox" data-qctick="' + esc(id) + '" data-qckey="' + esc(i.key) + '"'
         + (t[i.key] === true ? ' checked' : '') + (can ? '' : ' disabled') + '><span><b>' + esc(i.label) + ':</b> ' + esc(i.help) + '</span></label>').join('')
     + '<label class="qcnotelbl">QC note <span class="qcsc">(optional, team only, saved with your ticks)</span>'
     + '<textarea data-qcnotetext="' + esc(id) + '" rows="2" placeholder="e.g. Keyword count kept lower on purpose, it reads better."' + (can ? '' : ' disabled') + '>'
@@ -5073,13 +5073,13 @@ function qcListHtml(id, can){
 function qcPanel(r, staff){
   const a = ARTICLES[r.id];
   const li = r.deliverable === 'linkedin_article';
-  // Blogs only: pages have no QC checklist yet (Jhen 10/11/2026).
+  // Blogs only: pages have no QC checklist yet (Jhen 10/11/2026). Pages get their own checklist and QC approve below (Jhen 13/11/2026).
   if (staff && a && a.released_at && r.deliverable === 'blog' && r.stream === 'blog') {
     return '<div class="qcrow qcrel"><div class="qctext">' + (qcPassedAfterRelease(a)
       ? '&#10003; QC passed by <b>' + esc(a.qc_name || '') + '</b>, ' + esc(ausDate(String(a.qc_at).slice(0, 10))) + '. Still with the client.'
       : '<b>Not QC checked yet.</b> Open Read &amp; comment to tick the QC list. It stays For approval either way.') + '</div></div>';
   }
-  if (!staff || (r.stream !== 'blog' && !li) || !a || a.released_at) return '';
+  if (!staff || (r.stream !== 'blog' && !li && !isPage(r)) || !a || a.released_at) return '';
   const id = esc(r.id);
   const sc = a.scores || {};
   const scores = (sc.seo || sc.ai_search) ? ' · Surfer SEO ' + esc(sc.seo ?? '?') + ', AI search ' + esc(sc.ai_search ?? '?') : '';
@@ -6610,8 +6610,8 @@ function wireMonthBrief(el, t){
   el.querySelectorAll('[data-qctick]').forEach(cb => cb.addEventListener('change', () => {
     const id = cb.dataset.qctick;
     qcTicks(id)[cb.dataset.qckey] = cb.checked; qcAutosave(id);
-    const done = QCITEMS.filter(i => qcTicks(id)[i.key] === true).length;
-    const c = el.querySelector('[data-qccount="' + id + '"]'); if (c) c.textContent = done + ' of ' + QCITEMS.length + ' ticked';
+    const done = qcItems(id).filter(i => qcTicks(id)[i.key] === true).length;
+    const c = el.querySelector('[data-qccount="' + id + '"]'); if (c) c.textContent = done + ' of ' + qcItems(id).length + ' ticked';
     const ok = el.querySelector('[data-qcok="' + id + '"]');
     if (ok) { if (qcAllTicked(id)) ok.removeAttribute('data-qcwait'); else ok.setAttribute('data-qcwait', '1'); }
   }));
