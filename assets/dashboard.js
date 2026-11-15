@@ -884,7 +884,8 @@ const RP = () => !!CFG.reportPlus;
    ordinary searches, so a client can set brand_pattern in its YAML (Your Body Hub, 06/11/2026). */
 function brandPattern(){ return CFG.brandPattern || CFG.name.split(/\s+/)[0].replace(/[^a-z0-9]/gi, ''); }
 const RP_RANGES = [{ d:7, l:'7 days' }, { d:30, l:'1 month' }, { d:91, l:'3 months' }, { d:182, l:'6 months' }, { d:487, l:'16 months' }];
-const RP_AI_RANGES = [{ m:3, l:'3 months' }, { m:6, l:'6 months' }, { m:16, l:'16 months' }];
+const RP_AI_RANGES_ALL = [{ m:1, l:'Month' }, { m:3, l:'3 months' }, { m:6, l:'6 months' }, { m:16, l:'16 months' }];
+const RP_AI_RANGES = RP_AI_RANGES_ALL.slice(1);   /* 'Month' is preview 'aiDelta' (Jose 15/11/2026) */
 const rp = { gsc:91, ga:91, gscBy:'days', gaBy:'days', aiRange:6, aiOn:{ aio:true, vis:false, impr:false, clicks:false, gen:false, e_ChatGPT:true, e_Gemini:true, e_Perplexity:true, e_Claude:true }, kw:null, view:'rank' };
 const rpDay = s => new Date(s + 'T00:00:00');
 const rpYmd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -1098,27 +1099,49 @@ function rpAiHtml(){
   ];
   if (cur.some(r => r.gen != null)) defs.splice(2, 0, { k:'gen', label:'AI impressions', tag:'Google', v:tot(cur,'gen'), p:tot(prev,'gen'), f:x => fmt(x), c:'#22D3EE', note:'Search Console generative AI report' });
   RP_ENGINES.forEach(e => { if (cur.some(r => r['e_' + e.n] != null) || prev.some(r => r['e_' + e.n] != null)) defs.push({ k:'e_' + e.n, label:e.n, tag:'AI', v:lastOf(cur, 'e_' + e.n), p:lastOf(prev, 'e_' + e.n), f:x => pct1(x), c:e.c, dash:e.dash, unit:'%', dp:1 }); });
+  /* Month view on a month still running: counts compare with the same days of the previous month,
+     never half a month against a whole one (same rule as the Search Console month picker). */
+  const runningM = rpYmd(new Date()).slice(0, 7) === end;
+  let sameDays = null;
+  if (rp.aiRange === 1 && runningM){
+    const days = (RAW.daily || []).filter(r => monthOf(r.date) === end && r.gsc_impressions != null).map(r => String(r.date).slice(8, 10)).sort();
+    const cut = days[days.length - 1];
+    if (cut){ const pm = rpMonthAdd(end, -1), rows = (RAW.daily || []).filter(r => monthOf(r.date) === pm && String(r.date).slice(8, 10) <= cut);
+      const sum = k => rows.filter(r => r[k] != null).reduce((t, r) => t + Number(r[k]), 0);
+      sameDays = { label:`Same days of ${rpMon(pm)} (1–${+cut})`, impr:sum('gsc_impressions'), clicks:sum('gsc_clicks'), gen:rows.some(r => r.gen_ai != null) ? sum('gen_ai') : null };
+      defs.forEach(d => { if (d.k in sameDays && sameDays[d.k] != null){ d.p = sameDays[d.k]; d.pLabel = sameDays.label; } }); } }
   /* Readings at a point in time: with nothing in the previous period, compare with the first one shown. */
   defs.forEach(d => { if (d.p != null || !(d.k === 'aio' || d.k === 'vis' || d.k.startsWith('e_'))) return;
     const x = cur.filter(r => r[d.k] != null); if (x.length > 1) d.first = { v:x[0][d.k], m:x[0].month }; });
   const tiles = defs.map(d => `<button type="button" class="rp-ai-tile${rp.aiOn[d.k] ? ' on' : ''}" data-rp="ai" data-v="${d.k}" aria-pressed="${!!rp.aiOn[d.k]}" style="--c:${d.c}">
       <span class="mlbl">${esc(d.label)} <em>${d.tag}</em></span>
       <b class="tnum">${d.v != null ? d.f(d.v) : '—'}</b><small>This period</small>
-      <span class="rp-prev tnum">${d.p != null ? d.f(d.p) : (d.first ? d.f(d.first.v) : '—')}</span><small>${d.p != null ? 'Previous period' : (d.first ? 'First reading, ' + rpMon(d.first.m) : 'No earlier reading')}</small></button>`).join('');
+      ${PV('aiDelta') ? rpAiDelta(d) : ''}
+      <span class="rp-prev tnum">${d.p != null ? d.f(d.p) : (d.first ? d.f(d.first.v) : '—')}</span><small>${d.p != null ? (d.pLabel || (rp.aiRange === 1 ? 'Previous month' : 'Previous period')) : (d.first ? 'First reading, ' + rpMon(d.first.m) : 'No earlier reading')}</small></button>`).join('');
   const series = defs.filter(d => rp.aiOn[d.k]).map(d => {
     const big = d.k === 'impr' || d.k === 'gen', pct = d.k === 'vis' || d.k.startsWith('e_');
     return { k:d.k, name:d.label, color:d.c, axis: pct || big ? 'r' : undefined, unit:d.unit, dp:d.dp, dash:d.dash, pct, connect:d.k !== 'impr' && d.k !== 'clicks' && d.k !== 'gen' }; });
   /* A percentage and a count share the right axis only if they share a unit. */
   const mixed = series.some(s => s.pct) && series.some(s => s.k === 'impr' || s.k === 'gen');
   if (mixed) series.forEach(s => { if (s.k === 'impr' || s.k === 'gen') s.axis = undefined; });
-  const curRange = all.filter(r => r.month >= start);
+  const curRange = all.filter(r => r.month >= (rp.aiRange === 1 ? rpMonthAdd(end, -2) : start));
   const partial = (() => { const t = rpYmd(new Date()).slice(0, 7); return end === t; })();
   return `<div class="cardhead"><div><h3>AI visibility tracker</h3>
-      <p class="sub">${rpMon(curRange[0].month)} to ${rpMon(end)}${partial ? ' (month in progress)' : ''}, monthly readings. Tap a tile to show or hide it on the graph.</p></div>
-      <div class="rp-range" role="group" aria-label="AI tracker period">${RP_AI_RANGES.map(r => rpBtn('airange', r.m, r.m === rp.aiRange, r.l)).join('')}</div></div>
+      <p class="sub">${rp.aiRange === 1 ? `${rpMon(end)} against ${rpMon(rpMonthAdd(end, -1))}${partial ? ' (month in progress)' : ''}. The graph shows the last three months` : `${rpMon(curRange[0].month)} to ${rpMon(end)}${partial ? ' (month in progress)' : ''}, monthly readings`}. Tap a tile to show or hide it on the graph.</p></div>
+      <div class="rp-range" role="group" aria-label="AI tracker period">${(PV('aiDelta') ? RP_AI_RANGES_ALL : RP_AI_RANGES).map(r => rpBtn('airange', r.m, r.m === rp.aiRange, r.l)).join('')}</div></div>
     <div class="rp-ai-tiles">${tiles}</div>
     ${series.length ? rpLegend(series) + rpLines(curRange, series, { labelFmt:rpMon, yR: series.some(s => s.axis === 'r' && s.pct) ? '%' : '' }) : '<p class="sub">Pick a tile to plot it.</p>'}
-    <p class="sub">AI Overview keywords are the ones found in the Australian keyword database we track, so they are a strong sample rather than every search Google answers. Each assistant line is the share of our questions where that assistant named ${esc(CFG.name)}, with a dot for each reading; months between readings are joined up.${(() => { const q = curRange.filter(r => r.qs); return new Set(q.map(r => r.qs)).size > 1 ? ' Questions asked: ' + q.map(r => `${r.qs} in ${rpMon(r.month)}`).join(', ') + '.' : ''; })()}</p>`;
+    <p class="sub${PV('aiDelta') ? ' rp-ai-note' : ''}">AI Overview keywords are the ones found in the Australian keyword database we track, so they are a strong sample rather than every search Google answers. Each assistant line is the share of our questions where that assistant named ${esc(CFG.name)}, with a dot for each reading; months between readings are joined up.${(() => { const q = curRange.filter(r => r.qs); return new Set(q.map(r => r.qs)).size > 1 ? ' Questions asked: ' + q.map(r => `${r.qs} in ${rpMon(r.month)}`).join(', ') + '.' : ''; })()}</p>`;
+}
+/* Change on the previous period, green up / red down. Percentage tiles move in points (a share of answers
+   going from 20% to 25% is +5 pts); counts move in %. */
+function rpAiDelta(d){
+  const was = d.p != null ? d.p : (d.first ? d.first.v : null);
+  if (d.v == null || was == null) return '';
+  const diff = d.v - was; if (Math.abs(diff) < 1e-9) return '<span class="rp-dl eq">= no change</span>';
+  const up = diff > 0, pctTile = d.unit === '%';
+  const txt = pctTile ? `${fmt(Math.abs(diff), 1)} pts` : (was ? `${fmt(Math.abs(diff) / was * 100, 0)}%` : 'new');
+  return `<span class="rp-dl ${up ? 'up' : 'dn'}">${up ? '▲' : '▼'} ${txt}</span>`;
 }
 /* Every AI Overview citation, month against month. */
 function rpAioTable(){
@@ -1189,7 +1212,7 @@ const rpReach = s => +s.spacing_km * (s.grid_size - 1) / 2;
 const rpKmFrom = (s, p) => 111.32 * Math.sqrt(Math.pow(+p.lat - +s.centre_lat, 2) + Math.pow((+p.lng - +s.centre_lng) * Math.cos(+s.centre_lat * Math.PI / 180), 2));
 const rpPts = s => (RAW.points || []).filter(p => p.scan_id === s.id
   && (!PV('mapCircle') || s.centre_lat == null || rpKmFrom(s, p) <= rpReach(s) + +s.spacing_km * .15));
-let rpMaskN = 0;
+let rpMaskN = 0, rpMapSmall = false;
 function rpStats(s){ const f = rpPts(s).filter(p => p.rank != null), r = f.map(p => +p.rank);
   return { found:f.length, total:rpPts(s).length, top3:r.filter(v => v <= 3).length, first:r.filter(v => v === 1).length, avg:r.length ? r.reduce((a, b) => a + b, 0) / r.length : null }; }
 function rpSeries(){
@@ -1214,18 +1237,21 @@ function rpMapSvg(s, prev, movement){
     const tip = `${r == null ? 'Not found here' : 'Rank #' + r} · ${km(+p.lat, +p.lng).toFixed(1)} km from the business${o ? ` · Last scan: ${was == null ? 'not found' : '#' + was}` : ''}${rpTop3(p)}`;
     let fill, ink, label;
     if (movement){
-      if (r == null && was == null) return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="rgba(255,255,255,.25)"><title>${esc(tip)}</title></circle>`;
+      if (r == null && was == null) return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="rgba(255,255,255,.25)" class="pin"><title>${esc(tip)}</title></circle>`;
       const d = r == null ? -1 : was == null ? 1 : was - r; fill = d > 0 ? '#2E9E5B' : d < 0 ? '#C94A4A' : '#6E6E7A'; ink = '#fff';
       label = r == null ? '✕' : was == null ? 'new' : d === 0 ? '=' : (d > 0 ? '+' : '') + d;
-    } else { if (r == null) return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="rgba(255,255,255,.25)"><title>${esc(tip)}</title></circle>`; [fill, ink] = colour(r); label = String(r); }
+    } else { if (r == null) return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="rgba(255,255,255,.25)" class="pin"><title>${esc(tip)}</title></circle>`; [fill, ink] = colour(r); label = String(r); }
     const fs = String(label).length > 2 ? size * .62 : size * .8;
-    return `<g><title>${esc(tip)}</title><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${size}" fill="${fill}" stroke="#17171C" stroke-width="1.5"/><text x="${x.toFixed(1)}" y="${(y + fs * .36).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-family="var(--mono)" font-weight="700" fill="${ink}">${esc(label)}</text></g>`; }).join('');
+    return `<g class="pin"><title>${esc(tip)}</title><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${size}" fill="${fill}" stroke="#17171C" stroke-width="1.5"/><text x="${x.toFixed(1)}" y="${(y + fs * .36).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-family="var(--mono)" font-weight="700" fill="${ink}">${esc(label)}</text></g>`; }).join('');
   const [sx, sy] = s.centre_lat != null ? px(+s.centre_lat, +s.centre_lng) : [320, 320];
   const star = [...Array(10)].map((_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? size * .42 : size * .95; return `${(sx + r * Math.cos(a)).toFixed(1)},${(sy + r * Math.sin(a)).toFixed(1)}`; }).join(' ');
   let circ = '';
   if (PV('mapCircle')){ const R = (rpReach(s) + +s.spacing_km * .5) * 1000 / metres, id = 'rpm' + (++rpMaskN);
     circ = `<defs><mask id="${id}"><rect width="640" height="640" fill="#fff"/><circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R.toFixed(1)}" fill="#000"/></mask></defs><rect width="640" height="640" fill="rgba(14,14,18,.72)" mask="url(#${id})"/><circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R.toFixed(1)}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>`; }
-  return `<div class="rp-map"><img src="${esc(B.src)}" alt="Map of the area around ${esc(s.centre_label || CFG.name)}" loading="lazy"><svg viewBox="0 0 640 640" role="img" aria-label="${esc(s.keyword)} map pack positions">${circ}${rings}${pins}<polygon points="${star}" fill="#fff" stroke="#17171C" stroke-width="1.5"><title>${esc(CFG.name)}</title></polygon></svg></div>`;
+  const inner = `<img src="${esc(B.src)}" alt="Map of the area around ${esc(s.centre_label || CFG.name)}" loading="lazy"><svg viewBox="0 0 640 640" role="img" aria-label="${esc(s.keyword)} map pack positions">${circ}${rings}${pins}<polygon class="pin" points="${star}" fill="#fff" stroke="#17171C" stroke-width="1.5"><title>${esc(CFG.name)}</title></polygon></svg>`;
+  /* Zoom (preview 'mapZoom'): + / − buttons and drag to pan, so suburb names can be read. Small maps don't zoom. */
+  if (PV('mapZoom') && !rpMapSmall) return `<div class="rp-map rp-zoomable"><div class="rp-zoom" data-z="1" data-x="0" data-y="0">${inner}</div><div class="rp-zbtns"><button type="button" data-rpz="in" aria-label="Zoom in">+</button><button type="button" data-rpz="out" aria-label="Zoom out">−</button><button type="button" data-rpz="reset" aria-label="Show whole map">⤢</button></div></div>`;
+  return `<div class="rp-map">${inner}</div>`;
 }
 function rpMapHtml(){
   const all = rpSeries();
@@ -1278,7 +1304,7 @@ function rpGrowthHtml(all, kws){
   const short = m => new Date(m + '-01T00:00:00').toLocaleDateString('en-AU', { month:'short', year:'2-digit' });
   const head = `<div class="rpg-k"></div>${G.months.map(m => `<div class="rpg-m">${esc(short(m))}</div>`).join('')}`;
   const body = G.rows.map(r => `<div class="rpg-k">${esc(r.k)}</div>${r.cells.map(s => { if (!s) return '<div class="rpg-c rpg-none">No scan</div>';
-    const a = rpStats(s); return `<div class="rpg-c">${rpMapSvg(s, null, false)}<div class="rpg-s"><b>${fmt(a.found)}</b>/${fmt(a.total)} found · <b>${fmt(a.top3)}</b> top 3 · avg ${a.avg != null ? fmt(a.avg, 1) : '—'}</div></div>`; }).join('')}`).join('');
+    const a = rpStats(s); rpMapSmall = true; const mm = rpMapSvg(s, null, false); rpMapSmall = false; return `<div class="rpg-c">${mm}<div class="rpg-s"><b>${fmt(a.found)}</b>/${fmt(a.total)} found · <b>${fmt(a.top3)}</b> top 3 · avg ${a.avg != null ? fmt(a.avg, 1) : '—'}</div></div>`; }).join('')}`).join('');
   return `<div class="card"><div class="cardhead"><div><h3>Growth at a glance</h3><p class="sub">Every keyword, month by month. Read each row left to right.</p></div><button type="button" class="rp-btn" data-rpgrowth="1">Download image</button></div>
     <div class="tscroll"><div class="rpg" style="grid-template-columns:minmax(110px,150px) repeat(${G.months.length}, minmax(150px,240px))">${head}${body}</div></div></div>`;
 }
@@ -1307,6 +1333,42 @@ async function rpGrowthPng(){
 document.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('[data-rpgrowth]'); if (!b) return;
   b.disabled = true; b.textContent = 'Preparing…'; rpGrowthPng().catch(e => { console.error(e); alert('Could not build the image.'); })
     .finally(() => { b.disabled = false; b.textContent = 'Download image'; }); });
+/* "Near me" searches (preview 'nearMe', Jose 15/11/2026): every GBP search term containing "near me",
+   month by month, ranked by people within the near-me set. Google gives a number only from 15 people a
+   month; below that it says "under 15", so totals are shown as "at least". No extra data pull or cost. */
+function rpNearMeHtml(){
+  const NM = /\bnear\s*me\b/i, all = (RAW.gkw || []).filter(r => NM.test(r.keyword) && monthOf(r.month) <= state.month);
+  const months = [...new Set(all.map(r => monthOf(r.month)))].sort().slice(-6);
+  if (!months.length) return '';
+  const val = r => r.users != null ? Number(r.users) : (r.below_threshold ? Number(r.below_threshold) - .5 : 0);
+  const by = {}; all.filter(r => months.includes(monthOf(r.month))).forEach(r => { const k = r.keyword.toLowerCase(); (by[k] = by[k] || { keyword:r.keyword })[monthOf(r.month)] = r; });
+  const rankIn = m => { const l = Object.values(by).filter(x => x[m]).sort((a, b) => val(b[m]) - val(a[m]) || a.keyword.localeCompare(b.keyword)); const o = {}; l.forEach((x, i) => { o[x.keyword.toLowerCase()] = i + 1; }); return o; };
+  const L = months[months.length - 1], P = months.length > 1 ? months[months.length - 2] : null, rL = rankIn(L), rP = P ? rankIn(P) : {};
+  const short = m => new Date(m + '-01T00:00:00').toLocaleDateString('en-AU', { month:'short', year:'2-digit' });
+  const rows = Object.values(by).map(x => { const k = x.keyword.toLowerCase(), o = { keyword:x.keyword, rank:rL[k] ?? 999 };
+    o.move = !x[L] ? -999 : !P || !rP[k] ? 999 : rP[k] - rL[k];
+    months.forEach(m => { o['m' + m] = x[m] ? val(x[m]) : -1; o['r' + m] = x[m]; }); return o; });
+  /* Each month against the month before: green up, red down. "Under 15" counts as 14.5, so a move into or
+     out of an exact count still shows, but under 15 to under 15 shows no arrow. */
+  const cell = (v, r, m) => { const x = r['r' + m], i = months.indexOf(m), pm = i > 0 ? months[i - 1] : null, px = pm ? r['r' + pm] : null;
+    if (!x) return '<span class="sub">—</span>' + (px ? `<span class="nm-mv dn" title="Not shown in ${short(m)}">▼</span>` : '');
+    const d = !pm ? 0 : !px ? 1 : val(x) - val(px);
+    const arrow = !pm || d === 0 ? '' : `<span class="nm-mv ${d > 0 ? 'up' : 'dn'}" title="${d > 0 ? 'Up' : 'Down'} on ${short(pm)}">${d > 0 ? '▲' : '▼'}</span>`;
+    return (x.users != null ? fmt(x.users) : `<span class="sub">under ${x.below_threshold}</span>`) + arrow; };
+  const cols = [{ k:'keyword', label:'Search' },
+    { k:'rank', label:`Rank (${short(L)})`, num:1, fmt:v => v === 999 ? '<span class="sub">—</span>' : '#' + v },
+    { k:'move', label:'Move', num:1, fmt:v => v === 999 ? '<span class="chip up">new</span>' : v === -999 ? '<span class="chip dn">gone</span>' : v === 0 ? '=' : `<span class="chip ${v > 0 ? 'up' : 'dn'}">${v > 0 ? '▲' : '▼'} ${Math.abs(v)}</span>` },
+    ...months.map(m => ({ k:'m' + m, label:short(m), num:1, fmt:(v, r) => cell(v, r, m) }))];
+  const tot = m => { const l = Object.values(by).filter(x => x[m]); return { n:l.length, exact:l.reduce((t, x) => t + (x[m].users != null ? Number(x[m].users) : 0), 0),
+    floor:l.reduce((t, x) => t + (x[m].users != null ? Number(x[m].users) : 1), 0), under:l.filter(x => x[m].users == null).length }; };
+  const T = tot(L), TP = P ? tot(P) : null;
+  const kp = `<div class="kpis">${kpi('“Near me” searches', fmt(T.n), TP ? `${T.n - TP.n >= 0 ? '+' : ''}${fmt(T.n - TP.n)} on ${short(P)}` : short(L))}
+    ${kpi('People, at least', fmt(T.floor), TP ? `${T.floor - TP.floor >= 0 ? '+' : ''}${fmt(T.floor - TP.floor)} on ${short(P)}` : short(L))}
+    ${kpi('Counted exactly', fmt(T.exact), `${fmt(T.n - T.under)} of ${fmt(T.n)} searches`)}</div>`;
+  return `<div class="card"><div class="cardhead"><div><h3>“Near me” searches</h3><p class="sub">Every search with “near me” that showed the profile, month by month. Rank is its place among these searches by people, ${monthName(L)}.</p></div></div>
+    ${kp}${dataTable('nearme', cols, rows, { sort:{ k:'rank', dir:1 }, maxH:460,
+      note:'Google gives an exact count only from 15 people a month; below that it shows “under 15”. “People, at least” counts each of those as 1, so the real figure is higher. Google releases this a few weeks after month end.' })}</div>`;
+}
 /* GBP: monthly views, reviews total, where people see you, and search chips. */
 function rpGbpExtras(){
   const byM = {};
@@ -1664,6 +1726,7 @@ function viewGbp(){
         { k:'sortv', label:'People', num:1, fmt:(v, r) => r.users != null ? fmt(r.users) : `under ${r.below_threshold}` }],
         rows, { sort:{ k:'sortv', dir:-1 }, maxH:380 })}</div>`;
   }
+  if (PV('nearMe')) out += rpNearMeHtml();
 
   /* Reviews — every one, newest first */
   if (rv.length){
@@ -3128,3 +3191,17 @@ function tgPlannerUpdate(card){
 }
 function tgPlannerInit(){ $$('[data-tgplan]').forEach(tgPlannerUpdate); }
 document.addEventListener('input', ev => { const c = ev.target.closest && ev.target.closest('[data-tgplan]'); if (c && ev.target.matches('[data-s]')) tgPlannerUpdate(c); });
+
+/* Map zoom + drag (preview 'mapZoom'). Pan is clamped so the map never leaves its frame. */
+function rpZoomSet(z, nz, x, y){ const k = Math.max(1, Math.min(4, nz)), w = z.parentElement.clientWidth, lim = w * (k - 1) / 2;
+  x = Math.max(-lim, Math.min(lim, x)); y = Math.max(-lim, Math.min(lim, y));
+  Object.assign(z.dataset, { z:k, x, y }); z.style.setProperty('--k', k); z.style.transform = `translate(${x}px, ${y}px) scale(${k})`; z.parentElement.classList.toggle('zoomed', k > 1); }
+document.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('[data-rpz]'); if (!b) return;
+  const z = b.closest('.rp-zoomable').querySelector('.rp-zoom'), k = +z.dataset.z;
+  if (b.dataset.rpz === 'reset') return rpZoomSet(z, 1, 0, 0);
+  const nk = b.dataset.rpz === 'in' ? k * 1.6 : k / 1.6; rpZoomSet(z, nk, +z.dataset.x * nk / k, +z.dataset.y * nk / k); });
+document.addEventListener('pointerdown', ev => { const z = ev.target.closest && ev.target.closest('.rp-zoom'); if (!z || +z.dataset.z <= 1) return;
+  const sx = ev.clientX, sy = ev.clientY, ox = +z.dataset.x, oy = +z.dataset.y; z.setPointerCapture(ev.pointerId);
+  const mv = e => rpZoomSet(z, +z.dataset.z, ox + e.clientX - sx, oy + e.clientY - sy);
+  const up = () => { z.removeEventListener('pointermove', mv); z.removeEventListener('pointerup', up); };
+  z.addEventListener('pointermove', mv); z.addEventListener('pointerup', up); });

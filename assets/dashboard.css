@@ -586,3 +586,20 @@ html.rvopen{overflow:hidden}
 .rpg-s{font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-top:6px;line-height:1.4}
 .rpg-s b{color:var(--ink)}
 .rpg-none{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1px dashed var(--ink3);border-radius:8px;color:var(--ink3);font-size:12px}
+
+.nm-mv{display:inline-block;margin-left:6px;font-size:10px;line-height:1}
+.nm-mv.up{color:#2E9E5B}.nm-mv.dn{color:#C94A4A}
+
+/* AI tracker change (preview aiDelta) */
+.rp-dl{font:700 11px var(--mono);margin-top:4px}
+.rp-dl.up{color:#2E9E5B}.rp-dl.dn{color:#C94A4A}.rp-dl.eq{color:var(--ink3)}
+.rp-ai-note{max-width:720px;margin:18px auto 4px;text-align:center;line-height:1.6}
+/* Map zoom (preview mapZoom) */
+.rp-zoomable{touch-action:none}
+.rp-zoom{position:absolute;inset:0;transform-origin:50% 50%;transition:transform .2s ease}
+.rp-zoomable.zoomed .rp-zoom{cursor:grab;transition:none}
+.rp-zbtns{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.rp-zbtns button{width:32px;height:32px;border-radius:8px;border:1px solid var(--bd2);background:rgba(18,18,22,.85);color:#fff;font:700 18px var(--sans);cursor:pointer;line-height:1}
+.rp-zbtns button:hover{border-color:var(--accent)}
+.rp-zoom .pin,.rp-zoom .rp-ring{transform-box:fill-box;transform-origin:center;transform:scale(calc(1 / var(--k, 1)));transition:transform .2s ease}
+.rp-zoomable.zoomed .rp-zoom .pin,.rp-zoomable.zoomed .rp-zoom .rp-ring{transition:none}
