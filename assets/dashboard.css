@@ -633,7 +633,7 @@ html.rvopen{overflow:hidden}
 .st-nav{position:absolute;inset:40px 0 0;display:flex;z-index:1}.st-nav span{flex:1;cursor:pointer}.st-nav span:first-child{flex:.45}
 .st-logo{max-height:64px;max-width:220px;background:#fff;border-radius:12px;padding:8px 12px;margin:0 auto 18px;display:block}
 .st-kick{font:700 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin:0 0 12px}
-.st-h{font-size:clamp(44px,9vw,84px);line-height:1;font-weight:900;margin:0 0 14px;letter-spacing:-.02em;background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--acc) 60%,#fff));-webkit-background-clip:text;background-clip:text;color:transparent}
+.st-h{font-size:clamp(44px,9vw,84px);line-height:1;font-weight:900;margin:0 0 14px;letter-spacing:-.02em;color:#fff;text-shadow:0 0 34px color-mix(in srgb,var(--acc) 75%,transparent),0 2px 0 rgba(0,0,0,.3)}
 .st-h2{font-size:clamp(26px,5vw,38px);font-weight:900;margin:0 0 16px;line-height:1.1}
 .st-big{font-size:clamp(72px,17vw,150px);font-weight:900;line-height:.95;margin:6px 0 10px;letter-spacing:-.03em;color:#fff;text-shadow:0 0 40px color-mix(in srgb,var(--acc) 70%,transparent)}
 .st-p{font-size:clamp(17px,3.4vw,21px);line-height:1.45;color:#e6e6ee;margin:0 auto 12px;max-width:470px}
@@ -669,3 +669,17 @@ html.rvopen{overflow:hidden}
 @keyframes stFrame{0%{opacity:1}99%{opacity:1}100%{opacity:0}}
 @keyframes stFrameLast{to{opacity:1}}
 @media (max-width:600px){.st-stats{grid-template-columns:1fr 1fr 1fr;gap:6px}.st-stat{padding:12px 4px}}
+
+/* bigger banner (15/11/2026: "not very obvious") */
+.st-banner{padding:22px 24px;gap:18px;border-width:2px;border-radius:18px;margin:0 0 22px;
+  background:linear-gradient(110deg,color-mix(in srgb,var(--acc) 55%,#101014) 0%,color-mix(in srgb,var(--acc) 22%,#141418) 55%,color-mix(in srgb,var(--acc) 40%,#101014) 100%);
+  background-size:200% 100%;animation:stPulse 2.4s ease-out infinite,stShine 6s linear infinite}
+@keyframes stShine{0%{background-position:0% 0}100%{background-position:200% 0}}
+.st-banner b{font-size:clamp(20px,2.6vw,28px);line-height:1.15}
+.st-banner small{font-size:12px;color:#ececf2}
+.st-banner .st-new{display:inline-block;font:800 10.5px var(--mono);letter-spacing:.14em;color:#0d0d10;background:#FFD54A;border-radius:999px;padding:3px 9px;margin:0 0 6px}
+.st-spark{font-size:44px}
+.st-play{font-size:16px;padding:14px 24px;box-shadow:0 6px 24px color-mix(in srgb,var(--acc) 60%,transparent);display:flex;align-items:center;gap:8px}
+.st-tri{display:inline-flex;width:22px;height:22px;border-radius:50%;background:#0d0d10;color:var(--acc);font-size:10px;align-items:center;justify-content:center}
+.st-banner:hover .st-play{transform:scale(1.05)}
+@media (max-width:640px){.st-banner{flex-wrap:wrap}.st-play{width:100%;justify-content:center}}

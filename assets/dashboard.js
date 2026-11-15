@@ -3283,17 +3283,40 @@ function storyCards(D){
   return C;
 }
 let ST = null;
+/* Inside the hub the dashboard is a frame, and a full-screen story in a frame only fills the frame.
+   The hub is on the same site, so the story opens on the hub page itself, carrying only its own CSS. */
+function stHost(){
+  let W = window;
+  if (EMBED) try { if (window.top.document) W = window.top; } catch (e) { W = window; }
+  const doc = W.document;
+  if (W !== window && !doc.getElementById('st-css')){
+    const rules = [];
+    for (const sh of document.styleSheets){ let list; try { list = sh.cssRules; } catch (e) { continue; }
+      for (const r of list || []){ const t = r.cssText;
+        if (/(^|[\s,>])\.(st|rp-map)[-\s.,:{>\[]/.test(t.split('{')[0]) || /^@keyframes st/.test(t)) rules.push(t);
+        else if (r.media && /\.st[-\s.{]/.test(t)) rules.push(t); } }
+    const st = doc.createElement('style'); st.id = 'st-css'; st.textContent = rules.join('\n'); doc.head.appendChild(st);
+  }
+  return { W, doc };
+}
+function stBind(doc, on){
+  const f = on ? 'addEventListener' : 'removeEventListener';
+  doc[f]('click', stOnClick); doc[f]('keydown', stOnKey); doc[f]('pointerdown', stOnDown); doc[f]('pointerup', stOnUp);
+}
 function storyOpen(){
-  const D = storyData(), C = storyCards(D);
-  const el = document.createElement('div'); el.className = 'st'; el.style.setProperty('--acc', CFG.accent || '#17B4F0');
+  const D = storyData(), C = storyCards(D), H = stHost(), doc = H.doc;
+  const el = doc.createElement('div'); el.className = 'st'; el.style.setProperty('--acc', CFG.accent || '#17B4F0');
+  const rs = getComputedStyle(document.documentElement);
+  ['--sans', '--mono'].forEach(k => { const v = rs.getPropertyValue(k).trim(); if (v) el.style.setProperty(k, v); });
   el.innerHTML = `<canvas class="st-fx"></canvas><div class="st-bars">${C.map(() => '<i><b></b></i>').join('')}</div><button type="button" class="st-x" data-st="close" aria-label="Close">✕</button>
     <div class="st-stage">${C.map((c, i) => `<section class="st-card ${c.cls || ''}" data-i="${i}">${c.html}</section>`).join('')}</div><div class="st-nav"><span data-st="prev"></span><span data-st="next"></span></div>`;
-  document.body.appendChild(el); document.body.style.overflow = 'hidden';
-  ST = { el, C, i: -1, t: null, paused: false, fx: stFx(el.querySelector('.st-fx')) };
+  doc.body.appendChild(el); doc.body.style.overflow = 'hidden';
+  ST = { el, C, i: -1, t: null, paused: false, doc, fx: stFx(el.querySelector('.st-fx'), H.W) };
+  if (doc !== document) stBind(doc, true);
   stGo(0);
   try { localStorage.setItem('st-seen-' + CFG.slug, D.m); } catch (e) {}
 }
-function stClose(){ if (!ST) return; clearTimeout(ST.t); ST.fx.stop(); ST.el.remove(); ST = null; document.body.style.overflow = ''; }
+function stClose(){ if (!ST) return; clearTimeout(ST.t); ST.fx.stop(); ST.el.remove(); ST.doc.body.style.overflow = ''; if (ST.doc !== document) stBind(ST.doc, false); ST = null; }
 const ST_MS = 7000;
 function stGo(i){
   if (!ST) return; if (i < 0) i = 0; if (i >= ST.C.length) return stClose();
@@ -3313,9 +3336,9 @@ function stCountUp(n){
 }
 /* Fireworks and confetti on one canvas: rockets that climb and burst into glowing sparks with
    fading trails, a finale, and falling confetti. Client accent plus gold, white, coral and green. */
-function stFx(cv){
-  const x = cv.getContext('2d'), R = devicePixelRatio || 1; let P = [], run = false, raf = 0, timers = [];
-  const fit = () => { cv.width = innerWidth * R; cv.height = innerHeight * R; }; fit();
+function stFx(cv, W = window){
+  const x = cv.getContext('2d'), R = W.devicePixelRatio || 1; let P = [], run = false, raf = 0, timers = [];
+  const fit = () => { cv.width = W.innerWidth * R; cv.height = W.innerHeight * R; }; fit();
   const cols = () => [getComputedStyle(cv.parentElement).getPropertyValue('--acc').trim() || '#17B4F0', '#FFD54A', '#FFFFFF', '#FF6B6B', '#7CF29A', '#FFB347'];
   const burst = (bx, by, big) => { const c = cols(), n = big ? 220 : 120, base = c[Math.floor(Math.random() * c.length)];
     for (let i = 0; i < n; i++){ const a = Math.random() * Math.PI * 2, sp = (big ? 3 : 2) + Math.random() * (big ? 9 : 6.5);
@@ -3350,22 +3373,23 @@ function stFx(cv){
     stop(){ timers.forEach(clearTimeout); timers = []; run = false; P = []; cancelAnimationFrame(raf); x.clearRect(0, 0, cv.width, cv.height); },
   };
 }
-document.addEventListener('click', ev => {
-  const o = ev.target.closest && ev.target.closest('[data-story-open]'); if (o){ storyOpen(); return; }
-  if (!ST) return; const b = ev.target.closest('[data-st]'); if (!b) return;
-  const a = b.dataset.st; if (a === 'close') stClose(); if (a === 'replay') stGo(0); if (a === 'next') stGo(ST.i + 1); if (a === 'prev') stGo(ST.i - 1);
-});
-document.addEventListener('keydown', ev => { if (!ST) return; if (ev.key === 'Escape') stClose(); if (ev.key === 'ArrowRight' || ev.key === ' ') stGo(ST.i + 1); if (ev.key === 'ArrowLeft') stGo(ST.i - 1); });
+function stOnClick(ev){
+  const o = ev.target.closest && ev.target.closest('[data-story-open]'); if (o){ if (!ST) storyOpen(); return; }
+  if (!ST) return; const b = ev.target.closest && ev.target.closest('[data-st]'); if (!b) return;
+  const a = b.dataset.st; if (a === 'close') stClose(); else if (a === 'replay') stGo(0); else if (a === 'next') stGo(ST.i + 1); else if (a === 'prev') stGo(ST.i - 1);
+}
+function stOnKey(ev){ if (!ST) return; if (ev.key === 'Escape') stClose(); if (ev.key === 'ArrowRight' || ev.key === ' ') stGo(ST.i + 1); if (ev.key === 'ArrowLeft') stGo(ST.i - 1); }
 /* Hold to pause, like a phone story. */
-document.addEventListener('pointerdown', ev => { if (ST && ev.target.closest('.st-stage')){ ST.paused = true; ST.el.classList.add('paused'); } });
-document.addEventListener('pointerup', () => { if (ST && ST.paused){ ST.paused = false; ST.el.classList.remove('paused'); clearTimeout(ST.t); if (ST.i < ST.C.length - 1) ST.t = setTimeout(() => stGo(ST.i + 1), ST_MS / 2); } });
+function stOnDown(ev){ if (ST && ev.target.closest && ev.target.closest('.st-stage')){ ST.paused = true; ST.el.classList.add('paused'); } }
+function stOnUp(){ if (ST && ST.paused){ ST.paused = false; ST.el.classList.remove('paused'); clearTimeout(ST.t); if (ST.i < ST.C.length - 1) ST.t = setTimeout(() => stGo(ST.i + 1), ST_MS / 2); } }
+stBind(document, true);
 /* The banner on the Overview tab. Clients see the story open by itself once per month; the team never does. */
 function storyHook(host){
   if (state.tab !== 'overview' || isAdm(state.tab)) return;
   const m = storyMonth(); if (!m) return;
   const b = document.createElement('button'); b.type = 'button'; b.className = 'st-banner'; b.setAttribute('data-story-open', '1');
   b.style.setProperty('--acc', CFG.accent || '#17B4F0');
-  b.innerHTML = `<span class="st-spark">🎉</span><span><b>Your ${esc(new Date(m + '-01T00:00:00').toLocaleDateString('en-AU', { month:'long' }))} in 60 seconds</b><small>Tap to watch your month’s wins</small></span><span class="st-play">▶ Play</span>`;
+  b.innerHTML = `<span class="st-spark">🎉</span><span class="st-btxt"><small class="st-new">NEW · YOUR MONTHLY WINS</small><b>Your ${esc(new Date(m + '-01T00:00:00').toLocaleDateString('en-AU', { month:'long' }))} in 60 seconds</b><small>Watch the highlights of your month: wins, map growth, calls and more</small></span><span class="st-play"><span class="st-tri">▶</span> Play now</span>`;
   host.prepend(b);
   let seen = null; try { seen = localStorage.getItem('st-seen-' + CFG.slug); } catch (e) {}
   if (!isTeam() && seen !== m && !ST) setTimeout(() => !ST && storyOpen(), 900);
