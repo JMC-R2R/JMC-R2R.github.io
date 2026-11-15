@@ -1307,6 +1307,36 @@ async function rpGrowthPng(){
 document.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('[data-rpgrowth]'); if (!b) return;
   b.disabled = true; b.textContent = 'Preparing…'; rpGrowthPng().catch(e => { console.error(e); alert('Could not build the image.'); })
     .finally(() => { b.disabled = false; b.textContent = 'Download image'; }); });
+/* "Near me" searches (preview 'nearMe', Jose 15/11/2026): every GBP search term containing "near me",
+   month by month, ranked by people within the near-me set. Google gives a number only from 15 people a
+   month; below that it says "under 15", so totals are shown as "at least". No extra data pull or cost. */
+function rpNearMeHtml(){
+  const NM = /\bnear\s*me\b/i, all = (RAW.gkw || []).filter(r => NM.test(r.keyword) && monthOf(r.month) <= state.month);
+  const months = [...new Set(all.map(r => monthOf(r.month)))].sort().slice(-6);
+  if (!months.length) return '';
+  const val = r => r.users != null ? Number(r.users) : (r.below_threshold ? Number(r.below_threshold) - .5 : 0);
+  const by = {}; all.filter(r => months.includes(monthOf(r.month))).forEach(r => { const k = r.keyword.toLowerCase(); (by[k] = by[k] || { keyword:r.keyword })[monthOf(r.month)] = r; });
+  const rankIn = m => { const l = Object.values(by).filter(x => x[m]).sort((a, b) => val(b[m]) - val(a[m]) || a.keyword.localeCompare(b.keyword)); const o = {}; l.forEach((x, i) => { o[x.keyword.toLowerCase()] = i + 1; }); return o; };
+  const L = months[months.length - 1], P = months.length > 1 ? months[months.length - 2] : null, rL = rankIn(L), rP = P ? rankIn(P) : {};
+  const short = m => new Date(m + '-01T00:00:00').toLocaleDateString('en-AU', { month:'short', year:'2-digit' });
+  const rows = Object.values(by).map(x => { const k = x.keyword.toLowerCase(), o = { keyword:x.keyword, rank:rL[k] ?? 999 };
+    o.move = !x[L] ? -999 : !P || !rP[k] ? 999 : rP[k] - rL[k];
+    months.forEach(m => { o['m' + m] = x[m] ? val(x[m]) : -1; o['r' + m] = x[m]; }); return o; });
+  const cell = (v, r, m) => { const x = r['r' + m]; return !x ? '<span class="sub">—</span>' : x.users != null ? fmt(x.users) : `<span class="sub">under ${x.below_threshold}</span>`; };
+  const cols = [{ k:'keyword', label:'Search' },
+    { k:'rank', label:`Rank (${short(L)})`, num:1, fmt:v => v === 999 ? '<span class="sub">—</span>' : '#' + v },
+    { k:'move', label:'Move', num:1, fmt:v => v === 999 ? '<span class="chip up">new</span>' : v === -999 ? '<span class="chip dn">gone</span>' : v === 0 ? '=' : `<span class="chip ${v > 0 ? 'up' : 'dn'}">${v > 0 ? '▲' : '▼'} ${Math.abs(v)}</span>` },
+    ...months.map(m => ({ k:'m' + m, label:short(m), num:1, fmt:(v, r) => cell(v, r, m) }))];
+  const tot = m => { const l = Object.values(by).filter(x => x[m]); return { n:l.length, exact:l.reduce((t, x) => t + (x[m].users != null ? Number(x[m].users) : 0), 0),
+    floor:l.reduce((t, x) => t + (x[m].users != null ? Number(x[m].users) : 1), 0), under:l.filter(x => x[m].users == null).length }; };
+  const T = tot(L), TP = P ? tot(P) : null;
+  const kp = `<div class="kpis">${kpi('“Near me” searches', fmt(T.n), TP ? `${T.n - TP.n >= 0 ? '+' : ''}${fmt(T.n - TP.n)} on ${short(P)}` : short(L))}
+    ${kpi('People, at least', fmt(T.floor), TP ? `${T.floor - TP.floor >= 0 ? '+' : ''}${fmt(T.floor - TP.floor)} on ${short(P)}` : short(L))}
+    ${kpi('Counted exactly', fmt(T.exact), `${fmt(T.n - T.under)} of ${fmt(T.n)} searches`)}</div>`;
+  return `<div class="card"><div class="cardhead"><div><h3>“Near me” searches</h3><p class="sub">Every search with “near me” that showed the profile, month by month. Rank is its place among these searches by people, ${monthName(L)}.</p></div></div>
+    ${kp}${dataTable('nearme', cols, rows, { sort:{ k:'rank', dir:1 }, maxH:460,
+      note:'Google gives an exact count only from 15 people a month; below that it shows “under 15”. “People, at least” counts each of those as 1, so the real figure is higher. Google releases this a few weeks after month end.' })}</div>`;
+}
 /* GBP: monthly views, reviews total, where people see you, and search chips. */
 function rpGbpExtras(){
   const byM = {};
@@ -1664,6 +1694,7 @@ function viewGbp(){
         { k:'sortv', label:'People', num:1, fmt:(v, r) => r.users != null ? fmt(r.users) : `under ${r.below_threshold}` }],
         rows, { sort:{ k:'sortv', dir:-1 }, maxH:380 })}</div>`;
   }
+  if (PV('nearMe')) out += rpNearMeHtml();
 
   /* Reviews — every one, newest first */
   if (rv.length){
