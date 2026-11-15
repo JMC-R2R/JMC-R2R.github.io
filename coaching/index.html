@@ -340,20 +340,29 @@ function tActions(){
 }
 
 /* ---------- forecast ---------- */
+var SCS=[["base","Base"],["growth","Growth"],["worst","Worst case"]];
 function fcInputs(){return snap("forecast_inputs").data}
+function ival(i,sc){var x=i[sc];if(x==null||x==="")x=i.base;return Number(x)}
 function compute(sc){
-  var D=fcInputs(),v={};D.inputs.forEach(function(i){v[i.key]=Number(i[sc])});
+  var D=fcInputs(),v={};D.inputs.forEach(function(i){v[i.key]=ival(i,sc)});
+  function z(k){return isNaN(v[k])?0:v[k]}
+  var ch=(D.channels||[]),half=Math.ceil(D.months/2);
   var y=+D.start_month.slice(0,4),m0=+D.start_month.slice(5,7)-1,mn=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  var rows=[],mrr=v.open_mrr,cl=v.open_clients,cum=0;
+  var rows=[],mrr=z("open_mrr"),cl=z("open_clients"),cum=0,every=z("pr_every")||6;
   for(var k=1;k<=D.months;k++){
     var mi=(m0+k-1)%12,yy=y+Math.floor((m0+k-1)/12);
     var r={label:mn[mi]+" "+String(yy).slice(2),open:mrr};
-    r.churn=-mrr*v.churn;r.newc=v.new_clients*v.new_value;r.up=v.upsell;r.pc=(k===v.pc_month?v.pc_amt:0);
-    r.close=r.open+r.churn+r.newc+r.up+r.pc;cl=cl*(1-v.churn)+v.new_clients;r.clients=cl;
-    r.ret=r.close;r.build=v.builds*v.build_value;r.other=v.other_inc;r.inc=r.ret+r.build+r.other;
-    r.cogs=-r.inc*v.cogs_pct;r.gp=r.inc+r.cogs;
-    r.opex=-v.opex;r.mk=-v.mktg;r.h1=-v.hire1;r.h2=(k>=v.hire2_month?-v.hire2:0);r.co=(k>=v.coach_from&&k<=v.coach_to?-v.coach:0);
-    r.net=r.gp+r.opex+r.mk+r.h1+r.h2+r.co;r.draw=-v.drawings;r.after=r.net+r.draw;r.head=r.after-r.inc*v.target;cum+=r.head;r.cum=cum;
+    r.churn=-mrr*z("churn");r.newc=z("new_clients")*z("new_value");r.up=z("up_count")*z("up_value");r.pc=(k===z("pc_month")?z("pc_amt"):0);
+    r.pr=(z("pr_pct")>0&&k>=z("pr_first")&&(k-z("pr_first"))%every===0)?mrr*z("pr_pct"):0;
+    r.close=r.open+r.churn+r.newc+r.up+r.pc+r.pr;cl=cl*(1-z("churn"))+z("new_clients");r.clients=cl;
+    r.ret=r.close;r.build=z("builds")*z("build_value");r.other=z("other_inc");r.inc=r.ret+r.build+r.other;
+    r.cogs=-r.inc*z("cogs_pct");r.gp=r.inc+r.cogs;r.opex=-z("opex");
+    r.mk=0;ch.forEach(function(c){var a=z("mk_"+c.key+(k<=half?"_h1":"_h2"));r["mk_"+c.key]=-a;r.mk-=a});
+    r.mkc=-z("mk_contract");
+    var rise=(z("pay_rise")>0&&k>=z("pay_month"))?(1+z("pay_rise")):1;
+    r.h1=-z("hire1")*rise;r.am=(k>=z("am_month")?-z("am_hire")*rise:0);r.h2=(k>=z("hire2_month")?-z("hire2")*rise:0);
+    r.co=(k>=z("coach_from")&&k<=z("coach_to")?-z("coach"):0);
+    r.net=r.gp+r.opex+r.mk+r.mkc+r.h1+r.am+r.h2+r.co;r.draw=-z("drawings");r.after=r.net+r.draw;r.head=r.after-r.inc*z("target");cum+=r.head;r.cum=cum;
     rows.push(r);mrr=r.close;
   }
   return rows;
@@ -361,31 +370,40 @@ function compute(sc){
 function sum(rows,k){return rows.reduce(function(a,r){return a+r[k]},0)}
 function first50(rows){var r=rows.find(function(x){return x.close>=50000});return r?r.label:"Not in 12 months"}
 function tForecast(){
-  var D=fcInputs(),B=compute("base"),G=compute("growth"),R=SCEN==="base"?B:G;
-  var h='<div class="card"><h3>Summary: Base vs Growth</h3><p class="note">Base carries the Jul–Oct 2026 trend forward. Growth adds price corrections, cross-sells, one more client a month at list price, lower churn and more lead-gen spend. '+(IS_OWNER?"Change the inputs below and everything recalculates.":"Jose sets the inputs below; comment on any you'd change.")+'</p>';
-  var S=[["MRR now",B[0].open,G[0].open,money],["MRR in 6 months",B[5].close,G[5].close,money],["MRR in 12 months",B[11].close,G[11].close,money],
-    ["Total income, 12 months",sum(B,"inc"),sum(G,"inc"),money],["Net profit before owner pay",sum(B,"net"),sum(G,"net"),money],
-    ["Profit after owner pay",sum(B,"after"),sum(G,"after"),money],["Margin after owner pay",sum(B,"after")/sum(B,"inc"),sum(G,"after")/sum(G,"inc"),pct],
-    ["Marketing / lead gen spend",-sum(B,"mk"),-sum(G,"mk"),money],["Headroom above target margin",sum(B,"head"),sum(G,"head"),money]];
-  h+='<div class="scroll"><table class="data"><tr><th></th><th>Base</th><th>Growth</th><th>Difference</th></tr>'+S.map(function(s){return '<tr><td>'+s[0]+'</td><td>'+s[3](s[1])+'</td><td>'+s[3](s[2])+'</td><td>'+(s[3]===pct?((s[2]-s[1])*100).toFixed(1)+" pts":money(s[2]-s[1]))+'</td></tr>'}).join("")+
-    '<tr class="b"><td>MRR first reaches $50k</td><td>'+first50(B)+'</td><td>'+first50(G)+'</td><td></td></tr></table></div>'+cmtBlock("snapshot_key","forecast_summary")+'</div>';
-  h+='<div class="card"><div class="row"><h3 style="flex:1">Month by month</h3><div class="seg"><button type="button" data-sc="base" class="'+(SCEN==="base"?"on":"")+'">Base</button><button type="button" data-sc="growth" class="'+(SCEN==="growth"?"on":"")+'">Growth</button></div></div><div class="scroll"><table class="data">';
+  var D=fcInputs(),RS={};SCS.forEach(function(s){RS[s[0]]=compute(s[0])});if(!RS[SCEN])SCEN="base";var R=RS[SCEN];
+  var h='<div class="card"><h3>Summary: Base, Growth and Worst case</h3><p class="note">'+esc(D.summary_note||"")+' '+(IS_OWNER?"Change the inputs below and everything recalculates.":"Jose sets the inputs below; comment on any you'd change.")+'</p>';
+  var S=[["MRR now",function(x){return x[0].open},money],["MRR in 6 months",function(x){return x[5].close},money],["MRR in 12 months",function(x){return x[11].close},money],
+    ["Total income, 12 months",function(x){return sum(x,"inc")},money],["Net profit before owner pay",function(x){return sum(x,"net")},money],
+    ["Profit after owner pay",function(x){return sum(x,"after")},money],["Margin after owner pay",function(x){return sum(x,"after")/sum(x,"inc")},pct],
+    ["Marketing / lead gen spend",function(x){return -sum(x,"mk")-sum(x,"mkc")},money],["Headroom above target margin",function(x){return sum(x,"head")},money]];
+  h+='<div class="scroll"><table class="data"><tr><th></th>'+SCS.map(function(s){return '<th>'+s[1]+'</th>'}).join("")+'</tr>'+S.map(function(s){return '<tr><td>'+s[0]+'</td>'+SCS.map(function(c){return '<td>'+s[2](s[1](RS[c[0]]))+'</td>'}).join("")+'</tr>'}).join("")+
+    '<tr class="b"><td>MRR first reaches $50k</td>'+SCS.map(function(c){return '<td>'+first50(RS[c[0]])+'</td>'}).join("")+'</tr></table></div>'+cmtBlock("snapshot_key","forecast_summary")+'</div>';
+  h+='<div class="card"><div class="row"><h3 style="flex:1">Month by month</h3><div class="seg">'+SCS.map(function(s){return '<button type="button" data-sc="'+s[0]+'" class="'+(SCEN===s[0]?"on":"")+'">'+s[1]+'</button>'}).join("")+'</div></div><div class="scroll"><table class="data">';
   h+='<tr><th>$ AUD</th>'+R.map(function(r){return '<th>'+r.label+'</th>'}).join("")+'<th>Total</th></tr>';
-  var lines=[["sec","MRR"],["open","Opening MRR"],["churn","Churned MRR",1],["newc","New client MRR",1],["up","Upsell / cross-sell",1],["pc","Price corrections",1],["close","Closing MRR",0,1],["clients","Retainer clients (approx.)",0,0,1],
-    ["sec","P&L"],["ret","Retainer income",1],["build","Website builds",1],["other","Other income",1],["inc","Total income",1,1],["cogs","Cost of sales",1],["gp","Gross profit",1,1],
-    ["opex","Operating expenses excl. marketing",1],["mk","Marketing + advertising",1],["h1","Armand",1],["h2","Onshore sales hire",1],["co","Coaching",1],["net","Net profit before owner pay",1,1],["draw","Owner drawings",1],["after","Profit after owner pay",1,1],
-    ["sec","Reinvestment"],["head","Headroom above target margin",1,1],["cum","Cumulative headroom"]];
+  var lines=[["sec","MRR"],["open","Opening MRR"],["churn","Churned MRR",1],["newc","New client MRR",1],["up","Upsells / cross-sells",1],["pr","Price rise ("+Math.round(ival(D.inputs.find(function(i){return i.key==="pr_pct"})||{base:0},SCEN)*100)+"% every 6 months)",1],["pc","One-off price corrections",1],["close","Closing MRR",0,1],["clients","Retainer clients (approx.)",0,0,1],
+    ["sec","P&L"],["ret","Retainer income",1],["build","Website builds",1],["other","Other income",1],["inc","Total income",1,1],["cogs","Cost of sales (delivery)",1],["gp","Gross profit",1,1],
+    ["opex","Operating expenses excl. marketing",1]];
+  (D.channels||[]).forEach(function(c){lines.push(["mk_"+c.key,"Marketing: "+c.label,1])});
+  lines=lines.concat([["mkc","Marketing contractors (copy, design, video)",1],["mk","Marketing total",1,1],["h1","Armand, Head of Account Management",1],["am","Onshore account manager",1],["h2","Onshore BDM / sales",1],["co","Coaching",1],["net","Net profit before owner pay",1,1],["draw","Owner drawings",1],["after","Profit after owner pay",1,1],
+    ["sec","Reinvestment"],["head","Headroom above target margin",1,1],["cum","Cumulative headroom"]]);
   lines.forEach(function(l){if(l[0]==="sec"){h+='<tr class="sec"><td colspan="'+(R.length+2)+'">'+l[1]+'</td></tr>';return}
     h+='<tr class="'+(l[3]?"b":"")+'"><td>'+l[1]+'</td>'+R.map(function(r){return '<td>'+(l[4]?r[l[0]].toFixed(1):money(r[l[0]]))+'</td>'}).join("")+'<td>'+(l[2]?money(sum(R,l[0])):"")+'</td></tr>'});
   h+='</table></div></div>';
-  h+='<div class="card"><h3>Inputs</h3><p class="note">Yellow rows are decisions to agree, not history. '+(IS_OWNER?"Edit Base or Growth and press Save.":"Only Jose can change inputs; comment below to suggest changes.")+'</p><div class="scroll"><table class="inp"><tr><td class="k">Input</td><td class="k">Base</td><td class="k">Growth</td><td class="k">Unit</td><td class="k">Source / reasoning</td></tr>';
-  D.inputs.forEach(function(i,ix){var isP=i.unit==="%";function cell(sc){var val=isP?(i[sc]*100).toFixed(2).replace(/\.?0+$/,""):i[sc];return IS_OWNER?'<input type="number" step="any" data-ix="'+ix+'" data-sc="'+sc+'" value="'+val+'">':(isP?val+"%":(i.unit.indexOf("$")===0?money(i[sc]):val))}
-    h+='<tr class="'+(i.decision?"dec":"")+'"><td>'+esc(i.label)+'</td><td class="v">'+cell("base")+'</td><td class="v">'+cell("growth")+'</td><td class="k">'+esc(i.unit)+'</td><td class="src">'+esc(i.source)+'</td></tr>'});
+  h+='<div class="card"><h3>Inputs</h3><p class="note">Yellow rows are decisions to agree, not history. A blank Worst case cell uses the Base value. '+(IS_OWNER?"Edit any scenario and press Save.":"Only Jose can change inputs; comment below to suggest changes.")+'</p><div class="scroll"><table class="inp"><tr><td class="k">Input</td>'+SCS.map(function(s){return '<td class="k">'+s[1]+'</td>'}).join("")+'<td class="k">Unit</td><td class="k">Source / reasoning</td></tr>';
+  var lastG=null;
+  D.inputs.forEach(function(i,ix){var isP=i.unit==="%";
+    if(i.group&&i.group!==lastG){lastG=i.group;h+='<tr><td class="k" colspan="'+(SCS.length+3)+'" style="padding-top:14px;font-weight:700">'+esc(i.group)+'</td></tr>'}
+    function cell(sc){var raw=i[sc],blank=(raw==null||raw==="");var val=blank?"":(isP?(raw*100).toFixed(2).replace(/\.?0+$/,""):raw);
+      if(IS_OWNER)return '<input type="number" step="any" data-ix="'+ix+'" data-sc="'+sc+'" value="'+val+'"'+(blank?' placeholder="'+(isP?(i.base*100).toFixed(2).replace(/\.?0+$/,""):i.base)+'"':'')+'>';
+      var n=blank?i.base:raw;return isP?(n*100).toFixed(2).replace(/\.?0+$/,"")+"%":(i.unit.indexOf("$")===0?money(n):n)}
+    h+='<tr class="'+(i.decision?"dec":"")+'"><td>'+esc(i.label)+'</td>'+SCS.map(function(s){return '<td class="v">'+cell(s[0])+'</td>'}).join("")+'<td class="k">'+esc(i.unit)+'</td><td class="src">'+esc(i.source)+'</td></tr>'});
   h+='</table></div>'+(IS_OWNER?'<div class="row" style="margin-top:12px"><button class="btn" id="saveInp" type="button">Save inputs</button><span class="note" id="saveMsg"></span></div>':'')+cmtBlock("snapshot_key","forecast_inputs")+'</div>';
   $("tab").innerHTML=h;wireComments();
   Array.prototype.forEach.call(document.querySelectorAll("[data-sc]"),function(b){if(b.tagName==="BUTTON")b.onclick=function(){SCEN=b.dataset.sc;render()}});
   if(IS_OWNER){
-    Array.prototype.forEach.call(document.querySelectorAll("table.inp input"),function(inp){inp.onchange=function(){var i=D.inputs[+inp.dataset.ix],n=Number(inp.value);if(isNaN(n))return;i[inp.dataset.sc]=(i.unit==="%"?n/100:n);var y=window.scrollY;render();window.scrollTo(0,y);$("saveMsg").textContent="Unsaved changes"}});
+    Array.prototype.forEach.call(document.querySelectorAll("table.inp input"),function(inp){inp.onchange=function(){var i=D.inputs[+inp.dataset.ix],sc=inp.dataset.sc;
+      if(inp.value===""){if(sc==="worst"){i.worst=null}else return}else{var n=Number(inp.value);if(isNaN(n))return;i[sc]=(i.unit==="%"?n/100:n)}
+      var y=window.scrollY;render();window.scrollTo(0,y);$("saveMsg").textContent="Unsaved changes"}});
     $("saveInp").onclick=async function(){var r=await sb.from("coaching_snapshots").update({data:D}).eq("program_slug",CUR).eq("key","forecast_inputs");$("saveMsg").textContent=r.error?("Couldn't save: "+r.error.message):"Saved"};
   }
 }
@@ -420,13 +438,14 @@ function tDelivery(){
 function tOrg(){
   var S=snap("org_chart"),seats=S.data.seats,byId={};seats.forEach(function(s){byId[s.seat_id]=s});
   var groups={};seats.forEach(function(s){var g=s.unit||s.function||"Other";(groups[g]=groups[g]||[]).push(s)});
-  var order=["CEO","Finance","HR","IT / Systems","Sales","Marketing","Client Services","Operations","Account Management","Delivery","SEO","Paid Media","Web & Creative"];
+  var order=["CEO","Finance","HR","IT / Systems","Sales","Marketing","Client Services","Operations","Account Management","Delivery","SEO","Paid Media","Web & Creative","Social"];
   var keys=Object.keys(groups).sort(function(a,b){var ia=order.indexOf(a),ib=order.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)});
   var filled=seats.filter(function(s){return s.status==="filled"||s.status==="starting"}).length,vac=seats.filter(function(s){return s.status==="vacant"}).length,pl=seats.filter(function(s){return s.status==="planned"}).length;
   var h='<div class="card org"><h3>'+esc(S.title)+'</h3><div class="k">'+esc(S.data.source)+'</div><div class="stats"><div class="stat"><div class="v">'+filled+'</div><div class="l">Seats filled</div></div><div class="stat"><div class="v">'+vac+'</div><div class="l">Vacant (Jose covers)</div></div><div class="stat"><div class="v">'+pl+'</div><div class="l">Planned</div></div></div>';
   h+='<div class="orgbar"><div class="seg"><button type="button" data-ov="tree" class="'+(ORGV==="tree"?"on":"")+'">Family tree</button><button type="button" data-ov="fn" class="'+(ORGV==="fn"?"on":"")+'">By function</button></div>'+
     (ORGV==="tree"?'<div class="zoombar"><button type="button" data-z="out" title="Zoom out">−</button><span class="zv" id="zv">Fit</span><button type="button" data-z="in" title="Zoom in">+</button><button type="button" data-z="fit" title="Fit the whole team on screen" style="border-left:1px solid var(--line);font-weight:600">Fit</button><button type="button" data-z="100" title="Actual size" style="border-left:1px solid var(--line);font-weight:600">100%</button></div>':'')+
     '<div class="legend"><span><i style="border-top:3px solid var(--blue)"></i>Filled</span><span><i style="border-top:3px solid var(--ok)"></i>Starting</span><span><i style="border:1px dashed var(--warn);background:#FFFCF2"></i>Vacant (Jose covers)</span><span><i style="border:1px dotted var(--mute)"></i>Planned</span></div></div>';
+  if(S.data.notes&&S.data.notes.length)h+='<ul class="note" style="margin:10px 0 4px">'+S.data.notes.map(function(n){return '<li>'+esc(n)+'</li>'}).join("")+'</ul>';
   if(ORGV==="tree"){h+=orgTree(seats)+cmtBlock("snapshot_key","org_chart")+'</div>';$("tab").innerHTML=h;wireOrg();return}
   keys.forEach(function(k){h+='<div class="fn"><h4>'+esc(k)+'</h4>'+groups[k].map(function(s){var rt=s.reports_to&&byId[s.reports_to]?byId[s.reports_to].role_title:"";
     return '<div class="seat '+(s.status==="vacant"?"vacant":s.status==="planned"?"planned":"")+'"><b>'+esc(s.person_name||(s.status==="planned"?"Planned":"Vacant"))+'</b><span>'+esc(s.role_title)+'</span><br><span>'+esc([s.location,rt?("Reports to "+rt):"",s.status==="starting"?"Starting":""].filter(Boolean).join(" · "))+'</span></div>'}).join("")+'</div>'});
