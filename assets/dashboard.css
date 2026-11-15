@@ -577,3 +577,12 @@ html.rvopen{overflow:hidden}
 .tgline b{color:var(--ink)}
 .tgnote{color:var(--ink3);font-size:12px;margin:0;max-width:80ch}
 @media (max-width:700px){.tgfunnel{grid-template-columns:repeat(2,1fr)}.tgfunnel > div::after{display:none}}
+
+/* Growth at a glance (preview) */
+.rpg{display:grid;gap:10px;align-items:start;min-width:min-content}
+.rpg-m{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.rpg-k{font-weight:700;font-size:13px;align-self:center}
+.rpg-c .rp-map{border-radius:8px}
+.rpg-s{font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-top:6px;line-height:1.4}
+.rpg-s b{color:var(--ink)}
+.rpg-none{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1px dashed var(--ink3);border-radius:8px;color:var(--ink3);font-size:12px}

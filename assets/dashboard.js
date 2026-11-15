@@ -1179,7 +1179,15 @@ function rpProofHtml(){
 const rpMapOn = () => RP() && !!CFG.mapBase;
 const mgX = (lng, z) => 256 * (lng + 180) / 360 * Math.pow(2, z);
 const mgY = (lat, z) => { const t = Math.sin(lat * Math.PI / 180); return 256 * (0.5 - Math.log((1 + t) / (1 - t)) / (4 * Math.PI)) * Math.pow(2, z); };
-const rpPts = s => (RAW.points || []).filter(p => p.scan_id === s.id);
+/* Preview features: only shells listing them in CFG.preview get them (Hot Chicken first, Jose 15/11/2026). */
+const PV = f => Array.isArray(CFG.preview) && CFG.preview.includes(f);
+/* Circle grid (preview 'mapCircle'): only points within the service radius count, so the corners
+   of the square (up to 1.41x the radius away) no longer dilute "points found". */
+const rpReach = s => +s.spacing_km * (s.grid_size - 1) / 2;
+const rpKmFrom = (s, p) => 111.32 * Math.sqrt(Math.pow(+p.lat - +s.centre_lat, 2) + Math.pow((+p.lng - +s.centre_lng) * Math.cos(+s.centre_lat * Math.PI / 180), 2));
+const rpPts = s => (RAW.points || []).filter(p => p.scan_id === s.id
+  && (!PV('mapCircle') || s.centre_lat == null || rpKmFrom(s, p) <= rpReach(s) + +s.spacing_km * .15));
+let rpMaskN = 0;
 function rpStats(s){ const f = rpPts(s).filter(p => p.rank != null), r = f.map(p => +p.rank);
   return { found:f.length, total:rpPts(s).length, top3:r.filter(v => v <= 3).length, first:r.filter(v => v === 1).length, avg:r.length ? r.reduce((a, b) => a + b, 0) / r.length : null }; }
 function rpSeries(){
@@ -1212,7 +1220,10 @@ function rpMapSvg(s, prev, movement){
     return `<g><title>${esc(tip)}</title><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${size}" fill="${fill}" stroke="#17171C" stroke-width="1.5"/><text x="${x.toFixed(1)}" y="${(y + fs * .36).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-family="var(--mono)" font-weight="700" fill="${ink}">${esc(label)}</text></g>`; }).join('');
   const [sx, sy] = s.centre_lat != null ? px(+s.centre_lat, +s.centre_lng) : [320, 320];
   const star = [...Array(10)].map((_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? size * .42 : size * .95; return `${(sx + r * Math.cos(a)).toFixed(1)},${(sy + r * Math.sin(a)).toFixed(1)}`; }).join(' ');
-  return `<div class="rp-map"><img src="${esc(B.src)}" alt="Map of the area around ${esc(s.centre_label || CFG.name)}" loading="lazy"><svg viewBox="0 0 640 640" role="img" aria-label="${esc(s.keyword)} map pack positions">${rings}${pins}<polygon points="${star}" fill="#fff" stroke="#17171C" stroke-width="1.5"><title>${esc(CFG.name)}</title></polygon></svg></div>`;
+  let circ = '';
+  if (PV('mapCircle')){ const R = (rpReach(s) + +s.spacing_km * .5) * 1000 / metres, id = 'rpm' + (++rpMaskN);
+    circ = `<defs><mask id="${id}"><rect width="640" height="640" fill="#fff"/><circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R.toFixed(1)}" fill="#000"/></mask></defs><rect width="640" height="640" fill="rgba(14,14,18,.72)" mask="url(#${id})"/><circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R.toFixed(1)}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>`; }
+  return `<div class="rp-map"><img src="${esc(B.src)}" alt="Map of the area around ${esc(s.centre_label || CFG.name)}" loading="lazy"><svg viewBox="0 0 640 640" role="img" aria-label="${esc(s.keyword)} map pack positions">${circ}${rings}${pins}<polygon points="${star}" fill="#fff" stroke="#17171C" stroke-width="1.5"><title>${esc(CFG.name)}</title></polygon></svg></div>`;
 }
 function rpMapHtml(){
   const all = rpSeries();
@@ -1244,12 +1255,56 @@ function rpMapHtml(){
   const founds = kws.map(k => rpStats(pair(k)[0]).found), spread = Math.max(...founds) - Math.min(...founds);
   const boxed = A.total && Math.max(...founds) / A.total < .6 && spread <= A.total * .1;
   const reach = +cur.spacing_km * (cur.grid_size - 1) / 2;
-  const note = `Each pin is one search from that spot on the map: ${cur.grid_size} × ${cur.grid_size} points, ${+cur.spacing_km} km apart, reaching ${fmt(reach, reach % 1 ? 1 : 0)} km from the business. Average rank only counts points where ${esc(who)} was found. `
+  const note = (PV('mapCircle')
+      ? `Each pin is one search from that spot on the map: ${fmt(A.total)} points ${+cur.spacing_km} km apart, in a circle reaching ${fmt(reach, reach % 1 ? 1 : 0)} km from the business.`
+      : `Each pin is one search from that spot on the map: ${cur.grid_size} × ${cur.grid_size} points, ${+cur.spacing_km} km apart, reaching ${fmt(reach, reach % 1 ? 1 : 0)} km from the business.`) + ` Average rank only counts points where ${esc(who)} was found. `
     + (boxed ? `Google returned ${esc(who)} within about the same area on every keyword, which looks like the edge of its search view at this zoom rather than true reach, so a grey point doesn’t prove ${esc(who)} wouldn’t show for someone there. Compare ranks and top 3 points for growth. ` : '')
     + `Comparisons are scan against scan, by the dates shown. Google’s results change day to day, so read small moves with care. These scans run each month end.`;
   return `${tiles}<div class="rp-switch">${switcher}</div><div class="grid2 rp-maps">${mapA}${mapB}</div><div class="legend rp-key">${key}</div>
-    <div class="card"><div class="cardhead"><div><h3>Every keyword, scan against scan</h3></div></div><div class="tscroll"><table class="tbl"><thead><tr><th>Keyword</th><th>Points found</th><th>Change</th><th>Top 3</th><th>Change</th><th>#1</th><th>Change</th><th>Avg rank</th><th>Change</th></tr></thead><tbody>${rowsT}</tbody></table></div><p class="sub rp-note">${note}</p></div>`;
+    <div class="card"><div class="cardhead"><div><h3>Every keyword, scan against scan</h3></div></div><div class="tscroll"><table class="tbl"><thead><tr><th>Keyword</th><th>Points found</th><th>Change</th><th>Top 3</th><th>Change</th><th>#1</th><th>Change</th><th>Avg rank</th><th>Change</th></tr></thead><tbody>${rowsT}</tbody></table></div><p class="sub rp-note">${note}</p></div>${PV('mapGrowth') ? rpGrowthHtml(all, kws) : ''}`;
 }
+/* Growth at a glance (preview 'mapGrowth'): every keyword (rows) by every month (columns), one small
+   map each, so growth reads left to right. One scan per keyword per month: the month's latest. */
+function rpGrowthCells(all, kws){
+  const months = [...new Set(all.map(s => monthOf(s.checked_at)))].sort().slice(-6);
+  const pick = (k, m) => { const l = all.filter(s => s.keyword === k && monthOf(s.checked_at) === m); return l[l.length - 1] || null; };
+  return { months, rows: kws.map(k => ({ k, cells: months.map(m => pick(k, m)) })) };
+}
+function rpGrowthHtml(all, kws){
+  const G = rpGrowthCells(all, kws);
+  if (G.months.length < 2) return `<div class="card"><div class="cardhead"><div><h3>Growth at a glance</h3></div></div><p>Every keyword, month by month, appears here after the second monthly scan.</p></div>`;
+  const short = m => new Date(m + '-01T00:00:00').toLocaleDateString('en-AU', { month:'short', year:'2-digit' });
+  const head = `<div class="rpg-k"></div>${G.months.map(m => `<div class="rpg-m">${esc(short(m))}</div>`).join('')}`;
+  const body = G.rows.map(r => `<div class="rpg-k">${esc(r.k)}</div>${r.cells.map(s => { if (!s) return '<div class="rpg-c rpg-none">No scan</div>';
+    const a = rpStats(s); return `<div class="rpg-c">${rpMapSvg(s, null, false)}<div class="rpg-s"><b>${fmt(a.found)}</b>/${fmt(a.total)} found · <b>${fmt(a.top3)}</b> top 3 · avg ${a.avg != null ? fmt(a.avg, 1) : '—'}</div></div>`; }).join('')}`).join('');
+  return `<div class="card"><div class="cardhead"><div><h3>Growth at a glance</h3><p class="sub">Every keyword, month by month. Read each row left to right.</p></div><button type="button" class="rp-btn" data-rpgrowth="1">Download image</button></div>
+    <div class="tscroll"><div class="rpg" style="grid-template-columns:minmax(110px,150px) repeat(${G.months.length}, minmax(150px,1fr))">${head}${body}</div></div></div>`;
+}
+/* Download: draws every small map (base image + its pins) onto one canvas and saves a PNG. */
+async function rpGrowthPng(){
+  const all = rpSeries(), kws = [...new Set(all.map(s => s.keyword))].sort((a, b) => a.localeCompare(b)), G = rpGrowthCells(all, kws);
+  const C = 300, L = 220, T = 90, F = 54, W = L + G.months.length * C, H = T + G.rows.length * (C + F) + 40;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
+  x.fillStyle = '#121216'; x.fillRect(0, 0, W, H); x.fillStyle = '#fff'; x.font = '700 26px Archivo, sans-serif';
+  x.fillText(`${CFG.name}: map pack growth`, 20, 40); x.font = '14px "Space Mono", monospace'; x.fillStyle = '#9a9aa6';
+  x.fillText('Delivered by Ready to Rank · each map is one month’s scan', 20, 64);
+  const load = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
+  const base = await load(CFG.mapBase.src);
+  x.font = '700 15px "Space Mono", monospace'; x.fillStyle = '#fff';
+  G.months.forEach((m, j) => x.fillText(monthName(m), L + j * C + 10, T - 12));
+  for (let i = 0; i < G.rows.length; i++){ const r = G.rows[i], y0 = T + i * (C + F);
+    x.fillStyle = '#fff'; x.font = '700 15px Archivo, sans-serif'; x.fillText(r.k, 20, y0 + C / 2);
+    for (let j = 0; j < r.cells.length; j++){ const s = r.cells[j], x0 = L + j * C; if (!s) continue;
+      x.drawImage(base, x0 + 6, y0, C - 12, C - 12);
+      const svg = rpMapSvg(s, null, false).match(/<svg[\s\S]*<\/svg>/)[0].replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" ').replace(/var\(--mono\)/g, 'monospace');
+      x.drawImage(await load('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)), x0 + 6, y0, C - 12, C - 12);
+      const a = rpStats(s); x.fillStyle = '#d6d6de'; x.font = '13px "Space Mono", monospace';
+      x.fillText(`${a.found}/${a.total} found · ${a.top3} top 3`, x0 + 8, y0 + C + 8); x.fillText(`avg rank ${a.avg != null ? a.avg.toFixed(1) : '—'}`, x0 + 8, y0 + C + 26); } }
+  const a = document.createElement('a'); a.download = `${CFG.slug}-map-growth.png`; a.href = cv.toDataURL('image/png'); a.click();
+}
+document.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('[data-rpgrowth]'); if (!b) return;
+  b.disabled = true; b.textContent = 'Preparing…'; rpGrowthPng().catch(e => { console.error(e); alert('Could not build the image.'); })
+    .finally(() => { b.disabled = false; b.textContent = 'Download image'; }); });
 /* GBP: monthly views, reviews total, where people see you, and search chips. */
 function rpGbpExtras(){
   const byM = {};
