@@ -166,6 +166,39 @@ td.best{background:#E6F6EC;font-weight:700}
 .lbx,.lbn{position:absolute;background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer}
 .lbx{top:16px;right:16px}.lbn.p{left:16px;top:50%}.lbn.n{right:16px;top:50%}
 .lbc{position:absolute;bottom:16px;color:#fff;font:12px var(--mono)}
+.lpwrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;margin-top:16px;align-items:start}
+@media(max-width:860px){.lpwrap{grid-template-columns:1fr}}
+.lpdesk{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:10px;margin-top:6px}
+.lpdesk iframe{width:1280px;height:800px;border:0;transform-origin:0 0;position:absolute;top:0;left:0}
+.lpq{border-top:1px solid var(--line);padding:12px 0}
+.phone{width:min(390px,100%);margin:10px auto 6px;border:10px solid #111;border-radius:36px;background:#000;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.pscreen{height:740px;overflow-y:auto;background:#fff;border-radius:26px;-webkit-overflow-scrolling:touch}
+.ptop{position:sticky;top:0;z-index:2;background:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);font-size:17px}
+.fstories{display:flex;gap:10px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--line)}
+.fst{flex:0 0 62px;height:62px;border-radius:50%;padding:2px;background:linear-gradient(45deg,#F9A825,#E91E63,#8E24AA)}
+.fst img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #fff;cursor:zoom-in}
+.fpost{border-bottom:1px solid var(--line);padding-bottom:6px}
+.fpost .cimg{aspect-ratio:4/5}
+.fhead{display:flex;gap:10px;align-items:center;padding:10px 12px;font-size:13.5px}
+.fav{width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--blue);font:700 10px var(--mono);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.fav.big{width:76px;height:76px;font-size:16px}
+.fsub{font-size:11.5px;color:var(--mute)}
+.facts{display:flex;align-items:center;gap:4px;padding:8px 12px 2px;font-size:18px}
+.facts span{margin-left:auto;font-size:12px;color:var(--mute)}
+.fcta{display:flex;justify-content:space-between;align-items:center;background:var(--soft);padding:9px 12px;font-size:12.5px}
+.fcta b{color:var(--blue-d)}
+.fcap{padding:4px 12px 4px;font-size:13px}
+.fcap .ctxt{display:inline;max-height:4.5em;display:block}
+.fend{text-align:center;color:var(--mute);font-size:12px;padding:22px}
+.gprof{display:flex;align-items:center;gap:24px;padding:14px}
+.gstats{display:flex;gap:18px;font-size:13px;text-align:center}.gstats b{display:block;font-size:16px}
+.gname{padding:0 14px 12px;font-size:13px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.pg{position:relative;aspect-ratio:4/5;overflow:hidden;background:var(--soft)}
+.pg img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.pg.sch img{opacity:.85}
+.pgm{position:absolute;top:4px;right:6px;color:#fff;text-shadow:0 0 3px #000;font-size:13px}
+.pgs{position:absolute;bottom:4px;left:4px;background:rgba(15,15,18,.7);color:#fff;font:10px var(--mono);padding:1px 5px;border-radius:6px}
 </style>
 </head>
 <body>
@@ -301,6 +334,8 @@ function tabList(){
   if(snap("ad_creatives"))t.push(["ads","Ad creatives"]);
   if(snap("linkedin_posts"))t.push(["linkedin","LinkedIn"]);
   if(snap("social_posts"))t.push(["social","Social posts"]);
+  if(snap("social_posts"))t.push(["feed","Feed preview"]);
+  if(snap("landing_page"))t.push(["landing","Landing page"]);
   t.push(["about","About"]);
   return t;
 }
@@ -312,7 +347,7 @@ function render(){
   h+='<div class="tabs">'+tabList().map(function(t){return '<button type="button" data-t="'+t[0]+'" class="'+(t[0]===TAB?"on":"")+'">'+t[1]+'</button>'}).join("")+'</div><div id="tab"></div>';
   $("main").innerHTML=h;
   Array.prototype.forEach.call(document.querySelectorAll(".tabs button"),function(b){b.onclick=function(){TAB=b.dataset.t;render()}});
-  ({answers:tAnswers,actions:tActions,forecast:tForecast,numbers:tNumbers,delivery:tDelivery,org:tOrg,ads:tAds,linkedin:tLinkedIn,social:tSocial,about:tAbout})[TAB]();
+  ({answers:tAnswers,actions:tActions,forecast:tForecast,numbers:tNumbers,delivery:tDelivery,org:tOrg,ads:tAds,linkedin:tLinkedIn,social:tSocial,feed:tFeed,landing:tLanding,about:tAbout})[TAB]();
 }
 
 /* ---------- comments ---------- */
@@ -587,6 +622,65 @@ function tSocial(){
   if(pub.length)h+='<div class="card"><h3>Published</h3>'+cards(pub)+'</div>';
   if(sch.length)h+='<div class="card"><h3>Scheduled</h3>'+cards(sch)+'</div>';
   $("tab").innerHTML=h;wireComments();wireReview();
+}
+
+/* ---------- landing page review ---------- */
+function tLanding(){
+  var S=snap("landing_page"),d=S.data;
+  var h='<div class="card"><h3>'+esc(S.title)+'</h3><div class="k">'+esc(d.url.replace(/^https?:\/\//,""))+'</div><p class="note">'+esc(d.note)+'</p>'+
+    '<div class="row" style="margin-top:12px;gap:10px"><a class="btn" href="'+esc(d.url)+'" target="_blank" rel="noopener">View landing page ↗</a><button class="btn ghost" type="button" id="lpLoad">Show live preview here</button></div><div id="lpPrev"></div></div>';
+  h+='<div class="card"><h3>Your feedback</h3><p class="note" style="margin-top:0">Leave a note under any section, or use the general box at the bottom.</p>'+
+    d.prompts.map(function(p){return '<div class="lpq"><b>'+esc(p.q)+'</b><p class="note" style="margin-top:2px">'+esc(p.hint)+'</p>'+cmtBlock("snapshot_key","lp:"+p.key)+'</div>'}).join("")+
+    '<div class="lpq"><b>Anything else</b>'+cmtBlock("snapshot_key","landing_page")+'</div></div>';
+  $("tab").innerHTML=h;wireComments();
+  $("lpLoad").onclick=function(){var b=this;b.remove();
+    $("lpPrev").innerHTML='<div class="lpwrap"><div><div class="k">Desktop</div><div class="lpdesk"><iframe src="'+esc(d.url)+'" title="Landing page, desktop" loading="lazy"></iframe></div></div>'+
+      '<div><div class="k">Phone</div><div class="phone"><div class="pscreen"><iframe src="'+esc(d.url)+'" title="Landing page, phone" loading="lazy" style="width:100%;height:100%;border:0"></iframe></div></div></div></div>';
+    var dk=document.querySelector(".lpdesk");function fit(){var f=dk.querySelector("iframe");if(!f)return;var s=dk.clientWidth/1280;f.style.transform="scale("+s+")";dk.style.height=(800*s)+"px"}fit();window.addEventListener("resize",fit)};
+}
+
+/* ---------- feed preview ---------- */
+var FEEDV="feed",FEEDT="all",FEEDADS=true;
+function feedItems(){
+  var so=snap("social_posts").data.days,ads=snap("ad_creatives")?snap("ad_creatives").data.groups:[];
+  var posts=so.filter(function(g){return g.media&&g.media.length&&g.platforms.some(function(p){return p.platform==="instagram"})}).map(function(g){
+    var ig=g.platforms.filter(function(p){return p.platform==="instagram"})[0];return {type:"post",key:g.key,date:g.date,day:g.day,status:ig.status,media:g.media,text:g.text,metrics:ig.metrics,url:ig.url}});
+  if(FEEDT==="live")posts=posts.filter(function(p){return p.status==="published"});
+  posts.sort(function(a,b){return a.key<b.key?1:-1});
+  var adl=[];ads.forEach(function(g){g.ads.forEach(function(a){adl.push({type:"ad",code:a.code,title:a.title,media:[a.image],text:snap("ad_creatives").data.copy[a.copy].primary,cta:"Learn more"})})});
+  var out=[],ai=0;posts.forEach(function(p,i){out.push(p);if(FEEDADS&&adl.length&&i%4===2){out.push(adl[ai%adl.length]);ai++}});
+  return out;
+}
+function feedPost(it){
+  var head='<div class="fhead"><div class="fav">R2R</div><div><b>ready2rank</b><div class="fsub">'+(it.type==="ad"?"Sponsored":(it.status==="published"?"Live · "+esc(it.day+" "+it.date):"Scheduled · "+esc(it.day+" "+it.date)))+'</div></div></div>';
+  var media=car(it.media,"");
+  var acts=it.type==="ad"?'<div class="fcta"><span>landing.readytorank.com.au</span><b>Learn more</b></div>':'<div class="facts">♡ &nbsp;💬 &nbsp;➤<span>'+(it.metrics&&it.metrics.Likes!=null?it.metrics.Likes+" likes":(it.status==="published"?"":"Not posted yet"))+'</span></div>';
+  return '<div class="fpost">'+head+media+acts+'<div class="fcap"><b>ready2rank</b> '+ctext(it.text)+'</div>'+(it.type==="ad"?'<div class="fsub" style="padding:0 12px 10px">Ad '+esc(it.code)+': '+esc(it.title)+'</div>':'')+'</div>';
+}
+function tFeed(){
+  var items=feedItems(),so=snap("social_posts").data.days,posts=items.filter(function(i){return i.type==="post"}),last=posts.length?posts[0]:null;
+  var stories=[];so.forEach(function(g){g.stories.forEach(function(s){if(s.media[0]&&(FEEDT==="all"||s.status==="published"))stories.push(s.media[0])})});
+  var h='<div class="card"><h3>Feed preview: Instagram</h3><p class="note" style="margin-top:0">What someone sees scrolling the Ready to Rank feed. '+(FEEDT==="all"?"Everything live now plus everything scheduled to "+(last?last.date:"")+", newest first.":"Only what is live right now.")+' Keep scrolling inside the phone and more posts load. '+(FEEDADS?"Ad creatives are dropped in as Sponsored posts every few posts, like a real feed.":"")+'</p>'+
+    '<div class="row" style="gap:10px;margin:10px 0"><div class="seg"><button type="button" data-fv="feed" class="'+(FEEDV==="feed"?"on":"")+'">Feed scroll</button><button type="button" data-fv="grid" class="'+(FEEDV==="grid"?"on":"")+'">Profile grid</button></div>'+
+    '<div class="seg"><button type="button" data-ft="live" class="'+(FEEDT==="live"?"on":"")+'">Live now</button><button type="button" data-ft="all" class="'+(FEEDT==="all"?"on":"")+'">With scheduled</button></div>'+
+    (FEEDV==="feed"?'<label class="note" style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="fads"'+(FEEDADS?" checked":"")+'> Show ads in feed</label>':'')+'</div>';
+  h+='<div class="phone"><div class="pscreen" id="pscreen"><div class="ptop"><b>Instagram</b><span>♡ &nbsp;✉</span></div>';
+  if(FEEDV==="feed"){
+    h+='<div class="fstories">'+stories.slice(0,14).map(function(u){return '<div class="fst"><img src="'+esc(u)+'" alt="Story" data-zoom="1" loading="lazy"></div>'}).join("")+'</div><div id="flist"></div><div id="fsent" class="fend">Loading…</div>';
+  }else{
+    var np=posts.length;h+='<div class="gprof"><div class="fav big">R2R</div><div class="gstats"><div><b>'+np+'</b>posts</div></div></div><div class="gname"><b>Ready to Rank</b><br>Local SEO for Melbourne tradies</div><div class="pgrid">'+posts.map(function(p){return '<div class="pg'+(p.status!=="published"?" sch":"")+'"><img loading="lazy" src="'+esc(p.media[0])+'" alt="" data-zoom="1">'+(p.media.length>1?'<span class="pgm">❐</span>':'')+(p.status!=="published"?'<span class="pgs">'+esc(p.date.slice(0,5))+'</span>':'')+'</div>'}).join("")+'</div>';
+  }
+  h+='</div></div>'+cmtBlock("snapshot_key","feed_preview")+'</div>';
+  $("tab").innerHTML=h;wireComments();
+  Array.prototype.forEach.call(document.querySelectorAll("[data-fv]"),function(b){b.onclick=function(){FEEDV=b.dataset.fv;render()}});
+  Array.prototype.forEach.call(document.querySelectorAll("[data-ft]"),function(b){b.onclick=function(){FEEDT=b.dataset.ft;render()}});
+  var fa=$("fads");if(fa)fa.onchange=function(){FEEDADS=fa.checked;render()};
+  if(FEEDV==="grid"){wireReview();return}
+  var shown=0,list=$("flist"),sent=$("fsent"),scr=$("pscreen");
+  function more(){var batch=items.slice(shown,shown+5);shown+=batch.length;list.insertAdjacentHTML("beforeend",batch.map(feedPost).join(""));wireReview();
+    if(shown>=items.length){sent.textContent="You're all caught up"+(FEEDT==="all"&&last?" · scheduled to "+last.date:"");if(io)io.disconnect()}}
+  var io=("IntersectionObserver" in window)?new IntersectionObserver(function(e){if(e[0].isIntersecting)more()},{root:scr,rootMargin:"600px"}):null;
+  more();if(io)io.observe(sent);scr.onscroll=function(){if(shown<items.length&&scr.scrollTop+scr.clientHeight>scr.scrollHeight-600)more()};
 }
 
 /* ---------- about ---------- */
