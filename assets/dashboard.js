@@ -1179,8 +1179,10 @@ function rpProofHtml(){
 const rpMapOn = () => RP() && !!CFG.mapBase;
 const mgX = (lng, z) => 256 * (lng + 180) / 360 * Math.pow(2, z);
 const mgY = (lat, z) => { const t = Math.sin(lat * Math.PI / 180); return 256 * (0.5 - Math.log((1 + t) / (1 - t)) / (4 * Math.PI)) * Math.pow(2, z); };
-/* Preview features: only shells listing them in CFG.preview get them (Hot Chicken first, Jose 15/11/2026). */
-const PV = f => Array.isArray(CFG.preview) && CFG.preview.includes(f);
+/* Preview features: only shells listing them in CFG.preview get them (Hot Chicken first, Jose 15/11/2026).
+   LIVE lists features Jose has approved for every hub. */
+const PV_LIVE = ['mapCircle', 'mapGrowth'];   // rolled out 15/11/2026
+const PV = f => PV_LIVE.includes(f) || (Array.isArray(CFG.preview) && CFG.preview.includes(f));
 /* Circle grid (preview 'mapCircle'): only points within the service radius count, so the corners
    of the square (up to 1.41x the radius away) no longer dilute "points found". */
 const rpReach = s => +s.spacing_km * (s.grid_size - 1) / 2;
@@ -1278,7 +1280,7 @@ function rpGrowthHtml(all, kws){
   const body = G.rows.map(r => `<div class="rpg-k">${esc(r.k)}</div>${r.cells.map(s => { if (!s) return '<div class="rpg-c rpg-none">No scan</div>';
     const a = rpStats(s); return `<div class="rpg-c">${rpMapSvg(s, null, false)}<div class="rpg-s"><b>${fmt(a.found)}</b>/${fmt(a.total)} found · <b>${fmt(a.top3)}</b> top 3 · avg ${a.avg != null ? fmt(a.avg, 1) : '—'}</div></div>`; }).join('')}`).join('');
   return `<div class="card"><div class="cardhead"><div><h3>Growth at a glance</h3><p class="sub">Every keyword, month by month. Read each row left to right.</p></div><button type="button" class="rp-btn" data-rpgrowth="1">Download image</button></div>
-    <div class="tscroll"><div class="rpg" style="grid-template-columns:minmax(110px,150px) repeat(${G.months.length}, minmax(150px,1fr))">${head}${body}</div></div></div>`;
+    <div class="tscroll"><div class="rpg" style="grid-template-columns:minmax(110px,150px) repeat(${G.months.length}, minmax(150px,240px))">${head}${body}</div></div></div>`;
 }
 /* Download: draws every small map (base image + its pins) onto one canvas and saves a PNG. */
 async function rpGrowthPng(){
