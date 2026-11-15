@@ -1204,7 +1204,7 @@ const mgX = (lng, z) => 256 * (lng + 180) / 360 * Math.pow(2, z);
 const mgY = (lat, z) => { const t = Math.sin(lat * Math.PI / 180); return 256 * (0.5 - Math.log((1 + t) / (1 - t)) / (4 * Math.PI)) * Math.pow(2, z); };
 /* Preview features: only shells listing them in CFG.preview get them (Hot Chicken first, Jose 15/11/2026).
    LIVE lists features Jose has approved for every hub. */
-const PV_LIVE = ['mapCircle', 'mapGrowth'];   // rolled out 15/11/2026
+const PV_LIVE = ['mapCircle', 'mapGrowth', 'nearMe', 'aiDelta', 'mapZoom'];   // rolled out 15/11/2026
 const PV = f => PV_LIVE.includes(f) || (Array.isArray(CFG.preview) && CFG.preview.includes(f));
 /* Circle grid (preview 'mapCircle'): only points within the service radius count, so the corners
    of the square (up to 1.41x the radius away) no longer dilute "points found". */
