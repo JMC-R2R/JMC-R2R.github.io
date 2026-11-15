@@ -1322,7 +1322,13 @@ function rpNearMeHtml(){
   const rows = Object.values(by).map(x => { const k = x.keyword.toLowerCase(), o = { keyword:x.keyword, rank:rL[k] ?? 999 };
     o.move = !x[L] ? -999 : !P || !rP[k] ? 999 : rP[k] - rL[k];
     months.forEach(m => { o['m' + m] = x[m] ? val(x[m]) : -1; o['r' + m] = x[m]; }); return o; });
-  const cell = (v, r, m) => { const x = r['r' + m]; return !x ? '<span class="sub">—</span>' : x.users != null ? fmt(x.users) : `<span class="sub">under ${x.below_threshold}</span>`; };
+  /* Each month against the month before: green up, red down. "Under 15" counts as 14.5, so a move into or
+     out of an exact count still shows, but under 15 to under 15 shows no arrow. */
+  const cell = (v, r, m) => { const x = r['r' + m], i = months.indexOf(m), pm = i > 0 ? months[i - 1] : null, px = pm ? r['r' + pm] : null;
+    if (!x) return '<span class="sub">—</span>' + (px ? `<span class="nm-mv dn" title="Not shown in ${short(m)}">▼</span>` : '');
+    const d = !pm ? 0 : !px ? 1 : val(x) - val(px);
+    const arrow = !pm || d === 0 ? '' : `<span class="nm-mv ${d > 0 ? 'up' : 'dn'}" title="${d > 0 ? 'Up' : 'Down'} on ${short(pm)}">${d > 0 ? '▲' : '▼'}</span>`;
+    return (x.users != null ? fmt(x.users) : `<span class="sub">under ${x.below_threshold}</span>`) + arrow; };
   const cols = [{ k:'keyword', label:'Search' },
     { k:'rank', label:`Rank (${short(L)})`, num:1, fmt:v => v === 999 ? '<span class="sub">—</span>' : '#' + v },
     { k:'move', label:'Move', num:1, fmt:v => v === 999 ? '<span class="chip up">new</span>' : v === -999 ? '<span class="chip dn">gone</span>' : v === 0 ? '=' : `<span class="chip ${v > 0 ? 'up' : 'dn'}">${v > 0 ? '▲' : '▼'} ${Math.abs(v)}</span>` },

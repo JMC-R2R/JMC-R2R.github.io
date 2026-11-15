@@ -586,3 +586,6 @@ html.rvopen{overflow:hidden}
 .rpg-s{font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-top:6px;line-height:1.4}
 .rpg-s b{color:var(--ink)}
 .rpg-none{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1px dashed var(--ink3);border-radius:8px;color:var(--ink3);font-size:12px}
+
+.nm-mv{display:inline-block;margin-left:6px;font-size:10px;line-height:1}
+.nm-mv.up{color:#2E9E5B}.nm-mv.dn{color:#C94A4A}
