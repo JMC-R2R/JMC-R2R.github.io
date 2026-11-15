@@ -29,6 +29,8 @@ label{display:block;font-weight:700;font-size:14px;margin:14px 0 6px}
 label small{font-weight:400;color:var(--mut)}
 input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid var(--line);background:#0c0d10;color:#fff;font:inherit;font-size:16px}
 input:focus{outline:2px solid var(--b);border-color:transparent}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:420px){.row{grid-template-columns:1fr;gap:0}}
 .hp{position:absolute;left:-9999px;height:0;overflow:hidden}
 button,.btn{margin-top:20px;width:100%;display:block;text-align:center;background:var(--b);color:#0F0F12;border:0;border-radius:999px;padding:16px;font:inherit;font-weight:900;font-size:17px;cursor:pointer;text-decoration:none}
 button[disabled]{opacity:.6;cursor:wait}
@@ -55,6 +57,7 @@ button[disabled]{opacity:.6;cursor:wait}
 <div class="side">
   <form id="f" novalidate>
     <div class="k">Get the checklist</div>
+    <div class="row"><div><label for="fn">First name</label><input id="fn" name="fn" autocomplete="given-name" required maxlength="60"></div><div><label for="ln">Last name</label><input id="ln" name="ln" autocomplete="family-name" required maxlength="60"></div></div>
     <label for="b">Business name</label><input id="b" name="b" autocomplete="organization" required maxlength="120">
     <label for="s">Website</label><input id="s" name="s" inputmode="url" autocomplete="url" placeholder="yourbusiness.com.au" required maxlength="200">
     <label for="e">Email</label><input id="e" name="e" type="email" autocomplete="email" required maxlength="200">
@@ -67,7 +70,7 @@ button[disabled]{opacity:.6;cursor:wait}
   <div class="done" id="done" hidden>
     <div class="k">It's yours</div>
     <h2>Thanks! Here's your checklist.</h2>
-    <p class="lead" style="font-size:16px">Work down it with your phone in your hand. Want us to look at your site for you? Reply to our DM or book a call.</p>
+    <p class="lead" style="font-size:16px">Work down it with your phone in your hand. Start with the five quick checks in Part One. We'll also email you a copy, so it's there when you need it.</p>
     <a class="btn" id="dl" href="dl-1e15be78d037/R2R-40-Website-Fixes-For-Tradies.pdf" target="_blank" rel="noopener">Download the checklist (PDF)</a>
     <a class="btn" style="background:#fff" href="https://calendly.com/jose_chavez/ready-to-rank-discovery-call-" target="_blank" rel="noopener">Book a free discovery call</a>
   </div>
@@ -83,13 +86,15 @@ const f=document.getElementById("f"), err=document.getElementById("err"), go=doc
 f.addEventListener("submit", async e=>{
   e.preventDefault(); err.textContent="";
   const v=id=>document.getElementById(id).value.trim();
+  if(!v("fn")) return err.textContent="Please add your first name.";
+  if(!v("ln")) return err.textContent="Please add your last name.";
   if(v("b").length<2) return err.textContent="Please add your business name.";
   if(v("s").length<4) return err.textContent="Please add your website.";
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v("e"))) return err.textContent="Please check your email address.";
   go.disabled=true; go.textContent="One moment...";
   try{
     const r=await fetch(U,{method:"POST",headers:{"apikey":K,"Authorization":"Bearer "+K,"Content-Type":"application/json"},
-      body:JSON.stringify({p_kind:"checklist",p_business:v("b"),p_website:v("s"),p_email:v("e"),p_phone:v("p")||null,p_channel:okCh,p_hp:v("w")||null})});
+      body:JSON.stringify({p_kind:"checklist",p_business:v("b"),p_website:v("s"),p_email:v("e"),p_phone:v("p")||null,p_channel:okCh,p_hp:v("w")||null,p_first:v("fn"),p_last:v("ln")})});
     if(!r.ok) throw new Error(r.status);
     f.hidden=true; document.getElementById("done").hidden=false; document.getElementById("done").scrollIntoView({behavior:"smooth"});
   }catch(x){ go.disabled=false; go.textContent="Get the checklist"; err.textContent="Something went wrong. Please try again, or email hello@readytorank.com.au."; }
