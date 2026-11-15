@@ -367,6 +367,7 @@ function renderAll(){
   /* Jose 06/11/2026: title, then the boxed numbers, then the paragraph that explains them. */
   host.querySelectorAll('.lede').forEach(p => { const n = p.nextElementSibling; if (n && n.classList.contains('kpis')) n.after(p); });
   teamBar(host);
+  if (PV('story')) storyHook(host);
   drawCharts(); wireTables();
   /* The refresh log is admin-only, so a client falls back to the newest dated row. */
   const newest = [...RAW.seo, ...RAW.gbp, ...RAW.paid].map(r => r.date).filter(Boolean).sort().pop();
@@ -3205,3 +3206,167 @@ document.addEventListener('pointerdown', ev => { const z = ev.target.closest && 
   const mv = e => rpZoomSet(z, +z.dataset.z, ox + e.clientX - sx, oy + e.clientY - sy);
   const up = () => { z.removeEventListener('pointermove', mv); z.removeEventListener('pointerup', up); };
   z.addEventListener('pointermove', mv); z.addEventListener('pointerup', up); });
+
+/* ================================================================ Month in 60 seconds
+   Preview 'story' (Jose 15/11/2026): a Wrapped-style, tap-through story of the client's last full
+   month, with fireworks. Every figure comes from data already on the page; a card with no data is
+   left out, never filled with a guess. */
+function storyMonth(){
+  const now = rpYmd(new Date()).slice(0, 7), done = state.months.filter(m => m < now);
+  return done.length ? done[done.length - 1] : state.months[state.months.length - 1];
+}
+function storyData(){
+  const keep = state.month, m = storyMonth(); state.month = m; applyMonth();
+  const v = V, out = { m, mName: monthName(m), mShort: new Date(m + '-01T00:00:00').toLocaleDateString('en-AU', { month:'long' }), cards: [] };
+  const views = a => a.reduce((t, r) => t + ['impr_search_mobile','impr_search_desktop','impr_maps_mobile','impr_maps_desktop'].reduce((x, k) => x + (Number(r[k]) || 0), 0), 0);
+  const g = { views: views(v.gbp), viewsP: views(v.gbpPrev), calls: v.agg.calls, callsP: v.aggPrev.calls, web: v.agg.gbpClicks, webP: sum(v.gbpPrev, 'website_clicks'), dir: v.agg.directions, dirP: v.aggPrev.directions };
+  /* map: the keyword that grew most, latest scan in the month against the previous comparable one */
+  const ser = rpSeries().filter(x => monthOf(x.checked_at) <= m), kws = [...new Set(ser.map(x => x.keyword))];
+  let map = null;
+  kws.forEach(k => { const l = ser.filter(x => x.keyword === k), c = l[l.length - 1]; if (!c || monthOf(c.checked_at) !== m) return;
+    const p = l.slice(0, -1).filter(x => rpSame(x, c)).pop(), A = rpStats(c), P = p ? rpStats(p) : null, first = l.find(x => rpSame(x, c));
+    const d = P ? A.found - P.found : 0; if (!map || d > map.d) map = { k, c, p, A, P, d, list: l.filter(x => rpSame(x, c)).slice(-6), F: first ? rpStats(first) : null, fm: first && first.checked_at }; });
+  /* AI */
+  const share = snap => snap.length ? snap.filter(rpNamed).length / snap.length * 100 : null;
+  const ai = { now: share(v.geoSnap), prev: share(v.geoPrevSnap), n: v.geoSnap.length, eng: {} };
+  RP_ENGINES.forEach(e => { const a = v.geoSnap.filter(r => String(r.engine).toLowerCase() === e.n.toLowerCase()); if (a.length) ai.eng[e.n] = a.filter(rpNamed).length / a.length * 100; });
+  /* near me (Google releases search terms a few weeks late: latest month on or before) */
+  const NM = /\bnear\s*me\b/i, gk = (RAW.gkw || []).filter(r => NM.test(r.keyword) && monthOf(r.month) <= m), gm = gk.map(r => monthOf(r.month)).sort().pop();
+  const nm = gm ? gk.filter(r => monthOf(r.month) === gm) : [];
+  const near = { m: gm, n: nm.length, floor: nm.reduce((t, r) => t + (r.users != null ? Number(r.users) : 1), 0), top: nm.slice().sort((a, b) => (b.users || 14.5) - (a.users || 14.5)).slice(0, 3).map(r => r.keyword) };
+  /* work delivered */
+  const wl = (RAW.wlog || []).filter(r => monthOf(r.month) === m), byCat = {};
+  wl.forEach(r => { byCat[r.category] = (byCat[r.category] || 0) + 1; });
+  /* review of the month: a 5-star with words, newest first */
+  const rvs = (RAW.grl || []).filter(r => monthOf(String(r.created_at).slice(0, 10)) === m);
+  const best = rvs.filter(r => r.rating === 5 && r.comment && r.comment.length > 25).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
+  const rvNow = v.reviews;
+  state.month = keep; applyMonth();
+  Object.assign(out, { g, map, ai, near, wl, byCat, best, rvs, rvNow });
+  /* the biggest win: largest % rise among real month-on-month figures */
+  const cand = [];
+  const pc = (a, b) => b > 0 ? (a - b) / b * 100 : null;
+  if (g.views && g.viewsP) cand.push({ k:'views', label:'people saw your Google profile', v:g.views, was:g.viewsP, p:pc(g.views, g.viewsP) });
+  if (g.calls && g.callsP) cand.push({ k:'calls', label:'calls straight from Google', v:g.calls, was:g.callsP, p:pc(g.calls, g.callsP) });
+  if (g.web && g.webP) cand.push({ k:'web', label:'website visits from your Google profile', v:g.web, was:g.webP, p:pc(g.web, g.webP) });
+  if (map && map.P && map.d > 0) cand.push({ k:'map', label:`spots on the map where you show up for “${map.k}”`, v:map.A.found, was:map.P.found, p:pc(map.A.found, map.P.found) });
+  if (ai.now != null && ai.prev != null && ai.now > ai.prev) cand.push({ k:'ai', label:'of AI answers now name you', v:ai.now, was:ai.prev, p:(ai.now - ai.prev) * 2, pct:true });
+  out.win = cand.filter(c => c.p > 0).sort((a, b) => b.p - a.p)[0] || null;
+  return out;
+}
+const stCount = (n, dp = 0, suf = '') => `<span class="st-num" data-count="${n}" data-dp="${dp}" data-suf="${esc(suf)}">0${esc(suf)}</span>`;
+function storyCards(D){
+  const who = esc(CFG.shortName || CFG.name), C = [];
+  const logo = CFG.logo ? `<img class="st-logo" src="${esc(CFG.logo)}" alt="">` : '';
+  C.push({ fx:'fireworks', html:`${logo}<p class="st-kick">Your month in 60 seconds</p><h1 class="st-h">${esc(D.mName)}</h1><p class="st-p">Here’s what ${who} achieved on Google this month.</p><p class="st-tap">Tap to start →</p>` });
+  if (D.win){ const w = D.win, up = w.pct ? `${fmt(w.v - w.was, 1)} pts` : `${fmt(w.p, 0)}%`;
+    C.push({ fx:'celebrate', html:`<p class="st-kick">🏆 Biggest win of ${esc(D.mShort)}</p><div class="st-big">${w.pct ? stCount(w.v, 1, '%') : stCount(w.v)}</div><p class="st-p">${esc(w.label)}</p><p class="st-up">▲ ${up} on last month <span>(${w.pct ? fmt(w.was, 1) + '%' : fmt(w.was)} before)</span></p>` }); }
+  if (D.map && D.map.list.length){ const mp = D.map;
+    const frames = mp.list.map((s, i) => { rpMapSmall = true; const h = rpMapSvg(s, null, false); rpMapSmall = false; const a = rpStats(s);
+      return `<div class="st-frame${i === mp.list.length - 1 ? ' last' : ''}" style="--i:${i}">${h}<span class="st-fl">${esc(new Date(s.checked_at + 'T00:00:00').toLocaleDateString('en-AU', { month:'short', year:'2-digit' }))} · ${fmt(a.found)} spots</span></div>`; }).join('');
+    C.push({ fx: mp.d > 0 ? 'confetti' : '', cls:'st-mapcard', html:`<p class="st-kick">📍 Your reach on Google Maps</p><div class="st-maps" style="--n:${mp.list.length}">${frames}</div><p class="st-p">You show up in <b>${stCount(mp.A.found)}</b> of ${fmt(mp.A.total)} spots for “${esc(mp.k)}”${mp.A.top3 ? `, in the top 3 at <b>${fmt(mp.A.top3)}</b>` : ''}.</p>${mp.P ? `<p class="st-up${mp.d < 0 ? ' dn' : ''}">${mp.d > 0 ? '▲ ' + fmt(mp.d) + ' more spots' : mp.d < 0 ? '▼ ' + fmt(-mp.d) + ' fewer spots' : 'Holding steady'} since last month</p>` : ''}` }); }
+  const g = D.g;
+  if (g.calls || g.web || g.dir){
+    const row = (ic, n, l, was) => `<div class="st-stat"><span class="st-ic">${ic}</span><b>${stCount(n)}</b><small>${l}</small>${was ? `<em class="${n >= was ? 'up' : 'dn'}">${n >= was ? '▲' : '▼'} ${fmt(Math.abs(n - was))}</em>` : ''}</div>`;
+    C.push({ fx:'', html:`<p class="st-kick">📞 People who reached out</p><h2 class="st-h2">Straight from your Google profile</h2><div class="st-stats">${row('📞', g.calls, 'calls', g.callsP)}${row('🌐', g.web, 'website visits', g.webP)}${row('🧭', g.dir, 'asked for directions', g.dirP)}</div>${g.views ? `<p class="st-p">Your profile was seen <b>${fmt(g.views)}</b> times on Google Search and Maps.</p>` : ''}` }); }
+  if (D.near.n){ const n = D.near;
+    C.push({ fx:'', html:`<p class="st-kick">🔎 “Near me” searches</p><div class="st-big">${stCount(n.floor)}+</div><p class="st-p">people searched “near me” and found ${who} in ${esc(monthName(n.m))}</p><div class="st-chips">${n.top.map(t => `<span>${esc(t)}</span>`).join('')}</div><p class="st-small">${fmt(n.n)} different “near me” searches. Google only counts exactly from 15 people, so the real number is higher.</p>` }); }
+  if (D.ai.now != null){ const a = D.ai;
+    C.push({ fx: a.prev != null && a.now > a.prev ? 'confetti' : '', html:`<p class="st-kick">🤖 AI assistants</p><div class="st-big">${stCount(a.now, 0, '%')}</div><p class="st-p">of answers from ChatGPT, Gemini, Claude and Perplexity named ${who} when we asked them local questions</p>${a.prev != null ? `<p class="st-up${a.now < a.prev ? ' dn' : ''}">${a.now >= a.prev ? '▲' : '▼'} ${fmt(Math.abs(a.now - a.prev), 1)} pts on last month</p>` : ''}<div class="st-chips">${Object.entries(a.eng).map(([e, x]) => `<span>${esc(e)} ${fmt(x, 0)}%</span>`).join('')}</div>` }); }
+  if (D.wl.length){ const cats = Object.entries(D.byCat).sort((a, b) => b[1] - a[1]);
+    C.push({ fx:'', html:`<p class="st-kick">🛠️ What we delivered</p><div class="st-big">${stCount(D.wl.length)}</div><p class="st-p">pieces of work went live for ${who} in ${esc(D.mShort)}</p><div class="st-work">${cats.map(([c, n]) => `<div><b>${fmt(n)}</b><span>${esc(c)}</span></div>`).join('')}</div>` }); }
+  if (D.best){ const r = D.best;
+    C.push({ fx:'', html:`<p class="st-kick">⭐ Review of the month</p><div class="st-stars">★★★★★</div><blockquote class="st-quote">“${esc(r.comment.length > 260 ? r.comment.slice(0, 257) + '…' : r.comment)}”</blockquote><p class="st-small">${esc(r.reviewer || 'A customer')}${D.rvs.length > 1 ? ` · one of ${fmt(D.rvs.length)} new reviews this month` : ''}${D.rvNow ? ` · ${fmt(D.rvNow.review_count)} reviews, ${fmt(D.rvNow.avg_rating, 1)}★ overall` : ''}</p>` }); }
+  if (D.map && D.map.F && D.map.fm && monthOf(D.map.fm) < D.m){ const mp = D.map, d = mp.A.found - mp.F.found;
+    if (d > 0) C.push({ fx:'confetti', html:`<p class="st-kick">🚀 Since we started</p><h2 class="st-h2">“${esc(mp.k)}” on Google Maps</h2><div class="st-vs"><div><small>${esc(new Date(mp.fm + 'T00:00:00').toLocaleDateString('en-AU', { month:'short', year:'numeric' }))}</small><b>${fmt(mp.F.found)}</b></div><span>→</span><div><small>Now</small><b>${stCount(mp.A.found)}</b></div></div><p class="st-p">spots where ${who} shows up. That’s <b>${fmt(d)}</b> more since the first scan.</p>` }); }
+  C.push({ fx:'celebrate', html:`${logo}<h2 class="st-h2">That’s your ${esc(D.mShort)}! 🎉</h2><p class="st-p">Every number here is live in your hub, ready to explore.</p><div class="st-cta"><button type="button" class="st-btn" data-st="close">Explore my hub</button><button type="button" class="st-btn ghost" data-st="replay">Watch again</button></div><p class="st-small">Delivered by Ready to Rank</p>` });
+  return C;
+}
+let ST = null;
+function storyOpen(){
+  const D = storyData(), C = storyCards(D);
+  const el = document.createElement('div'); el.className = 'st'; el.style.setProperty('--acc', CFG.accent || '#17B4F0');
+  el.innerHTML = `<canvas class="st-fx"></canvas><div class="st-bars">${C.map(() => '<i><b></b></i>').join('')}</div><button type="button" class="st-x" data-st="close" aria-label="Close">✕</button>
+    <div class="st-stage">${C.map((c, i) => `<section class="st-card ${c.cls || ''}" data-i="${i}">${c.html}</section>`).join('')}</div><div class="st-nav"><span data-st="prev"></span><span data-st="next"></span></div>`;
+  document.body.appendChild(el); document.body.style.overflow = 'hidden';
+  ST = { el, C, i: -1, t: null, paused: false, fx: stFx(el.querySelector('.st-fx')) };
+  stGo(0);
+  try { localStorage.setItem('st-seen-' + CFG.slug, D.m); } catch (e) {}
+}
+function stClose(){ if (!ST) return; clearTimeout(ST.t); ST.fx.stop(); ST.el.remove(); ST = null; document.body.style.overflow = ''; }
+const ST_MS = 7000;
+function stGo(i){
+  if (!ST) return; if (i < 0) i = 0; if (i >= ST.C.length) return stClose();
+  ST.i = i; clearTimeout(ST.t);
+  ST.el.querySelectorAll('.st-card').forEach((c, k) => c.classList.toggle('on', k === i));
+  ST.el.querySelectorAll('.st-bars i').forEach((b, k) => { b.className = k < i ? 'done' : k === i ? 'run' : ''; });
+  const card = ST.el.querySelector(`.st-card[data-i="${i}"]`);
+  card.querySelectorAll('[data-count]').forEach(n => stCountUp(n));
+  card.querySelectorAll('.st-frame').forEach(f => { f.style.animation = 'none'; void f.offsetWidth; f.style.animation = ''; });
+  ST.fx.stop(); const f = ST.C[i].fx; if (f && ST.fx[f]) ST.fx[f]();
+  if (i < ST.C.length - 1) ST.t = setTimeout(() => !ST.paused && stGo(ST.i + 1), ST_MS);
+}
+function stCountUp(n){
+  const to = +n.dataset.count, dp = +n.dataset.dp || 0, suf = n.dataset.suf || '', t0 = performance.now(), D = 1400;
+  const step = () => { const k = Math.max(0, Math.min(1, (performance.now() - t0) / D)), e = 1 - Math.pow(1 - k, 3); n.textContent = fmt(to * e, dp) + suf; if (k < 1 && n.isConnected) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+/* Fireworks and confetti on one canvas: rockets that climb and burst into glowing sparks with
+   fading trails, a finale, and falling confetti. Client accent plus gold, white, coral and green. */
+function stFx(cv){
+  const x = cv.getContext('2d'), R = devicePixelRatio || 1; let P = [], run = false, raf = 0, timers = [];
+  const fit = () => { cv.width = innerWidth * R; cv.height = innerHeight * R; }; fit();
+  const cols = () => [getComputedStyle(cv.parentElement).getPropertyValue('--acc').trim() || '#17B4F0', '#FFD54A', '#FFFFFF', '#FF6B6B', '#7CF29A', '#FFB347'];
+  const burst = (bx, by, big) => { const c = cols(), n = big ? 220 : 120, base = c[Math.floor(Math.random() * c.length)];
+    for (let i = 0; i < n; i++){ const a = Math.random() * Math.PI * 2, sp = (big ? 3 : 2) + Math.random() * (big ? 9 : 6.5);
+      P.push({ x:bx, y:by, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp, life:1, d:.009 + Math.random() * .006, c: Math.random() < .6 ? base : c[i % c.length], r:(1.6 + Math.random() * 2.2) * R, g:.045, f:.982, glow:1 }); }
+    for (let i = 0; i < 26; i++) P.push({ x:bx, y:by, vx:(Math.random() - .5) * 2.5, vy:(Math.random() - .5) * 2.5, life:.7, d:.03, c:'#FFFFFF', r:4 * R, g:0, f:.9, glow:1 }); };
+  const rocket = big => { const W = cv.width, H = cv.height, tx = W * (.12 + Math.random() * .76), ty = H * (.1 + Math.random() * .32);
+    const sx = tx + (Math.random() - .5) * W * .15, sy = H + 10, steps = 34;
+    P.push({ x:sx, y:sy, vx:(tx - sx) / steps / R, vy:(ty - sy) / steps / R, life:1, d:1 / steps, c:'#FFE9A8', r:2.4 * R, g:0, f:1, glow:1, trail:1, onEnd:() => burst(tx, ty, big) }); };
+  const loop = () => {
+    /* fade what was drawn instead of wiping it: sparks leave trails, the card underneath stays visible */
+    x.globalCompositeOperation = 'destination-out'; x.fillStyle = 'rgba(0,0,0,.28)'; x.fillRect(0, 0, cv.width, cv.height);
+    x.globalCompositeOperation = 'lighter';
+    const born = [];
+    P.forEach(p => { p.vx *= p.f; p.vy = p.vy * p.f + p.g * R; p.x += p.vx * R; p.y += p.vy * R; p.life -= p.d;
+      if (p.life <= 0 && p.onEnd){ born.push(p.onEnd); p.onEnd = null; }
+      if (p.life <= 0) return;
+      x.globalAlpha = Math.min(1, p.life * 1.2); x.fillStyle = p.c;
+      if (p.w){ x.globalCompositeOperation = 'source-over'; x.save(); x.translate(p.x, p.y); x.rotate(p.rot += p.vr); x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); x.restore(); x.globalCompositeOperation = 'lighter'; }
+      else { if (p.glow){ x.shadowBlur = 12 * R; x.shadowColor = p.c; } x.beginPath(); x.arc(p.x, p.y, p.r * (p.trail ? 1 : Math.max(.4, p.life)), 0, Math.PI * 2); x.fill(); x.shadowBlur = 0; } });
+    P = P.filter(p => p.life > 0); born.forEach(f => f());
+    x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+    if (run || P.length) raf = requestAnimationFrame(loop); else x.clearRect(0, 0, cv.width, cv.height); };
+  const start = () => { if (!run){ run = true; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); } };
+  const confetti = (n = 200) => { const c = cols(), W = cv.width;
+    for (let i = 0; i < n; i++) P.push({ x:Math.random() * W, y:-20 - Math.random() * cv.height * .5, vx:(Math.random() - .5) * 2.4, vy:2 + Math.random() * 3.5, life:2.2, d:.005,
+      c:c[i % c.length], w:(7 + Math.random() * 7) * R, h:(3 + Math.random() * 5) * R, rot:Math.random() * 6, vr:(Math.random() - .5) * .35, g:.02, f:.995 }); };
+  return {
+    fireworks(){ start(); for (let i = 0; i < 12; i++) timers.push(setTimeout(() => rocket(false), i * 260 + Math.random() * 120));
+      timers.push(setTimeout(() => { rocket(true); rocket(true); }, 3300)); timers.push(setTimeout(() => { run = false; }, 5200)); },
+    celebrate(){ this.fireworks(); confetti(220); },
+    confetti(){ start(); confetti(); timers.push(setTimeout(() => { run = false; }, 4200)); },
+    stop(){ timers.forEach(clearTimeout); timers = []; run = false; P = []; cancelAnimationFrame(raf); x.clearRect(0, 0, cv.width, cv.height); },
+  };
+}
+document.addEventListener('click', ev => {
+  const o = ev.target.closest && ev.target.closest('[data-story-open]'); if (o){ storyOpen(); return; }
+  if (!ST) return; const b = ev.target.closest('[data-st]'); if (!b) return;
+  const a = b.dataset.st; if (a === 'close') stClose(); if (a === 'replay') stGo(0); if (a === 'next') stGo(ST.i + 1); if (a === 'prev') stGo(ST.i - 1);
+});
+document.addEventListener('keydown', ev => { if (!ST) return; if (ev.key === 'Escape') stClose(); if (ev.key === 'ArrowRight' || ev.key === ' ') stGo(ST.i + 1); if (ev.key === 'ArrowLeft') stGo(ST.i - 1); });
+/* Hold to pause, like a phone story. */
+document.addEventListener('pointerdown', ev => { if (ST && ev.target.closest('.st-stage')){ ST.paused = true; ST.el.classList.add('paused'); } });
+document.addEventListener('pointerup', () => { if (ST && ST.paused){ ST.paused = false; ST.el.classList.remove('paused'); clearTimeout(ST.t); if (ST.i < ST.C.length - 1) ST.t = setTimeout(() => stGo(ST.i + 1), ST_MS / 2); } });
+/* The banner on the Overview tab. Clients see the story open by itself once per month; the team never does. */
+function storyHook(host){
+  if (state.tab !== 'overview' || isAdm(state.tab)) return;
+  const m = storyMonth(); if (!m) return;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'st-banner'; b.setAttribute('data-story-open', '1');
+  b.style.setProperty('--acc', CFG.accent || '#17B4F0');
+  b.innerHTML = `<span class="st-spark">🎉</span><span><b>Your ${esc(new Date(m + '-01T00:00:00').toLocaleDateString('en-AU', { month:'long' }))} in 60 seconds</b><small>Tap to watch your month’s wins</small></span><span class="st-play">▶ Play</span>`;
+  host.prepend(b);
+  let seen = null; try { seen = localStorage.getItem('st-seen-' + CFG.slug); } catch (e) {}
+  if (!isTeam() && seen !== m && !ST) setTimeout(() => !ST && storyOpen(), 900);
+}
