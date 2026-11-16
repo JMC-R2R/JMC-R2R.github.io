@@ -683,3 +683,13 @@ html.rvopen{overflow:hidden}
 .st-tri{display:inline-flex;width:22px;height:22px;border-radius:50%;background:#0d0d10;color:var(--acc);font-size:10px;align-items:center;justify-content:center}
 .st-banner:hover .st-play{transform:scale(1.05)}
 @media (max-width:640px){.st-banner{flex-wrap:wrap}.st-play{width:100%;justify-content:center}}
+
+/* Jobs from your ads (preview 'jobs', 17/11/2026) */
+.jobadd{margin-top:14px;border-top:1px solid var(--bd);padding-top:12px}
+.jobadd summary{cursor:pointer;list-style:none;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.jobadd summary .sub{margin:0;font-size:12px}
+.jobadd[open] summary{margin-bottom:12px}
+.jobgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+.jobgrid label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink2)}
+.jobgrid input,.jobgrid select{font:inherit;padding:8px;border:1px solid var(--bd);border-radius:8px;background:transparent;color:inherit}
+.card.jobs td .btn{padding:2px 8px;font-size:12px;margin-left:4px}

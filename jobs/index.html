@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Jobs from your ads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- Jobs from your ads: a no-login form the client opens from WhatsApp (Jose 17/11/2026).
+     The link's #t= token is the key; the database only stores its hash. Nothing else is read. -->
+<style>
+  :root { --bg:#0B0B0C; --card:#16161A; --bd:#2A2A31; --ink:#F4F4F6; --ink2:#B5B5BF; --ink3:#7C7C88; --accent:#17B4F0; --bad:#FF6B6B; --good:#3DD68C; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 Archivo, system-ui, sans-serif; -webkit-text-size-adjust:100%; }
+  main { max-width:520px; margin:0 auto; padding:20px 16px 48px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; }
+  header .logo { height:40px; max-width:150px; object-fit:contain; background:#fff; border-radius:8px; padding:4px 8px; }
+  header .r2r { font:700 11px 'Space Mono', monospace; letter-spacing:.08em; color:var(--ink3); text-transform:uppercase; text-align:right; }
+  .kicker { font:700 12px 'Space Mono', monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
+  h1 { font-weight:900; font-size:28px; line-height:1.1; margin:0 0 8px; }
+  p.sub { color:var(--ink2); margin:0 0 20px; }
+  fieldset { border:1px solid var(--bd); background:var(--card); border-radius:14px; padding:16px; margin:0 0 14px; }
+  legend { font-weight:800; font-size:17px; padding:0 6px; }
+  .hint { color:var(--ink3); font-size:14px; margin:4px 0 10px; }
+  .opts { display:grid; gap:8px; }
+  .opt { display:flex; align-items:center; gap:12px; padding:14px; border:1px solid var(--bd); border-radius:10px; cursor:pointer; min-height:52px; }
+  .opt input { width:22px; height:22px; accent-color:var(--accent); flex:none; margin:0; }
+  .opt:has(input:checked) { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  .opt small { display:block; color:var(--ink3); font-size:13px; }
+  label.f { display:block; font-weight:600; margin:12px 0 6px; }
+  label.f:first-of-type { margin-top:0; }
+  input[type=text], input[type=date], input[type=number], textarea {
+    width:100%; font:inherit; color:var(--ink); background:#0F0F12; border:1px solid var(--bd); border-radius:10px; padding:13px 12px; }
+  input:focus, textarea:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:transparent; }
+  .money { position:relative; } .money span { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--ink3); }
+  .money input { padding-left:26px; }
+  textarea { min-height:80px; resize:vertical; }
+  button.go { width:100%; font:800 18px Archivo, sans-serif; color:#0B0B0C; background:var(--accent); border:0; border-radius:12px; padding:16px; cursor:pointer; margin-top:6px; }
+  button.go:disabled { opacity:.5; }
+  button.link { background:none; border:0; color:var(--accent); font:inherit; text-decoration:underline; cursor:pointer; padding:0; }
+  .err { color:var(--bad); font-weight:600; margin:10px 0 0; min-height:1em; }
+  .hide { display:none !important; }
+  .done { text-align:center; padding:40px 8px; }
+  .done .tick { width:64px; height:64px; border-radius:50%; background:var(--good); color:#0B0B0C; font-size:36px; line-height:64px; margin:0 auto 16px; font-weight:900; }
+  footer { margin-top:28px; color:var(--ink3); font-size:13px; text-align:center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img class="logo hide" id="logo" alt="">
+    <div class="r2r">Ready to Rank</div>
+  </header>
+
+  <div id="loading"><p class="sub">Loading…</p></div>
+
+  <div id="broken" class="hide">
+    <p class="kicker">Link not working</p>
+    <h1>This link has expired</h1>
+    <p class="sub">Ask Ready to Rank for a new link and we will send it straight over.</p>
+  </div>
+
+  <form id="form" class="hide" novalidate>
+    <p class="kicker" id="biz"></p>
+    <h1>Jobs from your ads</h1>
+    <p class="sub">Tell us about a quote or a job that came from the Google ads. It takes 30 seconds and shows what the ads are really earning you.</p>
+
+    <fieldset>
+      <legend>What's this about?</legend>
+      <div class="opts" id="what">
+        <label class="opt"><input type="radio" name="what" value="quoted"><div>I sent a quote<small>Not won yet</small></div></label>
+        <label class="opt"><input type="radio" name="what" value="won"><div>I won a job<small>The customer said yes</small></div></label>
+        <label class="opt hide" id="upd"><input type="radio" name="what" value="update"><div>Update a quote I already told you about<small>It's now won or lost</small></div></label>
+      </div>
+    </fieldset>
+
+    <fieldset id="pickq" class="hide">
+      <legend>Which quote?</legend>
+      <div class="opts" id="quotes"></div>
+      <label class="f" style="margin-top:14px">What happened?</label>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="outcome" value="won"><div>We won it</div></label>
+        <label class="opt"><input type="radio" name="outcome" value="lost"><div>We lost it</div></label>
+      </div>
+    </fieldset>
+
+    <fieldset id="how" class="hide">
+      <legend>How did they find you?</legend>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="came_in" value="call"><div>They called us</div></label>
+        <label class="opt"><input type="radio" name="came_in" value="form"><div>They filled in the website form</div></label>
+        <label class="opt"><input type="radio" name="came_in" value="other"><div>Something else</div></label>
+        <label class="opt"><input type="radio" name="came_in" value="unsure"><div>Not sure</div></label>
+      </div>
+    </fieldset>
+
+    <fieldset id="details" class="hide">
+      <legend>The job</legend>
+      <div id="newonly">
+        <label class="f" for="job_type">What was the job?</label>
+        <input type="text" id="job_type" maxlength="120" placeholder="e.g. Blocked drain, Bexley">
+        <label class="f" for="job_date">Date</label>
+        <input type="date" id="job_date">
+      </div>
+      <label class="f" for="value" id="vlabel">Job value (inc GST)</label>
+      <div class="money"><span>$</span><input type="number" id="value" inputmode="decimal" min="0" step="1" placeholder="0"></div>
+      <p class="hint" id="vhint"></p>
+      <label class="f" for="note">Anything else? <span style="color:var(--ink3);font-weight:400">(optional)</span></label>
+      <textarea id="note" maxlength="1000" placeholder="e.g. Repeat customer, wants a hot water service next month"></textarea>
+      <label class="f" for="name">Your name <span style="color:var(--ink3);font-weight:400">(optional)</span></label>
+      <input type="text" id="name" maxlength="80" autocomplete="name">
+    </fieldset>
+
+    <button class="go hide" id="go" type="submit">Send</button>
+    <p class="err" id="err" role="alert"></p>
+  </form>
+
+  <div id="done" class="done hide">
+    <div class="tick">✓</div>
+    <h1>Thanks, got it</h1>
+    <p class="sub">It's on your dashboard now. Got another one?</p>
+    <button class="go" id="again" type="button">Add another job</button>
+  </div>
+
+  <footer>Sent by Ready to Rank. Only you and our team can see what you send.</footer>
+</main>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+const sb = createClient('https://tjgrtrazyepvbcmmdhet.supabase.co', 'sb_publishable_FeX9cGqiIHCfAlWA_yTJ9g_u_TM48T8',
+  { auth: { persistSession: false, autoRefreshToken: false } });
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const token = new URLSearchParams(location.hash.slice(1)).get('t') || '';
+const show = (el, on) => el.classList.toggle('hide', !on);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const dmy = s => String(s).slice(0, 10).split('-').reverse().join('/');
+const money = n => n == null ? '' : '$' + Number(n).toLocaleString('en-AU', { maximumFractionDigits: 0 });
+let info = null;
+
+async function load(){
+  if (!/^[0-9a-f]{48}$/.test(token)) return broken();
+  const { data, error } = await sb.rpc('md_job_form_info', { p_token: token });
+  if (error || !data) return broken();
+  info = data;
+  if (info.accent && /^#[0-9a-f]{6}$/i.test(info.accent)) document.documentElement.style.setProperty('--accent', info.accent);
+  if (info.logo) { $('#logo').src = info.logo; $('#logo').alt = info.name; show($('#logo'), true); }
+  $('#biz').textContent = info.name;
+  document.title = `Jobs from your ads · ${info.name}`;
+  const qs = info.quotes || [];
+  show($('#upd'), qs.length > 0);
+  $('#quotes').innerHTML = qs.map(q => `<label class="opt"><input type="radio" name="quote" value="${esc(q.id)}" data-v="${q.value ?? ''}">
+    <div>${esc(q.job_type || 'Quote')}<small>${dmy(q.job_date)}${q.value != null ? ' · ' + money(q.value) : ''}</small></div></label>`).join('');
+  $('#job_date').value = today(); $('#job_date').max = today();
+  show($('#loading'), false); show($('#form'), true);
+}
+function broken(){ show($('#loading'), false); show($('#broken'), true); }
+
+function sync(){
+  const what = ($('input[name=what]:checked') || {}).value;
+  const upd = what === 'update', outcome = ($('input[name=outcome]:checked') || {}).value;
+  show($('#pickq'), upd); show($('#how'), what === 'quoted' || what === 'won');
+  show($('#newonly'), !upd);
+  const status = upd ? outcome : what;
+  show($('#details'), !!what && (!upd || !!outcome));
+  show($('#go'), !!what && (!upd || !!outcome));
+  $('#vlabel').textContent = status === 'quoted' ? 'Quote amount (inc GST)' : 'Job value (inc GST)';
+  $('#vhint').textContent = status === 'lost' ? 'Optional.' : status === 'quoted' ? 'Optional, but it helps us show the value of quotes in the pipeline.' : 'Needed so we can count it.';
+  show($('#value').closest('.money'), status !== 'lost'); show($('#vlabel'), status !== 'lost');
+  $('#err').textContent = '';
+}
+document.addEventListener('change', e => {
+  if (e.target.name === 'quote' && e.target.dataset.v && !$('#value').value) $('#value').value = e.target.dataset.v;
+  sync();
+});
+
+$('#form').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('#err').textContent = '';
+  const what = ($('input[name=what]:checked') || {}).value;
+  const upd = what === 'update';
+  const status = upd ? ($('input[name=outcome]:checked') || {}).value : what;
+  const p = { status, value: $('#value').value.trim(), note: $('#note').value.trim(), name: $('#name').value.trim() };
+  if (upd) {
+    p.quote_id = ($('input[name=quote]:checked') || {}).value;
+    if (!p.quote_id) return fail('Pick the quote you are updating.');
+    if (status === 'lost') p.value = '';
+  } else {
+    p.came_in = ($('input[name=came_in]:checked') || {}).value;
+    if (!p.came_in) return fail('Tell us how they found you, or pick Not sure.');
+    p.job_type = $('#job_type').value.trim(); p.job_date = $('#job_date').value;
+  }
+  if (status === 'won' && !(Number(p.value) > 0)) return fail('Add the job value so we can count it.');
+  const btn = $('#go'); btn.disabled = true; btn.textContent = 'Sending…';
+  const { error } = await sb.rpc('md_job_form_submit', { p_token: token, p });
+  btn.disabled = false; btn.textContent = 'Send';
+  if (error) return fail(error.message || 'Something went wrong. Try again.');
+  show($('#form'), false); show($('#done'), true); scrollTo(0, 0);
+});
+function fail(m){ $('#err').textContent = m; }
+
+$('#again').addEventListener('click', () => {
+  $('#form').reset(); show($('#done'), false); show($('#loading'), true);
+  load().then(sync);
+});
+load().then(sync);
+</script>
+</body>
+</html>

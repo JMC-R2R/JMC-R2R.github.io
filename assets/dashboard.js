@@ -158,6 +158,8 @@ async function loadData(){
     const { data: { session } } = await sb.auth.getSession(); RAW.me = session?.user?.id || null;
     await tgReload();
   }
+  /* Jobs from the ads: preview 'jobs' only. */
+  if (jobsOn()) await jobsReload();
   RAW.notes = notes.data || [];
   RAW.calls = pcalls.data || [];
   RAW.sposts = sposts.data || [];
@@ -1963,6 +1965,7 @@ function viewPaid(){
   }
 
   out += paidCallsCard();
+  out += jobsCard();
 
   /* Search terms — the spreadsheet */
   if (V.pst.length){
@@ -2077,6 +2080,120 @@ function paidCallsCard(){
     { k:'outcome', label:'Outcome' }, { k:'source', label:'Came from' }, { k:'how', label:'How' }, { k:'campaign', label:'Campaign' }, { k:'area', label:'Caller area' }],
     rows, { sort:{ k:'started_at', dir:-1 }, maxH:360, note: `Times are in the ad account's time zone${zone ? ` (${esc(zone)})` : ''}. ${note}` }) + '</div>';
 }
+
+/* ---------------------------------------------------------------- jobs from the ads
+   Preview 'jobs' (Jose 17/11/2026, GSK asked first). The client tells us which enquiries
+   became quotes and paid work (md_job_outcomes), from here or from a no-login form link
+   sent over WhatsApp (/jobs/#t=<token>, RPCs md_job_form_info / md_job_form_submit).
+   Return on ad spend = value of WON jobs ÷ Google Ads spend. Only what the client enters
+   counts: an enquiry nobody reported is not a job, and nothing here is estimated. */
+const jobsOn = () => PV('jobs') && !!CFG.modules.paid_ads?.enabled;
+const JOB_HOW = { call: 'Called', form: 'Website form', other: 'Other', unsure: 'Not sure' };
+async function jobsReload(){
+  const { data } = await sb.from('md_job_outcomes').select('*').eq('client_id', RAW.client.id).order('job_date');
+  RAW.jobs = data || [];
+}
+function jobsCard(){
+  if (!jobsOn()) return '';
+  const all = RAW.jobs || [], inM = all.filter(r => monthOf(r.job_date) === state.month);
+  const won = inM.filter(r => r.status === 'won'), quoted = inM.filter(r => r.status === 'quoted');
+  const wonV = sum(won, 'value'), quoteV = sum(quoted, 'value'), spend = sum(V.paid, 'spend');
+  const roas = spend && won.length ? wonV / spend : null;
+  /* Running total from the month tracking began, never further back: spend from months nobody
+     reported jobs for would drag the return down for no real reason. */
+  const firstM = all.length ? monthOf(all.map(r => r.job_date).sort()[0]) : null;
+  const allWon = all.filter(r => r.status === 'won'), allSpend = firstM ? sum(RAW.paid.filter(r => monthOf(r.date) >= firstM), 'spend') : 0;
+  const roasAll = allSpend && allWon.length && firstM < state.month ? sum(allWon, 'value') / allSpend : null;
+  const x = v => v == null ? '—' : fmt(v, v < 10 ? 1 : 0) + 'x';
+  let out = `<div class="card jobs"><div class="cardhead"><div><h3>Jobs from your ads</h3>
+    <p class="sub">The quotes and paid work that came from the ads, as you tell us. This is how we measure what the ads actually earn.</p></div></div>
+    <div class="kpis">
+    ${kpi('Jobs won', fmt(won.length), monthName(state.month))}
+    ${kpi('Revenue from ads', money(wonV), 'Won jobs, as entered')}
+    ${kpi('Return on ad spend', x(roas), roas == null ? (spend ? 'Add a won job to see this' : 'No ad spend this month') : `${money(wonV)} back on ${money(spend)} spent`)}
+    ${kpi('Open quotes', fmt(quoted.length), quoted.length ? `${money(quoteV)} quoted` : 'None this month')}</div>`;
+  if (roasAll != null) out += `<p class="lede">Since ${monthName(firstM)}, when job tracking started: ${fmt(allWon.length)} job${allWon.length === 1 ? '' : 's'} won worth ${money(sum(allWon, 'value'))} on ${money(allSpend)} of ad spend, a return of ${x(roasAll)}.</p>`;
+  if (inM.length) out += dataTable('jobs', [
+      { k:'job_date', label:'Date', fmt:v => String(v).split('-').reverse().join('/') }, { k:'job_type', label:'Job' },
+      { k:'came_in', label:'Came in by', fmt:v => JOB_HOW[v] || '—' }, { k:'status', label:'Status', fmt:(v, r) => jobStatus(r) },
+      { k:'value', label:'Value', num:1, fmt:v => v == null ? '—' : money(v) }, { k:'entered_by_name', label:'Added by', fmt:(v, r) => esc(v || (r.entered_via === 'link' ? 'Form link' : '—')) }],
+      inM, { sort:{ k:'job_date', dir:-1 }, filter:false, maxH:360 });
+  else out += `<p class="sub">Nothing added for ${monthName(state.month)} yet.</p>`;
+  out += jobsAddForm() + jobsLinkBox();
+  out += `<p class="dtnote">Values are what you enter, including GST. Ad spend is what Google charged. A quote only counts towards revenue once it is marked won.</p></div>`;
+  return out;
+}
+function jobStatus(r){
+  const label = { quoted: 'Quoted', won: 'Won', lost: 'Lost' }[r.status] || r.status;
+  if (r.status !== 'quoted' || previewOnly()) return label;
+  return `${label} <button class="btn" data-jobset="won" data-id="${esc(r.id)}">Won</button> <button class="btn" data-jobset="lost" data-id="${esc(r.id)}">Lost</button>`;
+}
+function jobsAddForm(){
+  if (previewOnly()) return '';
+  return `<details class="jobadd"><summary><b>Add a quote or job</b></summary>
+    <form data-jobform class="jobgrid">
+      <label>Date<input type="date" name="d" value="${ymd(new Date())}" max="${ymd(new Date())}" required></label>
+      <label>Status<select name="s"><option value="quoted">Quoted</option><option value="won">Won</option></select></label>
+      <label>Came in by<select name="h">${Object.entries(JOB_HOW).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
+      <label>Job<input type="text" name="t" maxlength="120" placeholder="e.g. Blocked drain, Bexley"></label>
+      <label>Value inc GST ($)<input type="number" name="v" min="0" step="1" inputmode="decimal"></label>
+      <button class="btn primary" type="submit">Add</button>
+    </form></details>`;
+}
+/* Team only: make the WhatsApp form link. Only the hash is stored, so a link is shown once;
+   making a new one switches the old one off. */
+function jobsLinkBox(){
+  if (!isTeam() || previewOnly()) return '';
+  return `<details class="jobadd"><summary><b>Form link for WhatsApp</b> <span class="sub">Team only</span></summary>
+    <p class="sub">A no-login page the client can open from WhatsApp to tell us about quotes and won jobs. The link is the key: anyone with it can add a job or see open quotes, so only send it to the client. Making a new link switches the old one off.</p>
+    <p><button class="btn primary" data-joblink="1">Make a new link</button></p><div id="joblinkout"></div></details>`;
+}
+document.addEventListener('submit', async ev => {
+  const f = ev.target; if (!(f.matches && f.matches('[data-jobform]'))) return;
+  ev.preventDefault();
+  if (previewOnly()) return toast('Client view is a preview. Switch to Admin view to change anything.', 'bad');
+  const v = f.v.value.trim() === '' ? null : Number(f.v.value);
+  if (f.s.value === 'won' && !(v > 0)) return toast('Add the job value so it counts.', 'bad');
+  const { data: { session } } = await sb.auth.getSession();
+  const { error } = await sb.from('md_job_outcomes').insert({ client_id: RAW.client.id, job_date: f.d.value, came_in: f.h.value,
+    status: f.s.value, job_type: f.t.value.trim() || null, value: v, entered_by: session?.user?.id,
+    entered_by_name: session?.user?.user_metadata?.full_name || session?.user?.email || null });
+  if (error) return toast('Could not save: ' + error.message, 'bad');
+  await jobsReload(); toast('Added'); renderAll();
+});
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest && ev.target.closest('[data-jobset],[data-joblink]'); if (!b) return;
+  if (previewOnly()) return toast('Client view is a preview. Switch to Admin view to change anything.', 'bad');
+  if (b.dataset.joblink){
+    if (!confirm('Make a new form link? Any link sent before stops working.')) return;
+    const logo = CFG.logo ? new URL(CFG.logo, location.href).href : null;
+    const { data, error } = await sb.rpc('md_job_form_link_create', { p_client_id: RAW.client.id, p_accent: CFG.accent || null, p_logo_url: logo });
+    if (error) return toast('Could not make a link: ' + error.message, 'bad');
+    const url = `${location.origin}/jobs/#t=${data}`;
+    const wa = 'https://wa.me/?text=' + encodeURIComponent(`Here's your link to tell us about quotes and jobs from the ads. It takes 30 seconds: ${url}`);
+    $('#joblinkout').innerHTML = `<p><input type="text" readonly value="${esc(url)}" style="width:100%" onclick="this.select()"></p>
+      <p><button class="btn" data-copy="${esc(url)}">Copy link</button> <a class="btn primary" href="${esc(wa)}" target="_blank" rel="noopener">Send on WhatsApp</a></p>
+      <p class="sub">Save it now: it can't be shown again.</p>`;
+    return;
+  }
+  let value;
+  if (b.dataset.jobset === 'won'){
+    const r = (RAW.jobs || []).find(j => j.id === b.dataset.id);
+    const ans = prompt('Job value inc GST ($)', r && r.value != null ? r.value : '');
+    if (ans === null) return;
+    value = Number(String(ans).replace(/[$,\s]/g, ''));
+    if (!(value > 0)) return toast('Add the job value so it counts.', 'bad');
+  }
+  const patch = { status: b.dataset.jobset, updated_at: new Date().toISOString() };
+  if (value != null) patch.value = value;
+  const { error } = await sb.from('md_job_outcomes').update(patch).eq('id', b.dataset.id);
+  if (error) return toast('Could not save: ' + error.message, 'bad');
+  await jobsReload(); toast(b.dataset.jobset === 'won' ? 'Marked won' : 'Marked lost'); renderAll();
+});
+document.addEventListener('click', ev => {
+  const b = ev.target.closest && ev.target.closest('[data-copy]'); if (!b) return;
+  navigator.clipboard?.writeText(b.dataset.copy).then(() => toast('Link copied'), () => toast('Copy it from the box above', 'bad'));
+});
 
 /* ---------------------------------------------------------------- negative keywords
    The client ticks a search term; it lands in md_negative_requests at 'requested'. The
