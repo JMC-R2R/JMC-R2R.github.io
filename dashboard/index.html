@@ -473,7 +473,7 @@ async function boot(){
   const p=(D.partners||[]).filter(Boolean);
   $('partners').textContent=p.length?('with '+p.map(x=>String(x).split(',').slice(-1)[0].trim()).filter((v,i,a)=>a.indexOf(v)===i).join(' and ')):'';
   $('sources').textContent='Figures come from the ad platforms themselves. Nothing on this page is estimated: where a number is unknown it reads N/A.';
-  await loadSocial();
+  await loadSocial(); await loadJobs();
   renderTabs(); renderMonths(); renderAll(); askInit();
 }
 
@@ -761,7 +761,7 @@ function renderOverview(){
       <div class="card" style="margin-top:0"><div class="cardhead"><div><h3>${SHOP()?'Daily add to carts':'Daily enquiries'}</h3><p class="ch3sub">Last 30 days · one bar per day</p></div></div><div class="chart" id="ch-ov-leads"></div></div>
     </div>
     ${stackCard('ch-ov-stack')}
-    ${momBand()}`;
+    ${momBand()}${jobsBlock()}`;
 }
 function renderAds(kind){
   const el=$('sec-'+kind); if(!el) return;
@@ -785,6 +785,62 @@ function renderUpdates(){
     <tbody>${a.map(x=>`<tr><td class="tnum">${esc(new Date(x.on+'T00:00:00').toLocaleDateString('en-AU'))}</td><td><b>${esc(x.what)}</b></td><td>${esc(x.why||'')}</td></tr>`).join('')||'<tr><td colspan="3">Nothing to report yet.</td></tr>'}</tbody></table></div></div>
     ${D.target&&D.target.measure?`<div class="card"><div class="cardhead"><div><h3>What we are aiming for</h3></div></div><div><b>${esc(D.target.measure)}</b>${D.target.value!=null?' · target '+aud(D.target.value):''}</div></div>`:''}`;
 }
+
+/* ---------- Weekly check-in (added 17/11/2026) ----------
+   Standard for lead-gen ad clients (Jose 17/11/2026). Every Monday the client fills in /jobs/#t=<token>
+   for the week before: how many came from the ads, type and value of each, how many won and for how much.
+   Read through pa_client_jobs (same access rule as pa_client_dashboard). Return on ad spend here is only
+   what the client told us; online orders Meta tracks are shown above and are not added in. */
+let J=null;
+async function loadJobs(){
+  try{ const {data,error}=await sb.rpc('pa_client_jobs',{p_slug:D.slug}); if(error) throw error; J=data||null; }catch(e){ J=null; }
+}
+function jobsBlock(){
+  if(!J) return '';
+  const staff=!!J.client_id, weeks=J.weeks||[], jobs=J.jobs||[];
+  if(!weeks.length&&!jobs.length&&!staff) return '';
+  const noun=SHOP()?'sales':'jobs', Noun=noun[0].toUpperCase()+noun.slice(1);
+  const m=String(D.month||'').slice(0,7), inM=jobs.filter(j=>String(j.job_date).slice(0,7)===m);
+  const won=inM.filter(j=>j.status==='won'), wonV=won.reduce((t,j)=>t+Number(j.value||0),0);
+  const quoted=inM.filter(j=>j.status==='quoted'), qV=quoted.reduce((t,j)=>t+Number(j.value||0),0);
+  const spend=Number(((J.spend||[]).find(x=>x.month===m)||{}).spend||0);
+  const roas=spend&&won.length?(wonV/spend).toFixed(1)+'x':'—';
+  const monthName=m?new Date(m+'-01T00:00:00').toLocaleDateString('en-AU',{month:'long',year:'numeric'}):'';
+  const label=ws=>{const a=new Date(ws+'T00:00:00'),b=new Date(a);b.setDate(b.getDate()+6);const f=d=>d.toLocaleDateString('en-AU',{day:'numeric',month:'short'});return f(a)+' to '+f(b);};
+  /* Every week from the first answer to last week. A week with no answer is shown, never assumed to be 0. */
+  const rows=[]; if(weeks.length){
+    const mon=new Date(); mon.setHours(0,0,0,0); mon.setDate(mon.getDate()-((mon.getDay()+6)%7)-7);
+    const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    for(let d=new Date(weeks[0].week_start+'T00:00:00'); d<=mon||ymd(d)<=weeks[weeks.length-1].week_start; d.setDate(d.getDate()+7)){
+      const ws=ymd(d), a=weeks.find(w=>w.week_start===ws), js=jobs.filter(j=>j.week_start===ws), w=js.filter(j=>j.status==='won');
+      rows.push({ws,a,w:w.length,wv:w.reduce((t,j)=>t+Number(j.value||0),0)}); }
+  }
+  const miss=rows.filter(r=>!r.a).length;
+  return `<div class="card"><div class="cardhead"><div><h3>${Noun} from your ads</h3>
+    <p class="ch3sub">From your weekly check-in: the ${noun} you told us came from the ads${SHOP()?'. Online orders Meta tracks are shown above and are not counted here':''}.</p></div></div>
+    <div class="kpis">
+      ${kpi(Noun+' won',num(won.length),monthName)}
+      ${kpi('Value won',aud(wonV),'As you entered it, inc GST')}
+      ${kpi('Return on ad spend',roas,spend?`${aud(wonV)} on ${aud(spend)} of ad spend`:'No ad spend this month')}
+      ${kpi('Not won yet',num(quoted.length),quoted.length?aud(qV)+' quoted':'None this month')}
+    </div>
+    ${rows.length?`<p class="ch3sub" style="margin-top:14px">${miss?`<b>${miss} week${miss===1?'':'s'} not answered yet.</b>`:'Every week answered so far.'}</p>
+    <div class="tscroll"><table class="tbl"><thead><tr><th>Week</th><th>From the ads</th><th>Won</th><th>Value won</th></tr></thead><tbody>
+    ${rows.slice().reverse().map(r=>`<tr><td>${esc(label(r.ws))}</td>${r.a?`<td class="tnum">${num(r.a.jobs_count)}</td><td class="tnum">${num(r.w)}</td><td class="tnum">${aud(r.wv)}</td>`:'<td colspan="3" style="color:var(--bad)">Not answered</td>'}</tr>`).join('')}
+    </tbody></table></div>`:'<p class="ch3sub" style="margin-top:14px">No weeks answered yet.</p>'}
+    ${staff?`<p class="ch3sub" style="margin-top:14px"><b>Team only:</b> <button class="btn-s" id="joblink" type="button">Make a new check-in link</button> Making a new link switches the old one off. It keeps the job types and wording of the last link.</p><div id="joblinkout"></div>`:''}
+  </div>`;
+}
+document.addEventListener('click',async e=>{
+  if(!e.target.closest||!e.target.closest('#joblink')) return;
+  if(!confirm('Make a new check-in link? Any link sent before stops working.')) return;
+  const {data,error}=await sb.rpc('md_job_form_link_create',{p_client_id:J.client_id});
+  if(error){ alert('Could not make a link: '+error.message); return; }
+  const url=`${location.origin}/jobs/#t=${data}`;
+  const wa='https://wa.me/?text='+encodeURIComponent(`Here's your weekly ads check-in. Every Monday, take a minute to tell us what last week's ads brought in, so we can see what they are really earning you: ${url}`);
+  $('joblinkout').innerHTML=`<p><input type="text" readonly value="${esc(url)}" style="width:100%" onclick="this.select()"></p>
+    <p><a class="btn-s" href="${esc(wa)}" target="_blank" rel="noopener">Send on WhatsApp</a> Save it now: it can't be shown again.</p>`;
+});
 
 /* ---------- charts (SVG, no library; spend and counts never share a scale) ---------- */
 function drawAll(){
