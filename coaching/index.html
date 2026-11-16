@@ -199,6 +199,14 @@ td.best{background:#E6F6EC;font-weight:700}
 .pg.sch img{opacity:.85}
 .pgm{position:absolute;top:4px;right:6px;color:#fff;text-shadow:0 0 3px #000;font-size:13px}
 .pgs{position:absolute;bottom:4px;left:4px;background:rgba(15,15,18,.7);color:#fff;font:10px var(--mono);padding:1px 5px;border-radius:6px}
+.fav{object-fit:cover}
+.fopen{margin-left:auto;color:var(--mute);text-decoration:none;font-size:15px}
+.gbio{white-space:pre-line;margin:2px 0}
+.gname a{color:#00376B;font-weight:600;text-decoration:none}
+.gbtns{display:flex;gap:6px;padding:0 14px 10px}.gbtns span{flex:1;text-align:center;background:var(--soft);border-radius:8px;padding:7px 0;font-weight:600;font-size:13px}
+.gbtns span:first-child{background:#0095F6;color:#fff}
+.gtabs{display:flex;border-top:1px solid var(--line)}.gtabs span{flex:1;text-align:center;padding:9px 0;color:var(--mute);font-size:16px}.gtabs span.on{color:var(--ink);border-top:1px solid var(--ink);margin-top:-1px}
+.gstats{flex:1;justify-content:space-around}
 </style>
 </head>
 <body>
@@ -641,34 +649,45 @@ function tLanding(){
 
 /* ---------- feed preview ---------- */
 var FEEDV="feed",FEEDT="all",FEEDADS=true;
-function feedItems(){
-  var so=snap("social_posts").data.days,ads=snap("ad_creatives")?snap("ad_creatives").data.groups:[];
-  var posts=so.filter(function(g){return g.media&&g.media.length&&g.platforms.some(function(p){return p.platform==="instagram"})}).map(function(g){
-    var ig=g.platforms.filter(function(p){return p.platform==="instagram"})[0];return {type:"post",key:g.key,date:g.date,day:g.day,status:ig.status,media:g.media,text:g.text,metrics:ig.metrics,url:ig.url}});
-  if(FEEDT==="live")posts=posts.filter(function(p){return p.status==="published"});
-  posts.sort(function(a,b){return a.key<b.key?1:-1});
-  var adl=[];ads.forEach(function(g){g.ads.forEach(function(a){adl.push({type:"ad",code:a.code,title:a.title,media:[a.image],text:snap("ad_creatives").data.copy[a.copy].primary,cta:"Learn more"})})});
-  var out=[],ai=0;posts.forEach(function(p,i){out.push(p);if(FEEDADS&&adl.length&&i%4===2){out.push(adl[ai%adl.length]);ai++}});
-  return out;
+function igP(){var s=snap("instagram_profile");return s?s.data:null}
+function feedPosts(){
+  var P=igP(),so=snap("social_posts").data.days,live,sch;
+  var igDays=so.filter(function(g){return g.media&&g.media.length&&g.platforms.some(function(p){return p.platform==="instagram"})});
+  if(P)live=P.live.map(function(p){return {type:"post",key:p.key,date:p.date,day:p.day,status:"published",media:[p.img],text:p.caption,metrics:{Likes:p.likes},url:p.url,kind:p.type}});
+  else live=igDays.filter(function(g){return g.status==="published"}).map(function(g){var ig=g.platforms.filter(function(p){return p.platform==="instagram"})[0];return {type:"post",key:g.key,date:g.date,day:g.day,status:"published",media:g.media,text:g.text,metrics:ig.metrics,url:ig.url}});
+  sch=igDays.filter(function(g){return g.platforms.some(function(p){return p.platform==="instagram"&&p.status==="scheduled"})}).map(function(g){return {type:"post",key:g.key,date:g.date,day:g.day,status:"scheduled",media:g.media,text:g.text}});
+  var all=(FEEDT==="live"?live:sch.concat(live));all.sort(function(a,b){return a.key<b.key?1:(a.key>b.key?-1:0)});
+  return {posts:all,live:live,sch:sch};
 }
+function feedItems(posts){
+  var ads=snap("ad_creatives")?snap("ad_creatives").data:null,adl=[];
+  if(ads)ads.groups.forEach(function(g){g.ads.forEach(function(a){adl.push({type:"ad",code:a.code,title:a.title,media:[a.image],text:ads.copy[a.copy].primary})})});
+  var out=[],ai=0;posts.forEach(function(p,i){out.push(p);if(FEEDADS&&adl.length&&i%4===2){out.push(adl[ai%adl.length]);ai++}});return out;
+}
+function avatar(cls){var P=igP();return P?'<img class="fav '+(cls||"")+'" src="'+P.avatar+'" alt="">':'<div class="fav '+(cls||"")+'">R2R</div>'}
 function feedPost(it){
-  var head='<div class="fhead"><div class="fav">R2R</div><div><b>ready2rank</b><div class="fsub">'+(it.type==="ad"?"Sponsored":(it.status==="published"?"Live · "+esc(it.day+" "+it.date):"Scheduled · "+esc(it.day+" "+it.date)))+'</div></div></div>';
-  var media=car(it.media,"");
+  var P=igP(),u=P?P.username:"ready2rank";
+  var head='<div class="fhead">'+avatar()+'<div><b>'+esc(u)+'</b><div class="fsub">'+(it.type==="ad"?"Sponsored":(it.status==="published"?"Live · "+esc(it.day+" "+it.date)+(it.kind==="Reel"?" · Reel":""):"Scheduled · "+esc(it.day+" "+it.date)))+'</div></div>'+(it.url?'<a class="fopen" href="'+esc(it.url)+'" target="_blank" rel="noopener">↗</a>':'')+'</div>';
   var acts=it.type==="ad"?'<div class="fcta"><span>landing.readytorank.com.au</span><b>Learn more</b></div>':'<div class="facts">♡ &nbsp;💬 &nbsp;➤<span>'+(it.metrics&&it.metrics.Likes!=null?it.metrics.Likes+" likes":(it.status==="published"?"":"Not posted yet"))+'</span></div>';
-  return '<div class="fpost">'+head+media+acts+'<div class="fcap"><b>ready2rank</b> '+ctext(it.text)+'</div>'+(it.type==="ad"?'<div class="fsub" style="padding:0 12px 10px">Ad '+esc(it.code)+': '+esc(it.title)+'</div>':'')+'</div>';
+  return '<div class="fpost">'+head+car(it.media,"")+acts+'<div class="fcap"><b>'+esc(u)+'</b> '+ctext(it.text)+'</div>'+(it.type==="ad"?'<div class="fsub" style="padding:0 12px 10px">Ad '+esc(it.code)+': '+esc(it.title)+'</div>':'')+'</div>';
 }
 function tFeed(){
-  var items=feedItems(),so=snap("social_posts").data.days,posts=items.filter(function(i){return i.type==="post"}),last=posts.length?posts[0]:null;
+  var P=igP(),F=feedPosts(),posts=F.posts,items=feedItems(posts),so=snap("social_posts").data.days,last=F.sch.length?F.sch.reduce(function(a,b){return a.key>b.key?a:b}):null;
   var stories=[];so.forEach(function(g){g.stories.forEach(function(s){if(s.media[0]&&(FEEDT==="all"||s.status==="published"))stories.push(s.media[0])})});
-  var h='<div class="card"><h3>Feed preview: Instagram</h3><p class="note" style="margin-top:0">What someone sees scrolling the Ready to Rank feed. '+(FEEDT==="all"?"Everything live now plus everything scheduled to "+(last?last.date:"")+", newest first.":"Only what is live right now.")+' Keep scrolling inside the phone and more posts load. '+(FEEDADS?"Ad creatives are dropped in as Sponsored posts every few posts, like a real feed.":"")+'</p>'+
+  var h='<div class="card"><h3>Feed preview: Instagram</h3><p class="note" style="margin-top:0">'+(FEEDT==="all"?"Your real Instagram feed as it is now, with every scheduled post to "+(last?last.date:"")+" added on top, newest first.":"Your real Instagram feed as it is right now.")+' Keep scrolling inside the phone and more posts load. '+(FEEDADS&&FEEDV==="feed"?"Ad creatives are dropped in as Sponsored posts every few posts, like a real feed.":"")+(P?' <span class="k">'+esc(P.source)+'</span>':'')+'</p>'+
     '<div class="row" style="gap:10px;margin:10px 0"><div class="seg"><button type="button" data-fv="feed" class="'+(FEEDV==="feed"?"on":"")+'">Feed scroll</button><button type="button" data-fv="grid" class="'+(FEEDV==="grid"?"on":"")+'">Profile grid</button></div>'+
     '<div class="seg"><button type="button" data-ft="live" class="'+(FEEDT==="live"?"on":"")+'">Live now</button><button type="button" data-ft="all" class="'+(FEEDT==="all"?"on":"")+'">With scheduled</button></div>'+
     (FEEDV==="feed"?'<label class="note" style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="fads"'+(FEEDADS?" checked":"")+'> Show ads in feed</label>':'')+'</div>';
-  h+='<div class="phone"><div class="pscreen" id="pscreen"><div class="ptop"><b>Instagram</b><span>♡ &nbsp;✉</span></div>';
+  h+='<div class="phone"><div class="pscreen" id="pscreen"><div class="ptop"><b>'+(FEEDV==="grid"&&P?esc(P.username):"Instagram")+'</b><span>♡ &nbsp;✉</span></div>';
   if(FEEDV==="feed"){
     h+='<div class="fstories">'+stories.slice(0,14).map(function(u){return '<div class="fst"><img src="'+esc(u)+'" alt="Story" data-zoom="1" loading="lazy"></div>'}).join("")+'</div><div id="flist"></div><div id="fsent" class="fend">Loading…</div>';
   }else{
-    var np=posts.length;h+='<div class="gprof"><div class="fav big">R2R</div><div class="gstats"><div><b>'+np+'</b>posts</div></div></div><div class="gname"><b>Ready to Rank</b><br>Local SEO for Melbourne tradies</div><div class="pgrid">'+posts.map(function(p){return '<div class="pg'+(p.status!=="published"?" sch":"")+'"><img loading="lazy" src="'+esc(p.media[0])+'" alt="" data-zoom="1">'+(p.media.length>1?'<span class="pgm">❐</span>':'')+(p.status!=="published"?'<span class="pgs">'+esc(p.date.slice(0,5))+'</span>':'')+'</div>'}).join("")+'</div>';
+    var mc=P?P.media_count+(FEEDT==="all"?F.sch.length:0):posts.length;
+    h+='<div class="gprof">'+avatar("big")+'<div class="gstats"><div><b>'+n0(mc)+'</b>posts</div><div><b>'+(P?n0(P.followers):"–")+'</b>followers</div><div><b>'+(P?n0(P.following):"–")+'</b>following</div></div></div>'+
+      '<div class="gname"><b>'+esc(P?P.name:"Ready to Rank")+'</b>'+(P?'<div class="gbio">'+esc(P.bio)+'</div><a href="https://'+esc(P.website)+'" target="_blank" rel="noopener">'+esc(P.website)+'</a>':'')+'</div>'+
+      '<div class="gbtns"><span>Follow</span><span>Message</span><span>Email</span></div><div class="gtabs"><span class="on">▦</span><span>▷</span><span>◫</span></div>'+
+      '<div class="pgrid">'+posts.map(function(p){return '<div class="pg'+(p.status!=="published"?" sch":"")+'"><img loading="lazy" src="'+esc(p.media[0])+'" alt="" data-zoom="1">'+(p.kind==="Reel"?'<span class="pgm">▷</span>':(p.media.length>1?'<span class="pgm">❐</span>':''))+(p.status!=="published"?'<span class="pgs">'+esc(p.date.slice(0,5))+'</span>':'')+'</div>'}).join("")+'</div>'+
+      (P&&P.media_count>F.live.length?'<div class="fend"><a href="https://www.instagram.com/'+esc(P.username)+'/" target="_blank" rel="noopener">+ '+n0(P.media_count-F.live.length)+' older posts on Instagram ↗</a></div>':'');
   }
   h+='</div></div>'+cmtBlock("snapshot_key","feed_preview")+'</div>';
   $("tab").innerHTML=h;wireComments();
@@ -678,7 +697,7 @@ function tFeed(){
   if(FEEDV==="grid"){wireReview();return}
   var shown=0,list=$("flist"),sent=$("fsent"),scr=$("pscreen");
   function more(){var batch=items.slice(shown,shown+5);shown+=batch.length;list.insertAdjacentHTML("beforeend",batch.map(feedPost).join(""));wireReview();
-    if(shown>=items.length){sent.textContent="You're all caught up"+(FEEDT==="all"&&last?" · scheduled to "+last.date:"");if(io)io.disconnect()}}
+    if(shown>=items.length){sent.innerHTML="You're all caught up"+(P&&P.media_count>F.live.length?' · <a href="https://www.instagram.com/'+esc(P.username)+'/" target="_blank" rel="noopener">older posts on Instagram ↗</a>':"");if(io)io.disconnect()}}
   var io=("IntersectionObserver" in window)?new IntersectionObserver(function(e){if(e[0].isIntersecting)more()},{root:scr,rootMargin:"600px"}):null;
   more();if(io)io.observe(sent);scr.onscroll=function(){if(shown<items.length&&scr.scrollTop+scr.clientHeight>scr.scrollHeight-600)more()};
 }
