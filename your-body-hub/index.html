@@ -14,6 +14,12 @@
   // Everything client-specific lives here — dashboard.js is identical for every client.
   window.DASHBOARD_CONFIG = {
   "slug": "your-body-hub",
+  "jobsCheckin": true,
+  "jobTypes": ["Physiotherapy", "Exercise physiology", "Myotherapy", "Classes", "Dietitian", "Other"],
+  "jobsNoun": "new clients",
+  "jobsOne": "Client",
+  "jobsHint": "Count every new client who found you through the ads, whether they booked or not.",
+  "jobsValueHint": "What their first block of appointments is worth, including GST. A rough figure is fine.",
   "name": "Your Body Hub",
   "accent": "#902484",
   "logo": "./ybh-logo.png",
@@ -102,6 +108,6 @@
 </head>
 <body>
 <!-- dashboard.js renders the entire page (login gate, tabs, charts) into <body> -->
-<script type="module" src="../assets/dashboard.js?v=17f7911656"></script>
+<script type="module" src="../assets/dashboard.js?v=bc4c748492"></script>
 </body>
 </html>

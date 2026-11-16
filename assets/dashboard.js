@@ -2087,7 +2087,12 @@ function paidCallsCard(){
    sent over WhatsApp (/jobs/#t=<token>, RPCs md_job_form_info / md_job_form_submit).
    Return on ad spend = value of WON jobs ÷ Google Ads spend. Only what the client enters
    counts: an enquiry nobody reported is not a job, and nothing here is estimated. */
-const jobsOn = () => PV('jobs') && !!CFG.modules.paid_ads?.enabled;
+/* Standard for lead-gen ad clients (Jose 17/11/2026): a shell turns it on with jobsCheckin:true, plus
+   jobTypes, and optionally jobsAds ('Facebook & Instagram ads'), jobsNoun ('new patients'), jobsOne, jobsHint, jobsValueHint. */
+const jobsOn = () => (PV('jobs') || CFG.jobsCheckin === true) && !!CFG.modules.paid_ads?.enabled;
+const jobsNoun = () => CFG.jobsNoun || 'jobs', jobsCap = () => jobsNoun().charAt(0).toUpperCase() + jobsNoun().slice(1);
+const jobsLabels = () => Object.fromEntries(Object.entries({ ads: CFG.jobsAds || 'Google Ads', noun: CFG.jobsNoun, one: CFG.jobsOne,
+  hint: CFG.jobsHint, value_hint: CFG.jobsValueHint }).filter(([, v]) => v));
 const JOB_HOW = { call: 'Called', form: 'Website form', other: 'Other', unsure: 'Not sure' };
 async function jobsReload(){
   const [j, w] = await Promise.all([sb.from('md_job_outcomes').select('*').eq('client_id', RAW.client.id).order('job_date'),
@@ -2114,7 +2119,7 @@ function jobsWeeksTable(){
   return `<h4 style="margin:22px 0 4px">Week by week</h4>
     <p class="sub">From the weekly check-in. ${miss ? `<b>${miss} week${miss === 1 ? '' : 's'} not answered yet.</b>` : 'Every week answered so far.'}</p>` +
     dataTable('jobweeks', [{ k:'week', label:'Week', fmt:v => jwLabel(v) },
-      { k:'count', label:'Jobs from ads', num:1, fmt:(v, r) => r.answered ? fmt(v) : '<span class="chip dn">Not answered</span>' },
+      { k:'count', label:`${jobsCap()} from ads`, num:1, fmt:(v, r) => r.answered ? fmt(v) : '<span class="chip dn">Not answered</span>' },
       { k:'won', label:'Won', num:1, fmt:v => v == null ? '—' : fmt(v) }, { k:'wonv', label:'Won value', num:1, fmt:v => v == null ? '—' : money(v) },
       { k:'quoted', label:'Not won (quoted)', num:1, fmt:v => v == null ? '—' : money(v) }], rows, { sort:{ k:'week', dir:-1 }, filter:false, maxH:320 });
 }
@@ -2130,10 +2135,10 @@ function jobsCard(){
   const allWon = all.filter(r => r.status === 'won'), allSpend = firstM ? sum(RAW.paid.filter(r => monthOf(r.date) >= firstM), 'spend') : 0;
   const roasAll = allSpend && allWon.length && firstM < state.month ? sum(allWon, 'value') / allSpend : null;
   const x = v => v == null ? '—' : fmt(v, v < 10 ? 1 : 0) + 'x';
-  let out = `<div class="card jobs"><div class="cardhead"><div><h3>Jobs from your ads</h3>
+  let out = `<div class="card jobs"><div class="cardhead"><div><h3>${jobsCap()} from your ads</h3>
     <p class="sub">The quotes and paid work that came from the ads, as you tell us. This is how we measure what the ads actually earn.</p></div></div>
     <div class="kpis">
-    ${kpi('Jobs won', fmt(won.length), monthName(state.month))}
+    ${kpi(`${jobsCap()} won`, fmt(won.length), monthName(state.month))}
     ${kpi('Revenue from ads', money(wonV), 'Won jobs, as entered')}
     ${kpi('Return on ad spend', x(roas), roas == null ? (spend ? 'Add a won job to see this' : 'No ad spend this month') : `${money(wonV)} back on ${money(spend)} spent`)}
     ${kpi('Open quotes', fmt(quoted.length), quoted.length ? `${money(quoteV)} quoted` : 'None this month')}</div>`;
@@ -2170,7 +2175,7 @@ function jobsAddForm(){
 function jobsLinkBox(){
   if (!isTeam() || previewOnly()) return '';
   return `<details class="jobadd"><summary><b>Weekly check-in link for WhatsApp</b> <span class="sub">Team only</span></summary>
-    <p class="sub">A no-login weekly form the client fills in every Monday for the week before: how many jobs came from the ads, the type and value of each, how many they won and for how much. The same link works every week. It is the key, so only send it to the client. Making a new link switches the old one off.${(CFG.jobTypes || []).length ? ` Job types on the form: ${esc(CFG.jobTypes.join(', '))}.` : ' No job types are set for this client yet (jobTypes in the dashboard settings), so the form only offers "Other".'}</p>
+    <p class="sub">A no-login weekly form the client fills in every Monday for the week before: how many ${esc(jobsNoun())} came from the ads, the type and value of each, how many they won and for how much. The same link works every week. It is the key, so only send it to the client. Making a new link switches the old one off.${(CFG.jobTypes || []).length ? ` Job types on the form: ${esc(CFG.jobTypes.join(', '))}.` : ' No job types are set for this client yet (jobTypes in the dashboard settings), so the form only offers "Other".'}</p>
     <p><button class="btn primary" data-joblink="1">Make a new link</button></p><div id="joblinkout"></div></details>`;
 }
 document.addEventListener('submit', async ev => {
@@ -2193,10 +2198,10 @@ document.addEventListener('click', async ev => {
     if (!confirm('Make a new form link? Any link sent before stops working.')) return;
     const logo = CFG.logo ? new URL(CFG.logo, location.href).href : null;
     const { data, error } = await sb.rpc('md_job_form_link_create', { p_client_id: RAW.client.id, p_accent: CFG.accent || null, p_logo_url: logo,
-      p_job_types: Array.isArray(CFG.jobTypes) && CFG.jobTypes.length ? CFG.jobTypes : null });
+      p_job_types: Array.isArray(CFG.jobTypes) && CFG.jobTypes.length ? CFG.jobTypes : null, p_labels: jobsLabels() });
     if (error) return toast('Could not make a link: ' + error.message, 'bad');
     const url = `${location.origin}/jobs/#t=${data}`;
-    const wa = 'https://wa.me/?text=' + encodeURIComponent(`Here's your weekly ads check-in. Every Monday, take a minute to tell us what last week's Google Ads brought in, so we can see what the ads are really earning you: ${url}`);
+    const wa = 'https://wa.me/?text=' + encodeURIComponent(`Here's your weekly ads check-in. Every Monday, take a minute to tell us what last week's ${CFG.jobsAds || 'Google Ads'} brought in, so we can see what the ads are really earning you: ${url}`);
     $('#joblinkout').innerHTML = `<p><input type="text" readonly value="${esc(url)}" style="width:100%" onclick="this.select()"></p>
       <p><button class="btn" data-copy="${esc(url)}">Copy link</button> <a class="btn primary" href="${esc(wa)}" target="_blank" rel="noopener">Send on WhatsApp</a></p>
       <p class="sub">Save it now: it can't be shown again.</p>`;

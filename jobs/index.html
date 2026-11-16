@@ -80,8 +80,8 @@
     <p class="kicker" id="biz"></p>
     <h1>Your weekly ads check-in</h1>
     <div class="why">
-      <p><b>What this is:</b> every Monday, tell us what last week's Google Ads brought in. It takes about a minute.</p>
-      <p><b>Why it matters:</b> Google shows us clicks and calls, but only you know which ones turned into real work. Your answers show what the ads actually earn you for every dollar spent, so we can put more budget into the jobs that pay and cut what doesn't.</p>
+      <p><b>What this is:</b> every Monday, tell us what last week's <span class="L-ads">Google Ads</span> brought in. It takes about a minute.</p>
+      <p><b>Why it matters:</b> the ads show us clicks and calls, but only you know which ones turned into real <span class="L-noun">jobs</span>. Your answers show what the ads actually earn you for every dollar spent, so we can put more budget into the jobs that pay and cut what doesn't.</p>
       <p>Only you and the Ready to Rank team see your answers.</p>
     </div>
 
@@ -91,15 +91,15 @@
     </fieldset>
 
     <fieldset>
-      <legend><span class="qn">1</span>How many jobs came from Google Ads?</legend>
-      <p class="hint">Count every enquiry from the ads that you quoted on or booked in, won or not.</p>
+      <legend><span class="qn">1</span>How many <span class="L-noun">jobs</span> came from <span class="L-ads">Google Ads</span>?</legend>
+      <p class="hint" id="q1hint">Count every enquiry from the ads that you quoted on or booked in, won or not.</p>
       <div class="chips" id="count"></div>
       <div id="manywrap" class="hide"><label class="f" for="many">How many exactly?</label><input type="number" id="many" min="6" max="30" inputmode="numeric"></div>
     </fieldset>
 
     <fieldset id="q23" class="hide">
-      <legend><span class="qn">2</span>What type of jobs were they, and what was each worth?</legend>
-      <p class="hint">The value is what you quoted or charged, including GST. A rough figure is fine.</p>
+      <legend><span class="qn">2</span>What type of <span class="L-noun">jobs</span> were they, and what was each worth?</legend>
+      <p class="hint" id="q2hint">The value is what you quoted or charged, including GST. A rough figure is fine.</p>
       <div id="jobs"></div>
     </fieldset>
 
@@ -152,7 +152,7 @@ const money = n => '$' + Number(n || 0).toLocaleString('en-AU', { maximumFractio
 const D = s => new Date(s + 'T00:00:00');
 const short = d => d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
 const weekLabel = ws => { const a = D(ws), b = D(ws); b.setDate(b.getDate() + 6); return `${short(a)} to ${short(b)}`; };
-let info = null, types = [];
+let info = null, types = [], noun = 'jobs', one = 'Job';
 
 async function load(){
   if (!/^[0-9a-f]{48}$/.test(token)) return broken();
@@ -163,6 +163,10 @@ async function load(){
   if (info.accent && /^#[0-9a-f]{6}$/i.test(info.accent)) document.documentElement.style.setProperty('--accent', info.accent);
   if (info.logo) { $('#logo').src = info.logo; $('#logo').alt = info.name; show($('#logo'), true); }
   $('#biz').textContent = info.name; document.title = `Weekly ads check-in · ${info.name}`;
+  /* Per-client wording: which ads, what a result is called, and an optional counting hint. */
+  const L = info.labels || {}; noun = L.noun || 'jobs'; one = L.one || 'Job';
+  $$('.L-ads').forEach(e => e.textContent = L.ads || 'Google Ads'); $$('.L-noun').forEach(e => e.textContent = noun);
+  if (L.hint) $('#q1hint').textContent = L.hint; if (L.value_hint) $('#q2hint').textContent = L.value_hint;
   const weeks = info.weeks || [];
   /* Default: the most recent week not yet answered, else last week. */
   const pick = (weeks.find(w => !w.answered) && weeks[0].answered ? weeks.find(w => !w.answered) : weeks[0]) || {};
@@ -177,7 +181,7 @@ const count = () => { const v = ($('input[name=count]:checked') || {}).value; if
   if (v === '6+') { const m = parseInt($('#many').value, 10); return m >= 6 && m <= 30 ? m : null; } return +v; };
 function buildJobs(n){
   const keep = $$('#jobs .job').map(j => ({ type: (j.querySelector('input[type=radio]:checked') || {}).value, value: j.querySelector('.jv').value }));
-  $('#jobs').innerHTML = Array.from({ length: n }, (_, i) => `<div class="job" data-i="${i}"><h4>Job ${i + 1}</h4>
+  $('#jobs').innerHTML = Array.from({ length: n }, (_, i) => `<div class="job" data-i="${i}"><h4>${esc(one)} ${i + 1}</h4>
     <div class="chips">${types.map(t => `<label class="chip"><input type="radio" name="type${i}" value="${esc(t)}" ${keep[i] && keep[i].type === t ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}</div>
     <label class="f">Value (inc GST)</label><div class="money"><span>$</span><input class="jv" type="number" min="0" step="1" inputmode="decimal" placeholder="0" value="${keep[i] ? esc(keep[i].value) : ''}"></div></div>`).join('');
   $('#woncount').innerHTML = Array.from({ length: n + 1 }, (_, k) => `<label class="chip"><input type="radio" name="won" value="${k}"><span>${k}</span></label>`).join('');
@@ -189,7 +193,7 @@ function buildWon(){
   $('#q5hint').textContent = all ? 'Check the final amount for each one.' : `Tick the ${k} you won and check the final amount.`;
   $('#wonlist').innerHTML = js.map((j, i) => `<div class="wonrow" data-i="${i}">
     <label class="opt" style="border:0;padding:0;min-height:0"><input type="checkbox" ${all || (prev[i] && prev[i].on) ? 'checked' : ''} ${all ? 'disabled' : ''}>
-      <div>Job ${i + 1}: ${esc(j.type || 'Not picked')}<small>${j.value ? 'Quoted ' + money(j.value) : 'No value yet'}</small></div></label>
+      <div>${esc(one)} ${i + 1}: ${esc(j.type || 'Not picked')}<small>${j.value ? 'Quoted ' + money(j.value) : 'No value yet'}</small></div></label>
     <div class="money"><span>$</span><input class="wv" type="number" min="0" step="1" inputmode="decimal" value="${esc(prev[i] && prev[i].v !== '' ? prev[i].v : j.value)}"></div></div>`).join('');
 }
 const wonRows = () => $$('#wonlist .wonrow').map(r => ({ i: +r.dataset.i, on: r.querySelector('input[type=checkbox]').checked, v: r.querySelector('.wv').value.trim() }));
@@ -205,7 +209,7 @@ function sync(changed){
   $$('#wonlist .wonrow').forEach(r => r.querySelector('.wv').closest('.money').style.opacity = r.querySelector('input[type=checkbox]').checked ? 1 : .35);
   const won = wonRows().filter(r => r.on), wv = won.reduce((t, r) => t + (Number(r.v) || 0), 0);
   $('#wonsum').textContent = won.length ? `${won.length} won, worth ${money(wv)}` : '';
-  $('#go').textContent = n === 0 ? 'Send: no jobs from the ads this week' : 'Send';
+  $('#go').textContent = n === 0 ? `Send: no ${noun} from the ads this week` : 'Send';
   $('#err').textContent = '';
 }
 document.addEventListener('change', e => {
@@ -219,15 +223,15 @@ $('#form').addEventListener('submit', async e => {
   const week = ($('input[name=week]:checked') || {}).value;
   if (!week) return fail('Pick the week.');
   const n = count();
-  if (n == null) return fail(($('input[name=count]:checked') || {}).value === '6+' ? 'Type how many jobs (6 to 30).' : 'Pick how many jobs came from the ads.');
+  if (n == null) return fail(($('input[name=count]:checked') || {}).value === '6+' ? `Type how many ${noun} (6 to 30).` : `Pick how many ${noun} came from the ads.`);
   const js = jobs(), k = +(($('input[name=won]:checked') || {}).value ?? -1);
   if (n > 0) {
-    const missing = js.findIndex(j => !j.type); if (missing >= 0) return fail(`Pick the type for job ${missing + 1}.`);
+    const missing = js.findIndex(j => !j.type); if (missing >= 0) return fail(`Pick the type for ${one.toLowerCase()} ${missing + 1}.`);
     if (k < 0) return fail('Pick how many you won.');
   }
   const won = wonRows().filter(r => r.on);
-  if (n > 0 && won.length !== k) return fail(`Tick the ${k} job${k === 1 ? '' : 's'} you won.`);
-  const noVal = won.find(r => !(Number(r.v) > 0)); if (noVal) return fail(`Add the value of job ${noVal.i + 1} so we can count it.`);
+  if (n > 0 && won.length !== k) return fail(`Tick the ${k} you won.`);
+  const noVal = won.find(r => !(Number(r.v) > 0)); if (noVal) return fail(`Add the value of ${one.toLowerCase()} ${noVal.i + 1} so we can count it.`);
   const wonBy = Object.fromEntries(won.map(r => [r.i, r.v]));
   const p = { week_start: week, count: n, note: $('#note').value.trim(), name: $('#name').value.trim(),
     jobs: js.map((j, i) => ({ type: j.type, value: j.value, won: i in wonBy, won_value: wonBy[i] ?? '' })) };
@@ -236,7 +240,7 @@ $('#form').addEventListener('submit', async e => {
   btn.disabled = false; sync('');
   if (error) return fail(error.message || 'Something went wrong. Try again.');
   const wv = won.reduce((t, r) => t + Number(r.v), 0);
-  $('#donesum').textContent = n === 0 ? `Week of ${weekLabel(week)}: no jobs from the ads.` : `Week of ${weekLabel(week)}: ${n} job${n === 1 ? '' : 's'} from the ads, ${k} won worth ${money(wv)}.`;
+  $('#donesum').textContent = n === 0 ? `Week of ${weekLabel(week)}: none from the ads.` : `Week of ${weekLabel(week)}: ${n} from the ads, ${k} won worth ${money(wv)}.`;
   show($('#form'), false); show($('#done'), true); scrollTo(0, 0);
 });
 function fail(m){ $('#err').textContent = m; }
