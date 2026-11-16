@@ -100,6 +100,7 @@
   .mcard .mtag{align-self:flex-start;margin-top:5px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.08em;
     text-transform:uppercase;border-radius:999px;padding:2px 7px;background:#f1edfb;color:#5b45a8;border:1px solid #ddd3f5}
   .mcard .mtag.done{background:#dcf3e6;color:#1c7c54;border-color:#b7e4cb}
+  .mcard.done:not(.on){border-color:#9fd9b8;background:#effaf3}
   .mcard.locked{cursor:not-allowed;background:repeating-linear-gradient(135deg,#f6f7f9,#f6f7f9 8px,#f1f3f6 8px,#f1f3f6 16px);
     color:#9aa3b2;border-style:dashed}
   .mcard.locked:hover{transform:none;box-shadow:none;border-color:var(--line)}
@@ -3387,6 +3388,13 @@ function expandTabs(){
   /* CNS exception (30/10/2026): the agreed plan runs to January 2027, so the client sees nothing
      past it until the next plan is approved. Raise this when it is. */
   months = months.filter(m => m <= '2027-01');
+  /* Jhen 16/11/2026: months the client has finished stay in their view, in green, so they can look
+     back. Only months before the current window where every item is approved; anything still open in
+     an earlier month stays out, as before. */
+  if (months.length) {
+    const done = allMonths.filter(m => m < months[0] && ITEMS.filter(r => r.month_key === m).every(r => r.approved));
+    months = done.concat(months);
+  }
   CLIENT_MONTHS = months;
   // Staff get one inbox for every note, change request and comment, so nobody has to
   // open each month and card to find what the client said.
@@ -3839,9 +3847,11 @@ function monthStrip(activeKey){
     const ok = rows.filter(r => r.approved).length;
     const pct = rows.length ? Math.round(ok / rows.length * 100) : 0;
     const hidden = ME.kind === 'internal' && !CLIENT_MONTHS.includes(t.monthKey);
-    return '<button type="button" class="mcard'+(t.key === activeKey ? ' on' : '')+'" data-month="'+esc(t.key)+'">'
+    const allDone = rows.length > 0 && ok === rows.length;
+    return '<button type="button" class="mcard'+(t.key === activeKey ? ' on' : '')+(allDone ? ' done' : '')+'" data-month="'+esc(t.key)+'">'
       + '<span class="mn">Month '+t.monthIndex+'</span><span class="mm">'+esc(t.monthLabel)+'</span>'
       + '<span class="mp">'+ok+' of '+rows.length+' approved</span><span class="mbar"><i style="width:'+pct+'%"></i></span>'
+      + (allDone && !hidden ? '<span class="mtag done">&#10003; All approved</span>' : '')
       // Staff only. Months ahead of the client's view are still to come; months behind it are ones the
       // client has finished and moved on from (Jhen 16/11/2026: the old tag on finished months read as an error).
       + (hidden ? (t.monthKey > CLIENT_MONTHS[CLIENT_MONTHS.length - 1]
