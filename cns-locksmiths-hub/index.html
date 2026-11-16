@@ -99,6 +99,7 @@
   .mcard.on .mbar{background:rgba(255,255,255,.28)} .mcard.on .mbar i{background:#fff}
   .mcard .mtag{align-self:flex-start;margin-top:5px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.08em;
     text-transform:uppercase;border-radius:999px;padding:2px 7px;background:#f1edfb;color:#5b45a8;border:1px solid #ddd3f5}
+  .mcard .mtag.done{background:#dcf3e6;color:#1c7c54;border-color:#b7e4cb}
   .mcard.locked{cursor:not-allowed;background:repeating-linear-gradient(135deg,#f6f7f9,#f6f7f9 8px,#f1f3f6 8px,#f1f3f6 16px);
     color:#9aa3b2;border-style:dashed}
   .mcard.locked:hover{transform:none;box-shadow:none;border-color:var(--line)}
@@ -3841,7 +3842,13 @@ function monthStrip(activeKey){
     return '<button type="button" class="mcard'+(t.key === activeKey ? ' on' : '')+'" data-month="'+esc(t.key)+'">'
       + '<span class="mn">Month '+t.monthIndex+'</span><span class="mm">'+esc(t.monthLabel)+'</span>'
       + '<span class="mp">'+ok+' of '+rows.length+' approved</span><span class="mbar"><i style="width:'+pct+'%"></i></span>'
-      + (hidden ? '<span class="mtag">Client can\'t see yet</span>' : '')
+      // Staff only. Months ahead of the client's view are still to come; months behind it are ones the
+      // client has finished and moved on from (Jhen 16/11/2026: the old tag on finished months read as an error).
+      + (hidden ? (t.monthKey > CLIENT_MONTHS[CLIENT_MONTHS.length - 1]
+                    ? '<span class="mtag">Client can\'t see yet</span>'
+                    : ok === rows.length
+                      ? '<span class="mtag done">Done &middot; client has moved on</span>'
+                      : '<span class="mtag">Client can\'t see this month</span>') : '')
       + '</button>';
   };
   const locked = ME.kind === 'internal' ? [] : LOCKED_MONTHS.map(mk =>
