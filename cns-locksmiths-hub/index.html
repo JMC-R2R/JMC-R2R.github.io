@@ -3266,13 +3266,17 @@ function guardWrites(){
 }
 
 async function loadData(){
-  const [q, kw, pr] = await Promise.all([
+  const [q, kw, pr, hv] = await Promise.all([
     sb.from('ch_items').select('*')
       .eq('client_id', CLIENT_ID).order('publish_date', {ascending:true}).order('sort_order'),
     sb.from('ch_keywords').select('*').eq('client_id', CLIENT_ID).order('kw_group').order('sort_order'),
-    sb.from('ch_prompts').select('*').eq('client_id', CLIENT_ID).order('sort_order')
+    sb.from('ch_prompts').select('*').eq('client_id', CLIENT_ID).order('sort_order'),
+    sb.from('ch_hub_view').select('client_id,show_through')
   ]);
   ITEMS = q.data || []; KEYWORDS = kw.data || []; PROMPTS = pr.data || [];
+  { const rows = (hv && hv.data) || [];
+    const own = rows.find(x => x.client_id === CLIENT_ID), all = rows.find(x => !x.client_id);
+    SHOW_THROUGH = (own || all || {}).show_through || null; }
   await loadAudits();
   await loadArticleIndex();
   await loadApprovalStamps();
@@ -3331,6 +3335,9 @@ async function loadData(){
    data, drop tabs this login may not see, then number what is left. Numbering
    last is the point: a client sees 01..05 with no gaps. */
 let LOCKED_MONTHS = [], CLIENT_MONTHS = [];
+/* Jhen 16/11/2026: how far ahead clients see their plan, from ch_hub_view (one row for every client,
+   or a row for one client). Moved forward each cycle in the database, no hub rebuild needed. */
+let SHOW_THROUGH = null;
 const monthName = mk => { if (!mk) return ''; const [y, m] = String(mk).split('-').map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString('en-AU', { month:'long', year:'numeric' }); };
 const monthShort = mk => { if (!mk) return ''; const [y, m] = String(mk).split('-').map(Number);
@@ -3385,9 +3392,12 @@ function expandTabs(){
         : allMonths.slice(-3);
     }
   }
-  /* CNS exception (30/10/2026): the agreed plan runs to January 2027, so the client sees nothing
-     past it until the next plan is approved. Raise this when it is. */
-  months = months.filter(m => m <= '2027-01');
+  /* Jhen 16/11/2026: clients see every month from where their view starts today up to SHOW_THROUGH,
+     and nothing after it, instead of one plan batch at a time. Old months that were hidden stay hidden. */
+  if (SHOW_THROUGH && months.length) {
+    const through = allMonths.filter(m => m >= months[0] && m <= SHOW_THROUGH);
+    if (through.length) months = through;
+  }
   /* Jhen 16/11/2026: months the client has finished stay in their view, in green, so they can look
      back. Only months before the current window where every item is approved; anything still open in
      an earlier month stays out, as before. */
