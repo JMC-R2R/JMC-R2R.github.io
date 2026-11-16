@@ -3340,6 +3340,9 @@ let LOCKED_MONTHS = [], CLIENT_MONTHS = [];
 let SHOW_THROUGH = null;
 const monthName = mk => { if (!mk) return ''; const [y, m] = String(mk).split('-').map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString('en-AU', { month:'long', year:'numeric' }); };
+// The month n months before mk, as YYYY-MM.
+const monthBefore = (mk, n) => { const [y, m] = String(mk).split('-').map(Number); const d = new Date(y, m - 1 - n, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
 const monthShort = mk => { if (!mk) return ''; const [y, m] = String(mk).split('-').map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString('en-AU', { month:'short' }); };
 
@@ -3874,7 +3877,9 @@ function monthStrip(activeKey){
   const locked = ME.kind === 'internal' ? [] : LOCKED_MONTHS.map(mk =>
     '<div class="mcard locked" aria-disabled="true" title="This month opens once the months before it are approved">'
     + '<span class="mn">Coming up</span><span class="mm">'+esc(monthName(mk))+'</span>'
-    + '<span class="lockrow">'+LOCK_SVG+' Opens after '+esc(monthShort(CLIENT_MONTHS[CLIENT_MONTHS.length-1]))+'</span></div>');
+    // Jhen 16/11/2026: clients see the current month plus one ahead (ch_hub_view_roll on the 1st), so a
+    // month opens once the month two before it has closed: February opens after December.
+    + '<span class="lockrow">'+LOCK_SVG+' Opens after '+esc(monthShort(monthBefore(mk, 2)))+'</span></div>');
   return '<div class="mstrip" role="tablist" aria-label="Months">' + months.map(card).join('') + locked.join('') + '</div>';
 }
 
