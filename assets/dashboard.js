@@ -2090,8 +2090,33 @@ function paidCallsCard(){
 const jobsOn = () => PV('jobs') && !!CFG.modules.paid_ads?.enabled;
 const JOB_HOW = { call: 'Called', form: 'Website form', other: 'Other', unsure: 'Not sure' };
 async function jobsReload(){
-  const { data } = await sb.from('md_job_outcomes').select('*').eq('client_id', RAW.client.id).order('job_date');
-  RAW.jobs = data || [];
+  const [j, w] = await Promise.all([sb.from('md_job_outcomes').select('*').eq('client_id', RAW.client.id).order('job_date'),
+    sb.from('md_job_weeks').select('*').eq('client_id', RAW.client.id).order('week_start')]);
+  RAW.jobs = j.data || []; RAW.jobWeeks = w.data || [];
+}
+/* Weekly check-in (Jose 17/11/2026): the client answers every Monday for the week before.
+   Weeks run Monday to Sunday; a week counts in the month it starts. */
+const jwMonday = d => { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return ymd(x); };
+const jwLabel = ws => { const a = new Date(ws + 'T00:00:00'), b = new Date(a); b.setDate(b.getDate() + 6);
+  const f = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }); return `${f(a)} to ${f(b)}`; };
+function jobsWeeksTable(){
+  const wk = RAW.jobWeeks || []; if (!wk.length) return '';
+  /* Every week from the first answer to last week; a week with no answer is shown, never assumed to be 0. */
+  const last = new Date(jwMonday(new Date()) + 'T00:00:00'); last.setDate(last.getDate() - 7);
+  const rows = [];
+  for (let d = new Date(wk[0].week_start + 'T00:00:00'); d <= last || ymd(d) <= wk[wk.length - 1].week_start; d.setDate(d.getDate() + 7)){
+    const ws = ymd(d), a = wk.find(w => String(w.week_start).slice(0, 10) === ws);
+    const js = (RAW.jobs || []).filter(j => String(j.week_start || '').slice(0, 10) === ws), won = js.filter(j => j.status === 'won');
+    rows.push({ week: ws, answered: !!a, count: a ? a.jobs_count : null, won: a ? won.length : null,
+      wonv: a ? sum(won, 'value') : null, quoted: a ? sum(js.filter(j => j.status === 'quoted'), 'value') : null });
+  }
+  const miss = rows.filter(r => !r.answered).length;
+  return `<h4 style="margin:22px 0 4px">Week by week</h4>
+    <p class="sub">From the weekly check-in. ${miss ? `<b>${miss} week${miss === 1 ? '' : 's'} not answered yet.</b>` : 'Every week answered so far.'}</p>` +
+    dataTable('jobweeks', [{ k:'week', label:'Week', fmt:v => jwLabel(v) },
+      { k:'count', label:'Jobs from ads', num:1, fmt:(v, r) => r.answered ? fmt(v) : '<span class="chip dn">Not answered</span>' },
+      { k:'won', label:'Won', num:1, fmt:v => v == null ? '—' : fmt(v) }, { k:'wonv', label:'Won value', num:1, fmt:v => v == null ? '—' : money(v) },
+      { k:'quoted', label:'Not won (quoted)', num:1, fmt:v => v == null ? '—' : money(v) }], rows, { sort:{ k:'week', dir:-1 }, filter:false, maxH:320 });
 }
 function jobsCard(){
   if (!jobsOn()) return '';
@@ -2119,8 +2144,8 @@ function jobsCard(){
       { k:'value', label:'Value', num:1, fmt:v => v == null ? '—' : money(v) }, { k:'entered_by_name', label:'Added by', fmt:(v, r) => esc(v || (r.entered_via === 'link' ? 'Form link' : '—')) }],
       inM, { sort:{ k:'job_date', dir:-1 }, filter:false, maxH:360 });
   else out += `<p class="sub">Nothing added for ${monthName(state.month)} yet.</p>`;
-  out += jobsAddForm() + jobsLinkBox();
-  out += `<p class="dtnote">Values are what you enter, including GST. Ad spend is what Google charged. A quote only counts towards revenue once it is marked won.</p></div>`;
+  out += jobsWeeksTable() + jobsAddForm() + jobsLinkBox();
+  out += `<p class="dtnote">Values are what you enter, including GST. Ad spend is what Google charged. A quote only counts towards revenue once it is marked won. Weekly check-in weeks count in the month they start.</p></div>`;
   return out;
 }
 function jobStatus(r){
@@ -2144,8 +2169,8 @@ function jobsAddForm(){
    making a new one switches the old one off. */
 function jobsLinkBox(){
   if (!isTeam() || previewOnly()) return '';
-  return `<details class="jobadd"><summary><b>Form link for WhatsApp</b> <span class="sub">Team only</span></summary>
-    <p class="sub">A no-login page the client can open from WhatsApp to tell us about quotes and won jobs. The link is the key: anyone with it can add a job or see open quotes, so only send it to the client. Making a new link switches the old one off.</p>
+  return `<details class="jobadd"><summary><b>Weekly check-in link for WhatsApp</b> <span class="sub">Team only</span></summary>
+    <p class="sub">A no-login weekly form the client fills in every Monday for the week before: how many jobs came from the ads, the type and value of each, how many they won and for how much. The same link works every week. It is the key, so only send it to the client. Making a new link switches the old one off.${(CFG.jobTypes || []).length ? ` Job types on the form: ${esc(CFG.jobTypes.join(', '))}.` : ' No job types are set for this client yet (jobTypes in the dashboard settings), so the form only offers "Other".'}</p>
     <p><button class="btn primary" data-joblink="1">Make a new link</button></p><div id="joblinkout"></div></details>`;
 }
 document.addEventListener('submit', async ev => {
@@ -2167,10 +2192,11 @@ document.addEventListener('click', async ev => {
   if (b.dataset.joblink){
     if (!confirm('Make a new form link? Any link sent before stops working.')) return;
     const logo = CFG.logo ? new URL(CFG.logo, location.href).href : null;
-    const { data, error } = await sb.rpc('md_job_form_link_create', { p_client_id: RAW.client.id, p_accent: CFG.accent || null, p_logo_url: logo });
+    const { data, error } = await sb.rpc('md_job_form_link_create', { p_client_id: RAW.client.id, p_accent: CFG.accent || null, p_logo_url: logo,
+      p_job_types: Array.isArray(CFG.jobTypes) && CFG.jobTypes.length ? CFG.jobTypes : null });
     if (error) return toast('Could not make a link: ' + error.message, 'bad');
     const url = `${location.origin}/jobs/#t=${data}`;
-    const wa = 'https://wa.me/?text=' + encodeURIComponent(`Here's your link to tell us about quotes and jobs from the ads. It takes 30 seconds: ${url}`);
+    const wa = 'https://wa.me/?text=' + encodeURIComponent(`Here's your weekly ads check-in. Every Monday, take a minute to tell us what last week's Google Ads brought in, so we can see what the ads are really earning you: ${url}`);
     $('#joblinkout').innerHTML = `<p><input type="text" readonly value="${esc(url)}" style="width:100%" onclick="this.select()"></p>
       <p><button class="btn" data-copy="${esc(url)}">Copy link</button> <a class="btn primary" href="${esc(wa)}" target="_blank" rel="noopener">Send on WhatsApp</a></p>
       <p class="sub">Save it now: it can't be shown again.</p>`;
