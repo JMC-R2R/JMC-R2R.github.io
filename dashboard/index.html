@@ -128,6 +128,23 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 .momcard .big{font-size:21px;font-weight:800;margin:6px 0 2px;display:flex;gap:8px;align-items:baseline}
 .momcard .cap{font-size:11.5px;color:var(--ink3)}
 .mspark{width:100%;height:40px;display:block;margin-top:8px}
+.fn-toggle{display:inline-flex;border:1px solid var(--bd);border-radius:30px;padding:3px;background:var(--s1)}
+.fn-toggle button{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border:none;background:none;color:var(--ink3);padding:8px 13px;border-radius:30px;cursor:pointer;min-height:34px}
+.fn-toggle button[aria-pressed=true]{background:var(--client);color:#03242e;font-weight:700}
+.fn-list{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.fn-row{display:grid;grid-template-columns:170px 1fr 118px;gap:14px;align-items:center;padding:7px 0}
+.fn-lab{font-size:13.5px;font-weight:700;color:var(--ink)}
+.fn-lab small{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:400;margin-top:2px}
+.fn-track{height:26px;background:var(--s1);border-radius:6px;overflow:hidden}
+.fn-bar{height:100%;background:var(--client);border-radius:6px;min-width:3px}
+.fn-num{text-align:right;font-size:19px;font-weight:800;letter-spacing:-.01em}
+.fn-num small{display:block;font-size:11px;font-weight:400;color:var(--ink3);letter-spacing:0}
+.fn-step{display:grid;grid-template-columns:170px 1fr;gap:14px;font-family:var(--mono);font-size:10.5px;color:var(--ink3);letter-spacing:.04em}
+.fn-step span:last-child{padding-left:2px}
+.fn-step.worst span:last-child{color:var(--warn);font-weight:700}
+.fn-note{font-size:12px;color:var(--ink3);margin:12px 0 0;max-width:80ch}
+.fn-empty{padding:26px 6px;color:var(--ink2);font-size:13.5px;max-width:64ch}
+@media (max-width:640px){.fn-row{grid-template-columns:1fr 92px;gap:6px 10px}.fn-row .fn-track{grid-column:1 / -1;grid-row:2}.fn-step{grid-template-columns:1fr}.fn-step span:first-child{display:none}}
 .empty-note{color:var(--ink3);font-size:13px;text-align:center;padding:54px 10px}
 
 /* dummy-data sticker */
@@ -501,9 +518,9 @@ function fillDummy(){
   D.actions=[{on:days[days.length-6].day,what:'Sample: paused the weakest ad set',why:'Sample entry so you can see how changes are reported'}];
   if(SHOP()){                       // a store's sample shows the shopping funnel too
     days.forEach((d,i)=>{ d.add_to_carts=(i*3)%4; });
-    Object.assign(D.totals,{link_clicks:940,landing_page_views:860,add_to_carts:sum('add_to_carts'),checkouts:4,messages:6});
+    Object.assign(D.totals,{link_clicks:940,landing_page_views:860,view_content:720,add_to_carts:sum('add_to_carts'),checkouts:4,messages:6});
     Object.assign(D.prev,{add_to_carts:Math.round(sum('add_to_carts')*0.7),messages:4});
-    D.by_campaign.forEach((c,i)=>Object.assign(c,{link_clicks:Math.round(940*share[i]),landing_page_views:Math.round(860*share[i]),
+    D.by_campaign.forEach((c,i)=>Object.assign(c,{link_clicks:Math.round(940*share[i]),landing_page_views:Math.round(860*share[i]),view_content:Math.round(720*share[i]),
       add_to_carts:Math.round(D.totals.add_to_carts*share[i]),checkouts:i===0?4:0,messages:i===0?4:2}));
   }
   D.launch_totals=D.totals; D.by_campaign_launch=D.by_campaign; D.days_this_month=30;
@@ -695,6 +712,7 @@ function tableCols(camps){
     if(got('link_clicks')) cols.push(['link_clicks','Link clicks',c=>cnt(c.link_clicks,has(c.spend))]);
     else cols.push(['clicks','Clicks',c=>num(c.clicks)]);
     if(got('landing_page_views')) cols.push(['landing_page_views','Landing page views',c=>cnt(c.landing_page_views,has(c.spend))]);
+    if(got('view_content')) cols.push(['view_content','Product views',c=>cnt(c.view_content,has(c.spend))]);
     if(got('add_to_carts')){ cols.push(['add_to_carts','Add to carts',c=>cnt(c.add_to_carts,has(c.spend))]);
       cols.push(['cpatc','Cost per add to cart',c=>per(c.spend,c.add_to_carts,has(c.spend))]); }
     if(got('checkouts')) cols.push(['checkouts','Checkouts',c=>cnt(c.checkouts,has(c.spend))]);
@@ -724,7 +742,7 @@ function campaignTable(){
   if(live){
     /* Sum each column; a column stays NULL only if no campaign reported it. */
     const t={};
-    ['spend','clicks','impressions','leads','purchases','revenue','link_clicks','landing_page_views','add_to_carts','checkouts','messages']
+    ['spend','clicks','impressions','leads','purchases','revenue','link_clicks','landing_page_views','view_content','add_to_carts','checkouts','messages']
       .forEach(k=>{ const v=camps.filter(c=>c[k]!=null); t[k]=v.length?v.reduce((s,c)=>s+Number(c[k]),0):null; });
     total=`<tr class="total"><td>Total</td>${cols.map(([,,f])=>`<td class="tnum">${f(t)}</td>`).join('')}</tr>`;
   }
@@ -1738,6 +1756,99 @@ momBand=function(){ const s=mBaseMomBand(); if(!mPast()) return s;
 const mBaseRenderAll=renderAll;
 renderAll=function(){ mBaseRenderAll();
   if(mPast()) document.querySelectorAll('.ch3sub').forEach(el=>{ el.textContent=el.textContent.replace('Last 30 days',mName(M_SEL)); }); };
+
+/* ---------- Shopping funnel (added 17/11/2026) ----------
+   Two views for store clients, toggled in the card. "From your ads" is the Meta pixel's events attributed to the
+   ads, from pa_report_daily (view_content added 17/11/2026). "Whole website" is every visitor, from Shopify or GA4
+   through pa_client_site_funnel; until a source is connected it says so and shows nothing. Meta counts events, not
+   people, so the ads view never says "people". Added without changing any existing line: it wraps renderOverview
+   and renderAds and follows the month chips. */
+let FN_MODE='ads'; const FN_SITE={};
+function fnIso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fnRange(){
+  if(VIEW==='launch'){ const n=new Date(); return [D.reporting_from||D.launch_date||'2000-01-01', fnIso(new Date(n.getFullYear(),n.getMonth(),n.getDate()+1)), 'launch']; }
+  const m=M_SEL||String(D.month).slice(0,7), s=new Date(m+'-01T00:00:00');
+  return [m+'-01', fnIso(new Date(s.getFullYear(),s.getMonth()+1,1)), m];
+}
+const fnPct=r=>{ const v=r*100; return (v<0.1?v.toFixed(2):v<1?v.toFixed(1):v<10?v.toFixed(1).replace(/\.0$/,''):Math.round(v))+'%'; };
+/* Whole-funnel rates for jewellery are tiny, so say them as "1 for every N" rather than 0.02%. */
+function fnOverall(steps){
+  const a=steps[0], z=steps[steps.length-1];
+  if(!has(a.v)||z.v==null) return '';
+  if(!has(z.v)) return ` No purchases yet from ${num(a.v)} ${a.l.toLowerCase()}.`;
+  const n=Math.round(Number(a.v)/Number(z.v));
+  return n<=1?` Overall, every one of the ${a.l.toLowerCase()} ended in a purchase.`:` Overall, 1 purchase for every ${num(n)} ${a.l.toLowerCase()}.`;
+}
+function fnList(steps, spend, unit){
+  const top=Math.max(1,...steps.map(s=>Number(s.v)||0));
+  let worst=-1, wr=2;
+  steps.forEach((s,i)=>{ if(i&&s.v!=null&&has(steps[i-1].v)){ const r=Number(s.v)/Number(steps[i-1].v); if(r<wr){wr=r;worst=i;} } });
+  const rows=steps.map((s,i)=>{
+    const prev=i?steps[i-1]:null;
+    const gap=i?`<div class="fn-step${i===worst?' worst':''}"><span></span><span>${s.v!=null&&prev&&has(prev.v)?'↓ '+fnPct(Number(s.v)/Number(prev.v))+' carried on'+(i===worst?' · biggest drop':''):'↓'}</span></div>`:'';
+    const each=spend!=null&&has(s.v)&&has(spend)?`<small>${cost(Number(spend)/Number(s.v))} each</small>`:'';
+    return gap+`<div class="fn-row"><div class="fn-lab">${esc(s.l)}<small>${esc(s.h)}</small></div>
+      <div class="fn-track"><div class="fn-bar" style="width:${s.v==null?0:Math.max(0.4,Number(s.v)/top*100)}%"></div></div>
+      <div class="fn-num">${s.v==null?'<span style="color:var(--ink3);font-size:15px">N/A</span>':num(s.v)}${each}</div></div>`;
+  }).join('');
+  const insight=worst>0?`<p class="fn-note"><b style="color:var(--ink2)">Where people drop off:</b> ${esc(steps[worst-1].l)} to ${esc(steps[worst].l.toLowerCase())}, where ${fnPct(wr)} carried on.${esc(fnOverall(steps))}</p>`:'';
+  return `<div class="fn-list">${rows}</div>${insight}`;
+}
+function fnAds(){
+  const {t}=P();
+  if(!has(t.spend)) return `<div class="fn-empty">The ads have not spent in this period, so there is no funnel to show.</div>`;
+  const steps=[
+    {l:'Link clicks',h:'clicked through from an ad',v:t.link_clicks},
+    {l:'Landing page views',h:'the page finished loading',v:t.landing_page_views},
+    {l:'Product views',h:'opened a product page',v:t.view_content},
+    {l:'Add to cart',h:'put a piece in the cart',v:t.add_to_carts},
+    {l:'Checkout started',h:'began checkout',v:t.checkouts},
+    {l:'Purchase',h:has(t.revenue)?aud(t.revenue)+' in sales':'completed an order',v:t.purchases}];
+  return fnList(steps, t.spend)+`<p class="fn-note">Counted by the Meta pixel on your website, for visits that came from your ads. These are actions, not people: one shopper who opens three pieces counts as three product views. Cost each is ad spend divided by that step.</p>`;
+}
+function fnSite(){
+  const [from,to,key]=fnRange();
+  if(DUMMY) return `<div class="fn-empty">Your whole website view appears here once your store is connected. It counts every visitor, not only the ones who came from ads.</div>`;
+  const r=FN_SITE[key];
+  if(r===undefined){ fnLoadSite(from,to,key); return `<div class="fn-empty">Loading your website figures…</div>`; }
+  if(r===null) return `<div class="fn-empty">Your website figures could not be loaded just now. Refresh the page, or let Jose know.</div>`;
+  if(!r.connected) return `<div class="fn-empty"><b>Not connected yet.</b> This view counts every visitor to your website, from Google, Instagram, email and direct visits as well as the ads. It needs your Shopify store connected to our reporting. Jose will be in touch to set it up; until then nothing here is estimated.</div>`;
+  if(!r.days) return `<div class="fn-empty">Your store is connected from ${esc(new Date(r.first_day+'T00:00:00').toLocaleDateString('en-AU'))}. There are no website figures for this period.</div>`;
+  const who=r.unit==='sessions'?'Visits':'Visitors', unit=r.unit==='people'?'people':r.unit==='sessions'?'visits':'actions';
+  const steps=[
+    {l:who,h:'came to your website',v:r.visitors},
+    {l:'Product views',h:'opened a product page',v:r.view_content},
+    {l:'Add to cart',h:'put a piece in the cart',v:r.add_to_carts},
+    {l:'Checkout started',h:'began checkout',v:r.checkouts},
+    {l:'Purchase',h:has(r.revenue)?aud(r.revenue)+' in sales':'completed an order',v:r.purchases}];
+  return fnList(steps,null)+`<p class="fn-note">Every visit to your website, whatever brought them there, from ${r.source==='shopify'?'your Shopify store':'Google Analytics'}. Counted as ${unit}. ${r.source==='shopify'?'':'Some browsers block analytics, so these run a little under the true figure. '}This includes the ad visits above, so the two views are not added together.</p>`;
+}
+async function fnLoadSite(from,to,key){
+  if(FN_SITE['_busy_'+key]) return; FN_SITE['_busy_'+key]=true;
+  try{ const {data,error}=await sb.rpc('pa_client_site_funnel',{p_slug:D.slug,p_from:from,p_to:to}); if(error) throw error; FN_SITE[key]=data||{connected:false}; }
+  catch(e){ console.warn('site funnel',e&&e.message); FN_SITE[key]=null; }
+  delete FN_SITE['_busy_'+key];
+  if(FN_MODE==='site') renderAll();
+}
+function fnCard(){
+  if(!SHOP()) return '';
+  const {label}=P();
+  return `<div class="card fn-card"><div class="cardhead"><div><h3>Shopping funnel</h3><p class="ch3sub">${esc(label)} · from first click to purchase</p></div>
+    <div class="fn-toggle" role="group" aria-label="Funnel view">
+      <button type="button" data-fn="ads" aria-pressed="${FN_MODE==='ads'}">From your ads</button>
+      <button type="button" data-fn="site" aria-pressed="${FN_MODE==='site'}">Whole website</button></div></div>
+    ${FN_MODE==='ads'?fnAds():fnSite()}</div>`;
+}
+function fnMount(sec){
+  const el=$(sec); if(!el||!SHOP()) return;
+  const k=el.querySelector('.kpis'); const html=fnCard();
+  if(k) k.insertAdjacentHTML('afterend',html); else el.insertAdjacentHTML('beforeend',html);
+}
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-fn]'); if(!b||FN_MODE===b.dataset.fn) return; FN_MODE=b.dataset.fn; renderAll(); });
+const fnBaseOverview=renderOverview;
+renderOverview=function(){ fnBaseOverview(); fnMount('sec-overview'); };
+const fnBaseAds=renderAds;
+renderAds=function(kind){ fnBaseAds(kind); if(kind==='meta'&&bought('meta')) fnMount('sec-meta'); };
 </script>
 </body>
 </html>
