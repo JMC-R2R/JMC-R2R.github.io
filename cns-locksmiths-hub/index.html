@@ -1127,6 +1127,7 @@
   .rmgh{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted,#5f6671);margin:6px 0 2px}
   .rmrow{display:flex;gap:8px;align-items:baseline;padding:4px 0;font-size:14px;cursor:pointer}
   .rmrow span{flex:1;min-width:0}
+  .rmrow i.badge{flex:none;font-style:normal;align-self:center;min-width:100px;text-align:center;box-sizing:border-box}
   .rmrow em{font-style:normal;font-size:12px;color:var(--muted,#5f6671);white-space:nowrap}
   @media (max-width:560px){.rmrow{flex-wrap:wrap}.rmrow em{flex-basis:100%;padding-left:24px;white-space:normal}}
   .rmadd{display:flex;gap:8px}
@@ -5836,7 +5837,10 @@ async function rmOpen(){
     const g = items.filter(r => rmStage(r) === stage);
     if (!g.length) return '';
     return '<div class="rmgroup"><div class="rmgh">' + label + ' (' + g.length + ')</div>'
-      + g.map(r => '<label class="rmrow"><input type="checkbox" data-rmitem="' + esc(r.id) + '" checked> <span>' + esc(r.title)
+      + g.map(r => '<label class="rmrow"><input type="checkbox" data-rmitem="' + esc(r.id) + '" checked> '
+        /* Jhen 17/11/2026: type label on each row, so staff can tell a GBP post from a blog. */
+        + '<i class="badge ' + (TYPE_BADGE[r.stream] || 'b-blog') + '">' + esc(TYPE_LABEL[r.stream] || 'Item') + '</i>'
+        + '<span>' + esc(r.title)
         + '</span><em>' + esc(monthLabel(r.month_key)) + '</em></label>').join('') + '</div>';
   };
   const recips = () => people.map((p, i) => '<label class="rmrow"><input type="checkbox" data-rmto="' + i + '"' + (p.off ? '' : ' checked') + '> <span>'
