@@ -418,6 +418,9 @@ table.cr{min-width:1180px}
 .gr-wk{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;margin-top:14px}
 .gr-wk table td.r,.gr-wk table th.r,table.gr td.r,table.gr th.r{text-align:right;font-family:var(--mono);font-size:13px}
 table.gr th{cursor:default}
+.gr-wk{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.gr-exp .kpis{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+.gr-exp .kpi .v{font-size:28px}
 table.gr{min-width:760px}
 .gr-wk table.gr{min-width:0}
 table.gr td:first-child{white-space:nowrap}
@@ -631,6 +634,12 @@ table.gr td.up{color:var(--stc);font-weight:700}
     <div id="grChart"><div class="empty">Loading…</div></div>
   </div>
   <div class="gr-wk" id="grWk"></div>
+  <div class="ov-card gr-exp" style="margin-top:14px">
+    <h3 id="grExpH">3029 on its own: what to expect</h3>
+    <p class="note" id="grExpLede" style="margin:0"></p>
+    <div class="kpis" id="grExp"><div class="empty">Loading…</div></div>
+    <p class="note" id="grExpNote" style="margin:0"></p>
+  </div>
 </section>
 <section aria-labelledby="grt-h" style="margin-top:30px">
   <div class="sec-head"><h2 id="grt-h">Postcode by postcode</h2><p>Registrations per day at each stage, so stages of different lengths compare fairly.</p></div>
@@ -1344,6 +1353,7 @@ function renderOverview(){
    Registrations come live from the leads doc; spend from the spend doc. Stage dates and the
    campaign status column are fixed facts about how the account was run. */
 const GR_FOCUS=["3029","3030","3024","3338","3023"], GR_PREV=["3024","3029","3030","3064","3977"];
+const GR_SOLO="2026-11-18", GR_SOLO_PC="3029"; /* first full day the ads ran on 3029 alone (others paused 16-17/11) */
 const GR_ST={"3029":"Live","3030":"Paused 17/11","3024":"Paused 16/11","3338":"Paused 16/11","3023":"Paused 16/11"};
 const GR_PH=[
   {n:"Stage 1",t:"Melbourne-wide mapping",from:"2026-10-01",to:"2026-11-01",d:"Eight regions across Melbourne on equal budgets, to find where demand is."},
@@ -1408,16 +1418,40 @@ function renderGrowth(){
     const k=document.createElement("p");k.className="note";k.style.margin="8px 0 0";k.textContent="Number above each bar = registrations in the five focus postcodes. Bottom row = Meta spend that day (AUD, ex GST).";C.appendChild(k)}
   // week tables
   const W=$("grWk");W.innerHTML="";
-  const wt=(title,a,b)=>{const d=document.createElement("div");d.className="scroll";const rws=GR_FOCUS.map(p=>[p,cnt(p,a,b)]).sort((x,y)=>y[1]-x[1]);
+  const ORD=[...GR_FOCUS].sort((x,y)=>cnt(y,"0000",end)-cnt(x,"0000",end));
+  const wt=(title,a,b)=>{const d=document.createElement("div");d.className="scroll";const rws=ORD.map(p=>[p,cnt(p,a,b)]);
     d.innerHTML='<table class="gr"><thead><tr><th></th><th class="r">Registrations</th></tr></thead><tbody></tbody></table>';d.querySelector("th").textContent=title;
     const tb=d.querySelector("tbody");rws.forEach(([p,v])=>{const tr=document.createElement("tr");tr.innerHTML='<td></td><td class="r"></td>';tr.children[0].textContent=p+(NAMES[p]?" "+NAMES[p]:"");tr.children[1].textContent=v;tb.appendChild(tr)});
     const t=document.createElement("tr");t.innerHTML='<td><strong>Total</strong></td><td class="r"><strong></strong></td>';t.children[1].firstChild.textContent=rws.reduce((s,x)=>s+x[1],0);tb.appendChild(t);
     if(S){const m=document.createElement("tr");m.innerHTML='<td>Meta spend · Meta leads</td><td class="r"></td>';m.children[1].textContent=aud0(sp(a,b))+" · "+ml(a,b);tb.appendChild(m)}
     W.appendChild(d)};
   wt("Before: "+dmy(wA[0]).slice(0,5)+" to "+dmy(wA[1]).slice(0,5),wA[0],wA[1]); wt("After: "+dmy(wB[0]).slice(0,5)+" to "+dmy(wB[1]).slice(0,5),wB[0],wB[1]);
+  wt("All time: to "+dmy(end).slice(0,5),"0000",end);
+
+  // 3029 on its own: pace since GR_SOLO, projected forward. Projections only, labelled as such.
+  (()=>{const E=$("grExp"),PC=GR_SOLO_PC,PN=PC+(NAMES[PC]?" "+NAMES[PC]:"");E.innerHTML="";
+    $("grExpH").textContent=PN+" on its own: what to expect";
+    if(end<GR_SOLO){E.innerHTML='<div class="empty">The first full day on '+PC+' alone is '+dmy(GR_SOLO)+'. Check back tomorrow.</div>';return}
+    const nD=grDays(GR_SOLO,end), regs=cnt(PC,GR_SOLO,end), pace=regs/nD, spT=sp(GR_SOLO,end), spD=spT/nD, cpr=regs?spT/regs:null, tot=cnt(PC,"0000",end);
+    const before=cnt(PC,ph[2].from,grAdd(GR_SOLO,-2)), bD=grDays(ph[2].from,grAdd(GR_SOLO,-2)), bPace=before/bD;
+    $("grExpLede").textContent="Since "+dmy(GR_SOLO)+" all Meta spend has gone to "+PC+". Figures below use the "+nD+" full day"+(nD===1?"":"s")+" since then and update every morning.";
+    const t=(v,l,sub,cls)=>{const d=document.createElement("div");d.className="kpi "+(cls||"");d.innerHTML='<div class="eyebrow"></div><div class="v num"></div><div class="s"></div>';d.children[0].textContent=l;d.children[1].textContent=v;d.children[2].textContent=sub;E.appendChild(d)};
+    t(grRate(pace)+" / day","Registrations in "+PC,"Was "+grRate(bPace)+" a day with five postcodes ("+dmy(ph[2].from).slice(0,5)+"–"+dmy(grAdd(GR_SOLO,-2)).slice(0,5)+")","lead");
+    if(S) t(aud0(spD)+" / day","Meta spend","All of it on the "+PC+" campaign");
+    if(S&&cpr) t(aud(cpr),"Cost per "+PC+" registration","Meta spend ÷ "+PC+" registrations since "+dmy(GR_SOLO).slice(0,5));
+    t(n0(tot),"All time in "+PC,"To "+dmy(end));
+    const d7=grAdd(end,7); t("≈ "+n0(Math.round(tot+pace*7)),"Expected by "+dmy(d7).slice(0,5),"If the "+grRate(pace)+"/day pace holds"+(S?" · ≈ "+aud0(spD*7)+" more spend":""),"lead");
+    const eom="2026-11-30", dE=grDays(grAdd(end,1),eom); if(dE>1&&dE!==7) t("≈ "+n0(Math.round(tot+pace*dE)),"Expected by "+dmy(eom).slice(0,5),dE+" more days at the same pace"+(S?" · ≈ "+aud0(spD*dE)+" more spend":""));
+    const c=compute(), r=c&&c.rows.find(x=>x.pc===PC);
+    let note="";
+    if(r&&pace>0){ if(r.need===0) t("Reached","Launch line","About "+n0(Math.round(r.exp))+" expected members of the "+n0(r.target)+" needed");
+      else{const dn=r.need/pace, when=grAdd(end,Math.ceil(dn)); t(dn<730?dmy(when):"2+ years","Launch line at this pace","≈ "+n0(r.need)+" more registrations · "+Math.round(dn)+" days"+(S?" · ≈ "+aud0(dn*spD)+" spend":""));
+        note="Launch line uses the settings on the Suburb launch tab: "+n0(r.target)+" members per suburb, "+scen.conv+"% of registrations becoming members (about "+n0(Math.round(r.exp))+" expected members in "+PC+" so far). ";}}
+    $("grExpNote").textContent=note+"These are projections from the pace so far, not promises. With only "+nD+" full day"+(nD===1?"":"s")+" on "+PC+" alone they will move; read them as a guide until there's a full week.";
+  })();
   // postcode table
   const tb=$("grTb");tb.innerHTML="";
-  [...new Set(GR_FOCUS.concat(GR_PREV))].map(p=>{const v=ph.map(x=>cnt(p,x.from,x.to));return {p,v,r:v.map((n,i)=>n/ph[i].len),all:rows.filter(r=>r.p===p).length}})
+  [...new Set(GR_FOCUS.concat(GR_PREV))].map(p=>{const v=ph.map(x=>cnt(p,x.from,x.to));return {p,v,r:v.map((n,i)=>n/ph[i].len),all:cnt(p,"0000",end)}})
    .sort((a,b)=>b.v[2]-a.v[2]).forEach(o=>{const tr=document.createElement("tr");const ch=o.r[1]>0?Math.round((o.r[2]-o.r[1])/o.r[1]*100):null;
     tr.innerHTML='<td></td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r"></td>';
     tr.children[0].textContent=o.p+(NAMES[o.p]?" "+NAMES[o.p]:"")+(GR_FOCUS.includes(o.p)?"":" (not in stage 3)");
