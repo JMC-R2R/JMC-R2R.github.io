@@ -395,6 +395,36 @@ table.cr{min-width:1180px}
 .gcard small{display:block;margin-top:18px;color:#7E7E8C;font-size:12px}
 .who{font-family:var(--mono);font-size:12px;color:var(--ink-3);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .who button{font:inherit;background:none;border:0;color:var(--r2r);cursor:pointer;padding:0;text-decoration:underline}
+/* ---- Postcode growth tab ---- */
+.gr-lede{font-size:clamp(17px,2vw,20px);line-height:1.5;max-width:78ch;margin:0;color:var(--ink)}
+.gr-ph{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px}
+.gr-ph .ov-card{gap:6px}
+.gr-ph .ov-card.now{border-color:var(--stc);box-shadow:inset 0 3px 0 var(--stc)}
+.gr-ph .when{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.gr-ph .big{text-align:left;align-self:flex-start;font-size:34px;font-weight:900;letter-spacing:-.02em;line-height:1.05}
+.gr-ph .big small{font-size:14px;font-weight:600;color:var(--ink-2);letter-spacing:0;margin-left:6px}
+.gr-ph p{margin:0;color:var(--ink-2);font-size:13.5px}
+.gr-x{display:inline-block;font-family:var(--mono);font-size:12px;padding:2px 7px;border-radius:999px;background:var(--stc-soft);color:var(--stc);font-weight:700}
+.gr-cols{display:flex;align-items:flex-end;gap:5px;height:190px;padding-top:18px;position:relative}
+.gr-col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;height:100%;position:relative}
+.gr-col .seg{display:block;border-radius:2px 2px 0 0}
+.gr-col .seg.f{background:var(--stc)}
+.gr-col .seg.o{background:var(--line);border-radius:0}
+.gr-col .n{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);text-align:center;margin-bottom:3px}
+.gr-col.split{border-left:2px dashed var(--ink-3);padding-left:3px}
+.gr-lab{display:flex;gap:5px;margin-top:6px}
+.gr-lab span{flex:1;min-width:0;text-align:center;font-family:var(--mono);font-size:10px;color:var(--ink-3);overflow:hidden}
+.gr-lab.sp span{color:var(--ink-2)}
+.gr-wk{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;margin-top:14px}
+.gr-wk table td.r,.gr-wk table th.r,table.gr td.r,table.gr th.r{text-align:right;font-family:var(--mono);font-size:13px}
+table.gr th{cursor:default}
+table.gr{min-width:760px}
+.gr-wk table.gr{min-width:0}
+table.gr td:first-child{white-space:nowrap}
+table.gr td.up{color:var(--stc);font-weight:700}
+.gr-notes{margin:0;padding-left:18px;color:var(--ink-2);font-size:14px;max-width:80ch}
+.gr-notes li{margin:6px 0}
+@media (max-width:560px){.gr-cols{gap:2px;height:160px}.gr-lab{gap:2px}.gr-col .n{font-size:9px}.gr-lab span{font-size:8.5px}}
 </style>
 </head>
 <body>
@@ -546,6 +576,7 @@ table.cr{min-width:1180px}
 <div class="tabs"><div class="tabs-in">
   <div class="tablist" role="tablist" aria-label="Dashboard views">
     <button class="tab" role="tab" id="tb-overview" aria-controls="pn-overview" aria-selected="true" type="button">Overview</button>
+    <button class="tab" role="tab" id="tb-growth" aria-controls="pn-growth" aria-selected="false" type="button" tabindex="-1">Postcode growth</button>
     <button class="tab" role="tab" id="tb-launch" aria-controls="pn-launch" aria-selected="false" type="button" tabindex="-1">Suburb launch</button>
     <button class="tab" role="tab" id="tb-ads" aria-controls="pn-ads" aria-selected="false" type="button" tabindex="-1">Ads &amp; creative</button>
     <button class="tab" role="tab" id="tb-social" aria-controls="pn-social" aria-selected="false" type="button" tabindex="-1">Socials</button>
@@ -580,6 +611,39 @@ table.cr{min-width:1180px}
     <div class="ov-card"><h3>What's working in the ads<button type="button" data-go="ads">Ads detail →</button></h3><div id="ovWin"></div></div>
     <div class="ov-card"><h3>Enquiries per day, last 14 days<button type="button" data-go="launch">Detail →</button></h3><div id="ovTrend"></div></div>
   </div>
+</section>
+</div>
+<div role="tabpanel" id="pn-growth" aria-labelledby="tb-growth" hidden>
+<section aria-labelledby="gr-h">
+  <div class="ov-top"><h2 id="gr-h">Postcode growth: what narrowing the ads has done</h2></div>
+  <p class="ov-meta"><span id="grAsOf"></span></p>
+  <p class="gr-lede" id="grSum">Loading…</p>
+</section>
+<section aria-labelledby="grp-h" style="margin-top:26px">
+  <div class="sec-head"><h2 id="grp-h">Three stages, one top postcode</h2><p id="grTopLab">Registrations in the top postcode at each stage, all sources, duplicates removed.</p></div>
+  <div class="gr-ph" id="grPh"><div class="empty">Loading…</div></div>
+</section>
+<section aria-labelledby="grr-h" style="margin-top:30px">
+  <div class="sec-head"><h2 id="grr-h">Last 14 days recap</h2><p id="grRLab"></p></div>
+  <div class="kpis" id="grK"><div class="empty">Loading…</div></div>
+  <div class="chart" style="margin-top:16px">
+    <h3 class="eyebrow" style="margin:0 0 4px">Registrations per day · red = the five focus postcodes · grey = everywhere else · dashed line = new campaigns start</h3>
+    <div id="grChart"><div class="empty">Loading…</div></div>
+  </div>
+  <div class="gr-wk" id="grWk"></div>
+</section>
+<section aria-labelledby="grt-h" style="margin-top:30px">
+  <div class="sec-head"><h2 id="grt-h">Postcode by postcode</h2><p>Registrations per day at each stage, so stages of different lengths compare fairly.</p></div>
+  <div class="scroll"><table class="gr"><thead><tr><th>Postcode</th><th class="r">Stage 1 / day</th><th class="r">Stage 2 / day</th><th class="r">Stage 3 / day</th><th class="r">Stage 3 total</th><th class="r">All time</th><th class="r">Change, stage 2 → 3</th></tr></thead><tbody id="grTb"></tbody></table></div>
+</section>
+<section aria-labelledby="grc-h" style="margin-top:30px">
+  <div class="sec-head"><h2 id="grc-h">The focused campaigns</h2><p>One Meta campaign per postcode, instant form, from 12/11/2026.</p></div>
+  <div class="scroll"><table class="gr"><thead><tr><th>Campaign</th><th>Status at 19/11</th><th class="r">Spend</th><th class="r">Leads (Meta)</th><th class="r">Cost per lead</th><th class="r">Registrations in postcode</th><th class="r">Cost per registration</th></tr></thead><tbody id="grCt"></tbody></table></div>
+  <p class="note" id="grCNote" style="margin-top:12px"></p>
+</section>
+<section aria-labelledby="grn-h" style="margin-top:30px">
+  <div class="sec-head"><h2 id="grn-h">Reading these numbers</h2></div>
+  <ul class="gr-notes" id="grNotes"></ul>
 </section>
 </div>
 <div role="tabpanel" id="pn-launch" aria-labelledby="tb-launch" hidden>
@@ -1275,10 +1339,118 @@ function renderOverview(){
     const tot=document.createElement("div");tot.className="s";tot.style.color="var(--ink-2)";tot.style.fontSize="13px";tot.textContent=ds.reduce((a,x)=>a+x[1],0)+" enquiries in 14 days. Busiest day "+(()=>{const b=[...ds].sort((a,b)=>b[1]-a[1])[0];return dmy(b[0]).slice(0,5)+" ("+b[1]+")"})()+".";
     T.append(sp,lb,tot);}
 }
+
+/* ---- Postcode growth tab ----
+   Registrations come live from the leads doc; spend from the spend doc. Stage dates and the
+   campaign status column are fixed facts about how the account was run. */
+const GR_FOCUS=["3029","3030","3024","3338","3023"], GR_PREV=["3024","3029","3030","3064","3977"];
+const GR_ST={"3029":"Live","3030":"Paused 17/11","3024":"Paused 16/11","3338":"Paused 16/11","3023":"Paused 16/11"};
+const GR_PH=[
+  {n:"Stage 1",t:"Melbourne-wide mapping",from:"2026-10-01",to:"2026-11-01",d:"Eight regions across Melbourne on equal budgets, to find where demand is."},
+  {n:"Stage 2",t:"High-performing postcodes test",from:"2026-11-02",to:"2026-11-11",d:"Two campaigns at A$44/day on 3024, 3029, 3030, 3064 and 3977, with the regional campaigns still running."},
+  {n:"Stage 3",t:"Focused postcode campaigns",from:"2026-11-12",to:null,d:"Budget moved to one campaign per postcode (3029, 3030, 3024, 3338, 3023), then narrowed to 3029 from 17/11."}];
+function grDays(a,b){return Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/864e5)+1}
+function grAdd(iso,n){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+n);return isoL(d)}
+function grRate(x){return x>=10?x.toFixed(0):x.toFixed(1)}
+function renderGrowth(){
+  if(!leadsDoc) return;
+  const S=spendDoc, rows=(leadsDoc.rows||[]).filter(r=>r.p&&isVic(r.p));
+  const end=grAdd(leadsDoc.asOf,-1);               /* last full day */
+  const ph=GR_PH.map(x=>({...x,to:x.to||end}));
+  ph.forEach(x=>{x.len=grDays(x.from,x.to)});
+  const allR=leadsDoc.rows||[], cnt=(p,a,b)=>(p?rows:allR).filter(r=>(!p||(Array.isArray(p)?p.includes(r.p):r.p===p))&&r.d>=a&&r.d<=b).length;
+  // top postcode = most registrations in stage 3
+  const s3={};rows.filter(r=>GR_FOCUS.includes(r.p)&&r.d>=ph[2].from&&r.d<=ph[2].to).forEach(r=>s3[r.p]=(s3[r.p]||0)+1);
+  const top=Object.entries(s3).sort((a,b)=>b[1]-a[1])[0]; if(!top) return;
+  const T=top[0], TN=NAMES[T]?" "+NAMES[T]:"";
+  const tv=ph.map(x=>cnt(T,x.from,x.to)), tr=ph.map((x,i)=>tv[i]/x.len), allT=rows.filter(r=>r.p===T).length;
+  const mult=tr[1]>0?tr[2]/tr[1]:null;
+  // 14-day recap: 7 days before the switch vs 7 after (or the last 14 full days)
+  const rTo=end, rFrom=grAdd(end,-13), split=ph[2].from;
+  const wA=[rFrom,grAdd(split,-1)], wB=[split,rTo];
+  const fA=cnt(GR_FOCUS,wA[0],wA[1]), fB=cnt(GR_FOCUS,wB[0],wB[1]), aA=cnt(null,wA[0],wA[1]), aB=cnt(null,wB[0],wB[1]);
+  const tA=cnt(T,wA[0],wA[1]), tB=cnt(T,wB[0],wB[1]);
+  const sd=S?(S.days||[]):[], sp=(a,b)=>sd.filter(x=>x.d>=a&&x.d<=b).reduce((t,x)=>t+x.s,0), ml=(a,b)=>sd.filter(x=>x.d>=a&&x.d<=b).reduce((t,x)=>t+(x.l||0),0);
+  $("grAsOf").textContent="Registrations to "+dmy(end)+(S?" · Meta spend to "+dmy(S.asOf<end?S.asOf:end):"")+". Updates every morning.";
+  const xT=mult?Math.round(mult*10)/10:null;
+  $("grSum").innerHTML="Since the ads were narrowed on "+dmy(split)+", <strong>"+T+esc(TN)+"</strong> has gone from about <strong>"+grRate(tr[1])+" registrations a day to "+grRate(tr[2])+"</strong>"+(xT?" ("+xT+"× faster)":"")+". "
+    +"<strong>"+tv[2]+" of its "+allT+" registrations</strong> to date ("+Math.round(tv[2]/allT*100)+"%) came in the last "+ph[2].len+" days. "
+    +"Across the five focus postcodes, registrations went from <strong>"+fA+"</strong> in the week before the switch to <strong>"+fB+"</strong> in the week after.";
+  // stage cards
+  const P=$("grPh");P.innerHTML="";
+  ph.forEach((x,i)=>{const c=document.createElement("div");c.className="ov-card"+(i===2?" now":"");
+    const ch=i>0&&tr[i-1]>0?Math.round(tr[i]/tr[i-1]*10)/10:null;
+    c.innerHTML='<div class="when"></div><h3></h3><div class="big"></div><p class="rt"></p><p class="ds"></p>';
+    c.children[0].textContent=x.n+" · "+dmy(x.from).slice(0,5)+" to "+dmy(x.to).slice(0,5)+" · "+x.len+" days";
+    c.children[1].textContent=x.t;
+    c.children[2].innerHTML=tv[i]+"<small>registrations in "+T+"</small>";
+    c.children[3].innerHTML=grRate(tr[i])+" a day"+(ch&&ch>1?' <span class="gr-x">'+ch+'× stage '+i+'</span>':"");
+    c.children[4].textContent=x.d;P.appendChild(c)});
+  $("grTopLab").textContent="Registrations in "+T+TN+", the top postcode, at each stage. All sources, duplicates removed.";
+  // KPIs
+  const K=$("grK");K.innerHTML="";
+  const tile=(cls,v,l,sub)=>{const d=document.createElement("div");d.className="kpi "+cls;d.innerHTML='<div class="eyebrow"></div><div class="v num"></div><div class="s"></div>';d.children[0].textContent=l;d.children[1].textContent=v;d.children[2].textContent=sub;K.appendChild(d)};
+  const pc=(a,b)=>a?(b>=a?"Up ":"Down ")+Math.abs(Math.round((b-a)/a*100))+"%":"New";
+  $("grRLab").textContent=dmy(rFrom)+" to "+dmy(rTo)+": the "+grDays(wA[0],wA[1])+" days before the new campaigns and the "+grDays(wB[0],wB[1])+" days since.";
+  tile("lead",String(tB),"Registrations in "+T,tA+" the week before · "+pc(tA,tB));
+  tile("lead",String(fB),"Five focus postcodes",fA+" the week before · "+pc(fA,fB));
+  tile("",Math.round(fB/(aB||1)*100)+"%","Share in focus postcodes","Was "+Math.round(fA/(aA||1)*100)+"% the week before");
+  tile("",String(aA+aB),"All registrations · 14 days",aA+" before · "+aB+" since");
+  if(S) tile("",aud0(sp(rFrom,rTo)),"Meta spend · 14 days",aud0(sp(wA[0],wA[1]))+" before · "+aud0(sp(wB[0],wB[1]))+" since");
+  // chart
+  const C=$("grChart");C.innerHTML="";const ds=[];for(let i=0;i<14;i++){const d=grAdd(rFrom,i);ds.push({d,f:cnt(GR_FOCUS,d,d),a:cnt(null,d,d),s:(sd.find(x=>x.d===d)||{}).s})}
+  const mx=Math.max(1,...ds.map(x=>x.a));const cols=document.createElement("div");cols.className="gr-cols";
+  ds.forEach(x=>{const c=document.createElement("div");c.className="gr-col"+(x.d===split?" split":"");c.title=dmy(x.d)+": "+x.f+" in focus postcodes, "+(x.a-x.f)+" elsewhere";
+    const n=document.createElement("div");n.className="n";n.textContent=x.f;const o=document.createElement("i");o.className="seg o";o.style.height=((x.a-x.f)/mx*150)+"px";const f=document.createElement("i");f.className="seg f";f.style.height=Math.max(x.f?2:0,x.f/mx*150)+"px";c.append(n,o,f);cols.appendChild(c)});
+  const lab=document.createElement("div");lab.className="gr-lab";ds.forEach(x=>{const s=document.createElement("span");s.textContent=dmy(x.d).slice(0,5);lab.appendChild(s)});
+  C.append(cols,lab);
+  if(S){const l2=document.createElement("div");l2.className="gr-lab sp";ds.forEach(x=>{const s=document.createElement("span");s.textContent=x.s!=null?"$"+Math.round(x.s):"";s.title="Meta spend";l2.appendChild(s)});C.appendChild(l2);
+    const k=document.createElement("p");k.className="note";k.style.margin="8px 0 0";k.textContent="Number above each bar = registrations in the five focus postcodes. Bottom row = Meta spend that day (AUD, ex GST).";C.appendChild(k)}
+  // week tables
+  const W=$("grWk");W.innerHTML="";
+  const wt=(title,a,b)=>{const d=document.createElement("div");d.className="scroll";const rws=GR_FOCUS.map(p=>[p,cnt(p,a,b)]).sort((x,y)=>y[1]-x[1]);
+    d.innerHTML='<table class="gr"><thead><tr><th></th><th class="r">Registrations</th></tr></thead><tbody></tbody></table>';d.querySelector("th").textContent=title;
+    const tb=d.querySelector("tbody");rws.forEach(([p,v])=>{const tr=document.createElement("tr");tr.innerHTML='<td></td><td class="r"></td>';tr.children[0].textContent=p+(NAMES[p]?" "+NAMES[p]:"");tr.children[1].textContent=v;tb.appendChild(tr)});
+    const t=document.createElement("tr");t.innerHTML='<td><strong>Total</strong></td><td class="r"><strong></strong></td>';t.children[1].firstChild.textContent=rws.reduce((s,x)=>s+x[1],0);tb.appendChild(t);
+    if(S){const m=document.createElement("tr");m.innerHTML='<td>Meta spend · Meta leads</td><td class="r"></td>';m.children[1].textContent=aud0(sp(a,b))+" · "+ml(a,b);tb.appendChild(m)}
+    W.appendChild(d)};
+  wt("Before: "+dmy(wA[0]).slice(0,5)+" to "+dmy(wA[1]).slice(0,5),wA[0],wA[1]); wt("After: "+dmy(wB[0]).slice(0,5)+" to "+dmy(wB[1]).slice(0,5),wB[0],wB[1]);
+  // postcode table
+  const tb=$("grTb");tb.innerHTML="";
+  [...new Set(GR_FOCUS.concat(GR_PREV))].map(p=>{const v=ph.map(x=>cnt(p,x.from,x.to));return {p,v,r:v.map((n,i)=>n/ph[i].len),all:rows.filter(r=>r.p===p).length}})
+   .sort((a,b)=>b.v[2]-a.v[2]).forEach(o=>{const tr=document.createElement("tr");const ch=o.r[1]>0?Math.round((o.r[2]-o.r[1])/o.r[1]*100):null;
+    tr.innerHTML='<td></td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r"></td>';
+    tr.children[0].textContent=o.p+(NAMES[o.p]?" "+NAMES[o.p]:"")+(GR_FOCUS.includes(o.p)?"":" (not in stage 3)");
+    o.r.forEach((x,i)=>tr.children[i+1].textContent=x.toFixed(1));tr.children[4].textContent=o.v[2];tr.children[5].textContent=o.all;
+    tr.children[6].textContent=ch==null?"—":(ch>0?"+":"")+ch+"%";if(ch>0)tr.children[6].className="r up";tb.appendChild(tr)});
+  // campaigns
+  const ct=$("grCt");ct.innerHTML="";
+  const camps=S?(S.camps||[]).filter(x=>x.code==="Advantage Plus"):[];
+  let cs=0,cl=0,cr=0;
+  camps.map(x=>({...x,p:(x.region.match(/\d{4}/)||[""])[0]})).sort((a,b)=>b.spend-a.spend).forEach(x=>{const reg=cnt(x.p,ph[2].from,ph[2].to);cs+=x.spend;cl+=x.leads||0;cr+=reg;
+    const tr=document.createElement("tr");tr.innerHTML='<td></td><td></td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r"></td>';
+    tr.children[0].textContent=x.p+(NAMES[x.p]?" "+NAMES[x.p]:"");tr.children[1].textContent=GR_ST[x.p]||"";tr.children[2].textContent=aud(x.spend);tr.children[3].textContent=x.leads||0;
+    tr.children[4].textContent=x.leads?aud(x.spend/x.leads):"—";tr.children[5].textContent=reg;tr.children[6].textContent=reg?aud(x.spend/reg):"—";ct.appendChild(tr)});
+  if(camps.length){const tr=document.createElement("tr");tr.innerHTML='<td><strong>Total</strong></td><td></td><td class="r"><strong></strong></td><td class="r"><strong></strong></td><td class="r"><strong></strong></td><td class="r"><strong></strong></td><td class="r"><strong></strong></td>';
+    [aud(cs),cl,cl?aud(cs/cl):"—",cr,cr?aud(cs/cr):"—"].forEach((v,i)=>tr.children[i+2].firstChild.textContent=v);ct.appendChild(tr)}
+  else ct.innerHTML='<tr><td colspan="7"><div class="empty">No campaign data yet.</div></td></tr>';
+  const pcC=(S&&S.camps||[]).filter(x=>x.code==="High-Performing Postal Codes"), ps=pcC.reduce((a,x)=>a+x.spend,0), pl=pcC.reduce((a,x)=>a+(x.leads||0),0);
+  $("grCNote").textContent="Spend and leads are Meta's figures for each campaign up to the latest refresh, which can include part of today. Registrations in postcode count every registration from that postcode since "+dmy(ph[2].from)+", from any source, so a few may have come from other ads."
+    +(pcC.length?" For comparison, the stage 2 test campaigns (A$44/day) spent "+aud(ps)+" for "+pl+" Meta leads, "+(pl?aud(ps/pl):"—")+" per lead.":"");
+  // notes
+  const st1=sp(ph[1].from,ph[1].to)/ph[1].len, st3=sp(ph[2].from,ph[2].to)/ph[2].len;
+  const N=[
+    "<strong>Total registrations are lower</strong> ("+aA+" the week before, "+aB+" the week since). That's expected: we stopped advertising across all of Melbourne and moved the budget into a handful of postcodes. The goal now is density where STC will launch, not volume everywhere.",
+    S?"<strong>The budget was similar.</strong> Meta spend averaged "+aud0(st1)+" a day in stage 2 and "+aud0(st3)+" a day in stage 3. The growth came from where the money went, not from spending more.":"",
+    "<strong>Stage 2 wasn't the A$44/day test on its own.</strong> The eight regional campaigns were still running, so some stage 2 registrations in these postcodes came from them.",
+    "<strong>Cost per Meta lead is higher in the focused campaigns</strong> than in the stage 2 test. Smaller audiences cost more to reach. What we're buying is concentration in the suburbs STC can launch first.",
+    "<strong>3064 Roxburgh Park and 3977 Cranbourne</strong> were in the stage 2 test but not in stage 3, which is why they slowed down."];
+  $("grNotes").innerHTML=N.filter(Boolean).map(x=>"<li>"+x+"</li>").join("");
+}
 function isoL(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function progTxt(r){const m=Math.round(r.exp);return "about "+(m<1?"under 1":n0(m))+" expected member"+(m===1?"":"s")+" of the "+n0(r.target)+" needed"}
 function esc(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
-function showTab(id,focus){["overview","launch","ads","social","next"].forEach(k=>{const on=k===id,b=$("tb-"+k);b.setAttribute("aria-selected",on);b.tabIndex=on?0:-1;$("pn-"+k).hidden=!on;if(on&&focus)b.focus()});try{localStorage.setItem("stcTab",id)}catch(e){}}
+function showTab(id,focus){["overview","growth","launch","ads","social","next"].forEach(k=>{const on=k===id,b=$("tb-"+k);b.setAttribute("aria-selected",on);b.tabIndex=on?0:-1;$("pn-"+k).hidden=!on;if(on&&focus)b.focus()});try{localStorage.setItem("stcTab",id)}catch(e){}}
 function render(){
   $("convOut").textContent=scen.conv+"%";
   const be=$("breakeven");
@@ -1294,6 +1466,7 @@ function render(){
   const {rows,excluded,asOf}=c;
   try{renderOverview()}catch(e){}
   try{renderNext()}catch(e){}
+  try{renderGrowth()}catch(e){console.error(e)}
   try{renderAud()}catch(e){}
   $("asOf").textContent="Lead data as at "+fmtDate(asOf)+".";
   const total=(leadsDoc.rows||[]).length;
@@ -1393,12 +1566,12 @@ document.querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",
 
 bindInputs(); render();
 document.querySelectorAll("#rng button,#socRng button").forEach(b=>b.addEventListener("click",()=>{ovR=b.dataset.r; try{localStorage.setItem("stcRange",ovR)}catch(e){} try{renderOverview()}catch(e){} try{renderSocial()}catch(e){}}));
-const TABS=["overview","launch","ads","social","next"];
+const TABS=["overview","growth","launch","ads","social","next"];
 TABS.forEach(k=>$("tb-"+k).addEventListener("click",()=>showTab(k)));
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{showTab(b.dataset.go);window.scrollTo({top:0,behavior:"smooth"})}));
 document.querySelector(".tablist").addEventListener("keydown",e=>{if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft")return;e.preventDefault();const i=TABS.findIndex(k=>$("tb-"+k).getAttribute("aria-selected")==="true");showTab(TABS[(i+(e.key==="ArrowRight"?1:TABS.length-1))%TABS.length],true)});
 /* Always open on the overview: it is the page a busy owner should land on. */
-if(location.hash==="#ads")showTab("ads"); else if(location.hash==="#launch")showTab("launch"); else if(location.hash==="#social")showTab("social"); else if(location.hash==="#next")showTab("next");
+if(location.hash==="#growth")showTab("growth"); else if(location.hash==="#ads")showTab("ads"); else if(location.hash==="#launch")showTab("launch"); else if(location.hash==="#social")showTab("social"); else if(location.hash==="#next")showTab("next");
 
 /* Data lives in Supabase behind RLS. The page never holds figures itself: every load goes
    through stc_launch_load(), which refuses any email not on STC's access list. */
@@ -1472,7 +1645,7 @@ async function boot(){
   db.doc("config/social").onSnapshot(s=>{ socialDoc=s.exists?s.data():null; try{renderSocial()}catch(e){console.error(e)} },()=>{});
   db.doc("config/thumbs").onSnapshot(s=>{ thumbsDoc=s.exists?s.data():null; try{renderCreative()}catch(e){} },()=>{});
   db.doc("config/audiences").onSnapshot(s=>{ audDoc=s.exists?s.data():null; try{renderAud()}catch(e){} },()=>{});
-  db.doc("config/spend").onSnapshot(s=>{ spendDoc=s.exists?s.data():null; if(!spendDoc){$("spK").innerHTML='<div class="empty">No spend data loaded yet.</div>';$("spChart").innerHTML='<div class="empty">No spend data loaded yet.</div>';} renderSpend(); renderDemo(); renderCreative(); renderFresh(); renderOverview(); });
+  db.doc("config/spend").onSnapshot(s=>{ spendDoc=s.exists?s.data():null; try{renderGrowth()}catch(e){console.error(e)} if(!spendDoc){$("spK").innerHTML='<div class="empty">No spend data loaded yet.</div>';$("spChart").innerHTML='<div class="empty">No spend data loaded yet.</div>';} renderSpend(); renderDemo(); renderCreative(); renderFresh(); renderOverview(); });
   db.collection("postcodes").onSnapshot(qs=>{ const m={}; qs.docs.forEach(d=>{m[d.id]=d.data()}); pcs=m; render(); });
   /* Pick up the 7am refresh without a reload. */
   setInterval(()=>{ if(!document.hidden) db.load().catch(()=>setState("Lost connection. Reload the page.")); },10*60*1000);
