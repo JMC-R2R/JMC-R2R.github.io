@@ -6190,7 +6190,7 @@ function monthBriefMarkup(t){
     body += '<div class="typehead"><span class="badge '+(TYPE_BADGE[stream]||'b-blog')+'">'
           + esc(TYPE_LABEL[stream]||stream)+'</span><h3>'+esc(TYPE_HEAD[stream]||stream)+'</h3>'
           + '<span class="tc">'+sr.length+' '+(sr.length===1?'item':'items')+'</span></div>';
-    if (stream !== 'gbp' && CFG.picCards) { body += '<div class="gp-grid">'; for (const r of pcSort(sr)) body += itemCard(r, staff); body += '</div>'; continue; }
+    if (CFG.picCards && PCSTREAMS.has(stream)) { body += '<div class="gp-grid">'; for (const r of pcSort(sr)) body += itemCard(r, staff); body += '</div>'; continue; }
     if (stream !== 'gbp') { for (const r of sr) body += itemCard(r, staff); continue; }
     // GBP: 3 posts a week, grouped by week so the client can approve a week in one click.
     // The pill reads wkDone, never !open. An item that is still 'started' is not approvable yet
@@ -6584,17 +6584,27 @@ function rejBox(r){
    The picture: the LinkedIn banner, or the first photo in the written article. Article HTML and the
    comments are not in the hub's article index, so they are fetched (read only) per month and dropped in. */
 if (typeof CFG !== 'undefined' && CFG.picCards) document.documentElement.classList.add('pcon');
+// Only these sections become picture cards. Anything else a hub has (Cobalt's Meta Ads, any future
+// section) keeps its own cards, untouched (Jhen 20/11/2026, after Cobalt's Meta Ads were caught).
+const PCSTREAMS = new Set(['blog', 'service_page', 'location_page', 'linkedin', 'power']);   // power: Coast to Coast's Power Mode blogs
+// The article a card uses. hub.json "page_articles_from" (GSK, Jhen 16/10/2026): pages before that month never
+// show article buttons, even when a draft is stored; they show View page only, as on the old card.
+function pcArt(r){
+  if (CFG.pageArticlesFrom && isPage(r) && String(r.month_key || '') < CFG.pageArticlesFrom) return null;
+  return ARTICLES[r.id] || null;
+}
 const PCCOVER = {}, PCCMT = {}, PCCMTN = {}, PCWANT = new Set(), PCMORE = new Set();
 let PCTIMER = null;
 function pcQueue(id){ PCWANT.add(id); if (!PCTIMER) PCTIMER = setTimeout(pcLoad, 0); }
 function pcCover(r){
   if (r.deliverable === 'linkedin_article' && r.banner_url) return r.banner_url;
-  if (!ARTICLES[r.id]) return '';
+  // card_image_url: the live page's own photo, for pieces written before content lived in the hub.
+  if (!pcArt(r)) return r.card_image_url || '';
   if (!(r.id in PCCOVER)) pcQueue(r.id);
-  return PCCOVER[r.id] || '';
+  return PCCOVER[r.id] || r.card_image_url || '';
 }
 function pcComments(r){
-  if (!ARTICLES[r.id]) return [];
+  if (!pcArt(r)) return [];
   const n = OPENCOMMENTS[r.id] || 0;
   if (!(r.id in PCCMT) || PCCMTN[r.id] !== n) pcQueue(r.id);
   return PCCMT[r.id] || [];
@@ -6923,7 +6933,8 @@ function picCard(r, staff){
   const canTick = one ? ready : (ready && !topicWaiting(r));
   const done = !!r.approved;
   const n = INTERNAL[r.id] || {};
-  const am = (ARTICLES[r.id] || {}).meta || {};
+  const art = pcArt(r);
+  const am = (art || {}).meta || {};
   const cover = pcCover(r);
   const cmts = pcComments(r);
   const isLive = r.client_status === 'live';
@@ -6933,7 +6944,7 @@ function picCard(r, staff){
     ? '<div class="gp-img" data-pcimg="'+id+'">' + clientBubbleV2(r) + '<img src="'+esc(cover)+'" alt="" loading="lazy"></div>'
     : '<div class="gp-img pc-ph" data-pcimg="'+id+'">' + clientBubbleV2(r)
       + '<div class="pc-phin"><span class="pc-phk">'+esc(pcType(r))+'</span>'
-      + '<span class="pc-phs">'+(ARTICLES[r.id] ? 'Photo to come' : 'Being written')+'</span></div></div>';
+      + '<span class="pc-phs">'+(art || r.client_status !== 'started' ? 'Photo to come' : 'Being written')+'</span></div></div>';
 
   // Team only: the keyword and its numbers, above the main button (Jhen 20/11/2026). Clients see none of it.
   const kw = [];
@@ -6953,14 +6964,15 @@ function picCard(r, staff){
   const pulse = (sk === 'due' || sk === 'chg') && ready ? ' pc-pulse' : '';
   const livePulse = sk === 'sched' || sk === 'live' ? ' pc-pulse' : '';
   let read = '';
-  if (ARTICLES[r.id]) {
+  if (art) {
     read = '<button class="btn pc-read'+pulse+'" type="button" data-read="'+id+'">'
       + (pg ? '&#9654; Preview page &amp; comment' : '&#9654; Read &amp; comment')
       + (OPENCOMMENTS[r.id] ? '<span class="ccount">'+OPENCOMMENTS[r.id]+'</span>' : '') + '</button>';
   } else if (pg && r.live_url) {
     read = '<a class="btn pc-read'+pulse+'" href="'+esc(r.live_url)+'" target="_blank" rel="noopener">&#9654; View the page</a>';
   } else if (r.doc_url) {
-    read = '<a class="btn pc-read'+pulse+'" href="'+esc(r.doc_url)+'" target="_blank" rel="noopener">&#9654; Read the draft</a>';
+    read = '<a class="btn pc-read'+pulse+'" href="'+esc(r.doc_url)+'" target="_blank" rel="noopener">'
+      + (pg && !/docs\.google\.com/i.test(r.doc_url) ? '&#9654; View the page' : '&#9654; Read &amp; comment') + '</a>';
   }
   // View live: the client sees it once the piece is live; the team as soon as there is a link.
   const liveLabel = li ? 'View on LinkedIn' : pg ? 'View live page' : 'View live post';
@@ -6985,10 +6997,10 @@ function picCard(r, staff){
     const canMark = (r.deliverable === 'blog' || li) && r.approved && !isLive;
     const marked = canMark && r.client_status === 'scheduled' && r.live_url;
     const pub = '<button class="notebtn wpbtn" type="button" data-seo="'+id+'" title="Copy the URL, meta title and meta description">'+(li ? 'Meta &amp; source' : 'Target URL &amp; meta')+'</button>'
-      + (ARTICLES[r.id] && !li
+      + (art && !li
         ? '<button class="notebtn wpbtn" type="button" data-wppack="'+id+'" title="HTML with headings, photos, SEO details and schema, ready for WordPress">WordPress pack</button>'
           + '<button class="notebtn wpbtn" type="button" data-wpcopy="'+id+'" title="See the post and its HTML, then copy it for a WordPress Custom HTML block">View &amp; copy HTML</button>' : '')
-      + (ARTICLES[r.id] && li
+      + (art && li
         ? '<button class="notebtn wpbtn" type="button" data-lipack="'+id+'" title="Article ready to paste, banner, meta and promo post">LinkedIn pack</button>' : '')
       + (canMark
         ? '<button class="notebtn wpbtn pc-noidx" type="button" data-pcpublish="'+id+'" title="Press once it is scheduled or live. It asks for the live link and uses the Go-live date.">'
@@ -7086,7 +7098,7 @@ function picCard(r, staff){
 }
 
 function itemCard(r, staff){
-  if (CFG.picCards) return picCard(r, staff);   // hub.json "picture_cards" (Jhen 20/11/2026)
+  if (CFG.picCards && PCSTREAMS.has(r.stream)) return picCard(r, staff);   // hub.json "picture_cards" (Jhen 20/11/2026)
   const id = esc(r.id), st = esc(r.client_status), fs = esc(r.funnel_stage || '');
   if (!staff && CFG.oneStage) return clientCard(r);
   // Written content can only be approved once it exists AND its topic was approved.
