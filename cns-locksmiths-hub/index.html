@@ -634,6 +634,16 @@
   .pc-team .gcta .gurl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pc-team .gcta .gctab{min-width:62px;text-align:center}
   .pc-team .gp-live .notebtn.wpbtn,.pc-team .gp-live .notebtn{font-size:10.5px;letter-spacing:.02em;padding:6px 10px;margin:0;min-height:0}
+  /* Slack profile photos in the Assigned to circles. */
+  .pc-avb.pc-avimg{background:#fff !important;padding:0}
+  .pc-avb.pc-avimg img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+  /* Branded placeholder: logo, headline, and Photo to come (client) or the reason (team). */
+  .pc-ph .pc-phin{gap:8px;padding:0 18px;max-width:100%}
+  .pc-phlogo{height:32px !important;max-width:60%;flex:0 0 auto;object-fit:contain;background:rgba(255,255,255,.94);border-radius:8px;padding:4px 9px;position:static !important;
+    width:auto !important;inset:auto !important}
+  .pc-pht{font-size:16px;font-weight:800;line-height:1.25;color:#fff;max-width:95%;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+    text-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .pc-phwhy{font-size:12px;font-weight:700;line-height:1.35;color:#fff;background:rgba(0,0,0,.32);border-radius:8px;padding:5px 9px;max-width:95%}
   .gp-team .gcta{margin:0}
   .gcard{border:1px solid var(--line);border-radius:11px;background:#fff;padding:12px 13px 13px;
     display:flex;flex-direction:column;gap:7px;min-height:196px}
@@ -6629,8 +6639,10 @@ async function pcLoad(){
     (c.data || []).forEach(x => { (PCCMT[x.item_id] = PCCMT[x.item_id] || []).push(x); });
   }
   ids.forEach(id => {
+    if (!PCCOVER[id]) { const it = ITEMS.find(x => x.id === id);
+      if (it) document.querySelectorAll('[data-pcwhy="' + id + '"]').forEach(x => { x.textContent = pcWhy(it); }); }
     if (PCCOVER[id]) document.querySelectorAll('[data-pcimg="' + id + '"]').forEach(box => {
-      if (box.querySelector('img')) return;
+      if (box.querySelector('img:not(.pc-phlogo)')) return;
       box.classList.remove('pc-ph');
       box.querySelectorAll('.pc-phin').forEach(x => x.remove());
       const img = document.createElement('img'); img.src = PCCOVER[id]; img.alt = ''; img.loading = 'lazy';
@@ -6740,17 +6752,31 @@ function pcTeam(r){
   return [...new Set(t)];
 }
 const PCAVC = { jose: '#1d4f91', jhen: '#7c3aed', janice: '#0e7490', armand: '#b45309', rishikesh: '#15803d', neha: '#be185d', daivesh: '#4338ca' };
+// Their Slack profile photos (ch_team_avatars, staff only, Jhen 20/11/2026); initials until the photos load,
+// or if a photo ever fails to load.
+let PCAV = null;
 function pcTeamHtml(r){
-  return pcTeam(r).map(p => '<span class="pc-avb" tabindex="0" style="background:' + (PCAVC[p] || '#475467') + '" data-tip="' + esc(PERSON(p)) + '" aria-label="' + esc(PERSON(p)) + '">'
-    + pcInitials(PERSON(p)) + '</span>').join('');
+  return pcTeam(r).map(p => {
+    const a = PCAV && PCAV[p], nm = (a && a.full_name) || PERSON(p), ini = pcInitials(PERSON(p));
+    const photo = a && /^https:\/\//.test(a.avatar_url || '');
+    return '<span class="pc-avb' + (photo ? ' pc-avimg' : '') + '" tabindex="0" style="background:' + (PCAVC[p] || '#475467') + '" data-tip="' + esc(nm) + '" aria-label="' + esc(nm) + '">'
+      + (photo ? '<img src="' + esc(a.avatar_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'pc-avimg\');this.replaceWith(\'' + ini + '\')">' : ini)
+      + '</span>';
+  }).join('');
+}
+function pcTeamRepaint(){
+  document.querySelectorAll('[data-pcteam]').forEach(x => { const it = ITEMS.find(y => y.id === x.dataset.pcteam); if (it) x.innerHTML = pcTeamHtml(it); });
 }
 function pcAssigned(r){
   const id = esc(r.id);
   if (PCPM === null && !PCPMASK && typeof sb !== 'undefined' && ME && ME.kind === 'internal') {
     PCPMASK = true;
     sb.rpc('ch_hub_pm', { p_slug: CFG.slug }).then(({ data }) => {
-      if (typeof data !== 'string' || !data) return; PCPM = data;
-      document.querySelectorAll('[data-pcteam]').forEach(x => { const it = ITEMS.find(y => y.id === x.dataset.pcteam); if (it) x.innerHTML = pcTeamHtml(it); });
+      if (typeof data !== 'string' || !data) return; PCPM = data; pcTeamRepaint();
+    });
+    sb.from('ch_team_avatars').select('person,full_name,avatar_url').then(({ data }) => {
+      if (!Array.isArray(data) || !data.length) return;
+      PCAV = {}; data.forEach(a => { if (a && a.person) PCAV[a.person] = a; }); pcTeamRepaint();
     });
   }
   const rv = r.client_reviewer ? ((CLIENTPEOPLE.find(p => p.user_id === r.client_reviewer) || {}).full_name || '') : '';
@@ -6925,6 +6951,31 @@ function pcHead(t){
        + (t.monthLabel ? ' <span class="mname">· '+esc(t.monthLabel)+'</span>' : '')+'</h2></div>'
        + (t.intro ? '<p class="intro">'+esc(t.intro)+'</p>' : '') + htb;
 }
+// The branded placeholder until a piece has a photo (Jhen 20/11/2026): the client's logo and the headline.
+// Clients read "Photo to come"; the team reads why there is no photo, so they can fix it.
+let PCLOGO = null;
+function pcLogo(){
+  if (PCLOGO === null) {
+    PCLOGO = '';
+    const l = document.querySelector('img.cl'), src = l && l.getAttribute('src') || '';
+    try {
+      const m = src.match(/^data:([^;,]+);base64,(.*)$/);   // one small blob link instead of the logo's data in every card
+      if (m) { const b = atob(m[2]), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i);
+               PCLOGO = URL.createObjectURL(new Blob([u], { type: m[1] })); }
+      else if (/^https?:\/\//.test(src)) PCLOGO = src;
+    } catch (e) { PCLOGO = ''; }
+  }
+  return PCLOGO ? '<img class="pc-phlogo" src="' + esc(PCLOGO) + '" alt="">' : '';
+}
+function pcWhy(r){
+  const li = r.deliverable === 'linkedin_article', art = pcArt(r);
+  if (li) return art ? 'No LinkedIn banner yet. It is made with the article.' : 'Not written yet. The banner comes with the article.';
+  if (art) return (r.id in PCCOVER) ? 'Written without a photo. Add one to the article and it shows here.' : 'Loading the photo\u2026';
+  if (r.live_url) return 'Written outside the hub, and its live page has no photo we can use.';
+  if (r.doc_url) return /docs\.google\.com/i.test(r.doc_url) ? 'Written in a Google Doc, not in the hub. Add the live link once it is up and its photo shows here.'
+                                                         : 'Not in the hub yet. Its page has no photo we can use.';
+  return 'Not written yet. The writer adds the photos when it writes it.';
+}
 function picCard(r, staff){
   const id = esc(r.id), st = esc(r.client_status), fs = esc(r.funnel_stage || '');
   const li = r.deliverable === 'linkedin_article', pg = isPage(r);
@@ -6943,8 +6994,9 @@ function picCard(r, staff){
   const pic = cover
     ? '<div class="gp-img" data-pcimg="'+id+'">' + clientBubbleV2(r) + '<img src="'+esc(cover)+'" alt="" loading="lazy"></div>'
     : '<div class="gp-img pc-ph" data-pcimg="'+id+'">' + clientBubbleV2(r)
-      + '<div class="pc-phin"><span class="pc-phk">'+esc(pcType(r))+'</span>'
-      + '<span class="pc-phs">'+(art || r.client_status !== 'started' ? 'Photo to come' : 'Being written')+'</span></div></div>';
+      + '<div class="pc-phin">' + pcLogo() + '<span class="pc-pht">'+esc(r.title)+'</span>'
+      + (staff ? '<span class="pc-phwhy" data-pcwhy="'+id+'">'+esc(pcWhy(r))+'</span>' : '<span class="pc-phs">Photo to come</span>')
+      + '</div></div>';
 
   // Team only: the keyword and its numbers, above the main button (Jhen 20/11/2026). Clients see none of it.
   const kw = [];
