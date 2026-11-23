@@ -7061,10 +7061,12 @@ function picCard(r, staff){
       + (pg && !/docs\.google\.com/i.test(r.doc_url) ? '&#9654; View the page' : '&#9654; Read &amp; comment') + '</a>';
   }
   // View live: the client sees it once the piece is live; the team as soon as there is a link.
+  // Jhen 23/11/2026: a blog or page with a go-live date counts too, since the date now comes with its live link.
   const liveLabel = li ? 'View on LinkedIn' : pg ? 'View live page' : 'View live post';
-  const live = r.live_url && (isLive || staff) && read.indexOf(esc(r.live_url)) < 0
+  const onSite = isLive || (sk === 'sched' && !li);
+  const live = r.live_url && (onSite || staff) && read.indexOf(esc(r.live_url)) < 0
     ? '<a class="btn pc-live'+livePulse+'" href="'+esc(r.live_url)+'" target="_blank" rel="noopener">&#8599; '
-      + (isLive ? liveLabel : (pg ? 'View page (not indexed yet)' : 'View the link')) + '</a>' : '';
+      + (onSite ? liveLabel : (pg ? 'View page (not indexed yet)' : 'View the link')) + '</a>' : '';
 
   // Feedback and old notes as bubbles, with the newest Read & comment comment below them.
   const who = CLIENT_NAME || 'Client';
@@ -7656,9 +7658,19 @@ function wireMonthBrief(el, t){
   }));
   el.querySelectorAll('[data-sched]').forEach(inp => inp.addEventListener('change', async () => {
     const id = inp.dataset.sched, it = ITEMS.find(r => r.id === id);
+    // Go-live date + live link (Jhen 23/11/2026): a blog or page gets its live link in the same step, so the
+    // switch to Published on the day is only us checking the link works. GBP and LinkedIn stay date only.
+    let link = null;
+    if (inp.value && (it.deliverable === 'blog' || it.deliverable === 'page')) {
+      const site = (ITEMS.map(x => x.live_url).find(u => /^https?:\/\//i.test(u || '') && !/linkedin\.com/i.test(u)) || '').replace(/^(https?:\/\/[^/]+).*$/i, '$1');
+      const guess = it.live_url || (it.target_url ? (/^https?:\/\//i.test(it.target_url) ? it.target_url : site + (it.target_url.startsWith('/') ? '' : '/') + it.target_url) : site);
+      link = (prompt('Goes live ' + ausDate(inp.value) + '. Now the live link of "' + it.title + '" (needed for blogs and pages). Check it, then press OK.', guess) || '').trim();
+      if (!/^https?:\/\/\S+$/i.test(link)) { inp.value = it.scheduled_for || ''; badge(link ? 'That does not look like a web address.' : 'Add the live link to set a go-live date.', 'err'); return; }
+    }
     badge('Saving…');
-    const { error } = await sb.rpc('ch_set_schedule', { p_item_id: id, p_date: inp.value || null });
-    if (error) { inp.value = it.scheduled_for || ''; badge(/approve/i.test(error.message) ? 'Approve the content first.' : 'Could not save the date.','err'); return; }
+    const { error } = await sb.rpc('ch_set_schedule', link ? { p_item_id: id, p_date: inp.value, p_live_url: link } : { p_item_id: id, p_date: inp.value || null });
+    if (error) { inp.value = it.scheduled_for || ''; badge(/approve/i.test(error.message) ? 'Approve the content first.' : /live link/i.test(error.message) ? 'Add the live link to set a go-live date.' : 'Could not save the date.','err'); return; }
+    if (link) it.live_url = link;
     it.scheduled_for = inp.value || null;
     if (inp.value && it.client_status !== 'live') it.client_status = 'scheduled';
     if (!inp.value && it.client_status === 'scheduled') it.client_status = 'approved';
