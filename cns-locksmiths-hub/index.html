@@ -545,6 +545,9 @@
   .pc-cmall{appearance:none;border:0;background:none;cursor:pointer;padding:0 0 0 39px;text-align:left;
     font-size:12.5px;font-weight:800;color:var(--accent-ink)}
   .pc-cmall:hover{text-decoration:underline}
+  .pc-cm.pcres{opacity:.6}
+  .pc-res{font-size:10.5px;font-weight:700;color:#5f6671;background:#eef0f3;border-radius:999px;padding:1px 7px}
+  .pc-cm.pcfb .pc-cmx{white-space:pre-line}
   /* Approve and Not approved, dressed as the GBP buttons. */
   .pc-tick{display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;user-select:none;position:relative}
   .pc-tick input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
@@ -6646,7 +6649,7 @@ async function pcLoad(){
   const need = ids.filter(id => !(id in PCCOVER));
   const [a, c] = await Promise.all([
     need.length ? sb.from('ch_item_articles').select('item_id,html').in('item_id', need) : Promise.resolve({ data: [] }),
-    sb.from('ch_item_comments').select('item_id,author_name,author_kind,body,status,created_at').in('item_id', ids).order('created_at', { ascending: false })
+    sb.from('ch_item_comments').select('item_id,author_name,author_kind,body,status,created_at,resolved_name,resolved_at').in('item_id', ids).order('created_at', { ascending: false })
   ]);
   if (!a.error) {
     need.forEach(id => { PCCOVER[id] = ''; });
@@ -6669,7 +6672,9 @@ async function pcLoad(){
       const img = document.createElement('img'); img.src = PCCOVER[id]; img.alt = ''; img.loading = 'lazy';
       box.appendChild(img);
     });
-    document.querySelectorAll('[data-pccmt="' + id + '"]').forEach(box => { box.innerHTML = pcCmtHtml(id); box.hidden = !box.innerHTML; });
+    document.querySelectorAll('[data-pccmt="' + id + '"]').forEach(box => { box.innerHTML = pcCmtHtml(id); box.hidden = !box.innerHTML;
+      // Jhen 23/11/2026: the bubble is filled after the month was wired, so its button needs its own listener.
+      box.querySelectorAll('[data-read]').forEach(b => b.addEventListener('click', () => openArticle(b.dataset.read))); });
   });
 }
 function pcType(r){
@@ -6687,6 +6692,8 @@ function pcInitials(name){
   const p = String(name || '?').trim().split(/\s+/);
   return esc(((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase());
 }
+// Who sent it back (Jhen 23/11/2026): the person's first name from ch_rejection_stamps, else the client's name.
+function pcRejecter(r, who){ const x = (typeof NASTAMP !== 'undefined') && NASTAMP[r.id]; return (x && x.rejecter) || who; }
 // One comment bubble: a round initials picture, the name, the time and two lines of the comment.
 function pcBubble(name, label, kind, when, text){
   return '<div class="pc-cm ' + esc(kind) + '"><span class="pc-av">' + pcInitials(name) + '</span>'
@@ -6698,9 +6705,15 @@ function pcBubble(name, label, kind, when, text){
 function pcCmtHtml(id){
   const list = PCCMT[id] || [];
   if (!list.length) return '';
-  const c = list[0];
-  return pcBubble(c.author_name || '', c.author_kind === 'client' ? 'Client' : 'Ready to Rank', c.author_kind === 'client' ? 'cl' : 'tm',
-      c.created_at ? pcAgo(c.created_at) : '', c.body || '')
+  // Jhen 23/11/2026: open comments before resolved ones; a resolved one keeps showing, greyed, with who resolved it.
+  const c = list.filter(x => x.status !== 'resolved').concat(list.filter(x => x.status === 'resolved'))[0];
+  const res = c.status === 'resolved';
+  const when = res ? 'Resolved' + (c.resolved_name ? ' by ' + c.resolved_name : '') + (c.resolved_at ? ', ' + ausDate(new Date(c.resolved_at).toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' })) : '')
+                   : (c.created_at ? pcAgo(c.created_at) : '');
+  let bub = pcBubble(c.author_name || '', c.author_kind === 'client' ? 'Client' : 'Ready to Rank', (c.author_kind === 'client' ? 'cl' : 'tm') + (res ? ' pcres' : ''),
+      when, c.body || '');
+  if (res) bub = bub.replace('</b>', () => '</b><span class="pc-res">&#10003; Resolved</span>');
+  return bub
     + '<button type="button" class="pc-cmall" data-read="' + esc(id) + '">'
     + (list.length > 1 ? 'View all ' + list.length + ' comments' : 'Open the comment') + '</button>';
 }
@@ -6858,7 +6871,7 @@ function pcGpCard(r, staff){
   PCGPIN = true; let h; try { h = gpCard(r, staff); } finally { PCGPIN = false; }
   const who = CLIENT_NAME || 'Client';
   if (r.not_approved && !r.approved && r.not_approved_reason) {
-    const nb = pcBubble(staff ? who : 'You', staff ? 'Not approved' : 'Feedback', 'pcfb', r.not_approved_at ? pcAgo(r.not_approved_at) : '', r.not_approved_reason);
+    const nb = pcBubble(staff ? pcRejecter(r, who) : 'You', staff ? 'Not approved' : 'Feedback', 'pcfb', r.not_approved_at ? pcAgo(r.not_approved_at) : '', r.not_approved_reason);
     h = h.replace('<div class="gp-fb"><b>' + (staff ? 'Client feedback' : 'Your feedback') + '</b>' + esc(r.not_approved_reason) + '</div>', () => nb);
   }
   if (staff && CFG.stagePills) {
@@ -7056,7 +7069,7 @@ function picCard(r, staff){
   // Feedback and old notes as bubbles, with the newest Read & comment comment below them.
   const who = CLIENT_NAME || 'Client';
   const fb = r.not_approved && !done && r.not_approved_reason
-    ? pcBubble(staff ? who : 'You', staff ? 'Not approved' : 'Feedback', 'pcfb', r.not_approved_at ? pcAgo(r.not_approved_at) : '', r.not_approved_reason) : '';
+    ? pcBubble(staff ? pcRejecter(r, who) : 'You', staff ? 'Not approved' : 'Feedback', 'pcfb', r.not_approved_at ? pcAgo(r.not_approved_at) : '', r.not_approved_reason) : '';
   const note = r.client_notes ? pcBubble(staff ? who : 'You', 'Note', 'cl', '', r.client_notes) : '';
   const cmt = '<div class="pc-cmts" data-pccmt="'+id+'"'+(cmts.length ? '' : ' hidden')+'>' + (cmts.length ? pcCmtHtml(r.id) : '') + '</div>';
 
