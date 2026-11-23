@@ -1393,6 +1393,8 @@
   .qcrow .qcauto ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:3px}
   .qcrow .qa-ok{color:#1c7c54;font-weight:700}.qcrow .qa-bad{color:#b42318;font-weight:700}.qcrow .qa-na{color:var(--muted)}
   .qcrow .qclist{display:grid;gap:6px;padding-top:8px;border-top:1px solid var(--line)}
+  .qcall{margin-left:8px;padding:2px 10px;border:1px solid #1c7c54;border-radius:999px;background:#fff;color:#1c7c54;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  .qcall:hover{background:#1c7c54;color:#fff}
   .qcsave{color:#1c7c54;font-style:italic}.qcsave:empty{display:none}.qcsave.qcsave-bad{color:#b42318;font-style:normal;font-weight:700}
   .qcrow .qcitem{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
   .qcrow .qcitem input{margin-top:3px;width:16px;height:16px;flex:none}
@@ -5352,6 +5354,7 @@ function qcListHtml(id, can){
   const note = saved && a && saved.article_version !== a.version
     ? '<div class="qcsc">Ticked by ' + esc(saved.checked_name || '') + ' on an earlier version. The blog has changed since, so tick again.</div>' : '';
   return '<div class="qclist" data-qclist="' + esc(id) + '"><div><b>QC checklist</b> <span class="qcsc" data-qccount="' + esc(id) + '">' + done + ' of ' + qcItems(id).length + ' ticked</span>'
+    + (can ? ' <button type="button" class="qcall" data-qcall="' + esc(id) + '">' + (done === qcItems(id).length ? 'Untick all' : 'Tick all') + '</button>' : '')
     + (can ? ' <span class="qcsc qcsave" data-qcsaved="' + esc(id) + '"></span>' : '') + '</div>' + note
     + qcItems(id).map(i => '<label class="qcitem"><input type="checkbox" data-qctick="' + esc(id) + '" data-qckey="' + esc(i.key) + '"'
         + (t[i.key] === true ? ' checked' : '') + (can ? '' : ' disabled') + '><span><b>' + esc(i.label) + ':</b> ' + esc(i.help) + '</span></label>').join('')
@@ -5360,6 +5363,24 @@ function qcListHtml(id, can){
     + esc(QCNOTES[id] || '') + '</textarea></label>'
     + '</div>';
 }
+
+/* Tick all (project managers, Jhen 23/11/2026): one click ticks every item in that checklist. Each box is
+   changed through its own change handler, so the count, QC approve and the autosave behave exactly as if
+   the boxes were ticked one by one. When all are ticked the button reads Untick all. */
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-qcall]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const list = b.closest('.qclist'); if (!list) return;
+  const boxes = [...list.querySelectorAll('input[data-qctick]')].filter(cb => !cb.disabled);
+  const on = !boxes.every(cb => cb.checked);
+  boxes.forEach(cb => { if (cb.checked !== on) { cb.checked = on; cb.dispatchEvent(new Event('change', { bubbles: true })); } });
+  b.textContent = on ? 'Untick all' : 'Tick all';
+});
+document.addEventListener('change', e => {
+  const cb = e.target.closest && e.target.closest('input[data-qctick]'); if (!cb) return;
+  const list = cb.closest('.qclist'), b = list && list.querySelector('[data-qcall]'); if (!b) return;
+  b.textContent = [...list.querySelectorAll('input[data-qctick]')].every(x => x.checked) ? 'Untick all' : 'Tick all';
+});
 
 function qcPanel(r, staff){
   const a = ARTICLES[r.id];
