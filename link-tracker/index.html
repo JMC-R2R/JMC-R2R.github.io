@@ -189,6 +189,9 @@
   .note b{color:var(--text)}
   .empty{padding:30px; text-align:center; color:var(--muted); font-size:13px}
   .hide{display:none !important}
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+  .form.editing{border-color:var(--blue); box-shadow:0 0 0 1px var(--blue)}
+  tbody tr.editing td{background:rgba(23,180,240,.08)}
   @media (max-width:640px){ main{padding:14px} header{padding:12px 14px} }
 </style>
 </head>
@@ -243,14 +246,15 @@
       <div class="cards" id="cards"></div>
     </section>
 
-    <section>
-      <h2>Log a placement</h2>
-      <p class="sub">Same fields as the spreadsheet. Client is a list, never typed &mdash; that's the one change, and it's why per-client totals will now add up.</p>
-      <div class="form">
+    <section id="formSection">
+      <h2 id="formTitle">Log a placement</h2>
+      <p class="sub" id="formSub">Same fields as the spreadsheet. Client is a list, never typed &mdash; that's the one change, and it's why per-client totals will now add up.</p>
+      <div class="form" id="placementForm">
         <div class="grid">
           <div class="fld"><label for="f_client">Client</label><select id="f_client"></select></div>
           <div class="fld"><label for="f_type">Link Type</label><select id="f_type">
-            <option>Guest Post</option><option>Link Insert</option></select></div>
+            <option>Guest Post</option><option>Link Insert</option><option>Citations</option><option>Paid Listings</option>
+            <option>PR</option><option>Directory Listing</option><option>404/Broken Link</option><option>Resource page</option></select></div>
           <div class="fld"><label for="f_status">Status</label><select id="f_status">
             <option>In Progress</option><option>Waiting</option><option>For Publication</option>
             <option selected>Live</option><option>Declined</option></select></div>
@@ -294,6 +298,7 @@
         <div class="formfoot">
           <button class="btn" id="save">Add placement</button>
           <button class="btn ghost" id="clear">Clear</button>
+          <button class="btn ghost hide" id="cancelEdit">Cancel edit</button>
           <span class="err" id="formErr" style="margin:0"></span>
           <span class="ok hide" id="formOk">Saved.</span>
         </div>
@@ -306,7 +311,7 @@
       <div class="tw">
         <table style="min-width:1400px">
           <thead><tr>
-            <th>Client</th><th>Link Type</th><th>Target Domain</th><th>Live URL</th><th>Target URL</th>
+            <th><span class="sr-only">Edit</span></th><th>Client</th><th>Link Type</th><th>Target Domain</th><th>Live URL</th><th>Target URL</th>
             <th>Anchor</th><th class="n">DR</th><th class="n">ST</th>
             <th>Status</th><th>Verified</th><th class="n">Cost</th><th>Date</th><th>Invoice</th>
           </tr></thead>
@@ -427,6 +432,7 @@ const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let CLIENTS = [], EMAIL = "", CAN_PAY = false, NAMES = {}, PARTNERS = [], ALL_LINKS = [], MONTH_ROWS = [];
+let EDITING = null;   // the saved placement loaded into the form, or null when adding a new one
 
 /* ---------- dates (local time, not UTC — toISOString drifts a day/month in AU) ---------- */
 const pad = n => String(n).padStart(2,'0');
@@ -625,7 +631,8 @@ function drawRows(){
     const opts = STATUSES.map(s =>
       `<option${s === r.status ? ' selected' : ''}>${s}</option>`).join('');
     const dom = normDomain(r.target_domain);
-    return `<tr>
+    return `<tr${EDITING && EDITING.id === r.id ? ' class="editing"' : ''}>
+      <td><button class="btn sm ghost" data-act="editrow" data-id="${r.id}">Edit</button></td>
       <td>${esc(clientName(r.client_slug))}</td>
       <td>${esc(r.link_type)}</td>
       <td>${dom ? `<a href="#partner/${encodeURIComponent(dom)}">${esc(r.target_domain)}</a>` : ''}</td>
@@ -648,7 +655,10 @@ function drawRows(){
       const { error } = await sb.from('lb_links')
         .update({ status: sel.value }).eq('id', sel.dataset.id);
       sel.disabled = false;
-      if (error) alert(error.message); else refresh();
+      if (error) { alert(error.message); return; }
+      // Keep an open edit in step, so Save changes doesn't put the old status back.
+      if (EDITING && EDITING.id === sel.dataset.id){ EDITING.status = sel.value; $('f_status').value = sel.value; }
+      refresh();
     };
   });
 }
@@ -667,6 +677,7 @@ $('rows').addEventListener('click', async e => {
   const b = e.target.closest('button[data-act]'); if (!b) return;
   const r = MONTH_ROWS.find(x => x.id === b.dataset.id); if (!r) return;
   const act = b.dataset.act;
+  if (act === 'editrow') return startEdit(r);
   if (act === 'edit') return openInvoiceEditor(r);
   b.disabled = true;
   let res;
@@ -740,6 +751,69 @@ $('clear').onclick = () => {
   $('formErr').textContent = "";
 };
 
+/* ---------- edit a saved placement ----------
+   Edit loads the row into the same form used to add one, so every field can be
+   changed, not just the few the table shows. Save changes updates that row. */
+const INV_FIELDS = ['f_invref','f_invstatus','f_due','f_duecustom'];
+const invLocked = r => r && r.invoice_status === 'Paid' && !CAN_PAY;
+
+function startEdit(r){
+  exitEdit(true);
+  EDITING = r;
+  const set = (id, v) => { $(id).value = v == null ? '' : v; };
+  // A client or type no longer in the list still needs to show, so add it for this edit.
+  const ensure = (id, v) => { if (v && ![...$(id).options].some(o => o.value === v)) {
+    const o = document.createElement('option'); o.value = o.textContent = v; o.dataset.tmp = '1'; $(id).appendChild(o); } };
+  ensure('f_client', r.client_slug); ensure('f_type', r.link_type);
+  set('f_client', r.client_slug); set('f_type', r.link_type); set('f_status', r.status);
+  set('f_targetdomain', r.target_domain); set('f_dr', r.dr); set('f_st', r.st);
+  set('f_liveurl', r.live_url); set('f_targeturl', r.target_url); set('f_anchor', r.anchor);
+  set('f_cost', r.cost_ex_gst); set('f_date', r.placed_on); set('f_category', r.category);
+  set('f_pubname', r.publisher_name); set('f_pubemail', r.publisher_email);
+  set('f_content', r.content_status); set('f_doc', r.doc_link); set('f_notes', r.notes);
+  set('f_collab', r.open_to_collab == null ? '' : String(r.open_to_collab));
+  set('f_invref', r.invoice_ref);
+  if (invLocked(r)) ensure('f_invstatus', 'Paid');
+  set('f_invstatus', r.invoice_status);
+  set('f_due', r.payment_due_choice);
+  set('f_duecustom', r.payment_due_choice === 'custom' && r.payment_due_at ? toLocalInput(r.payment_due_at) : '');
+  // Only Jose or Jhenyflor can change a paid invoice, so lock those fields for everyone else.
+  INV_FIELDS.forEach(i => $(i).disabled = invLocked(r));
+  dueHint();
+
+  $('formTitle').textContent = 'Edit placement · ' + clientName(r.client_slug);
+  $('formSub').textContent = 'Change any field, then press Save changes. Cancel edit leaves the placement as it was.';
+  $('save').textContent = 'Save changes';
+  $('clear').classList.add('hide');
+  $('cancelEdit').classList.remove('hide');
+  $('placementForm').classList.add('editing');
+  $('moreBox').open = true;
+  $('formErr').textContent = ''; $('formOk').classList.add('hide');
+  drawRows();
+  $('formSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function exitEdit(quiet){
+  const was = EDITING;
+  EDITING = null;
+  document.querySelectorAll('#placementForm option[data-tmp]').forEach(o => o.remove());
+  INV_FIELDS.forEach(i => $(i).disabled = false);
+  $('formTitle').textContent = 'Log a placement';
+  $('formSub').innerHTML = "Same fields as the spreadsheet. Client is a list, never typed &mdash; that's the one change, and it's why per-client totals will now add up.";
+  $('save').textContent = 'Add placement';
+  $('clear').classList.remove('hide');
+  $('cancelEdit').classList.add('hide');
+  $('placementForm').classList.remove('editing');
+  if (!was || quiet) return;
+  $('clear').click();
+  if (CLIENTS.length) $('f_client').value = CLIENTS[0].client_slug;
+  $('f_type').value = 'Guest Post'; $('f_status').value = 'Live'; $('f_collab').value = '';
+  $('f_date').value = dkey(new Date());
+  $('moreBox').open = false;
+  drawRows();
+}
+$('cancelEdit').onclick = () => exitEdit();
+
 // Picking a known partner fills in what we already know about it.
 $('f_targetdomain').addEventListener('change', () => {
   const p = PARTNERS.find(x => x.domain === normDomain($('f_targetdomain').value));
@@ -761,14 +835,15 @@ $('save').onclick = async () => {
     $('formErr').textContent = "A Live link needs a Live URL — otherwise it can never be verified.";
     return;
   }
+  const locked = invLocked(EDITING);
   const invStatus = $('f_invstatus').value || null;
-  if (invStatus === 'Raised' && !val('f_invref')){
+  if (!locked && invStatus === 'Raised' && !val('f_invref')){
     $('formErr').textContent = "A raised invoice needs its PayPal link.";
     $('moreBox').open = true; return;
   }
   const choice = $('f_due').value || null;
   let dueAt = null;
-  if (choice === 'custom'){
+  if (!locked && choice === 'custom'){
     if (!$('f_duecustom').value){ $('formErr').textContent = "Pick the payment due date and time."; $('moreBox').open = true; return; }
     dueAt = new Date($('f_duecustom').value).toISOString();
   }
@@ -798,6 +873,31 @@ $('save').onclick = async () => {
     notes:       val('f_notes'),
     submitted_by: EMAIL
   };
+
+  if (EDITING){
+    // Keep the row's own month and who logged it.
+    delete row.month_key; delete row.submitted_by;
+    if (locked){ ['invoice_ref','invoice_status','payment_due_choice','payment_due_at'].forEach(k => delete row[k]); }
+    // Leave the due date alone unless it's a picked date. The database recalculates
+    // it when the due option changes.
+    else if (choice !== 'custom') delete row.payment_due_at;
+    // A different live page means the old check no longer applies. Clear it so the
+    // checker looks again.
+    if ((row.live_url || null) !== (EDITING.live_url || null) || (row.target_url || null) !== (EDITING.target_url || null)){
+      Object.assign(row, { verified_live: null, verified_on: null, verify_note: null, went_dead_on: null, first_seen_live_on: null });
+    }
+    $('save').disabled = true;
+    const { error } = await sb.from('lb_links').update(row).eq('id', EDITING.id);
+    $('save').disabled = false;
+    if (error){ $('formErr').textContent = error.message; return; }
+    exitEdit();
+    $('formOk').textContent = 'Changes saved.';
+    $('formOk').classList.remove('hide');
+    setTimeout(() => { $('formOk').classList.add('hide'); $('formOk').textContent = 'Saved.'; }, 2500);
+    refresh();
+    return;
+  }
+
   $('save').disabled = true;
   const { error } = await sb.from('lb_links').insert(row);
   $('save').disabled = false;
