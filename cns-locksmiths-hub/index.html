@@ -1950,12 +1950,12 @@
   .upcta-end h4{font-size:22px}
   /* Approved stamp on content cards (Jhen 12/11/2026). Sits in the top right corner, never takes clicks. */
   .ap-on{position:relative;margin-top:20px}
-  .card.ap-on,.gcard.ap-on{padding-top:38px}
+  .card.ap-on,.gcard.ap-on{padding-top:48px}
   .ap-stamp{position:absolute;top:-16px;right:14px;transform:rotate(-6deg);border:3px double var(--stamp-ink,#1c9b5e);color:var(--stamp-ink,#1c9b5e);
-    border-radius:9px;padding:2px 9px 3px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;font-size:12.5px;line-height:1.05;
+    border-radius:9px;padding:2px 9px 3px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;font-size:16px;line-height:1.1;
     text-align:center;background:rgba(255,255,255,.9);pointer-events:none;z-index:3;opacity:.92}
-  .ap-stamp em{display:block;font-style:normal;font-size:9px;letter-spacing:.2em;border-bottom:1.5px solid currentColor;padding-bottom:2px;margin-bottom:2px}
-  .ap-stamp small{display:block;font-size:9px;letter-spacing:.04em;border-top:1.5px solid currentColor;padding-top:2px;margin-top:2px;text-transform:none;font-weight:700}
+  .ap-stamp em{display:block;font-style:normal;font-size:11px;letter-spacing:.2em;border-bottom:1.5px solid currentColor;padding-bottom:2px;margin-bottom:2px}
+  .ap-stamp small{display:block;font-size:12px;letter-spacing:.04em;border-top:1.5px solid currentColor;padding-top:2px;margin-top:2px;text-transform:none;font-weight:700}
   .ap-stamp.ap-new{animation:audstamp .6s cubic-bezier(.2,1.4,.4,1) both}
   .gp-card.ap-on{margin-top:0}
   .gp-card .ap-stamp{top:44px;right:10px}
@@ -1965,7 +1965,7 @@
   @keyframes qcpop{0%{opacity:1;transform:translate(0,0) rotate(0)}70%{opacity:1}
     100%{opacity:0;transform:translate(var(--x),calc(var(--y) + 40px)) rotate(var(--r))}}
   @media (prefers-reduced-motion:reduce){.ap-stamp.ap-new{animation:none}}
-  @media screen and (max-width:700px){.ap-stamp{font-size:11px;right:8px;top:-14px}.card.ap-on,.gcard.ap-on{padding-top:34px}}
+  @media screen and (max-width:700px){.ap-stamp{font-size:14px;right:8px;top:-14px}.card.ap-on,.gcard.ap-on{padding-top:44px}}
   /* Branded stamp (Jhen 12/11/2026): the client's logo in its own colours, then APPROVED or NOT APPROVED and
      who and when in their main colour. No box. Inside the card's top right; the card makes room above. */
   .ap-brand{top:10px;right:14px;border:0;background:none;border-radius:0;padding:0;opacity:1;transform:rotate(-4deg);
@@ -1977,15 +1977,15 @@
   .ap-brand.ap-no b{font-size:calc(16px * var(--ap-size,1))}
   .ap-brand small{border:0;margin:0;padding:0;font-size:11px;font-weight:600;line-height:1.15;letter-spacing:0;white-space:nowrap}
   /* Style B seal (12/11/2026): about 80px, half over the card's top edge like a stamp pressed on the corner. */
-  .ap-seal{display:block;top:-24px;right:16px;width:calc(80px * var(--ap-size,1));height:calc(80px * var(--ap-size,1));
+  .ap-seal{display:block;top:-30px;right:16px;width:calc(112px * var(--ap-size,1));height:calc(112px * var(--ap-size,1));
     transform:rotate(-8deg);opacity:.95;max-width:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.08))}
   .ap-seal svg{display:block;width:100%;height:100%;overflow:visible}
   .ap-seal text{font-family:Oswald,'Arial Narrow',Impact,sans-serif;font-weight:600;fill:currentColor}
-  .card.ap-on.ap-big,.gcard.ap-on.ap-big{padding-top:calc(60px * var(--ap-size,1))}
-  .ap-on.ap-big{margin-top:30px}
+  .card.ap-on.ap-big,.gcard.ap-on.ap-big{padding-top:calc(86px * var(--ap-size,1))}
+  .ap-on.ap-big{margin-top:36px}
   .gp-card.ap-on.ap-big{margin-top:0}
   .gp-card .ap-seal{top:40px;right:10px}
-  @media screen and (max-width:700px){.ap-seal{width:68px;height:68px;right:10px;top:-20px}.card.ap-on.ap-big,.gcard.ap-on.ap-big{padding-top:52px}}
+  @media screen and (max-width:700px){.ap-seal{width:92px;height:92px;right:10px;top:-24px}.card.ap-on.ap-big,.gcard.ap-on.ap-big{padding-top:70px}}
 </style>
 </head>
 <body>
@@ -2744,7 +2744,9 @@ let AP_UID = 0;
 function apFit(t, arc, max){ return Math.min(max, arc / (Math.max(t.length, 1) * 0.78)).toFixed(2); }
 function apBrandStampHtml(no, who, when){
   const st = CFG.stamp || {}, id = 'apseal' + (++AP_UID), top = no ? 'NOT APPROVED' : 'APPROVED', bot = st.name || '';
-  const line = [esc((who || '').split(' ')[0]), esc(when || '')].filter(Boolean).join(' &#183; ').toUpperCase();
+  // Name and date on their own lines, as large as the inner ring allows (Jhen 24/11/2026: make who and when readable).
+  const nm = String((who || '').split(' ')[0]).toUpperCase(), dt = String(when || '').toUpperCase();
+  const fit = (t, w, max) => Math.min(max, w / (Math.max(t.length, 1) * 0.6)).toFixed(2);
   return '<span class="ap-stamp ap-brand ap-seal' + (no ? ' ap-no' : '') + '" aria-hidden="true">'
     + '<svg viewBox="0 0 100 100"><defs><path id="' + id + 't" d="M 12.5 50 A 37.5 37.5 0 1 1 87.5 50"/>'
     + '<path id="' + id + 'b" d="M 6.5 50 A 43.5 43.5 0 0 0 93.5 50"/></defs>'
@@ -2753,9 +2755,24 @@ function apBrandStampHtml(no, who, when){
     + '<circle cx="8" cy="50" r="1.7" fill="currentColor"/><circle cx="92" cy="50" r="1.7" fill="currentColor"/>'
     + '<text font-size="' + apFit(top, 100, 9.2) + '" letter-spacing="1.2" text-anchor="middle"><textPath href="#' + id + 't" startOffset="50%">' + top + '</textPath></text>'
     + '<text font-size="' + apFit(bot, 118, 8.6) + '" letter-spacing=".6" text-anchor="middle"><textPath href="#' + id + 'b" startOffset="50%">' + esc(bot) + '</textPath></text>'
-    + (st.src ? '<image href="' + st.src + '" x="23" y="25" width="54" height="34" preserveAspectRatio="xMidYMid meet"/>' : '')
-    + (line ? '<text x="50" y="72" text-anchor="middle" font-size="7.6" letter-spacing=".4">' + line + '</text>' : '')
+    + (st.src ? '<image href="' + st.src + '" x="28" y="19" width="44" height="30" preserveAspectRatio="xMidYMid meet"/>' : '')
+    + (nm ? '<text x="50" y="' + (dt ? 64 : 69) + '" text-anchor="middle" font-size="' + fit(nm, 62, 12.5) + '" font-weight="700" letter-spacing=".3">' + esc(nm) + '</text>' : '')
+    + (dt ? '<text x="50" y="' + (nm ? 76 : 69) + '" text-anchor="middle" font-size="' + fit(dt, 48, 9.5) + '" font-weight="600" letter-spacing=".4">' + esc(dt) + '</text>' : '')
     + '</svg></span>';
+}
+/* Who approved, for the stamp and the stage pill (Jhen 24/11/2026). Staff approvals showed a blank name
+   until a reload, because only a client's own name was used for an approval made in this session. Any
+   signed-in person now stamps their own first name; after a reload ch_approval_stamps supplies it (it returns
+   a row for every approved item). An undone approval forgets its stamp, so a re-approval names whoever
+   ticked it, not the earlier approver. */
+function apMeFirst(){ return ME && ME.name ? String(ME.name).split(' ')[0] : ''; }
+function apApproverStamp(r){
+  if (!r.approved) { delete APSTAMP[r.id]; return null; }
+  return APSTAMP[r.id] || (APSTAMP[r.id] = { approver: apMeFirst(), approved_at: new Date().toISOString() });
+}
+function apRejecterStamp(r){
+  if (!r.not_approved) { delete NASTAMP[r.id]; return null; }
+  return NASTAMP[r.id] || (NASTAMP[r.id] = { rejecter: apMeFirst(), rejected_at: new Date().toISOString() });
 }
 function apBrand(){
   const a = (typeof AUDITS !== 'undefined' ? AUDITS : []).find(x => /aud-brandmark/.test(x.body_html || ''));
@@ -2770,11 +2787,11 @@ function apStampAll(el){
     card.querySelectorAll(':scope > .ap-stamp').forEach(x => x.remove());
     card.classList.remove('ap-on', 'ap-big');
     if (!r) return;
+    if (!r.approved) apApproverStamp(r);           // forget a stamp from an undone approval
+    if (!r.not_approved) apRejecterStamp(r);
     const no = !r.approved && !!r.not_approved;
     if (!r.approved && !(no && branded)) return;    // the plain text stamp was Approved only
-    const me = ME && ME.kind === 'client' ? (ME.name || '').split(' ')[0] : '';
-    const s = no ? (NASTAMP[r.id] || (NASTAMP[r.id] = { rejecter: me, rejected_at: new Date().toISOString() }))
-                 : (APSTAMP[r.id] || (APSTAMP[r.id] = { approver: me, approved_at: r.approved_at || new Date().toISOString() }));
+    const s = no ? apRejecterStamp(r) : apApproverStamp(r);
     const key = (no ? 'n:' : 'a:') + r.id;
     seen.add(key);
     card.classList.add('ap-on');
@@ -5271,8 +5288,10 @@ function itemStage(r){
   const on = x => x ? ' · ' + ausDate(x) : '';
   if (r.client_status === 'live') return { cls:'b-live', label:'Published' + on(r.scheduled_for) };
   if (r.client_status === 'scheduled' || (r.approved && r.scheduled_for)) return { cls:'b-sched', label:'Scheduled' + on(r.scheduled_for) };
-  if (r.approved) return { cls:'b-ok', label:'Approved by the client' };
-  if (r.not_approved) return { cls:'b-changes', label:'Client asked for changes' };
+  if (r.approved) { const s = apApproverStamp(r), who = s && s.approver ? String(s.approver).split(' ')[0] : '';
+    return { cls:'b-ok', label: (who ? 'Approved by ' + who : 'Approved') + (s && s.approved_at ? ' · ' + audWhen(s.approved_at) : '') }; }
+  if (r.not_approved) { const s = apRejecterStamp(r), who = s && s.rejecter ? String(s.rejecter).split(' ')[0] : '';
+    return { cls:'b-changes', label: who ? 'Changes asked by ' + who : 'Changes asked for' }; }
   if (r.client_status === 'for_approval') return { cls:'b-client', label:'With the client' };
   if (topicWaiting(r)) return { cls:'b-client', label:'Topic with the client' };
   if (r.stream === 'gbp')
