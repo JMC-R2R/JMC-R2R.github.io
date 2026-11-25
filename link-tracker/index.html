@@ -287,7 +287,7 @@
           <div class="grid" style="margin-top:12px">
             <div class="fld"><label for="f_invref">PayPal invoice link</label><input id="f_invref" placeholder="https://www.paypal.com/invoice/…"></div>
             <div class="fld"><label for="f_invstatus">Invoice status</label><select id="f_invstatus">
-              <option value="">—</option><option>Not raised</option><option>Raised</option><option class="payerOnly">Paid</option></select></div>
+              <option value="">—</option><option>Not raised</option><option>Not needed</option><option>Raised</option><option class="payerOnly">Paid</option></select></div>
             <div class="fld"><label for="f_due">Payment due</label><select id="f_due"></select>
               <input id="f_duecustom" type="datetime-local" class="hide" aria-label="Pick a due date and time">
               <span class="hint" id="f_duehint"></span></div>
@@ -603,7 +603,8 @@ function invoiceCell(r){
   const st = r.invoice_status;
   const chip = st === 'Paid' ? '<span class="vf y">paid</span>'
              : st === 'Raised' ? '<span class="vf a">raised</span>'
-             : st === 'Not raised' ? '<span class="vf p">not raised</span>' : '';
+             : st === 'Not raised' ? '<span class="vf p">not raised</span>'
+             : st === 'Not needed' ? '<span class="vf p" style="opacity:.6">not needed</span>' : '';
   const link = r.invoice_ref ? `<a href="${esc(r.invoice_ref)}" target="_blank" rel="noopener" class="mono" style="font-size:11px">PayPal ↗</a>` : '';
   const follow = r.last_followed_up_at
     ? `<span class="fnote">Followed up ${esc(shortDate(r.last_followed_up_at))} by ${esc(nameOf(r.last_followed_up_by))}</span>` : '';
@@ -690,7 +691,7 @@ $('rows').addEventListener('click', async e => {
 
 function openInvoiceEditor(r){
   const box = $('inv_' + r.id);
-  const statuses = ['Not raised','Raised'].concat(CAN_PAY ? ['Paid'] : []);
+  const statuses = ['Not raised','Not needed','Raised'].concat(CAN_PAY ? ['Paid'] : []);
   const choice = r.payment_due_choice || '';
   box.innerHTML = `<div class="inl">
     <label class="lbl-sm" for="ie_ref_${r.id}">PayPal invoice link</label>
