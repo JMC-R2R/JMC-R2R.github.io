@@ -6950,7 +6950,7 @@ function gpCard(r, staff){
               + (tags ? '<div class="gp-tags">' + tags + '</div>' : '')
               + (staff && CFG.gbpEdit ? capEdRow(r) : '')
             + '</div>'
-          : '<div class="gp-sub">The post is being written.</div>')
+          : '<div class="gp-sub">The post is being written.</div>' + (staff ? wnBox(r) : ''))
       + (r.not_approved && !done && r.not_approved_reason
           ? '<div class="gp-fb"><b>' + (staff ? 'Client feedback' : 'Your feedback') + '</b>' + esc(r.not_approved_reason) + '</div>' : '')
       + (r.client_notes ? gpNoteBox(r, staff) : '')
@@ -7920,7 +7920,7 @@ if (typeof CFG !== 'undefined' && CFG.newBadges) {
    (ch_month_fill: never past the maximum, queued straight away). A test hub records the press but never
    reaches a writer. */
 let WN = null, WNCHK = null, WNASK = false;
-const WNKIND = { blog: 'blog writer', page: 'page writer', linkedin: 'LinkedIn writer' };
+const WNKIND = { blog: 'blog writer', page: 'page writer', linkedin: 'LinkedIn writer', gbp: 'GBP writer' };
 function wnOn(){ return !!(CFG.writeNow && ME && ME.kind === 'internal' && typeof sb !== 'undefined'); }
 function wnLoad(force){
   if (!wnOn() || (WNASK && !force)) return Promise.resolve();
@@ -7933,7 +7933,8 @@ function wnRepaint(){
   document.querySelectorAll('[data-wnmonth]').forEach(x => { x.innerHTML = wnMonthInner(x.dataset.wnmonth); });
 }
 function wnBox(r){
-  if (!wnOn() || !['blog', 'page', 'linkedin_article'].includes(r.deliverable)) return '';
+  // GBP posts too (Jhen 26/11/2026): a post with no caption yet goes to the GBP writer.
+  if (!wnOn() || !['blog', 'page', 'linkedin_article', 'gbp_post'].includes(r.deliverable)) return '';
   wnLoad();
   return '<div class="wn" data-wnbox="' + esc(r.id) + '">' + wnInner(r) + '</div>';
 }
@@ -7944,7 +7945,7 @@ function wnInner(r){
   const rm = s.removable && WN.can ? '<button class="wn-rm" type="button" data-wnrm="' + id + '">Remove (added by mistake)</button>' : '';
   if (s.state === 'ready') return WN.can
     ? '<button class="btn wn-go big" type="button" data-wn="' + id + '">&#9889; Write it now</button>'
-      + '<span class="wn-sub">The topic is here but not written yet. This puts it first for the ' + esc(WNKIND[s.kind] || 'writer') + ', next run ' + esc(s.next || '') + (s.test ? ' (test hub: nothing is written)' : '') + '.</span>' + rm
+      + '<span class="wn-sub">' + (s.kind === 'gbp' ? 'The caption is not written yet.' : 'The topic is here but not written yet.') + ' This puts it first for the ' + esc(WNKIND[s.kind] || 'writer') + ', next run ' + esc(s.next || '') + (s.test ? ' (test hub: nothing is written)' : '') + '.</span>' + rm
     : '<span class="wn-st no">Not written yet</span>';
   if (s.state === 'queued') return '<span class="wn-st q">&#9203; ' + esc(s.label) + by + '</span>'
     + (WN.can ? '<button class="wn-x" type="button" data-wncancel="' + id + '">Cancel</button>' : '') + rm;
@@ -7987,7 +7988,10 @@ function wnMonthInner(mk){
   row('Pages', N(m.pages), m.pages_min, m.pages_max, '', addCtl('page', N(m.add_pages), shortP, 'Add pages'));
   row('Blogs', N(m.blogs), m.blogs_min, m.blogs_max, '', addCtl('blog', N(m.add_blogs), shortB, 'Add blogs'));
   if (N(m.power_max)) row('Power Mode', N(m.power), m.power_min, m.power_max, '', '');
-  row('GBP posts', N(m.gbp), m.gbp_min, m.gbp_max, 'Added by the GBP writer, not here', '');
+  // Add GBPs (Jhen 26/11/2026): placeholders on the client's posting days, queued for the GBP writer.
+  const gdays = (WNCHK.gbp_days || []).map(d => String(d).charAt(0).toUpperCase() + String(d).slice(1, 3)).join(', ');
+  row('GBP posts', N(m.gbp), m.gbp_min, m.gbp_max, gdays ? 'Posting days ' + esc(gdays) : '',
+      addCtl('gbp', N(m.add_gbp), Math.max(0, N(m.gbp_min) - N(m.gbp)), 'Add GBPs'));
   row('LinkedIn', N(m.linkedin), m.linkedin_min, m.linkedin_max, 'One per blog, written from that blog',
       addCtl('linkedin', N(m.add_linkedin), Math.max(0, N(m.linkedin_min) - N(m.linkedin)), 'Add LinkedIn'));
   const states = [stateOf(N(m.total), N(m.total_min), N(m.total_max)), stateOf(N(m.gbp), N(m.gbp_min), N(m.gbp_max)),
@@ -8019,12 +8023,15 @@ if (typeof CFG !== 'undefined' && CFG.writeNow) document.addEventListener('click
   if (go.dataset.wnaddgo) {
     const [mk, kind] = go.dataset.wnaddgo.split('|');
     const sel = document.querySelector('[data-wnaddn="' + go.dataset.wnaddgo + '"]'), n = Number(sel && sel.value) || 1;
-    const noun = kind === 'page' ? (n === 1 ? 'page' : 'pages') : kind === 'linkedin' ? (n === 1 ? 'LinkedIn article' : 'LinkedIn articles') : (n === 1 ? 'blog' : 'blogs');
+    const noun = kind === 'page' ? (n === 1 ? 'page' : 'pages') : kind === 'linkedin' ? (n === 1 ? 'LinkedIn article' : 'LinkedIn articles')
+      : kind === 'gbp' ? (n === 1 ? 'GBP post' : 'GBP posts') : (n === 1 ? 'blog' : 'blogs');
     const mm = (WNCHK && WNCHK.months || []).find(x => x.month === mk) || {};
     const after = kind === 'linkedin' ? 'LinkedIn ' + ((Number(mm.linkedin) || 0) + n) + ' of ' + mm.linkedin_min + ' to ' + mm.linkedin_max
+      : kind === 'gbp' ? 'GBP posts ' + ((Number(mm.gbp) || 0) + n) + ' of ' + mm.gbp_min + ' to ' + mm.gbp_max
       : 'pages and blogs ' + ((Number(mm.total) || 0) + n) + ' of ' + mm.total_min + ' to ' + mm.total_max;
-    if (!confirm('Add ' + n + ' ' + noun + ' to ' + monthLabel(mk) + (kind === 'linkedin' ? ', one from each blog that has none yet,' : ' from the best unused keywords,')
-      + ' and queue them to write now?\n\nAfter this: ' + after + '.')) return;
+    const how = kind === 'linkedin' ? ', one from each blog that has none yet,'
+      : kind === 'gbp' ? ' on the client’s posting days (the GBP writer picks each topic),' : ' from the best unused keywords,';
+    if (!confirm('Add ' + n + ' ' + noun + ' to ' + monthLabel(mk) + how + ' and queue them to write now?\n\nAfter this: ' + after + '.')) return;
     go.disabled = true; badge('Adding ' + noun + '…');
     const { data, error } = await sb.rpc('ch_month_fill', { p_slug: CFG.slug, p_month: mk, p_kind: kind, p_count: n });
     go.disabled = false;
@@ -8035,7 +8042,7 @@ if (typeof CFG !== 'undefined' && CFG.writeNow) document.addEventListener('click
     (rows || []).forEach(r => { if (!ITEMS.some(x => x.id === r.id)) ITEMS.push(r); });
     ITEMS.sort((a, b) => String(a.publish_date).localeCompare(String(b.publish_date)) || (a.sort_order || 0) - (b.sort_order || 0));
     await wnLoad(true); wnRefreshMonth(mk);
-    badge('Added ' + ids.length + ' ' + (kind === 'page' ? 'page' : kind === 'linkedin' ? 'LinkedIn article' : 'blog') + (ids.length === 1 ? '' : 's') + ', queued to write', 'ok');
+    badge('Added ' + ids.length + ' ' + (kind === 'page' ? 'page' : kind === 'linkedin' ? 'LinkedIn article' : kind === 'gbp' ? 'GBP post' : 'blog') + (ids.length === 1 ? '' : 's') + ', queued to write', 'ok');
     return;
   }
   const id = go.dataset.wn || go.dataset.wncancel || go.dataset.wnkw;
