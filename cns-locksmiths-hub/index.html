@@ -531,7 +531,7 @@
   .wnm-row .n{font-size:14px}.wnm-row .n b{font-size:18px;color:var(--ink-dk)}
   .wnm .ok{color:#1c7c54;font-weight:800}.wnm .short{color:#b42318;font-weight:800}.wnm .over{color:#8a5a00;font-weight:800}
   .wnm .full{font-size:12.5px;color:var(--muted)}
-  .wnm .wnm-add{display:flex;align-items:center;gap:6px}
+  .wnm .wnm-add{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
   .wnm .wnm-add select{border:1.5px solid var(--line);border-radius:8px;padding:3px 6px;font:inherit;font-size:13px}
   .wn .wn-go.big{width:100%;justify-content:center;font-size:15px;padding:10px 12px}
   .wn-rm{background:none;border:0;padding:0;font:inherit;font-size:12.5px;color:#b42318;text-decoration:underline;cursor:pointer}
@@ -7973,7 +7973,10 @@ function wnMonthInner(mk){
     if (!room) return '<span class="full">Full: no room for more this month</span>';
     const def = Math.max(1, Math.min(room, short || 1)), key = esc(mk) + '|' + kind;
     let opts = ''; for (let i = 1; i <= room; i++) opts += '<option' + (i === def ? ' selected' : '') + '>' + i + '</option>';
-    return '<span class="wnm-add"><select data-wnaddn="' + key + '" title="Room for ' + room + ' more">' + opts + '</select>'
+    // Pages: Best keyword (the default, the type follows the keyword's performance) or force Service / Location (Jhen 26/11/2026).
+    const ptype = kind === 'page' ? '<select data-wnptype="' + key + '" title="Which kind of page to add">'
+      + '<option value="">Best keyword</option><option value="service">Service page</option><option value="location">Location page</option></select>' : '';
+    return '<span class="wnm-add">' + ptype + '<select data-wnaddn="' + key + '" title="Room for ' + room + ' more">' + opts + '</select>'
       + '<button class="btn sm" type="button" data-wnaddgo="' + key + '">' + label + '</button>'
       + '<span class="full">room for ' + room + '</span></span>';
   };
@@ -8031,9 +8034,26 @@ if (typeof CFG !== 'undefined' && CFG.writeNow) document.addEventListener('click
       : 'pages and blogs ' + ((Number(mm.total) || 0) + n) + ' of ' + mm.total_min + ' to ' + mm.total_max;
     const how = kind === 'linkedin' ? ', one from each blog that has none yet,'
       : kind === 'gbp' ? ' on the client’s posting days (the GBP writer picks each topic),' : ' from the best unused keywords,';
-    if (!confirm('Add ' + n + ' ' + noun + ' to ' + monthLabel(mk) + how + ' and queue them to write now?\n\nAfter this: ' + after + '.')) return;
+    // Pages: show exactly which keywords it will use, and their type, before anything is added.
+    const tsel = kind === 'page' ? document.querySelector('[data-wnptype="' + go.dataset.wnaddgo + '"]') : null;
+    const ptype = (tsel && tsel.value) || null;
+    let picks = '';
+    if (kind === 'page') {
+      const pv = await sb.rpc('ch_month_fill_preview', { p_slug: CFG.slug, p_count: n, p_page_type: ptype });
+      if (pv.error) { badge(pv.error.message, 'err'); return; }
+      const list = (pv.data && pv.data.picks) || [], left = (pv.data && pv.data.left) || {};
+      if (!list.length) { badge('No unused ' + (ptype ? ptype + ' ' : '') + 'keywords left for this client (service ' + (left.service || 0) + ', location ' + (left.location || 0) + ').', 'err'); return; }
+      picks = '\n\nIt will add:\n' + list.map(p => '• ' + p.keyword + ' (' + p.type + (p.pos ? ', position ' + p.pos : ', not ranking yet')
+        + (p.volume ? ', ' + p.volume + '/mo' : '') + ')').join('\n')
+        + (list.length < n ? '\n(only ' + list.length + ' ' + (ptype || '') + ' keyword' + (list.length === 1 ? '' : 's') + ' left)' : '')
+        + '\n\nUnused keywords left: service ' + (left.service || 0) + ', location ' + (left.location || 0) + '.';
+    }
+    const what = kind === 'page' && ptype ? n + ' ' + ptype + ' ' + noun : n + ' ' + noun;
+    if (!confirm('Add ' + what + ' to ' + monthLabel(mk) + how + ' and queue them to write now?' + picks + '\n\nAfter this: ' + after + '.')) return;
     go.disabled = true; badge('Adding ' + noun + '…');
-    const { data, error } = await sb.rpc('ch_month_fill', { p_slug: CFG.slug, p_month: mk, p_kind: kind, p_count: n });
+    const args = { p_slug: CFG.slug, p_month: mk, p_kind: kind, p_count: n };
+    if (kind === 'page') args.p_page_type = ptype;
+    const { data, error } = await sb.rpc('ch_month_fill', args);
     go.disabled = false;
     if (error) { badge(error.message, 'err'); return; }
     const ids = ((data && data.added) || []).map(a => a.id);
