@@ -73,6 +73,9 @@ Rendering: the body goes inside `.pgframe` after page_css, between page_header.h
 
 Do not quote a review count (it changes). Do not use "20+ years" (conflicts with 2011; Lauren to confirm).
 
+## Photos (Jhen 27/11/2026)
+No client photos yet: the Drive Client Uploads folders are empty. Pages are written now without them, like the blogs. The service hero is a fixed "Photo to come" placeholder; keep it as is. The location layout has no photo slots (the 8 service cards are fixed and already on the live site). Do not add any other image. The team swaps in a real Aquasonic job photo before a page goes live.
+
 ## Banner photo (Jhen 12/11/2026)
 A banner photo may have a little writing in it, as long as no writing sits behind the page heading, lead line or button. Never use a flyer or graphic that is mostly text. Product cut-outs on a white background must not go in a tall photo slot; use real photos there. Prefer Aquasonic's own job photos from the photo library over the site's stock images.
 
