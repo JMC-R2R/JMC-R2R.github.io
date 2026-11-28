@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free Marketing Audit for Aussie Tradies | Ready to Rank</title>
+<meta name="description" content="Find out if Google Maps, ChatGPT and Google's AI recommend your trade business, and what's costing you jobs. Free audit, emailed to you as a PDF.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F0F12; --panel:#17171C; --line:#2A2A31; --blue:#17B4F0; --azure:#39A0FE;
+    --text:#FFFFFF; --muted:#A6A6B0; --ok:#3DDC97;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:Archivo,Arial,Helvetica,sans-serif;font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--blue)}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .kicker{font-family:"Space Mono","Courier New",monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--blue);font-weight:700}
+  h1,h2,h3{font-weight:900;line-height:1.08;letter-spacing:-.01em}
+  h1{font-size:clamp(34px,6vw,58px)}
+  h2{font-size:clamp(26px,4vw,38px)}
+  h3{font-size:20px}
+  .hl{color:var(--blue)}
+
+  header{padding:22px 0}
+  header .wrap{display:flex;align-items:center;justify-content:space-between}
+  header img{height:34px;width:auto;display:block}
+  header .tag{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+  .hero{padding:28px 0 64px}
+  .hero .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:start}
+  .hero p.sub{color:var(--muted);font-size:19px;margin:18px 0 26px;max-width:560px}
+  .ticks{list-style:none;display:grid;gap:12px;margin-bottom:8px}
+  .ticks li{display:flex;gap:12px;align-items:flex-start}
+  .ticks li::before{content:"";flex:0 0 22px;height:22px;border-radius:50%;background:var(--blue) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230F0F12' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/14px no-repeat;margin-top:2px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px}
+  form .card{box-shadow:0 20px 60px rgba(23,180,240,.10)}
+  .form-head{margin-bottom:18px}
+  .form-head h2{font-size:24px;margin-top:6px}
+  .form-head p{color:var(--muted);font-size:15px;margin-top:6px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px;color:#DADAE0}
+  input,select{width:100%;font:inherit;font-size:16px;color:var(--text);background:#0F0F12;border:1px solid var(--line);border-radius:10px;padding:13px 14px;outline:none;transition:border-color .15s}
+  input:focus,select:focus{border-color:var(--blue)}
+  select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A6A6B0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:18px;padding-right:40px}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  button{width:100%;margin-top:20px;font:inherit;font-weight:900;font-size:18px;color:#0F0F12;background:var(--blue);border:0;border-radius:12px;padding:16px 18px;cursor:pointer;transition:transform .08s,filter .15s}
+  button:hover{filter:brightness(1.08)}
+  button:active{transform:translateY(1px)}
+  button[disabled]{opacity:.6;cursor:wait}
+  .fine{font-size:12.5px;color:var(--muted);margin-top:12px;text-align:center}
+  .err{color:#FF7A7A;font-size:14px;margin-top:10px;display:none}
+  .done{display:none;text-align:center;padding:12px 4px}
+  .done .big{width:64px;height:64px;border-radius:50%;background:var(--blue);margin:4px auto 16px;display:grid;place-items:center}
+  .done h2{font-size:26px}
+  .done p{color:var(--muted);margin-top:10px}
+
+  section{padding:64px 0;border-top:1px solid var(--line)}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}
+  .three .card p{color:var(--muted);font-size:15.5px;margin-top:8px}
+  .num{font-family:"Space Mono",monospace;font-size:13px;color:var(--blue);font-weight:700;letter-spacing:.1em}
+  .proof{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}
+  .stat{font-size:clamp(36px,5vw,52px);font-weight:900;color:var(--blue);line-height:1}
+  .stat-l{font-weight:700;margin-top:10px}
+  .stat-s{font-family:"Space Mono",monospace;font-size:11.5px;color:var(--muted);letter-spacing:.06em;margin-top:8px;text-transform:uppercase}
+  .lead{color:var(--muted);font-size:18px;margin-top:12px;max-width:620px}
+  .note{color:var(--muted);font-size:12.5px;margin-top:22px}
+  .logos-band{padding:44px 0}
+  .logos{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:20px}
+  .plate{background:#fff;border-radius:12px;height:86px;display:flex;align-items:center;justify-content:center;padding:12px 16px}
+  .plate img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+  .plate-sm{height:64px;width:180px;padding:10px 14px}
+  .cs{display:grid;grid-template-columns:1fr 1.2fr;gap:30px;align-items:center;margin-top:24px;padding:28px}
+  .cs-q{font-size:22px;margin-top:8px;line-height:1.25}
+  .metrics{display:flex;gap:26px;flex-wrap:wrap;margin-top:18px}
+  .metrics .v{font-weight:900;font-size:clamp(28px,3.6vw,40px);color:var(--blue);line-height:1}
+  .metrics .l{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:8px;max-width:16ch}
+  .src{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:18px}
+  .shot{border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#fff}
+  .shot img{width:100%;height:auto;display:block}
+  .ad p{color:var(--muted);font-size:15px;margin-top:14px}
+  .marquee{overflow:hidden;margin-top:24px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .track{list-style:none;display:flex;align-items:center;gap:56px;width:max-content;animation:scroll 70s linear infinite}
+  .track li{flex:0 0 auto;height:52px;display:flex;align-items:center}
+  .track img{height:100%;width:auto;max-width:170px;object-fit:contain;opacity:.85}
+  .marquee:hover .track{animation-play-state:paused}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+  @media (prefers-reduced-motion:reduce){.track{animation:none;flex-wrap:wrap;width:auto;justify-content:center}.track li[aria-hidden]{display:none}}
+  .kwcards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px}
+  .kwlogo{height:52px;width:auto;max-width:190px;object-fit:contain;display:block;margin-bottom:16px}
+  .kw .since{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;color:var(--muted);margin-top:6px;text-transform:uppercase}
+  .kw .tot{font-weight:700;font-size:18px;margin:14px 0 10px}
+  .kw .tot b{color:var(--blue)}
+  .mv{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px}
+  .mv span:first-child{color:#DADAE0}
+  .pos{font-family:"Space Mono",monospace;white-space:nowrap;color:var(--muted)}
+  .pos b{color:var(--blue);font-size:16px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:28px}
+  .faq{margin-top:26px;display:grid;gap:12px}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:16px}
+  summary::after{content:"+";color:var(--blue);font-weight:900;font-size:20px;line-height:1}
+  details[open] summary::after{content:"–"}
+  details p{color:var(--muted);margin-top:10px;font-size:15.5px}
+  .cta-band{text-align:center}
+  .cta-band a.btn{display:inline-block;margin-top:22px;font-weight:900;font-size:18px;color:#0F0F12;background:var(--blue);border-radius:12px;padding:16px 28px;text-decoration:none}
+  footer{padding:30px 0 40px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+  @media (max-width:880px){
+    .hero .grid{grid-template-columns:1fr;gap:30px}
+    .three,.proof,.cs,.kwcards,.two{grid-template-columns:1fr}
+    .track{gap:40px}
+    .track li{height:40px}
+    header .tag{display:none}
+  }
+  @media (max-width:420px){ .row{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <img src="r2r-logo.png" alt="Ready to Rank">
+    <span class="tag">Marketing for Aussie tradies</span>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap grid">
+      <div>
+        <div class="kicker">Free audit · emailed to you as a PDF</div>
+        <h1 style="margin-top:14px">Find out exactly why customers <span class="hl">aren't finding</span> your trade business.</h1>
+        <p class="sub">We check whether Google Maps, ChatGPT and Google's AI recommend you, or your competitors, and what on your website is costing you jobs. No call needed.</p>
+        <ul class="ticks">
+          <li>Do ChatGPT and Google's AI recommend you when locals ask?</li>
+          <li>Where you show on Google Maps against your top 3 competitors</li>
+          <li>Website speed, mobile and the fixes that win more calls</li>
+        </ul>
+      </div>
+
+      <form id="audit-form" novalidate>
+        <div class="card">
+          <div id="form-body">
+            <div class="form-head">
+              <div class="kicker">Get your audit</div>
+              <h2>Where should we send it?</h2>
+              <p>Takes 30 seconds. Your report lands in your inbox within minutes.</p>
+            </div>
+
+            <label for="business">Business name</label>
+            <input id="business" name="business" required autocomplete="organization" placeholder="e.g. Smith Plumbing">
+
+            <label for="website">Website</label>
+            <input id="website" name="website" required inputmode="url" placeholder="e.g. smithplumbing.com.au">
+
+            <div class="row">
+              <div>
+                <label for="trade">Trade</label>
+                <select id="trade" name="trade" required>
+                  <option value="">Choose…</option>
+                  <option>Plumber</option><option>Electrician</option><option>HVAC / Air conditioning</option>
+                  <option>Roofer</option><option>Builder</option><option>Handyman</option>
+                  <option>Locksmith</option><option>Landscaper</option><option>Cleaner</option><option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label for="location">Main suburb / town</label>
+                <input id="location" name="location" required placeholder="e.g. Geelong VIC">
+              </div>
+            </div>
+
+            <label for="name">Your name</label>
+            <input id="name" name="name" required autocomplete="name">
+
+            <div class="row">
+              <div>
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" required autocomplete="email">
+              </div>
+              <div>
+                <label for="mobile">Mobile</label>
+                <input id="mobile" name="mobile" type="tel" required autocomplete="tel" placeholder="04xx xxx xxx">
+              </div>
+            </div>
+
+            <div class="hp" aria-hidden="true"><label>Leave blank<input name="company_url" tabindex="-1" autocomplete="off"></label></div>
+            <input type="hidden" name="utm_source"><input type="hidden" name="utm_medium"><input type="hidden" name="utm_campaign">
+
+            <button type="submit" id="submit">Send me my free audit</button>
+            <div class="err" id="err"></div>
+            <p class="fine">No lock-in, no spam. We'll only use your details to send your audit and follow up once.</p>
+          </div>
+
+          <div class="done" id="done">
+            <div class="big"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0F0F12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+            <h2>Your audit is on its way</h2>
+            <p>We're running the checks now. Look out for an email from <strong>Ready to Rank</strong> in the next few minutes (check junk just in case).</p>
+            <p>Want it walked through? <a href="https://calendly.com/jose_chavez/30-min-geo-audit-social-media" target="_blank" rel="noopener">Book a free 30-min call</a>.</p>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <div class="kicker">What's in your audit</div>
+      <h2 style="margin-top:12px">Three checks. One clear report.</h2>
+      <div class="three">
+        <div class="card"><div class="num">01 · AI SEARCH</div><h3 style="margin-top:10px">Does AI recommend you?</h3><p>We ask ChatGPT and Google's AI the questions your customers ask, like "best plumber in Geelong", and show who they recommend.</p></div>
+        <div class="card"><div class="num">02 · GOOGLE MAPS</div><h3 style="margin-top:10px">Where you rank locally</h3><p>Your Google Business Profile against the top 3 businesses in your area: position, reviews, rating and category.</p></div>
+        <div class="card"><div class="num">03 · WEBSITE</div><h3 style="margin-top:10px">What's costing you calls</h3><p>Mobile speed, Google's own performance score, page titles, schema and whether customers can tap to call you.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="logos-band">
+    <div class="kicker" style="text-align:center">Trusted by 29 Australian trade &amp; home service businesses</div>
+    <div class="marquee"><ul class="track"><li><img src="cases/trades/unleash.png" alt="Unleash Plumbing" loading="lazy"></li><li><img src="cases/trades/clarkies.png" alt="Clarkies Plumbing" loading="lazy"></li><li><img src="cases/trades/c2c.png" alt="Coast to Coast Plumbing" loading="lazy"></li><li><img src="cases/trades/gsk.png" alt="GSK Plumbing Solutions" loading="lazy"></li><li><img src="cases/trades/mgrp.png" alt="MGR Plumbing" loading="lazy"></li><li><img src="cases/trades/mgrl.png" alt="MGR Leak Detection" loading="lazy"></li><li><img src="cases/trades/aquasonic.png" alt="Aquasonic Plumbing &amp; Gas" loading="lazy"></li><li><img src="cases/trades/barone.png" alt="Barone Plumbing &amp; Excavations" loading="lazy"></li><li><img src="cases/trades/humming.png" alt="Humming Plumbing" loading="lazy"></li><li><img src="cases/trades/hyas.png" alt="HYAS Plumbing" loading="lazy"></li><li><img src="cases/trades/otj.png" alt="On The Job Plumbing" loading="lazy"></li><li><img src="cases/trades/polarity.png" alt="Polarity Plumbing" loading="lazy"></li><li><img src="cases/trades/raks.png" alt="RAKS Quality Plumbing" loading="lazy"></li><li><img src="cases/trades/bayswater.png" alt="Bayswater Roofing" loading="lazy"></li><li><img src="cases/trades/bm.png" alt="BM Roofing &amp; Cladding" loading="lazy"></li><li><img src="cases/trades/bt.png" alt="BT Metal Roofing" loading="lazy"></li><li><img src="cases/trades/r1.png" alt="R1 Roofing Services" loading="lazy"></li><li><img src="cases/trades/bartling.png" alt="Bartling Constructions" loading="lazy"></li><li><img src="cases/trades/cobalt.png" alt="Cobalt Constructions" loading="lazy"></li><li><img src="cases/trades/proud.png" alt="Proud Homes" loading="lazy"></li><li><img src="cases/trades/integra.png" alt="Integra Remedial Solutions" loading="lazy"></li><li><img src="cases/trades/shuttle.png" alt="Shuttle Electrics" loading="lazy"></li><li><img src="cases/trades/tlc.png" alt="TLC Energy" loading="lazy"></li><li><img src="cases/trades/thermocline.png" alt="Thermocline Heating &amp; Cooling" loading="lazy"></li><li><img src="cases/trades/cns.png" alt="CNS Locksmiths" loading="lazy"></li><li><img src="cases/trades/stc.png" alt="Stop The Crime Security" loading="lazy"></li><li><img src="cases/trades/select.png" alt="Select Cleaning" loading="lazy"></li><li><img src="cases/trades/kleen.png" alt="Kleen Living" loading="lazy"></li><li><img src="cases/trades/vic.png" alt="Vic Haulage Co." loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/unleash.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/clarkies.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/c2c.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/gsk.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/mgrp.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/mgrl.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/aquasonic.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/barone.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/humming.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/hyas.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/otj.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/polarity.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/raks.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/bayswater.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/bm.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/bt.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/r1.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/bartling.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/cobalt.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/proud.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/integra.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/shuttle.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/tlc.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/thermocline.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/cns.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/stc.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/select.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/kleen.png" alt="" loading="lazy"></li><li aria-hidden="true"><img src="cases/trades/vic.png" alt="" loading="lazy"></li></ul></div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="kicker">Case studies · SEO</div>
+      <h2 style="margin-top:12px">The keywords that moved, <span class="hl">in 3 months</span>.</h2>
+      <p class="lead">Real Google rankings for current trade clients, from the week we started tracking to now.</p>
+      <div class="kwcards">
+        <div class="card kw">
+          <img class="kwlogo" src="cases/trades/unleash.png" alt="Unleash Plumbing">
+          <div class="num">ROOF PLUMBING · YARRA RANGES VIC</div>
+          <div class="since">16/08 – 19/11/2026 · 14 weeks</div>
+          <div class="tot">Search clicks <b>+123%</b> in 3 months</div>
+          <div class="mv"><span>colorbond roof replacement mt evelyn</span><span class="pos">#7 → <b>#4</b></span></div>
+          <div class="mv"><span>rusted roof valley repair</span><span class="pos">— → <b>#6</b></span></div>
+          <div class="mv"><span>roof restoration woori yallock</span><span class="pos">— → <b>#7</b></span></div>
+          <div class="mv"><span>roof leak repair dandenong ranges</span><span class="pos">— → <b>#9</b></span></div>
+          <div class="mv"><span>licensed roof plumber victoria</span><span class="pos">#62 → <b>#16</b></span></div>
+        </div>
+        <div class="card kw">
+          <img class="kwlogo" src="cases/trades/clarkies.png" alt="Clarkies Plumbing">
+          <div class="num">PLUMBING · NEWCASTLE NSW</div>
+          <div class="since">05/08 – 19/11/2026 · 15 weeks</div>
+          <div class="tot">Page one: <b>9 → 20</b> tracked keywords</div>
+          <div class="mv"><span>plumber newcastle</span><span class="pos">— → <b>#4</b></span></div>
+          <div class="mv"><span>emergency plumber newcastle</span><span class="pos">#44 → <b>#4</b></span></div>
+          <div class="mv"><span>burst pipes newcastle</span><span class="pos">#47 → <b>#2</b></span></div>
+          <div class="mv"><span>gas fittings newcastle</span><span class="pos">#78 → <b>#5</b></span></div>
+          <div class="mv"><span>leak detection newcastle</span><span class="pos">— → <b>#8</b></span></div>
+        </div>
+        <div class="card kw">
+          <img class="kwlogo" src="cases/trades/c2c.png" alt="Coast to Coast Plumbing">
+          <div class="num">PLUMBING · BAYSIDE &amp; PENINSULA VIC</div>
+          <div class="since">30/07 – 19/11/2026 · 16 weeks</div>
+          <div class="tot">Suburb pages climbing to the <b>top 5</b></div>
+          <div class="mv"><span>blocked drains sandringham</span><span class="pos">#55 → <b>#2</b></span></div>
+          <div class="mv"><span>blocked drains highett</span><span class="pos">— → <b>#2</b></span></div>
+          <div class="mv"><span>blocked drains beaumaris</span><span class="pos">— → <b>#2</b></span></div>
+          <div class="mv"><span>plumber highett</span><span class="pos">— → <b>#4</b></span></div>
+          <div class="mv"><span>blocked drains hampton</span><span class="pos">#64 → <b>#6</b></span></div>
+        </div>
+      </div>
+      <p class="note">Source: each client's SE Ranking rank tracking (Google AU), first tracked week vs week to 19/11/2026. "—" = not in the top 100. Unleash clicks: Google Search Console, last 3 months vs previous 3.</p>
+
+      <div class="cs card">
+        <div>
+          <img class="kwlogo" src="cases/trades/mgrl.png" alt="MGR Leak Detection">
+          <div class="num" style="margin-top:6px">TRADES · LEAK DETECTION · SEO</div>
+          <h3 class="cs-q">From near-zero to a steady flow of organic enquiries.</h3>
+          <div class="metrics">
+            <div><div class="v">3,320</div><div class="l">Google clicks</div></div>
+            <div><div class="v">922k</div><div class="l">Impressions</div></div>
+            <div><div class="v">16 mo</div><div class="l">From a standing start</div></div>
+          </div>
+          <div class="src">Google Search Console · Nov 2024 – Feb 2026</div>
+        </div>
+        <div class="shot"><img src="cases/gsc-mgr-leak.png" alt="MGR Leak Detection Google Search Console growth graph" loading="lazy"></div>
+      </div>
+      <div class="cs card">
+        <div>
+          <img class="kwlogo" src="cases/trades/mgrp.png" alt="MGR Plumbing">
+          <div class="num" style="margin-top:6px">TRADES · PLUMBING · SEO</div>
+          <h3 class="cs-q">Organic visibility built from scratch for a local plumber.</h3>
+          <div class="metrics">
+            <div><div class="v">1,820</div><div class="l">Google clicks</div></div>
+            <div><div class="v">839k</div><div class="l">Impressions</div></div>
+            <div><div class="v">16 mo</div><div class="l">From a standing start</div></div>
+          </div>
+          <div class="src">Google Search Console · Nov 2024 – Feb 2026</div>
+        </div>
+        <div class="shot"><img src="cases/gsc-mgr-plumbing.png" alt="MGR Plumbing Google Search Console growth graph" loading="lazy"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="kicker">Case studies · Google Ads</div>
+      <h2 style="margin-top:12px">Google Ads that ring the phone.</h2>
+      <div class="two">
+        <div class="card ad">
+          <img class="kwlogo" src="cases/trades/unleash.png" alt="Unleash Plumbing">
+          <div class="num">ROOF PLUMBING · GOOGLE ADS</div>
+          <div class="metrics"><div><div class="v">47</div><div class="l">Leads in 12 weeks</div></div><div><div class="v">14</div><div class="l">Phone calls</div></div><div><div class="v">33</div><div class="l">Quote requests</div></div></div>
+          <p>Re-roofing and roof repair campaigns built from scratch, with the client blocking bad search terms straight from their dashboard.</p>
+          <div class="src">Google Ads · 07/09 – 27/11/2026</div>
+        </div>
+        <div class="card ad">
+          <img class="kwlogo" src="cases/trades/gsk.png" alt="GSK Plumbing Solutions">
+          <div class="num">PLUMBING · GOOGLE ADS</div>
+          <div class="metrics"><div><div class="v">8</div><div class="l">Leads in the first 4 weeks</div></div><div><div class="v">1,401</div><div class="l">Clicks</div></div><div><div class="v">41k</div><div class="l">Impressions</div></div></div>
+          <p>Taken over from a previous agency and relaunched in four weeks, with call tracking so every lead is counted.</p>
+          <div class="src">Google Ads · 27/10 – 27/11/2026</div>
+        </div>
+      </div>
+      <p class="note">Leads = calls and form enquiries recorded as conversions in each client's Google Ads account, R2R campaigns only. Results depend on starting point, market and budget.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="kicker">Questions</div>
+      <h2 style="margin-top:12px">Before you ask.</h2>
+      <div class="faq">
+        <details><summary>Is it really free?</summary><p>Yes. No card, no obligation. If you'd like help fixing what we find, you can book a call. If not, the report is yours to keep.</p></details>
+        <details><summary>How long does it take?</summary><p>The form takes 30 seconds. The checks run automatically and the PDF usually reaches your inbox within a few minutes.</p></details>
+        <details><summary>Do I need to give you any logins?</summary><p>No. Everything we check is public: your website, your Google Business Profile and what AI search says about your business.</p></details>
+        <details><summary>Who's Ready to Rank?</summary><p>An Australian marketing agency for tradies and home service businesses. We run SEO, Google and Meta ads, websites, CRM and social, with a live dashboard so you can see exactly what's being done.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap">
+      <h2>See where you stand in 30 seconds.</h2>
+      <a class="btn" href="#audit-form">Get my free audit</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© Ready to Rank · readytorank.com.au</span>
+    <span>Results shown are from real Ready to Rank clients. Every business is different.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Edge Function endpoint goes here once built (step 3 of PLAN.md).
+  var ENDPOINT = "https://tjgrtrazyepvbcmmdhet.supabase.co/functions/v1/audit-submit";
+
+  var f = document.getElementById('audit-form');
+  var q = new URLSearchParams(location.search);
+  ['utm_source','utm_medium','utm_campaign'].forEach(function(k){ if(q.get(k)) f.elements[k].value = q.get(k); });
+
+  function showErr(m){ var e=document.getElementById('err'); e.textContent=m; e.style.display='block'; }
+
+  f.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    document.getElementById('err').style.display='none';
+    var d = {}; new FormData(f).forEach(function(v,k){ d[k]=String(v).trim(); });
+    if(d.company_url){ return; } // bot
+    var req = ['business','website','trade','location','name','email','mobile'];
+    for(var i=0;i<req.length;i++){ if(!d[req[i]]){ showErr('Please fill in every field.'); f.elements[req[i]].focus(); return; } }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)){ showErr('That email doesn’t look right.'); f.elements.email.focus(); return; }
+    if(!/\./.test(d.website)){ showErr('Please enter your website address.'); f.elements.website.focus(); return; }
+
+    var b = document.getElementById('submit'); b.disabled = true; b.textContent = 'Sending…';
+    function done(){ document.getElementById('form-body').style.display='none'; document.getElementById('done').style.display='block'; }
+    if(!ENDPOINT){ setTimeout(done, 600); return; } // preview mode
+    fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
+      .then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ if(!r.ok) throw (j && j.error) || 0; done(); }); })
+      .catch(function(m){ b.disabled=false; b.textContent='Send me my free audit'; showErr(typeof m==='string' ? m : 'Something went wrong. Please try again in a minute.'); });
+  });
+})();
+</script>
+</body>
+</html>
